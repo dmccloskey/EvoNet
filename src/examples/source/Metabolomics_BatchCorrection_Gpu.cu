@@ -1,11 +1,11 @@
 /**TODO:  Add copyright*/
 
-#include <SmartPeak/ml/PopulationTrainerGpu.h>
-#include <SmartPeak/ml/ModelTrainerGpu.h>
+#include <SmartPeak/ml/PopulationTrainerDefaultDevice.h>
+#include <SmartPeak/ml/ModelTrainerDefaultDevice.h>
 #include <SmartPeak/ml/ModelReplicator.h>
 #include <SmartPeak/ml/ModelBuilder.h>
 #include <SmartPeak/io/PopulationTrainerFile.h>
-#include <SmartPeak/io/ModelInterpreterFileGpu.h>
+#include <SmartPeak/io/ModelInterpreterFileDefaultDevice.h>
 #include <SmartPeak/simulator/BiochemicalReaction.h>
 #include <unsupported/Eigen/CXX11/Tensor>
 
@@ -17,7 +17,7 @@ class ModelReplicatorExt : public ModelReplicator<TensorT>
 {};
 
 template<typename TensorT>
-class PopulationTrainerExt : public PopulationTrainerGpu<TensorT>
+class PopulationTrainerExt : public PopulationTrainerDefaultDevice<TensorT>
 {};
 
 template<typename TensorT>
@@ -372,7 +372,7 @@ public:
 };
 
 template<typename TensorT>
-class ModelTrainerExt : public ModelTrainerGpu<TensorT>
+class ModelTrainerExt : public ModelTrainerDefaultDevice<TensorT>
 {
 public:
   /*
@@ -598,7 +598,7 @@ public:
     const int& n_de_hidden_0 = 64, const int& n_de_hidden_1 = 0, const int& n_de_hidden_2 = 0,
     const int& n_hidden_0 = 32, const int& n_hidden_1 = 0, const int& n_hidden_2 = 0) {
     model.setId(0);
-    model.setName("AE");    
+    model.setName("AE");
     ModelBuilder<TensorT> model_builder;
 
     // Add the inputs
@@ -1005,7 +1005,7 @@ public:
     const int& n_generations,
     const int& n_epochs,
     Model<TensorT>& model,
-    ModelInterpreterGpu<TensorT>& model_interpreter,
+    ModelInterpreterDefaultDevice<TensorT>& model_interpreter,
     const std::vector<float>& model_errors) {
     // Check point the model every 1000 epochs
     if (n_epochs % 500 == 0 && n_epochs != 0) {
@@ -1016,11 +1016,11 @@ public:
       // save the model and tensors to binary
       ModelFile<TensorT> data;
       data.storeModelBinary(model.getName() + "_" + std::to_string(n_epochs) + "_model.binary", model);
-      ModelInterpreterFileGpu<TensorT> interpreter_data;
+      ModelInterpreterFileDefaultDevice<TensorT> interpreter_data;
       interpreter_data.storeModelInterpreterBinary(model.getName() + "_" + std::to_string(n_epochs) + "_interpreter.binary", model_interpreter);
     }
   }
-  void trainingModelLogger(const int & n_epochs, Model<TensorT>& model, ModelInterpreterGpu<TensorT>& model_interpreter, ModelLogger<TensorT>& model_logger,
+  void trainingModelLogger(const int & n_epochs, Model<TensorT>& model, ModelInterpreterDefaultDevice<TensorT>& model_interpreter, ModelLogger<TensorT>& model_logger,
     const Eigen::Tensor<TensorT, 3>& expected_values, const std::vector<std::string>& output_nodes, const TensorT & model_error_train, const TensorT & model_error_test,
     const Eigen::Tensor<TensorT, 1> & model_metrics_train, const Eigen::Tensor<TensorT, 1> & model_metrics_test)
   {
@@ -1056,7 +1056,7 @@ public:
     }
     model_logger.writeLogs(model, n_epochs, log_train_headers, log_test_headers, log_train_values, log_test_values, output_nodes, expected_values);
   }
-  void validationModelLogger(const int & n_epochs, Model<TensorT>& model, ModelInterpreterGpu<TensorT>& model_interpreter, ModelLogger<TensorT>& model_logger,
+  void validationModelLogger(const int & n_epochs, Model<TensorT>& model, ModelInterpreterDefaultDevice<TensorT>& model_interpreter, ModelLogger<TensorT>& model_logger,
     const Eigen::Tensor<TensorT, 3>& expected_values, const std::vector<std::string>& output_nodes, const TensorT & model_error_train, const TensorT & model_error_test,
     const Eigen::Tensor<TensorT, 1> & model_metrics_train, const Eigen::Tensor<TensorT, 1> & model_metrics_test)
   {
@@ -1209,10 +1209,10 @@ void main_batchCorrectionAE(const std::string& biochem_rxns_filename,
   }
 
   // define the model trainers and resources for the trainers
-  std::vector<ModelInterpreterGpu<float>> model_interpreters;
+  std::vector<ModelInterpreterDefaultDevice<float>> model_interpreters;
   for (size_t i = 0; i < n_threads; ++i) {
     ModelResources model_resources = { ModelDevice(0, 1) };
-    ModelInterpreterGpu<float> model_interpreter(model_resources);
+    ModelInterpreterDefaultDevice<float> model_interpreter(model_resources);
     model_interpreters.push_back(model_interpreter);
   }
   ModelTrainerExt<float> model_trainer;
@@ -1255,10 +1255,10 @@ void main_batchCorrectionAE(const std::string& biochem_rxns_filename,
 }
 
 /// Script to evaluate the batch correction AE + classifier networks
-void main_batchCorrectionAE(const std::string& biochem_rxns_filename,
+void main_batchCorrectionClassification(const std::string& biochem_rxns_filename,
   const std::string& metabo_data_filename_train, const std::string& metabo_data_filename_test,
   const std::string& meta_data_filename_train, const std::string& meta_data_filename_test,
-  const std::string& model_ae_weight_filename, const std::string& model_classifier_weight_filename,
+  const std::string& model_ae_weight_filename, const std::string& model_ae_classifier_weights_filename, const std::string& model_classifier_weight_filename,
   bool simulate_MARs = true, bool sample_concs = true)
 {
   // define the multithreading parameters
@@ -1331,10 +1331,10 @@ void main_batchCorrectionAE(const std::string& biochem_rxns_filename,
   }
 
   // define the model trainers and resources for the trainers
-  std::vector<ModelInterpreterGpu<float>> model_interpreters;
+  std::vector<ModelInterpreterDefaultDevice<float>> model_interpreters;
   for (size_t i = 0; i < n_threads; ++i) {
     ModelResources model_resources = { ModelDevice(0, 1) };
-    ModelInterpreterGpu<float> model_interpreter(model_resources);
+    ModelInterpreterDefaultDevice<float> model_interpreter(model_resources);
     model_interpreters.push_back(model_interpreter);
   }
   ModelTrainerExt<float> model_trainer;
@@ -1342,7 +1342,7 @@ void main_batchCorrectionAE(const std::string& biochem_rxns_filename,
   model_trainer.setMemorySize(1);
   model_trainer.setNEpochsValidation(100);
   model_trainer.setVerbosityLevel(1);
-  model_trainer.setLogging(true, false, false);
+  model_trainer.setLogging(true, true, false);
   model_trainer.setFindCycles(false);
   model_trainer.setFastInterpreter(true);
   model_trainer.setPreserveOoO(true);
@@ -1374,7 +1374,7 @@ void main_batchCorrectionAE(const std::string& biochem_rxns_filename,
   data.loadWeightValuesCsv(model_ae_weight_filename, model_batch_correction_classifier.getWeightsMap());
 
   // read in the Classifier weights
-  data.loadWeightValuesCsv(model_classifier_weight_filename, model_batch_correction_classifier.getWeightsMap());
+  data.loadWeightValuesCsv(model_ae_classifier_weights_filename, model_batch_correction_classifier.getWeightsMap());
   data.loadWeightValuesCsv(model_classifier_weight_filename, model_classifier.getWeightsMap());
 
   // check that all weights were read in correctly
@@ -1418,7 +1418,7 @@ int main(int argc, char** argv)
   // Make the filenames
   const std::string biochem_rxns_filename = data_dir + "iJO1366.csv";
 
-  // IndustrialStrains0103
+  // IndustrialStrains0103 Batch correction filenames
   const std::string metabo_data_filename_train_batch_1 = data_dir + "IndustrialStrains0103_Metabolomics_train_batch_1.csv";
   const std::string metabo_data_filename_test_batch_1 = data_dir + "IndustrialStrains0103_Metabolomics_test_batch_1.csv";
   const std::string metabo_data_filename_train_batch_2 = data_dir + "IndustrialStrains0103_Metabolomics_train_batch_2.csv";
@@ -1428,11 +1428,29 @@ int main(int argc, char** argv)
   const std::string meta_data_filename_train_batch_2 = data_dir + "IndustrialStrains0103_MetaData_train_batch_2.csv";
   const std::string meta_data_filename_test_batch_2 = data_dir + "IndustrialStrains0103_MetaData_test_batch_2.csv";
 
+  // Run the batch correction
   main_batchCorrectionAE(biochem_rxns_filename,
     metabo_data_filename_train_batch_1, metabo_data_filename_test_batch_1,
     meta_data_filename_train_batch_1, meta_data_filename_test_batch_1,
     metabo_data_filename_train_batch_2, metabo_data_filename_test_batch_2,
     meta_data_filename_train_batch_2, meta_data_filename_test_batch_2, true, false, true);
+
+  // IndustrialStrains0103 classification filenames
+  const std::string metabo_data_filename_train = data_dir + "IndustrialStrains0103_Metabolomics_train.csv";
+  const std::string meta_data_filename_train = data_dir + "IndustrialStrains0103_MetaData_train.csv";
+  const std::string metabo_data_filename_test = data_dir + "IndustrialStrains0103_Metabolomics_test.csv";
+  const std::string meta_data_filename_test = data_dir + "IndustrialStrains0103_MetaData_test.csv";
+
+  // Model filenames
+  const std::string model_ae_weights_filename = data_dir + "TrainTestData/BatchCorrection/AE_weights.csv";
+  const std::string model_ae_classifier_weights_filename = data_dir + "TrainTestData/BatchCorrection/AE_Classifier_weights.csv";
+  const std::string model_classifier_weights_filename = data_dir + "TrainTestData/BatchCorrection/Classifier_weights.csv";
+
+  //// Run the classification
+  //main_batchCorrectionClassification(biochem_rxns_filename,
+  //  metabo_data_filename_train, metabo_data_filename_test,
+  //  meta_data_filename_train, meta_data_filename_test,
+  //  model_ae_weights_filename, model_ae_classifier_weights_filename, model_classifier_weights_filename, false, true);
 
   return 0;
 }
