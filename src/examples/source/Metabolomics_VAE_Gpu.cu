@@ -138,7 +138,7 @@ public:
 
     std::random_device rd{};
     std::mt19937 gen{ rd() };
-    std::normal_distribution<> d{ 0.0f, 0.1f };
+    std::normal_distribution<> d{ 0.0f, 1.0f };
 
     for (int batch_iter = 0; batch_iter < batch_size; ++batch_iter) {
       for (int memory_iter = 0; memory_iter < memory_size; ++memory_iter) {
@@ -444,7 +444,7 @@ public:
     ModelInterpreterGpu<TensorT>& model_interpreter,
     const std::vector<float>& model_errors) {
     // Check point the model every 1000 epochs
-    if (n_epochs % 1000 == 0 && n_epochs != 0) {
+    if (n_epochs % 200 == 0 && n_epochs != 0) {
       model_interpreter.getModelResults(model, false, true, false);
       // save the model weights
       WeightFile<float> weight_data;
@@ -583,7 +583,7 @@ void main_reconstruction(const std::string& biochem_rxns_filename,
   if (simulate_MARs) n_input_nodes = reaction_model.reaction_ids_.size();
   else n_input_nodes = reaction_model.component_group_names_.size();
   const int n_output_nodes = n_input_nodes;
-  const int encoding_size = 8;
+  const int encoding_size = 16;
   metabolomics_data.n_encodings_ = encoding_size;
   std::vector<std::string> input_nodes;
   std::vector<std::string> output_nodes;

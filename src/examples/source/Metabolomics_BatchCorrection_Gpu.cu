@@ -381,7 +381,7 @@ public:
   void makeModelBatchCorrectionAE(Model<TensorT>& model, const int& n_inputs, const int& n_encodings, const bool& linear_scale_input, const bool& log_transform_input, const bool& standardize_input, bool add_norm = true) {
     model.setId(0);
     model.setName("AE");
-    const int n_en_hidden_0 = 88;
+    const int n_en_hidden_0 = 0;
     const int n_en_hidden_1 = 0;
     const int n_en_hidden_2 = 0;
     const int n_de_hidden_0 = 0;
@@ -471,14 +471,14 @@ public:
     }
 
     // Add the mu and log var layers
-    std::vector<std::string> node_names_mu = model_builder.addFullyConnected(model, "Mu", "Mu", node_names, n_encodings,
+    std::vector<std::string> node_names_mu = model_builder.addSinglyConnected(model, "Mu", "Mu", node_names, n_encodings,
       std::shared_ptr<ActivationOp<TensorT>>(new LinearOp<TensorT>()),
       std::shared_ptr<ActivationOp<TensorT>>(new LinearGradOp<TensorT>()),
       std::shared_ptr<IntegrationOp<TensorT>>(new SumOp<TensorT>()),
       std::shared_ptr<IntegrationErrorOp<TensorT>>(new SumErrorOp<TensorT>()),
       std::shared_ptr<IntegrationWeightGradOp<TensorT>>(new SumWeightGradOp<TensorT>()),
-      std::shared_ptr<WeightInitOp<TensorT>>(new RandWeightInitOp<TensorT>((int)(node_names.size() + n_encodings) / 2, 1)),
-      std::shared_ptr<SolverOp<TensorT>>(new AdamOp<TensorT>(1e-4, 0.9, 0.999, 1e-8)), 0.0f, 0.0f, false, true);
+      std::shared_ptr<WeightInitOp<TensorT>>(new ConstWeightInitOp<TensorT>(1)),
+      std::shared_ptr<SolverOp<TensorT>>(new AdamOp<TensorT>(1e-4, 0.9, 0.999, 1e-8)), 0.0f, 0.0f, true, true);
 
     // Add a link between the mu and the encoding
     node_names = model_builder.addSinglyConnected(model, "Encoding", "Encoding", node_names_mu, n_encodings,
@@ -565,13 +565,13 @@ public:
     }
 
     // Add the final output layer
-    node_names = model_builder.addFullyConnected(model, "Output-AE", "Output-AE", node_names, n_inputs,
+    node_names = model_builder.addSinglyConnected(model, "Output-AE", "Output-AE", node_names, n_inputs,
       std::shared_ptr<ActivationOp<TensorT>>(new LeakyReLUOp<TensorT>()),
       std::shared_ptr<ActivationOp<TensorT>>(new LeakyReLUGradOp<TensorT>()),
       std::shared_ptr<IntegrationOp<TensorT>>(new SumOp<TensorT>()),
       std::shared_ptr<IntegrationErrorOp<TensorT>>(new SumErrorOp<TensorT>()),
       std::shared_ptr<IntegrationWeightGradOp<TensorT>>(new SumWeightGradOp<TensorT>()),
-      std::shared_ptr<WeightInitOp<TensorT>>(new RandWeightInitOp<TensorT>((int)(node_names.size() + n_inputs) / 2, 1)),
+      std::shared_ptr<WeightInitOp<TensorT>>(new ConstWeightInitOp<TensorT>(1)),
       std::shared_ptr<SolverOp<TensorT>>(new AdamOp<TensorT>(1e-4, 0.9, 0.999, 1e-8)), 0.0f, 0.0f, false, true);
 
     // Add the inputs
