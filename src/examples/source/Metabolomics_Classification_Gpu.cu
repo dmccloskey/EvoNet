@@ -648,7 +648,9 @@ public:
         std::shared_ptr<IntegrationErrorOp<TensorT>>(new SumErrorOp<TensorT>()),
         std::shared_ptr<IntegrationWeightGradOp<TensorT>>(new SumWeightGradOp<TensorT>()),
         std::shared_ptr<WeightInitOp<TensorT>>(new ConstWeightInitOp<TensorT>(1)),
-        std::shared_ptr<SolverOp<TensorT>>(new DummySolverOp<TensorT>()), 0.0, 0.0, true, true);
+        std::shared_ptr<SolverOp<TensorT>>(new DummySolverOp<TensorT>()), 0.0, 0.0, false, true);
+      model_builder.addBiases(model, "LogScaleInput", node_names, std::shared_ptr<WeightInitOp<TensorT>>(new ConstWeightInitOp<TensorT>(1e-6)),
+        std::shared_ptr<SolverOp<TensorT>>(new DummySolverOp<TensorT>()), 0.0, true);
     }
     if (linear_scale_input) {
       node_names = model_builder.addLinearScale(model, "LinearScaleInput", "LinearScaleInput", node_names, 0, 1, true);
@@ -848,11 +850,11 @@ void main_classification(const std::string& biochem_rxns_filename,
   //std::vector<Model<float>> population;
   Model<float> model;
   if (make_model) {
-    //model_trainer.makeModelFCClass(model, n_input_nodes, n_output_nodes, false, false, false, false); // normalization type 0
-    model_trainer.makeModelFCClass(model, n_input_nodes, n_output_nodes, true, false, false, false); // normalization type 1
-    //model_trainer.makeModelFCClass(model, n_input_nodes, n_output_nodes, true, false, true, false); // normalization type 2
-    //model_trainer.makeModelFCClass(model, n_input_nodes, n_output_nodes, true, true, false, false); // normalization type 3
-    //model_trainer.makeModelFCClass(model, n_input_nodes, n_output_nodes, true, true, true, false); // normalization type 4
+    //model_trainer.makeModelFCClass(model, n_input_nodes, n_output_nodes, false, false, false, false, 64, 64, 0); // normalization type 0
+    //model_trainer.makeModelFCClass(model, n_input_nodes, n_output_nodes, true, false, false, false, 64, 64, 0); // normalization type 1
+    //model_trainer.makeModelFCClass(model, n_input_nodes, n_output_nodes, true, false, true, false, 64, 64, 0); // normalization type 2
+    model_trainer.makeModelFCClass(model, n_input_nodes, n_output_nodes, true, true, false, false, 64, 64, 0); // normalization type 3
+    //model_trainer.makeModelFCClass(model, n_input_nodes, n_output_nodes, true, true, true, false, 64, 64, 0); // normalization type 4
 
     //model_trainer.makeModelCovNetClass(model, n_input_nodes, n_output_nodes, true, true, false, 64, 16, 0, 32, false, true); // normalization type 3
 
@@ -886,19 +888,19 @@ int main(int argc, char** argv)
   // Make the filenames
   const std::string biochem_rxns_filename = data_dir + "iJO1366.csv";
 
-  //// ALEsKOs01
-  //const std::string metabo_data_filename_train = data_dir + "ALEsKOs01_Metabolomics_train.csv";
-  //const std::string meta_data_filename_train = data_dir + "ALEsKOs01_MetaData_train.csv";
-  //const std::string metabo_data_filename_test = data_dir + "ALEsKOs01_Metabolomics_test.csv";
-  //const std::string meta_data_filename_test = data_dir + "ALEsKOs01_MetaData_test.csv";
+  // ALEsKOs01
+  const std::string metabo_data_filename_train = data_dir + "ALEsKOs01_Metabolomics_train.csv";
+  const std::string meta_data_filename_train = data_dir + "ALEsKOs01_MetaData_train.csv";
+  const std::string metabo_data_filename_test = data_dir + "ALEsKOs01_Metabolomics_test.csv";
+  const std::string meta_data_filename_test = data_dir + "ALEsKOs01_MetaData_test.csv";
 
-  // IndustrialStrains0103
-  const std::string metabo_data_filename_train = data_dir + "IndustrialStrains0103_Metabolomics_train.csv";
-  const std::string meta_data_filename_train = data_dir + "IndustrialStrains0103_MetaData_train.csv";
-  const std::string metabo_data_filename_test = data_dir + "IndustrialStrains0103_Metabolomics_test.csv";
-  const std::string meta_data_filename_test = data_dir + "IndustrialStrains0103_MetaData_test.csv";
+  //// IndustrialStrains0103
+  //const std::string metabo_data_filename_train = data_dir + "IndustrialStrains0103_Metabolomics_train.csv";
+  //const std::string meta_data_filename_train = data_dir + "IndustrialStrains0103_MetaData_train.csv";
+  //const std::string metabo_data_filename_test = data_dir + "IndustrialStrains0103_Metabolomics_test.csv";
+  //const std::string meta_data_filename_test = data_dir + "IndustrialStrains0103_MetaData_test.csv";
 
   main_classification(biochem_rxns_filename, metabo_data_filename_train, meta_data_filename_train,
-    metabo_data_filename_test, meta_data_filename_test, true, true, true);
+    metabo_data_filename_test, meta_data_filename_test, true, false, true);
   return 0;
 }
