@@ -467,14 +467,16 @@ public:
     }
 
     // Add the mu and log var layers
-    std::vector<std::string> node_names_mu = model_builder.addFullyConnected(model, "Mu", "Mu", node_names, n_encodings,
+    //std::vector<std::string> node_names_mu = model_builder.addFullyConnected(model, "Mu", "Mu", node_names, n_encodings, // FIXME
+    std::vector<std::string> node_names_mu = model_builder.addSinglyConnected(model, "Mu", "Mu", node_names, n_encodings,
       std::shared_ptr<ActivationOp<TensorT>>(new LinearOp<TensorT>()),
       std::shared_ptr<ActivationOp<TensorT>>(new LinearGradOp<TensorT>()),
       std::shared_ptr<IntegrationOp<TensorT>>(new SumOp<TensorT>()),
       std::shared_ptr<IntegrationErrorOp<TensorT>>(new SumErrorOp<TensorT>()),
       std::shared_ptr<IntegrationWeightGradOp<TensorT>>(new SumWeightGradOp<TensorT>()),
       std::shared_ptr<WeightInitOp<TensorT>>(new RandWeightInitOp<TensorT>((int)(node_names.size() + n_encodings) / 2, 1)),
-      std::shared_ptr<SolverOp<TensorT>>(new AdamOp<TensorT>(1e-4, 0.9, 0.999, 1e-8)), 0.0f, 0.0f, false, true);
+      std::shared_ptr<SolverOp<TensorT>>(new AdamOp<TensorT>(1e-4, 0.9, 0.999, 1e-8)), 0.0f, 0.0f, true, true);  // FIXME
+    //std::shared_ptr<SolverOp<TensorT>>(new AdamOp<TensorT>(1e-4, 0.9, 0.999, 1e-8)), 0.0f, 0.0f, false, true);
 
     // Add a link between the mu and the encoding
     node_names = model_builder.addSinglyConnected(model, "Encoding", "Encoding", node_names_mu, n_encodings,
@@ -561,7 +563,8 @@ public:
     }
 
     // Add the final output layer
-    node_names = model_builder.addFullyConnected(model, "Output-AE", "Output-AE", node_names, n_inputs,
+    //node_names = model_builder.addFullyConnected(model, "Output-AE", "Output-AE", node_names, n_inputs, // FIXME
+    node_names = model_builder.addSinglyConnected(model, "Output-AE", "Output-AE", node_names, n_inputs,
       std::shared_ptr<ActivationOp<TensorT>>(new LeakyReLUOp<TensorT>()),
       std::shared_ptr<ActivationOp<TensorT>>(new LeakyReLUGradOp<TensorT>()),
       std::shared_ptr<IntegrationOp<TensorT>>(new SumOp<TensorT>()),
@@ -577,7 +580,7 @@ public:
     this->addDataPreproccessingSteps(model, "Expected", node_names_expected, linear_scale_input, log_transform_input, standardize_input);
 
     // Subtract out the pre-processed input data to test against all 0's
-    model_builder.addSinglyConnected(model, "Output", node_names_expected, node_names,
+    model_builder.addSinglyConnected(model, "Output-AE", node_names_expected, node_names,
       std::shared_ptr<WeightInitOp<TensorT>>(new ConstWeightInitOp<TensorT>(-1)),
       std::shared_ptr<SolverOp<TensorT>>(new DummySolverOp<TensorT>()), 0.0f, true);
 
@@ -679,14 +682,16 @@ public:
     }
 
     // Add the mu and log var layers
-    std::vector<std::string> node_names_mu = model_builder.addFullyConnected(model, "Mu", "Mu", node_names, n_encodings,
+    //std::vector<std::string> node_names_mu = model_builder.addFullyConnected(model, "Mu", "Mu", node_names, n_encodings, //FIXME
+    std::vector<std::string> node_names_mu = model_builder.addSinglyConnected(model, "Mu", "Mu", node_names, n_encodings,
       std::shared_ptr<ActivationOp<TensorT>>(new LinearOp<TensorT>()),
       std::shared_ptr<ActivationOp<TensorT>>(new LinearGradOp<TensorT>()),
       std::shared_ptr<IntegrationOp<TensorT>>(new SumOp<TensorT>()),
       std::shared_ptr<IntegrationErrorOp<TensorT>>(new SumErrorOp<TensorT>()),
       std::shared_ptr<IntegrationWeightGradOp<TensorT>>(new SumWeightGradOp<TensorT>()),
       std::shared_ptr<WeightInitOp<TensorT>>(new RandWeightInitOp<TensorT>((int)(node_names.size() + n_encodings) / 2, 1)),
-      std::shared_ptr<SolverOp<TensorT>>(new AdamOp<TensorT>(1e-4, 0.9, 0.999, 1e-8)), 0.0f, 0.0f, false, true);
+      std::shared_ptr<SolverOp<TensorT>>(new AdamOp<TensorT>(1e-4, 0.9, 0.999, 1e-8)), 0.0f, 0.0f, true, true);  // FIXME
+    //std::shared_ptr<SolverOp<TensorT>>(new AdamOp<TensorT>(1e-4, 0.9, 0.999, 1e-8)), 0.0f, 0.0f, false, true);
 
     // Add a link between the mu and the encoding
     node_names = model_builder.addSinglyConnected(model, "Encoding", "Encoding", node_names_mu, n_encodings,
@@ -773,7 +778,8 @@ public:
     }
 
     // Add the AE Output layer
-    node_names = model_builder.addFullyConnected(model, "Output-AE", "Output-AE", node_names, n_inputs,
+    //node_names = model_builder.addFullyConnected(model, "Output-AE", "Output-AE", node_names, n_inputs, // FIXME
+    node_names = model_builder.addSinglyConnected(model, "Output-AE", "Output-AE", node_names, n_inputs,
       std::shared_ptr<ActivationOp<TensorT>>(new LeakyReLUOp<TensorT>()),
       std::shared_ptr<ActivationOp<TensorT>>(new LeakyReLUGradOp<TensorT>()),
       std::shared_ptr<IntegrationOp<TensorT>>(new SumOp<TensorT>()),
@@ -1240,7 +1246,7 @@ void main_batchCorrectionAE(const std::string& biochem_rxns_filename,
   Model<float> model;
   if (make_model) {
     model_trainer.makeModelBatchCorrectionAE(model, n_input_nodes, encoding_size, true, false, false, false,
-      88, 0, 0, 0, 0, 0); // normalization type 1
+      0, 0, 0, 0, 0, 0); // normalization type 1
   }
   else {
     // TODO: load in the trained model
@@ -1362,7 +1368,7 @@ void main_batchCorrectionClassification(const std::string& biochem_rxns_filename
   // define the models
   Model<float> model_batch_correction_classifier, model_classifier;
   model_trainer.makeModelBatchCorrectionClassifier(model_batch_correction_classifier, n_input_nodes, n_output_nodes, encoding_size, true, false, false, false,
-    88, 0, 0, 0, 0, 0, 32, 0, 0); // normalization type 1
+    0, 0, 0, 0, 0, 0, 32, 0, 0); // normalization type 1
   model_trainer.makeModelFCClass(model_classifier, n_input_nodes, n_output_nodes, true, false, false, false,
     32, 0, 0); // normalization type 1
 

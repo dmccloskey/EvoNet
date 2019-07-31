@@ -378,15 +378,11 @@ public:
   /*
   @brief Fully connected auto-encoder model
   */
-  void makeModelBatchCorrectionAE(Model<TensorT>& model, const int& n_inputs, const int& n_encodings, const bool& linear_scale_input, const bool& log_transform_input, const bool& standardize_input, bool add_norm = true) {
+  void makeModelBatchCorrectionAE(Model<TensorT>& model, const int& n_inputs, const int& n_encodings, const bool& linear_scale_input, const bool& log_transform_input, const bool& standardize_input, const bool& add_norm = true,
+    const int& n_en_hidden_0 = 64, const int& n_en_hidden_1 = 0, const int& n_en_hidden_2 = 0,
+    const int& n_de_hidden_0 = 64, const int& n_de_hidden_1 = 0, const int& n_de_hidden_2 = 0) {
     model.setId(0);
     model.setName("AE");
-    const int n_en_hidden_0 = 0;
-    const int n_en_hidden_1 = 0;
-    const int n_en_hidden_2 = 0;
-    const int n_de_hidden_0 = 0;
-    const int n_de_hidden_1 = 0;
-    const int n_de_hidden_2 = 0;
     ModelBuilder<TensorT> model_builder;
 
     // Add the inputs
@@ -471,14 +467,16 @@ public:
     }
 
     // Add the mu and log var layers
+    //std::vector<std::string> node_names_mu = model_builder.addFullyConnected(model, "Mu", "Mu", node_names, n_encodings, // FIXME
     std::vector<std::string> node_names_mu = model_builder.addSinglyConnected(model, "Mu", "Mu", node_names, n_encodings,
       std::shared_ptr<ActivationOp<TensorT>>(new LinearOp<TensorT>()),
       std::shared_ptr<ActivationOp<TensorT>>(new LinearGradOp<TensorT>()),
       std::shared_ptr<IntegrationOp<TensorT>>(new SumOp<TensorT>()),
       std::shared_ptr<IntegrationErrorOp<TensorT>>(new SumErrorOp<TensorT>()),
       std::shared_ptr<IntegrationWeightGradOp<TensorT>>(new SumWeightGradOp<TensorT>()),
-      std::shared_ptr<WeightInitOp<TensorT>>(new ConstWeightInitOp<TensorT>(1)),
-      std::shared_ptr<SolverOp<TensorT>>(new AdamOp<TensorT>(1e-3, 0.9, 0.999, 1e-8)), 0.0f, 0.0f, true, true);
+      std::shared_ptr<WeightInitOp<TensorT>>(new RandWeightInitOp<TensorT>((int)(node_names.size() + n_encodings) / 2, 1)),
+      std::shared_ptr<SolverOp<TensorT>>(new AdamOp<TensorT>(1e-3, 0.9, 0.999, 1e-8)), 0.0f, 0.0f, true, true);  // FIXME
+    //std::shared_ptr<SolverOp<TensorT>>(new AdamOp<TensorT>(1e-3, 0.9, 0.999, 1e-8)), 0.0f, 0.0f, false, true);
 
     // Add a link between the mu and the encoding
     node_names = model_builder.addSinglyConnected(model, "Encoding", "Encoding", node_names_mu, n_encodings,
@@ -565,13 +563,14 @@ public:
     }
 
     // Add the final output layer
+    //node_names = model_builder.addFullyConnected(model, "Output-AE", "Output-AE", node_names, n_inputs, // FIXME
     node_names = model_builder.addSinglyConnected(model, "Output-AE", "Output-AE", node_names, n_inputs,
       std::shared_ptr<ActivationOp<TensorT>>(new LeakyReLUOp<TensorT>()),
       std::shared_ptr<ActivationOp<TensorT>>(new LeakyReLUGradOp<TensorT>()),
       std::shared_ptr<IntegrationOp<TensorT>>(new SumOp<TensorT>()),
       std::shared_ptr<IntegrationErrorOp<TensorT>>(new SumErrorOp<TensorT>()),
       std::shared_ptr<IntegrationWeightGradOp<TensorT>>(new SumWeightGradOp<TensorT>()),
-      std::shared_ptr<WeightInitOp<TensorT>>(new ConstWeightInitOp<TensorT>(1)),
+      std::shared_ptr<WeightInitOp<TensorT>>(new RandWeightInitOp<TensorT>((int)(node_names.size() + n_inputs) / 2, 1)),
       std::shared_ptr<SolverOp<TensorT>>(new AdamOp<TensorT>(1e-3, 0.9, 0.999, 1e-8)), 0.0f, 0.0f, false, true);
 
     // Add the inputs
@@ -581,7 +580,7 @@ public:
     this->addDataPreproccessingSteps(model, "Expected", node_names_expected, linear_scale_input, log_transform_input, standardize_input);
 
     // Subtract out the pre-processed input data to test against all 0's
-    model_builder.addSinglyConnected(model, "Output", node_names_expected, node_names,
+    model_builder.addSinglyConnected(model, "Output-AE", node_names_expected, node_names,
       std::shared_ptr<WeightInitOp<TensorT>>(new ConstWeightInitOp<TensorT>(-1)),
       std::shared_ptr<SolverOp<TensorT>>(new DummySolverOp<TensorT>()), 0.0f, true);
 
@@ -683,14 +682,16 @@ public:
     }
 
     // Add the mu and log var layers
-    std::vector<std::string> node_names_mu = model_builder.addFullyConnected(model, "Mu", "Mu", node_names, n_encodings,
+    //std::vector<std::string> node_names_mu = model_builder.addFullyConnected(model, "Mu", "Mu", node_names, n_encodings, //FIXME
+    std::vector<std::string> node_names_mu = model_builder.addSinglyConnected(model, "Mu", "Mu", node_names, n_encodings,
       std::shared_ptr<ActivationOp<TensorT>>(new LinearOp<TensorT>()),
       std::shared_ptr<ActivationOp<TensorT>>(new LinearGradOp<TensorT>()),
       std::shared_ptr<IntegrationOp<TensorT>>(new SumOp<TensorT>()),
       std::shared_ptr<IntegrationErrorOp<TensorT>>(new SumErrorOp<TensorT>()),
       std::shared_ptr<IntegrationWeightGradOp<TensorT>>(new SumWeightGradOp<TensorT>()),
       std::shared_ptr<WeightInitOp<TensorT>>(new RandWeightInitOp<TensorT>((int)(node_names.size() + n_encodings) / 2, 1)),
-      std::shared_ptr<SolverOp<TensorT>>(new AdamOp<TensorT>(1e-3, 0.9, 0.999, 1e-8)), 0.0f, 0.0f, false, true);
+      std::shared_ptr<SolverOp<TensorT>>(new AdamOp<TensorT>(1e-3, 0.9, 0.999, 1e-8)), 0.0f, 0.0f, true, true);  // FIXME
+    //std::shared_ptr<SolverOp<TensorT>>(new AdamOp<TensorT>(1e-3, 0.9, 0.999, 1e-8)), 0.0f, 0.0f, false, true);
 
     // Add a link between the mu and the encoding
     node_names = model_builder.addSinglyConnected(model, "Encoding", "Encoding", node_names_mu, n_encodings,
@@ -777,7 +778,8 @@ public:
     }
 
     // Add the AE Output layer
-    node_names = model_builder.addFullyConnected(model, "Output-AE", "Output-AE", node_names, n_inputs,
+    //node_names = model_builder.addFullyConnected(model, "Output-AE", "Output-AE", node_names, n_inputs, // FIXME
+    node_names = model_builder.addSinglyConnected(model, "Output-AE", "Output-AE", node_names, n_inputs,
       std::shared_ptr<ActivationOp<TensorT>>(new LeakyReLUOp<TensorT>()),
       std::shared_ptr<ActivationOp<TensorT>>(new LeakyReLUGradOp<TensorT>()),
       std::shared_ptr<IntegrationOp<TensorT>>(new SumOp<TensorT>()),
@@ -1008,7 +1010,7 @@ public:
     ModelInterpreterGpu<TensorT>& model_interpreter,
     const std::vector<float>& model_errors) {
     // Check point the model every 1000 epochs
-    if (n_epochs % 1000 == 0 && n_epochs != 0) {
+    if (n_epochs % 500 == 0 && n_epochs != 0) {
       model_interpreter.getModelResults(model, false, true, false);
       // save the model weights
       WeightFile<float> weight_data;
@@ -1182,7 +1184,7 @@ void main_batchCorrectionAE(const std::string& biochem_rxns_filename,
   if (simulate_MARs) n_input_nodes = reaction_model.reaction_ids_.size();
   else n_input_nodes = reaction_model.component_group_names_.size();
   const int n_output_nodes = n_input_nodes;
-  const int encoding_size = 88;
+  const int encoding_size = 64;
 
   // Make the input nodes
   std::vector<std::string> input_nodes;
@@ -1243,7 +1245,8 @@ void main_batchCorrectionAE(const std::string& biochem_rxns_filename,
   // define the model
   Model<float> model;
   if (make_model) {
-    model_trainer.makeModelBatchCorrectionAE(model, n_input_nodes, encoding_size, true, false, false, false); // normalization type 1
+    model_trainer.makeModelBatchCorrectionAE(model, n_input_nodes, encoding_size, true, false, false, false,
+      0, 0, 0, 0, 0, 0); // normalization type 1
   }
   else {
     // TODO: load in the trained model
@@ -1365,7 +1368,7 @@ void main_batchCorrectionClassification(const std::string& biochem_rxns_filename
   // define the models
   Model<float> model_batch_correction_classifier, model_classifier;
   model_trainer.makeModelBatchCorrectionClassifier(model_batch_correction_classifier, n_input_nodes, n_output_nodes, encoding_size, true, false, false, false,
-    64, 0, 0, 64, 0, 0, 32, 0, 0); // normalization type 1
+    0, 0, 0, 0, 0, 0, 32, 0, 0); // normalization type 1
   model_trainer.makeModelFCClass(model_classifier, n_input_nodes, n_output_nodes, true, false, false, false,
     32, 0, 0); // normalization type 1
 
@@ -1428,12 +1431,12 @@ int main(int argc, char** argv)
   const std::string meta_data_filename_train_batch_2 = data_dir + "IndustrialStrains0103_MetaData_train_batch_2.csv";
   const std::string meta_data_filename_test_batch_2 = data_dir + "IndustrialStrains0103_MetaData_test_batch_2.csv";
 
-  // Run the batch correction
-  main_batchCorrectionAE(biochem_rxns_filename,
-    metabo_data_filename_train_batch_1, metabo_data_filename_test_batch_1,
-    meta_data_filename_train_batch_1, meta_data_filename_test_batch_1,
-    metabo_data_filename_train_batch_2, metabo_data_filename_test_batch_2,
-    meta_data_filename_train_batch_2, meta_data_filename_test_batch_2, true, false, true);
+  //// Run the batch correction
+  //main_batchCorrectionAE(biochem_rxns_filename,
+  //  metabo_data_filename_train_batch_1, metabo_data_filename_test_batch_1,
+  //  meta_data_filename_train_batch_1, meta_data_filename_test_batch_1,
+  //  metabo_data_filename_train_batch_2, metabo_data_filename_test_batch_2,
+  //  meta_data_filename_train_batch_2, meta_data_filename_test_batch_2, true, false, true);
 
   // IndustrialStrains0103 classification filenames
   const std::string metabo_data_filename_train = data_dir + "IndustrialStrains0103_Metabolomics_train.csv";
@@ -1446,11 +1449,11 @@ int main(int argc, char** argv)
   const std::string model_ae_classifier_weights_filename = data_dir + "TrainTestData/BatchCorrection/AE_Classifier_weights.csv";
   const std::string model_classifier_weights_filename = data_dir + "TrainTestData/BatchCorrection/Classifier_weights.csv";
 
-  //// Run the classification
-  //main_batchCorrectionClassification(biochem_rxns_filename,
-  //  metabo_data_filename_train, metabo_data_filename_test,
-  //  meta_data_filename_train, meta_data_filename_test,
-  //  model_ae_weights_filename, model_ae_classifier_weights_filename, model_classifier_weights_filename, false, true);
+  // Run the classification
+  main_batchCorrectionClassification(biochem_rxns_filename,
+    metabo_data_filename_train, metabo_data_filename_test,
+    meta_data_filename_train, meta_data_filename_test,
+    model_ae_weights_filename, model_ae_classifier_weights_filename, model_classifier_weights_filename, false, true);
 
   return 0;
 }
