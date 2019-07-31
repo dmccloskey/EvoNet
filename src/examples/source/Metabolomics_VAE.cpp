@@ -105,7 +105,7 @@ public:
             loss_output_data(batch_iter, memory_iter, nodes_iter) = 0;
             metric_output_data(batch_iter, memory_iter, nodes_iter) = 0;
           }
-          else if (nodes_iter < n_encodings_) {
+          if (nodes_iter < n_encodings_) {
             TensorT random_value = 0;
             if (train) {
               random_value = d(gen);
@@ -132,7 +132,7 @@ public:
     else
       n_input_pixels = this->model_validation_.component_group_names_.size();
 
-    assert(n_loss_output_nodes == 2 * n_input_pixels + 2 * n_encodings_);
+    assert(n_loss_output_nodes == n_input_pixels + 2 * n_encodings_);
     assert(n_metric_output_nodes % n_input_pixels == 0);
     assert(n_input_nodes == n_input_pixels + n_encodings_);
 
@@ -163,17 +163,16 @@ public:
                 this->model_validation_.component_group_names_.at(nodes_iter));
             input_data(batch_iter, memory_iter, nodes_iter) = value;
             loss_output_data(batch_iter, memory_iter, nodes_iter) = 0;
-            loss_output_data(batch_iter, memory_iter, nodes_iter + n_input_pixels) = 0;
             metric_output_data(batch_iter, memory_iter, nodes_iter) = 0;
           }
-          else if (nodes_iter < n_encodings_) {
+          if (nodes_iter < n_encodings_) {
             TensorT random_value = 0;
             if (train) {
               random_value = d(gen);
             }
-            input_data(batch_iter, memory_iter, nodes_iter + n_input_pixels) = random_value; // sample from a normal distribution
-            loss_output_data(batch_iter, memory_iter, nodes_iter + 2 * n_input_pixels) = 0; // Dummy data for KL divergence mu
-            loss_output_data(batch_iter, memory_iter, nodes_iter + 2 * n_input_pixels + n_encodings_) = 0; // Dummy data for KL divergence logvar
+            input_data(batch_iter, memory_iter, nodes_iter + n_input_pixels) = 0;// random_value; // sample from a normal distribution
+            loss_output_data(batch_iter, memory_iter, nodes_iter + n_input_pixels) = 0; // Dummy data for KL divergence mu
+            loss_output_data(batch_iter, memory_iter, nodes_iter + n_input_pixels + n_encodings_) = 0; // Dummy data for KL divergence logvar
           }
         }
       }
@@ -429,7 +428,9 @@ public:
         std::shared_ptr<IntegrationErrorOp<TensorT>>(new SumErrorOp<TensorT>()),
         std::shared_ptr<IntegrationWeightGradOp<TensorT>>(new SumWeightGradOp<TensorT>()),
         std::shared_ptr<WeightInitOp<TensorT>>(new ConstWeightInitOp<TensorT>(1)),
-        std::shared_ptr<SolverOp<TensorT>>(new DummySolverOp<TensorT>()), 0.0, 0.0, true, true);
+        std::shared_ptr<SolverOp<TensorT>>(new DummySolverOp<TensorT>()), 0.0, 0.0, false, true);
+      model_builder.addBiases(model, "LogScaleInput", node_names, std::shared_ptr<WeightInitOp<TensorT>>(new ConstWeightInitOp<TensorT>(1e-6)),
+        std::shared_ptr<SolverOp<TensorT>>(new DummySolverOp<TensorT>()), 0.0, true);
     }
     if (linear_scale_input) {
       node_names = model_builder.addLinearScale(model, "LinearScaleInput", "LinearScaleInput", node_names, 0, 1, true);
@@ -445,7 +446,7 @@ public:
     ModelInterpreterDefaultDevice<TensorT>& model_interpreter,
     const std::vector<float>& model_errors) {
     // Check point the model every 1000 epochs
-    if (n_epochs % 1000 == 0 && n_epochs != 0) {
+    if (n_epochs % 200 == 0 && n_epochs != 0) {
       model_interpreter.getModelResults(model, false, true, false);
       // save the model weights
       WeightFile<float> weight_data;
@@ -650,15 +651,13 @@ void main_reconstruction(const std::string& biochem_rxns_filename,
   model_trainer.setPreserveOoO(true);
   model_trainer.setLossFunctions({
     std::shared_ptr<LossFunctionOp<float>>(new MSEOp<float>(1e-6, 1.0)),
-    std::shared_ptr<LossFunctionOp<float>>(new BCEWithLogitsOp<float>(1e-6, 1.0)),
-    std::shared_ptr<LossFunctionOp<float>>(new KLDivergenceMuOp<float>(1e-6, 1.0)),
-    std::shared_ptr<LossFunctionOp<float>>(new KLDivergenceLogVarOp<float>(1e-6, 1.0)) });
+    std::shared_ptr<LossFunctionOp<float>>(new KLDivergenceMuOp<float>(1e-6, 0.0)),
+    std::shared_ptr<LossFunctionOp<float>>(new KLDivergenceLogVarOp<float>(1e-6, 0.0)) });
   model_trainer.setLossFunctionGrads({
     std::shared_ptr<LossFunctionGradOp<float>>(new MSEGradOp<float>(1e-6, 1.0)),
-    std::shared_ptr<LossFunctionGradOp<float>>(new BCEWithLogitsGradOp<float>(1e-6, 1.0)),
-    std::shared_ptr<LossFunctionGradOp<float>>(new KLDivergenceMuGradOp<float>(1e-6, 1.0)),
-    std::shared_ptr<LossFunctionGradOp<float>>(new KLDivergenceLogVarGradOp<float>(1e-6, 1.0)) });
-  model_trainer.setLossOutputNodes({ output_nodes, output_nodes, encoding_nodes_mu, encoding_nodes_logvar });
+    std::shared_ptr<LossFunctionGradOp<float>>(new KLDivergenceMuGradOp<float>(1e-6, 0.0)),
+    std::shared_ptr<LossFunctionGradOp<float>>(new KLDivergenceLogVarGradOp<float>(1e-6, 0.0)) });
+  model_trainer.setLossOutputNodes({ output_nodes, encoding_nodes_mu, encoding_nodes_logvar });
   model_trainer.setMetricFunctions({ std::shared_ptr<MetricFunctionOp<float>>(new MAEOp<float>()) });
   model_trainer.setMetricOutputNodes({ output_nodes });
   model_trainer.setMetricNames({ "MAE" });
@@ -674,7 +673,8 @@ void main_reconstruction(const std::string& biochem_rxns_filename,
   //std::vector<Model<float>> population;
   Model<float> model;
   if (make_model) {
-    model_trainer.makeModelFCVAE(model, n_input_nodes, n_output_nodes, encoding_size, true, false, false, false); // normalization type 1
+    //model_trainer.makeModelFCVAE(model, n_input_nodes, n_output_nodes, encoding_size, true, false, false, false); // normalization type 1
+    model_trainer.makeModelFCVAE(model, n_input_nodes, n_output_nodes, encoding_size, true, true, false, false); // normalization type 2
     //population = { model };
   }
   else {

@@ -428,7 +428,9 @@ public:
         std::shared_ptr<IntegrationErrorOp<TensorT>>(new SumErrorOp<TensorT>()),
         std::shared_ptr<IntegrationWeightGradOp<TensorT>>(new SumWeightGradOp<TensorT>()),
         std::shared_ptr<WeightInitOp<TensorT>>(new ConstWeightInitOp<TensorT>(1)),
-        std::shared_ptr<SolverOp<TensorT>>(new DummySolverOp<TensorT>()), 0.0, 0.0, true, true);
+        std::shared_ptr<SolverOp<TensorT>>(new DummySolverOp<TensorT>()), 0.0, 0.0, false, true);
+      model_builder.addBiases(model, "LogScaleInput", node_names, std::shared_ptr<WeightInitOp<TensorT>>(new ConstWeightInitOp<TensorT>(1e-6)),
+        std::shared_ptr<SolverOp<TensorT>>(new DummySolverOp<TensorT>()), 0.0, true);
     }
     if (linear_scale_input) {
       node_names = model_builder.addLinearScale(model, "LinearScaleInput", "LinearScaleInput", node_names, 0, 1, true);
@@ -671,7 +673,8 @@ void main_reconstruction(const std::string& biochem_rxns_filename,
   //std::vector<Model<float>> population;
   Model<float> model;
   if (make_model) {
-    model_trainer.makeModelFCVAE(model, n_input_nodes, n_output_nodes, encoding_size, true, false, false, false); // normalization type 1
+    //model_trainer.makeModelFCVAE(model, n_input_nodes, n_output_nodes, encoding_size, true, false, false, false); // normalization type 1
+    model_trainer.makeModelFCVAE(model, n_input_nodes, n_output_nodes, encoding_size, true, true, false, false); // normalization type 2
     //population = { model };
   }
   else {

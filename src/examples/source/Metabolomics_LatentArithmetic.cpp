@@ -86,7 +86,7 @@ public:
               value = this->model_validation_.getRandomConcentration(
                 this->model_validation_.metabolomicsData_.at(sample_group_name_),
                 this->model_validation_.component_group_names_.at(nodes_iter));
-            input_data(batch_iter, memory_iter, nodes_iter, epoch_iter) = value;
+            input_data(batch_iter, memory_iter, nodes_iter, epoch_iter) = value + 1e-6;
           }
         }
       }
@@ -599,7 +599,8 @@ public:
     model_decoder_.clear();
 
     // define the encoder and decoders
-    model_trainer.makeModelFCVAE_Encoder(model_encoder_, n_input_nodes_, encoding_size_, true, false, false, false); // normalization type 1
+    //model_trainer.makeModelFCVAE_Encoder(model_encoder_, n_input_nodes_, encoding_size_, true, false, false, false); // normalization type 1
+    model_trainer.makeModelFCVAE_Encoder(model_encoder_, n_input_nodes_, encoding_size_, true, true, false, false); // normalization type 2
     model_trainer.makeModelFCVAE_Decoder(model_decoder_, n_input_nodes_, encoding_size_, false);
 
     // read in the encoder and decoder weights
@@ -672,7 +673,8 @@ public:
     model_normalization_.clear();
 
     // define the model
-    model_trainer.makeModelNormalization(model_normalization_, n_input_nodes_, true, false, false); // Normalization type 1
+    //model_trainer.makeModelNormalization(model_normalization_, n_input_nodes_, true, false, false); // Normalization type 1
+    model_trainer.makeModelNormalization(model_normalization_, n_input_nodes_, true, true, false); // Normalization type 2
   };
 
   /*
@@ -1015,8 +1017,8 @@ int main(int argc, char** argv)
   //    Minkowski distance, Euclidean distance, Manhattan distance, Jeffreys & Matusita distance, Dice’s coefficient, Jaccard similarity coefficient
   //  and the following similarity metrics to be unsuitable for metabolomic profile data:
   //    Canberra distance, relative distance, and cosine of angle
-  const bool compute_reference_similarities = true;
-  const bool compute_latent_arithmetic = false;
+  const bool compute_reference_similarities = false;
+  const bool compute_latent_arithmetic = true;
   const bool compute_latent_interpolation = false;
   if (compute_reference_similarities) {
     // Reference similarity metrics
