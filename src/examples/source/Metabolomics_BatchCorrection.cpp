@@ -1431,12 +1431,12 @@ int main(int argc, char** argv)
   const std::string meta_data_filename_train_batch_2 = data_dir + "IndustrialStrains0103_MetaData_train_batch_2.csv";
   const std::string meta_data_filename_test_batch_2 = data_dir + "IndustrialStrains0103_MetaData_test_batch_2.csv";
 
-  //// Run the batch correction
-  //main_batchCorrectionAE(biochem_rxns_filename,
-  //  metabo_data_filename_train_batch_1, metabo_data_filename_test_batch_1,
-  //  meta_data_filename_train_batch_1, meta_data_filename_test_batch_1,
-  //  metabo_data_filename_train_batch_2, metabo_data_filename_test_batch_2,
-  //  meta_data_filename_train_batch_2, meta_data_filename_test_batch_2, true, false, true);
+  // Run the batch correction
+  main_batchCorrectionAE(biochem_rxns_filename,
+    metabo_data_filename_train_batch_1, metabo_data_filename_test_batch_1,
+    meta_data_filename_train_batch_1, meta_data_filename_test_batch_1,
+    metabo_data_filename_train_batch_2, metabo_data_filename_test_batch_2,
+    meta_data_filename_train_batch_2, meta_data_filename_test_batch_2, true, false, true);
 
   // IndustrialStrains0103 classification filenames
   const std::string metabo_data_filename_train = data_dir + "IndustrialStrains0103_Metabolomics_train.csv";

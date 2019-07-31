@@ -1002,6 +1002,11 @@ int main(int argc, char** argv)
   // define the reconstruction output
   Eigen::Tensor<float, 4> reconstruction_output(model_trainer.getBatchSize(), model_trainer.getMemorySize(), latentArithmetic.getNInputNodes(), model_trainer.getNEpochsEvaluation());
 
+  // NOTE: similarity metric of Manhattan distance used as per 10.1109/TCBB.2016.2586065
+  //  that found the following similarity metrics to work well for metabolomic prfile data:
+  //    Minkowski distance, Euclidean distance, Manhattan distance, Jeffreys & Matusita distance, Dice’s coefficient, Jaccard similarity coefficient
+  //  and the following similarity metrics to be unsuitable for metabolomic profile data:
+  //    Canberra distance, relative distance, and cosine of angle
   const bool compute_reference_similarities = true;
   const bool compute_latent_arithmetic = false;
   const bool compute_latent_interpolation = false;
@@ -1025,7 +1030,7 @@ int main(int argc, char** argv)
       model_trainer.setResetInterpreter(false);
 
       // Calculate the similarity
-      float score = latentArithmetic.scoreDataSimilarity(expected_reference.at(case_iter), predicted_reference.at(case_iter), PearsonRTensorOp<float, Eigen::DefaultDevice>(), model_trainer, model_logger);
+      float score = latentArithmetic.scoreDataSimilarity(expected_reference.at(case_iter), predicted_reference.at(case_iter), ManhattanDistTensorOp<float, Eigen::DefaultDevice>(), model_trainer, model_logger);
       std::cout << expected_reference.at(case_iter) << " -> " << predicted_reference.at(case_iter) << ": " << score << std::endl;
     }
 
@@ -1034,7 +1039,7 @@ int main(int argc, char** argv)
     assert(predicted_reference.size() == expected_reference.size());
     for (int case_iter = 0; case_iter < predicted_reference.size(); ++case_iter) {
       // Calculate the similarity
-      float score = latentArithmetic.scoreDataSimilarity(expected_reference.at(case_iter), predicted_reference.at(case_iter), PearsonRTensorOp<float, Eigen::DefaultDevice>(), model_trainer, model_logger);
+      float score = latentArithmetic.scoreDataSimilarity(expected_reference.at(case_iter), predicted_reference.at(case_iter), ManhattanDistTensorOp<float, Eigen::DefaultDevice>(), model_trainer, model_logger);
       std::cout << expected_reference.at(case_iter) << " -> " << predicted_reference.at(case_iter) << ": " << score << std::endl;
     }
 
@@ -1045,7 +1050,7 @@ int main(int argc, char** argv)
     assert(predicted_reference.size() == expected_reference.size());
     for (int case_iter = 0; case_iter < predicted_reference.size(); ++case_iter) {
       // Calculate the similarity
-      float score = latentArithmetic.scoreDataSimilarity(expected_reference.at(case_iter), predicted_reference.at(case_iter), PearsonRTensorOp<float, Eigen::DefaultDevice>(), model_trainer, model_logger);
+      float score = latentArithmetic.scoreDataSimilarity(expected_reference.at(case_iter), predicted_reference.at(case_iter), ManhattanDistTensorOp<float, Eigen::DefaultDevice>(), model_trainer, model_logger);
       std::cout << expected_reference.at(case_iter) << " -> " << predicted_reference.at(case_iter) << ": " << score << std::endl;
     }
 
@@ -1056,7 +1061,7 @@ int main(int argc, char** argv)
     assert(predicted_reference.size() == expected_reference.size());
     for (int case_iter = 0; case_iter < predicted_reference.size(); ++case_iter) {
       // Calculate the similarity
-      float score = latentArithmetic.scoreDataSimilarity(expected_reference.at(case_iter), predicted_reference.at(case_iter), PearsonRTensorOp<float, Eigen::DefaultDevice>(), model_trainer, model_logger);
+      float score = latentArithmetic.scoreDataSimilarity(expected_reference.at(case_iter), predicted_reference.at(case_iter), ManhattanDistTensorOp<float, Eigen::DefaultDevice>(), model_trainer, model_logger);
       std::cout << expected_reference.at(case_iter) << " -> " << predicted_reference.at(case_iter) << ": " << score << std::endl;
     }
   }
@@ -1088,7 +1093,7 @@ int main(int argc, char** argv)
       // Generate the encoding and decoding and score the result
       auto encoding_output = latentArithmetic.generateEncoding(condition_1_test_none.at(case_iter), model_trainer, model_logger);
       reconstruction_output = latentArithmetic.generateReconstruction(encoding_output, model_trainer, model_logger);
-      float score = latentArithmetic.scoreReconstructionSimilarity(expected_test_none.at(case_iter), reconstruction_output, PearsonRTensorOp<float, Eigen::DefaultDevice>(), model_trainer, model_logger);
+      float score = latentArithmetic.scoreReconstructionSimilarity(expected_test_none.at(case_iter), reconstruction_output, ManhattanDistTensorOp<float, Eigen::DefaultDevice>(), model_trainer, model_logger);
       std::cout << condition_1_test_none.at(case_iter) << " -> " << expected_test_none.at(case_iter) << ": " << score << std::endl;
     }
 
@@ -1109,7 +1114,7 @@ int main(int argc, char** argv)
       auto encoding_output_2 = latentArithmetic.generateEncoding(condition_2_arithmetic_1.at(case_iter), model_trainer, model_logger);
       Eigen::Tensor<float, 4> encoding_output = encoding_output_1 - encoding_output_2;
       reconstruction_output = latentArithmetic.generateReconstruction(encoding_output, model_trainer, model_logger);
-      float score = latentArithmetic.scoreReconstructionSimilarity(expected_arithmetic_1.at(case_iter), reconstruction_output, PearsonRTensorOp<float, Eigen::DefaultDevice>(), model_trainer, model_logger);
+      float score = latentArithmetic.scoreReconstructionSimilarity(expected_arithmetic_1.at(case_iter), reconstruction_output, ManhattanDistTensorOp<float, Eigen::DefaultDevice>(), model_trainer, model_logger);
       std::cout << condition_1_arithmetic_1.at(case_iter) << " - " << condition_2_arithmetic_1.at(case_iter) << " -> " << expected_arithmetic_1.at(case_iter) << ": " << score << std::endl;
     }
 
@@ -1130,7 +1135,7 @@ int main(int argc, char** argv)
       auto encoding_output_2 = latentArithmetic.generateEncoding(condition_2_arithmetic_2.at(case_iter), model_trainer, model_logger);
       Eigen::Tensor<float, 4> encoding_output = encoding_output_1 - encoding_output_2;
       reconstruction_output = latentArithmetic.generateReconstruction(encoding_output, model_trainer, model_logger);
-      float score = latentArithmetic.scoreReconstructionSimilarity(expected_arithmetic_2.at(case_iter), reconstruction_output, PearsonRTensorOp<float, Eigen::DefaultDevice>(), model_trainer, model_logger);
+      float score = latentArithmetic.scoreReconstructionSimilarity(expected_arithmetic_2.at(case_iter), reconstruction_output, ManhattanDistTensorOp<float, Eigen::DefaultDevice>(), model_trainer, model_logger);
       std::cout << condition_1_arithmetic_2.at(case_iter) << " - " << condition_2_arithmetic_2.at(case_iter) << " -> " << expected_arithmetic_2.at(case_iter) << ": " << score << std::endl;
     }
 
@@ -1151,7 +1156,7 @@ int main(int argc, char** argv)
       auto encoding_output_2 = latentArithmetic.generateEncoding(condition_2_arithmetic_3.at(case_iter), model_trainer, model_logger);
       Eigen::Tensor<float, 4> encoding_output = encoding_output_1 + encoding_output_2;
       reconstruction_output = latentArithmetic.generateReconstruction(encoding_output, model_trainer, model_logger);
-      float score = latentArithmetic.scoreReconstructionSimilarity(expected_arithmetic_3.at(case_iter), reconstruction_output, PearsonRTensorOp<float, Eigen::DefaultDevice>(), model_trainer, model_logger);
+      float score = latentArithmetic.scoreReconstructionSimilarity(expected_arithmetic_3.at(case_iter), reconstruction_output, ManhattanDistTensorOp<float, Eigen::DefaultDevice>(), model_trainer, model_logger);
       std::cout << condition_1_arithmetic_3.at(case_iter) << " + " << condition_2_arithmetic_3.at(case_iter) << " -> " << expected_arithmetic_3.at(case_iter) << ": " << score << std::endl;
     }
   }
@@ -1174,7 +1179,7 @@ int main(int argc, char** argv)
       auto encoding_output_2 = latentArithmetic.generateEncoding(condition_2_arithmetic_4.at(case_iter), model_trainer, model_logger);
       Eigen::Tensor<float, 4> encoding_output = encoding_output_1 * encoding_output_1.constant(0.5) + encoding_output_2 * encoding_output_2.constant(0.5);
       reconstruction_output = latentArithmetic.generateReconstruction(encoding_output, model_trainer, model_logger);
-      float score = latentArithmetic.scoreReconstructionSimilarity(expected_arithmetic_4.at(case_iter), reconstruction_output, PearsonRTensorOp<float, Eigen::DefaultDevice>(), model_trainer, model_logger);
+      float score = latentArithmetic.scoreReconstructionSimilarity(expected_arithmetic_4.at(case_iter), reconstruction_output, ManhattanDistTensorOp<float, Eigen::DefaultDevice>(), model_trainer, model_logger);
       std::cout << "0.5 * " << condition_1_arithmetic_4.at(case_iter) << " + " << condition_2_arithmetic_4.at(case_iter) << "0.5 * " << " -> " << expected_arithmetic_4.at(case_iter) << ": " << score << std::endl;
     }
   }

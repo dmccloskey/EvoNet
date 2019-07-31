@@ -25,6 +25,7 @@ namespace SmartPeak
 	{
 	public:
 		MetricFunctionTensorOp() = default;
+    MetricFunctionTensorOp(std::string& reduction_func) : reduction_func_(reduction_func) {}; ///< Options are Sum, Mean, Var
 		virtual ~MetricFunctionTensorOp() = default;
 		virtual std::string getName() = 0;
 		virtual void operator()(TensorT* predicted, TensorT* expected, TensorT* error, const int& batch_size, const int& memory_size, const int& layer_size,
@@ -32,6 +33,7 @@ namespace SmartPeak
   protected:
     TensorT threshold_positive_ = 0.9;
     TensorT threshold_negative_ = 0.1;
+    std::string reduction_func_ = "Sum";
 	};
 
   /**
@@ -627,20 +629,28 @@ public:
   class CosineSimilarityTensorOp : public MetricFunctionTensorOp<TensorT, DeviceT>
   {
   public:
-    using MetricFunctionTensorOp<TensorT, DeviceT>::MetricFunctionTensorOp;
+    CosineSimilarityTensorOp() = default;
+    CosineSimilarityTensorOp(std::string& reduction_func) : MetricFunctionTensorOp(reduction_func) {};
     std::string getName() { return "CosineSimilarityTensorOp"; }
     void operator()(TensorT* predicted, TensorT* expected, TensorT* error, const int& batch_size, const int& memory_size, const int& layer_size,
       const int& n_metrics, const int& time_step, const int& metric_index, DeviceT& device) const {
-      Eigen::TensorMap<Eigen::Tensor<TensorT, 2>> expected_tensor(expected, batch_size, layer_size);
-      Eigen::TensorMap<Eigen::Tensor<TensorT, 3>> predicted_tensor(predicted, batch_size, memory_size, layer_size);
+      Eigen::TensorMap<Eigen::Tensor<TensorT, 3>> expected_tensor(expected, batch_size, layer_size, 1);
+      Eigen::TensorMap<Eigen::Tensor<TensorT, 4>> predicted_tensor(predicted, batch_size, memory_size, layer_size, 1);
       Eigen::TensorMap<Eigen::Tensor<TensorT, 2>> error_tensor(error, n_metrics, memory_size);
       auto predicted_chip = predicted_tensor.chip(time_step, 1);
       auto dot_prod = (predicted_chip * expected_tensor).sum(Eigen::array<Eigen::Index, 1>({1})); // dim 1 batch_size
       auto predicted_unit = (predicted_chip.pow(TensorT(2)).sum(Eigen::array<Eigen::Index, 1>({ 1 }))).pow(TensorT(0.5)); // dim 1 batch_size
       auto expected_unit = (expected_tensor.pow(TensorT(2)).sum(Eigen::array<Eigen::Index, 1>({ 1 }))).pow(TensorT(0.5)); // dim 1 batch_size
       auto cosine_similarity = dot_prod / (predicted_unit * expected_unit);
-
-      error_tensor.chip(metric_index, 0).chip(time_step, 0).device(device) += cosine_similarity.sum();
+      if (this->reduction_func_ == "Sum")
+        error_tensor.chip(metric_index, 0).chip(time_step, 0).device(device) += cosine_similarity.sum();
+      else if (this->reduction_func_ == "Mean")
+        error_tensor.chip(metric_index, 0).chip(time_step, 0).device(device) += (cosine_similarity / cosine_similarity.constant(TensorT(batch_size))).sum();
+      else if (this->reduction_func_ == "Var") {
+        auto mean = (cosine_similarity / cosine_similarity.constant(TensorT(batch_size))).sum(Eigen::array<int, 1>({ 0 })).broadcast(Eigen::array<int, 1>({ batch_size }));
+        auto var = ((mean - cosine_similarity.chip(0, 1)).pow(TensorT(2)) / mean.constant(TensorT(batch_size) - 1)).sum();
+        error_tensor.chip(metric_index, 0).chip(time_step, 0).device(device) += var;
+      }
     };
   };
 
@@ -655,24 +665,120 @@ public:
   class PearsonRTensorOp : public MetricFunctionTensorOp<TensorT, DeviceT>
   {
   public:
-    using MetricFunctionTensorOp<TensorT, DeviceT>::MetricFunctionTensorOp;
+    PearsonRTensorOp() = default;
+    PearsonRTensorOp(std::string& reduction_func) : MetricFunctionTensorOp(reduction_func) {};
     std::string getName() { return "PearsonRTensorOp"; }
+    void operator()(TensorT* predicted, TensorT* expected, TensorT* error, const int& batch_size, const int& memory_size, const int& layer_size,
+      const int& n_metrics, const int& time_step, const int& metric_index, DeviceT& device) const {
+      Eigen::TensorMap<Eigen::Tensor<TensorT, 4>> expected_tensor(expected, batch_size, layer_size, 1, 1);
+      Eigen::TensorMap<Eigen::Tensor<TensorT, 5>> predicted_tensor(predicted, batch_size, memory_size, layer_size, 1, 1);
+      Eigen::TensorMap<Eigen::Tensor<TensorT, 2>> error_tensor(error, n_metrics, memory_size);
+      auto predicted_chip = predicted_tensor.chip(time_step, 1);
+      auto cov = ((predicted_chip.chip(0, 2) - predicted_chip.mean(Eigen::array<Eigen::Index, 1>({ 1 })).broadcast(Eigen::array<Eigen::Index, 3>({ 1, layer_size, 1 }))) *
+        (expected_tensor.chip(0, 2) - expected_tensor.mean(Eigen::array<Eigen::Index, 1>({ 1 })).broadcast(Eigen::array<Eigen::Index, 3>({ 1, layer_size, 1 })))
+        ).sum(Eigen::array<Eigen::Index, 1>({ 1 })); // Dim 1 batch_size
+      auto predicted_stdev = ((predicted_chip.chip(0, 2) - predicted_chip.mean(Eigen::array<Eigen::Index, 1>({ 1 })).broadcast(Eigen::array<Eigen::Index, 3>({ 1, layer_size, 1 }))
+        ).pow(TensorT(2)).sum(Eigen::array<Eigen::Index, 1>({ 1 })).pow(TensorT(0.5))); // Dim 1 batch_size
+      auto expected_stdev = ((expected_tensor.chip(0, 2) - expected_tensor.mean(Eigen::array<Eigen::Index, 1>({ 1 })).broadcast(Eigen::array<Eigen::Index, 3>({ 1, layer_size, 1 }))
+        ).pow(TensorT(2)).sum(Eigen::array<Eigen::Index, 1>({ 1 })).pow(TensorT(0.5))); // Dim 1 batch_size
+      auto PearsonR = cov / (predicted_stdev * expected_stdev);
+      if (this->reduction_func_ == "Sum")
+        error_tensor.chip(metric_index, 0).chip(time_step, 0).device(device) += PearsonR.sum();
+      else if (this->reduction_func_ == "Mean")
+        error_tensor.chip(metric_index, 0).chip(time_step, 0).device(device) += (PearsonR / PearsonR.constant(TensorT(batch_size))).sum();
+      else if (this->reduction_func_ == "Var") {
+        auto mean = (PearsonR / PearsonR.constant(TensorT(batch_size))).sum(Eigen::array<int, 1>({ 0 })).broadcast(Eigen::array<int, 1>({ batch_size }));
+        auto var = ((mean - PearsonR.chip(0, 1)).pow(TensorT(2)) / mean.constant(TensorT(batch_size) - 1)).sum();
+        error_tensor.chip(metric_index, 0).chip(time_step, 0).device(device) += var;
+      }
+    };
+  };
+
+  /**
+    @brief EuclideanDist metric function.
+  */
+  template<typename TensorT, typename DeviceT>
+  class EuclideanDistTensorOp : public MetricFunctionTensorOp<TensorT, DeviceT>
+  {
+  public:
+    EuclideanDistTensorOp() = default;
+    EuclideanDistTensorOp(std::string& reduction_func) : MetricFunctionTensorOp(reduction_func) {};
+    std::string getName() { return "EuclideanDistTensorOp"; }
     void operator()(TensorT* predicted, TensorT* expected, TensorT* error, const int& batch_size, const int& memory_size, const int& layer_size,
       const int& n_metrics, const int& time_step, const int& metric_index, DeviceT& device) const {
       Eigen::TensorMap<Eigen::Tensor<TensorT, 3>> expected_tensor(expected, batch_size, layer_size, 1);
       Eigen::TensorMap<Eigen::Tensor<TensorT, 4>> predicted_tensor(predicted, batch_size, memory_size, layer_size, 1);
       Eigen::TensorMap<Eigen::Tensor<TensorT, 2>> error_tensor(error, n_metrics, memory_size);
       auto predicted_chip = predicted_tensor.chip(time_step, 1);
-      auto cov = ((predicted_chip.chip(0, 2) - predicted_chip.mean(Eigen::array<Eigen::Index, 1>({ 1 })).broadcast(Eigen::array<Eigen::Index, 2>({ 1, layer_size }))) *
-        (expected_tensor.chip(0, 2) - expected_tensor.mean(Eigen::array<Eigen::Index, 1>({ 1 })).broadcast(Eigen::array<Eigen::Index, 2>({ 1, layer_size })))
-        ).sum(Eigen::array<Eigen::Index, 1>({ 1 })); // Dim 1 batch_size
-      auto predicted_stdev = ((predicted_chip.chip(0, 2) - predicted_chip.mean(Eigen::array<Eigen::Index, 1>({ 1 })).broadcast(Eigen::array<Eigen::Index, 2>({ 1, layer_size }))
-        ).pow(TensorT(2)).sum(Eigen::array<Eigen::Index, 1>({ 1 })).pow(TensorT(0.5))); // Dim 1 batch_size
-      auto expected_stdev = ((expected_tensor.chip(0, 2) - expected_tensor.mean(Eigen::array<Eigen::Index, 1>({ 1 })).broadcast(Eigen::array<Eigen::Index, 2>({ 1, layer_size }))
-        ).pow(TensorT(2)).sum(Eigen::array<Eigen::Index, 1>({ 1 })).pow(TensorT(0.5))); // Dim 1 batch_size
-      auto PearsonR = cov / (predicted_stdev * expected_stdev);
+      auto euclidean_dist = ((expected_tensor - predicted_chip).pow(TensorT(2))).sum(Eigen::array<int, 1>({ 1 })).sqrt();
+      if (this->reduction_func_ == "Sum")
+        error_tensor.chip(metric_index, 0).chip(time_step, 0).device(device) += euclidean_dist.sum();
+      else if (this->reduction_func_ == "Mean")
+        error_tensor.chip(metric_index, 0).chip(time_step, 0).device(device) += (euclidean_dist / euclidean_dist.constant(TensorT(batch_size))).sum();
+      else if (this->reduction_func_ == "Var") {
+        auto mean = (euclidean_dist / euclidean_dist.constant(TensorT(batch_size))).sum(Eigen::array<int, 1>({ 0 })).broadcast(Eigen::array<int, 1>({ batch_size }));
+        auto var = ((mean - euclidean_dist.chip(0, 1)).pow(TensorT(2)) / mean.constant(TensorT(batch_size) - 1)).sum();
+        error_tensor.chip(metric_index, 0).chip(time_step, 0).device(device) += var;
+      }
+    };
+  };
 
-      error_tensor.chip(metric_index, 0).chip(time_step, 0).device(device) += PearsonR.sum();
+  /**
+    @brief ManhattanDist metric function.
+  */
+  template<typename TensorT, typename DeviceT>
+  class ManhattanDistTensorOp : public MetricFunctionTensorOp<TensorT, DeviceT>
+  {
+  public:
+    ManhattanDistTensorOp() = default;
+    ManhattanDistTensorOp(std::string& reduction_func) : MetricFunctionTensorOp(reduction_func) {};
+    std::string getName() { return "ManhattanDistTensorOp"; }
+    void operator()(TensorT* predicted, TensorT* expected, TensorT* error, const int& batch_size, const int& memory_size, const int& layer_size,
+      const int& n_metrics, const int& time_step, const int& metric_index, DeviceT& device) const {
+      Eigen::TensorMap<Eigen::Tensor<TensorT, 3>> expected_tensor(expected, batch_size, layer_size, 1);
+      Eigen::TensorMap<Eigen::Tensor<TensorT, 4>> predicted_tensor(predicted, batch_size, memory_size, layer_size, 1);
+      Eigen::TensorMap<Eigen::Tensor<TensorT, 2>> error_tensor(error, n_metrics, memory_size);
+      auto predicted_chip = predicted_tensor.chip(time_step, 1);
+      auto euclidean_dist = ((expected_tensor - predicted_chip).pow(TensorT(2)).sqrt()).sum(Eigen::array<int, 1>({ 1 }));
+      if (this->reduction_func_ == "Sum")
+        error_tensor.chip(metric_index, 0).chip(time_step, 0).device(device) += euclidean_dist.sum();
+      else if (this->reduction_func_ == "Mean")
+        error_tensor.chip(metric_index, 0).chip(time_step, 0).device(device) += (euclidean_dist / euclidean_dist.constant(TensorT(batch_size))).sum();
+      else if (this->reduction_func_ == "Var") {
+        auto mean = (euclidean_dist / euclidean_dist.constant(TensorT(batch_size))).sum(Eigen::array<int, 1>({ 0 })).broadcast(Eigen::array<int, 1>({ batch_size }));
+        auto var = ((mean - euclidean_dist.chip(0, 1)).pow(TensorT(2)) / mean.constant(TensorT(batch_size) - 1)).sum();
+        error_tensor.chip(metric_index, 0).chip(time_step, 0).device(device) += var;
+      }
+    };
+  };
+
+  /**
+    @brief JeffreysAndMatusitaDist metric function.
+  */
+  template<typename TensorT, typename DeviceT>
+  class JeffreysAndMatusitaDistTensorOp : public MetricFunctionTensorOp<TensorT, DeviceT>
+  {
+  public:
+    JeffreysAndMatusitaDistTensorOp() = default;
+    JeffreysAndMatusitaDistTensorOp(std::string& reduction_func) : MetricFunctionTensorOp(reduction_func) {};
+    std::string getName() { return "JeffreysAndMatusitaDistTensorOp"; }
+    void operator()(TensorT* predicted, TensorT* expected, TensorT* error, const int& batch_size, const int& memory_size, const int& layer_size,
+      const int& n_metrics, const int& time_step, const int& metric_index, DeviceT& device) const {
+      Eigen::TensorMap<Eigen::Tensor<TensorT, 3>> expected_tensor(expected, batch_size, layer_size, 1);
+      Eigen::TensorMap<Eigen::Tensor<TensorT, 4>> predicted_tensor(predicted, batch_size, memory_size, layer_size, 1);
+      Eigen::TensorMap<Eigen::Tensor<TensorT, 2>> error_tensor(error, n_metrics, memory_size);
+      auto predicted_chip = predicted_tensor.chip(time_step, 1);
+      auto euclidean_dist = ((expected_tensor.cwiseMax(expected_tensor.constant(TensorT(0))).sqrt() - 
+        predicted_chip.cwiseMax(predicted_chip.constant(TensorT(0))).sqrt()).pow(TensorT(2))).sum(Eigen::array<int, 1>({ 1 })).sqrt();
+      if (this->reduction_func_ == "Sum")
+        error_tensor.chip(metric_index, 0).chip(time_step, 0).device(device) += euclidean_dist.sum();
+      else if (this->reduction_func_ == "Mean")
+        error_tensor.chip(metric_index, 0).chip(time_step, 0).device(device) += (euclidean_dist / euclidean_dist.constant(TensorT(batch_size))).sum();
+      else if (this->reduction_func_ == "Var") {
+        auto mean = (euclidean_dist / euclidean_dist.constant(TensorT(batch_size))).sum(Eigen::array<int, 1>({ 0 })).broadcast(Eigen::array<int, 1>({ batch_size }));
+        auto var = ((mean - euclidean_dist.chip(0, 1)).pow(TensorT(2)) / mean.constant(TensorT(batch_size) - 1)).sum();
+        error_tensor.chip(metric_index, 0).chip(time_step, 0).device(device) += var;
+      }
     };
   };
 }

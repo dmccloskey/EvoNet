@@ -846,8 +846,6 @@ BOOST_AUTO_TEST_CASE(destructorCosineSimilarityOp)
 
 BOOST_AUTO_TEST_CASE(operationfunctionCosineSimilarityOp)
 {
-  CosineSimilarityTensorOp<float, Eigen::DefaultDevice> operation;
-
   const int memory_size = 2;
   const int batch_size = 2;
   const int layer_size = 4;
@@ -864,15 +862,31 @@ BOOST_AUTO_TEST_CASE(operationfunctionCosineSimilarityOp)
     {{0, 1, 2, 3}, {0, 0, 0, 0}}
     });
 
-  float error_ptr[] = { 0, 0, 0, 0 };
   Eigen::DefaultDevice device;
 
-  operation(y_pred.data(), y_true.data(), error_ptr, batch_size, memory_size, layer_size, n_metrics, time_step, metric_index, device);
-  Eigen::TensorMap<Eigen::Tensor<float, 2>> error(error_ptr, n_metrics, memory_size);
-  BOOST_CHECK_CLOSE(error(0, 0), 0, 1e-4);
-  BOOST_CHECK_CLOSE(error(1, 0), 0.801783681, 1e-4);
-  BOOST_CHECK_CLOSE(error(0, 1), 0, 1e-4);
-  BOOST_CHECK_CLOSE(error(1, 1), 0, 1e-4);
+  CosineSimilarityTensorOp<float, Eigen::DefaultDevice> operation_sum(std::string("Sum"));
+  Eigen::Tensor<float, 2> error_sum(n_metrics, memory_size); error_sum.setZero();
+  operation_sum(y_pred.data(), y_true.data(), error_sum.data(), batch_size, memory_size, layer_size, n_metrics, time_step, metric_index, device);
+  BOOST_CHECK_CLOSE(error_sum(0, 0), 0, 1e-4);
+  BOOST_CHECK_CLOSE(error_sum(1, 0), 0.801783681, 1e-4);
+  BOOST_CHECK_CLOSE(error_sum(0, 1), 0, 1e-4);
+  BOOST_CHECK_CLOSE(error_sum(1, 1), 0, 1e-4);
+
+  CosineSimilarityTensorOp<float, Eigen::DefaultDevice> operation_mean(std::string("Mean"));
+  Eigen::Tensor<float, 2> error_mean(n_metrics, memory_size); error_mean.setZero();
+  operation_mean(y_pred.data(), y_true.data(), error_mean.data(), batch_size, memory_size, layer_size, n_metrics, time_step, metric_index, device);
+  BOOST_CHECK_CLOSE(error_mean(0, 0), 0, 1e-4);
+  BOOST_CHECK_CLOSE(error_mean(1, 0), 0.40089184, 1e-4);
+  BOOST_CHECK_CLOSE(error_mean(0, 1), 0, 1e-4);
+  BOOST_CHECK_CLOSE(error_mean(1, 1), 0, 1e-4);
+
+  CosineSimilarityTensorOp<float, Eigen::DefaultDevice> operation_var(std::string("Var"));
+  Eigen::Tensor<float, 2> error_var(n_metrics, memory_size); error_var.setZero();
+  operation_var(y_pred.data(), y_true.data(), error_var.data(), batch_size, memory_size, layer_size, n_metrics, time_step, metric_index, device);
+  BOOST_CHECK_CLOSE(error_var(0, 0), 0, 1e-4);
+  BOOST_CHECK_CLOSE(error_var(1, 0), 0.321428537, 1e-4);
+  BOOST_CHECK_CLOSE(error_var(0, 1), 0, 1e-4);
+  BOOST_CHECK_CLOSE(error_var(1, 1), 0, 1e-4);
 }
 
 /**
@@ -894,8 +908,6 @@ BOOST_AUTO_TEST_CASE(destructorPearsonROp)
 
 BOOST_AUTO_TEST_CASE(operationfunctionPearsonROp)
 {
-  PearsonRTensorOp<float, Eigen::DefaultDevice> operation;
-
   const int memory_size = 2;
   const int batch_size = 2;
   const int layer_size = 4;
@@ -912,15 +924,217 @@ BOOST_AUTO_TEST_CASE(operationfunctionPearsonROp)
     {{2, 3, 2, 3}, {0, 0, 0, 0}}
     });
 
-  float error_ptr[] = { 0, 0, 0, 0 };
   Eigen::DefaultDevice device;
 
-  operation(y_pred.data(), y_true.data(), error_ptr, batch_size, memory_size, layer_size, n_metrics, time_step, metric_index, device);
-  Eigen::TensorMap<Eigen::Tensor<float, 2>> error(error_ptr, n_metrics, memory_size);
-  BOOST_CHECK_CLOSE(error(0, 0), 0, 1e-4);
-  BOOST_CHECK_CLOSE(error(1, 0), 0.197246432, 1e-4);
-  BOOST_CHECK_CLOSE(error(0, 1), 0, 1e-4);
-  BOOST_CHECK_CLOSE(error(1, 1), 0, 1e-4);
+  PearsonRTensorOp<float, Eigen::DefaultDevice> operation_sum(std::string("Sum"));
+  Eigen::Tensor<float, 2> error_sum(n_metrics, memory_size); error_sum.setZero();
+  operation_sum(y_pred.data(), y_true.data(), error_sum.data(), batch_size, memory_size, layer_size, n_metrics, time_step, metric_index, device);
+  BOOST_CHECK_CLOSE(error_sum(0, 0), 0, 1e-4);
+  BOOST_CHECK_CLOSE(error_sum(1, 0), 0.197246432, 1e-4);
+  BOOST_CHECK_CLOSE(error_sum(0, 1), 0, 1e-4);
+  BOOST_CHECK_CLOSE(error_sum(1, 1), 0, 1e-4);
+
+  PearsonRTensorOp<float, Eigen::DefaultDevice> operation_mean(std::string("Mean"));
+  Eigen::Tensor<float, 2> error_mean(n_metrics, memory_size); error_mean.setZero();
+  operation_mean(y_pred.data(), y_true.data(), error_mean.data(), batch_size, memory_size, layer_size, n_metrics, time_step, metric_index, device);
+  BOOST_CHECK_CLOSE(error_mean(0, 0), 0, 1e-4);
+  BOOST_CHECK_CLOSE(error_mean(1, 0), 0.0986232162, 1e-4);
+  BOOST_CHECK_CLOSE(error_mean(0, 1), 0, 1e-4);
+  BOOST_CHECK_CLOSE(error_mean(1, 1), 0, 1e-4);
+
+  PearsonRTensorOp<float, Eigen::DefaultDevice> operation_var(std::string("Var"));
+  Eigen::Tensor<float, 2> error_var(n_metrics, memory_size); error_var.setZero();
+  operation_var(y_pred.data(), y_true.data(), error_var.data(), batch_size, memory_size, layer_size, n_metrics, time_step, metric_index, device);
+  BOOST_CHECK_CLOSE(error_var(0, 0), 0, 1e-4);
+  BOOST_CHECK_CLOSE(error_var(1, 0), 0.913880289, 1e-4);
+  BOOST_CHECK_CLOSE(error_var(0, 1), 0, 1e-4);
+  BOOST_CHECK_CLOSE(error_var(1, 1), 0, 1e-4);
+}
+
+/**
+  EuclideanDistOp Tests
+*/
+BOOST_AUTO_TEST_CASE(constructorEuclideanDistOp)
+{
+  EuclideanDistTensorOp<float, Eigen::DefaultDevice>* ptrEuclideanDist = nullptr;
+  EuclideanDistTensorOp<float, Eigen::DefaultDevice>* nullPointerEuclideanDist = nullptr;
+  BOOST_CHECK_EQUAL(ptrEuclideanDist, nullPointerEuclideanDist);
+}
+
+BOOST_AUTO_TEST_CASE(destructorEuclideanDistOp)
+{
+  EuclideanDistTensorOp<float, Eigen::DefaultDevice>* ptrEuclideanDist = nullptr;
+  ptrEuclideanDist = new EuclideanDistTensorOp<float, Eigen::DefaultDevice>();
+  delete ptrEuclideanDist;
+}
+
+BOOST_AUTO_TEST_CASE(operationfunctionEuclideanDistOp)
+{
+  const int memory_size = 2;
+  const int batch_size = 2;
+  const int layer_size = 4;
+  const int n_metrics = 2;
+  const int time_step = 0;
+  const int metric_index = 1;
+  Eigen::Tensor<float, 2> y_true(batch_size, layer_size);
+  y_true.setValues({
+    {1, 0, 0, 0}, {1, 0, 0, 0}
+    });
+  Eigen::Tensor<float, 3> y_pred(batch_size, memory_size, layer_size);
+  y_pred.setValues({
+    {{3, 2, 1, 0}, {0, 0, 0, 0}},
+    {{2, 3, 2, 3}, {0, 0, 0, 0}}
+    });
+
+  Eigen::DefaultDevice device;
+
+  EuclideanDistTensorOp<float, Eigen::DefaultDevice> operation_sum(std::string("Sum"));
+  Eigen::Tensor<float, 2> error_sum(n_metrics, memory_size); error_sum.setZero();
+  operation_sum(y_pred.data(), y_true.data(), error_sum.data(), batch_size, memory_size, layer_size, n_metrics, time_step, metric_index, device);
+  BOOST_CHECK_CLOSE(error_sum(0, 0), 0, 1e-4);
+  BOOST_CHECK_CLOSE(error_sum(1, 0), 7.79583168, 1e-4);
+  BOOST_CHECK_CLOSE(error_sum(0, 1), 0, 1e-4);
+  BOOST_CHECK_CLOSE(error_sum(1, 1), 0, 1e-4);
+
+  EuclideanDistTensorOp<float, Eigen::DefaultDevice> operation_mean(std::string("Mean"));
+  Eigen::Tensor<float, 2> error_mean(n_metrics, memory_size); error_mean.setZero();
+  operation_mean(y_pred.data(), y_true.data(), error_mean.data(), batch_size, memory_size, layer_size, n_metrics, time_step, metric_index, device);
+  BOOST_CHECK_CLOSE(error_mean(0, 0), 0, 1e-4);
+  BOOST_CHECK_CLOSE(error_mean(1, 0), 3.89791584, 1e-4);
+  BOOST_CHECK_CLOSE(error_mean(0, 1), 0, 1e-4);
+  BOOST_CHECK_CLOSE(error_mean(1, 1), 0, 1e-4);
+
+  EuclideanDistTensorOp<float, Eigen::DefaultDevice> operation_var(std::string("Var"));
+  Eigen::Tensor<float, 2> error_var(n_metrics, memory_size); error_var.setZero();
+  operation_var(y_pred.data(), y_true.data(), error_var.data(), batch_size, memory_size, layer_size, n_metrics, time_step, metric_index, device);
+  BOOST_CHECK_CLOSE(error_var(0, 0), 0, 1e-4);
+  BOOST_CHECK_CLOSE(error_var(1, 0), 1.61250567, 1e-4);
+  BOOST_CHECK_CLOSE(error_var(0, 1), 0, 1e-4);
+  BOOST_CHECK_CLOSE(error_var(1, 1), 0, 1e-4);
+}
+
+/**
+  ManhattanDistOp Tests
+*/
+BOOST_AUTO_TEST_CASE(constructorManhattanDistOp)
+{
+  ManhattanDistTensorOp<float, Eigen::DefaultDevice>* ptrManhattanDist = nullptr;
+  ManhattanDistTensorOp<float, Eigen::DefaultDevice>* nullPointerManhattanDist = nullptr;
+  BOOST_CHECK_EQUAL(ptrManhattanDist, nullPointerManhattanDist);
+}
+
+BOOST_AUTO_TEST_CASE(destructorManhattanDistOp)
+{
+  ManhattanDistTensorOp<float, Eigen::DefaultDevice>* ptrManhattanDist = nullptr;
+  ptrManhattanDist = new ManhattanDistTensorOp<float, Eigen::DefaultDevice>();
+  delete ptrManhattanDist;
+}
+
+BOOST_AUTO_TEST_CASE(operationfunctionManhattanDistOp)
+{
+  const int memory_size = 2;
+  const int batch_size = 2;
+  const int layer_size = 4;
+  const int n_metrics = 2;
+  const int time_step = 0;
+  const int metric_index = 1;
+  Eigen::Tensor<float, 2> y_true(batch_size, layer_size);
+  y_true.setValues({
+    {1, 0, 0, 0}, {1, 0, 0, 0}
+    });
+  Eigen::Tensor<float, 3> y_pred(batch_size, memory_size, layer_size);
+  y_pred.setValues({
+    {{3, 2, 1, 0}, {0, 0, 0, 0}},
+    {{2, 3, 2, 3}, {0, 0, 0, 0}}
+    });
+
+  Eigen::DefaultDevice device;
+
+  ManhattanDistTensorOp<float, Eigen::DefaultDevice> operation_sum(std::string("Sum"));
+  Eigen::Tensor<float, 2> error_sum(n_metrics, memory_size); error_sum.setZero();
+  operation_sum(y_pred.data(), y_true.data(), error_sum.data(), batch_size, memory_size, layer_size, n_metrics, time_step, metric_index, device);
+  BOOST_CHECK_CLOSE(error_sum(0, 0), 0, 1e-4);
+  BOOST_CHECK_CLOSE(error_sum(1, 0), 14, 1e-4);
+  BOOST_CHECK_CLOSE(error_sum(0, 1), 0, 1e-4);
+  BOOST_CHECK_CLOSE(error_sum(1, 1), 0, 1e-4);
+
+  ManhattanDistTensorOp<float, Eigen::DefaultDevice> operation_mean(std::string("Mean"));
+  Eigen::Tensor<float, 2> error_mean(n_metrics, memory_size); error_mean.setZero();
+  operation_mean(y_pred.data(), y_true.data(), error_mean.data(), batch_size, memory_size, layer_size, n_metrics, time_step, metric_index, device);
+  BOOST_CHECK_CLOSE(error_mean(0, 0), 0, 1e-4);
+  BOOST_CHECK_CLOSE(error_mean(1, 0), 7, 1e-4);
+  BOOST_CHECK_CLOSE(error_mean(0, 1), 0, 1e-4);
+  BOOST_CHECK_CLOSE(error_mean(1, 1), 0, 1e-4);
+
+  ManhattanDistTensorOp<float, Eigen::DefaultDevice> operation_var(std::string("Var"));
+  Eigen::Tensor<float, 2> error_var(n_metrics, memory_size); error_var.setZero();
+  operation_var(y_pred.data(), y_true.data(), error_var.data(), batch_size, memory_size, layer_size, n_metrics, time_step, metric_index, device);
+  BOOST_CHECK_CLOSE(error_var(0, 0), 0, 1e-4);
+  BOOST_CHECK_CLOSE(error_var(1, 0), 8, 1e-4);
+  BOOST_CHECK_CLOSE(error_var(0, 1), 0, 1e-4);
+  BOOST_CHECK_CLOSE(error_var(1, 1), 0, 1e-4);
+}
+
+/**
+  JeffreysAndMatusitaDistOp Tests
+*/
+BOOST_AUTO_TEST_CASE(constructorJeffreysAndMatusitaDistOp)
+{
+  JeffreysAndMatusitaDistTensorOp<float, Eigen::DefaultDevice>* ptrJeffreysAndMatusitaDist = nullptr;
+  JeffreysAndMatusitaDistTensorOp<float, Eigen::DefaultDevice>* nullPointerJeffreysAndMatusitaDist = nullptr;
+  BOOST_CHECK_EQUAL(ptrJeffreysAndMatusitaDist, nullPointerJeffreysAndMatusitaDist);
+}
+
+BOOST_AUTO_TEST_CASE(destructorJeffreysAndMatusitaDistOp)
+{
+  JeffreysAndMatusitaDistTensorOp<float, Eigen::DefaultDevice>* ptrJeffreysAndMatusitaDist = nullptr;
+  ptrJeffreysAndMatusitaDist = new JeffreysAndMatusitaDistTensorOp<float, Eigen::DefaultDevice>();
+  delete ptrJeffreysAndMatusitaDist;
+}
+
+BOOST_AUTO_TEST_CASE(operationfunctionJeffreysAndMatusitaDistOp)
+{
+  const int memory_size = 2;
+  const int batch_size = 2;
+  const int layer_size = 4;
+  const int n_metrics = 2;
+  const int time_step = 0;
+  const int metric_index = 1;
+  Eigen::Tensor<float, 2> y_true(batch_size, layer_size);
+  y_true.setValues({
+    {1, 0, 0, 0}, {1, 0, 0, 0}
+    });
+  Eigen::Tensor<float, 3> y_pred(batch_size, memory_size, layer_size);
+  y_pred.setValues({
+    {{3, 2, 1, 0}, {0, 0, 0, 0}},
+    {{2, 3, 2, 3}, {0, 0, 0, 0}}
+    });
+
+  Eigen::DefaultDevice device;
+
+  JeffreysAndMatusitaDistTensorOp<float, Eigen::DefaultDevice> operation_sum(std::string("Sum"));
+  Eigen::Tensor<float, 2> error_sum(n_metrics, memory_size); error_sum.setZero();
+  operation_sum(y_pred.data(), y_true.data(), error_sum.data(), batch_size, memory_size, layer_size, n_metrics, time_step, metric_index, device);
+  BOOST_CHECK_CLOSE(error_sum(0, 0), 0, 1e-4);
+  BOOST_CHECK_CLOSE(error_sum(1, 0), 4.7389946, 1e-4);
+  BOOST_CHECK_CLOSE(error_sum(0, 1), 0, 1e-4);
+  BOOST_CHECK_CLOSE(error_sum(1, 1), 0, 1e-4);
+
+  JeffreysAndMatusitaDistTensorOp<float, Eigen::DefaultDevice> operation_mean(std::string("Mean"));
+  Eigen::Tensor<float, 2> error_mean(n_metrics, memory_size); error_mean.setZero();
+  operation_mean(y_pred.data(), y_true.data(), error_mean.data(), batch_size, memory_size, layer_size, n_metrics, time_step, metric_index, device);
+  BOOST_CHECK_CLOSE(error_mean(0, 0), 0, 1e-4);
+  BOOST_CHECK_CLOSE(error_mean(1, 0), 2.3694973, 1e-4);
+  BOOST_CHECK_CLOSE(error_mean(0, 1), 0, 1e-4);
+  BOOST_CHECK_CLOSE(error_mean(1, 1), 0, 1e-4);
+
+  JeffreysAndMatusitaDistTensorOp<float, Eigen::DefaultDevice> operation_var(std::string("Var"));
+  Eigen::Tensor<float, 2> error_var(n_metrics, memory_size); error_var.setZero();
+  operation_var(y_pred.data(), y_true.data(), error_var.data(), batch_size, memory_size, layer_size, n_metrics, time_step, metric_index, device);
+  BOOST_CHECK_CLOSE(error_var(0, 0), 0, 1e-4);
+  BOOST_CHECK_CLOSE(error_var(1, 0), 0.478435606, 1e-4);
+  BOOST_CHECK_CLOSE(error_var(0, 1), 0, 1e-4);
+  BOOST_CHECK_CLOSE(error_var(1, 1), 0, 1e-4);
 }
 
 BOOST_AUTO_TEST_SUITE_END()
