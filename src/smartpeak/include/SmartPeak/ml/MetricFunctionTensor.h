@@ -30,6 +30,7 @@ namespace SmartPeak
 		virtual std::string getName() = 0;
 		virtual void operator()(TensorT* predicted, TensorT* expected, TensorT* error, const int& batch_size, const int& memory_size, const int& layer_size,
       const int& n_metrics, const int& time_step, const int& metric_index, DeviceT& device) const = 0;
+    void setReductionFunc(std::string& reduction_func) { reduction_func_ = reduction_func; }
   protected:
     TensorT threshold_positive_ = 0.9;
     TensorT threshold_negative_ = 0.1;

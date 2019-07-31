@@ -114,7 +114,7 @@ public:
   @brief Fully connected variational reconstruction model
   */
   void makeModelFCVAE_Encoder(Model<TensorT>& model, const int& n_inputs, const int& n_encodings, const bool& linear_scale_input, const bool& log_transform_input, const bool& standardize_input, const bool& add_norm = false,
-    const int& n_en_hidden_0 = 64, const int& n_en_hidden_1 = 64, const int& n_en_hidden_2 = 64) {
+    const int& n_en_hidden_0 = 64, const int& n_en_hidden_1 = 64, const int& n_en_hidden_2 = 0) {
     model.setId(0);
     model.setName("VAE-Encoder");
     ModelBuilder<TensorT> model_builder;
@@ -220,7 +220,7 @@ public:
   @brief Fully connected variational reconstruction model
   */
   void makeModelFCVAE_Decoder(Model<TensorT>& model, const int& n_outputs, const int& n_encodings, const bool& add_norm = false,
-    const int& n_de_hidden_0 = 64, const int& n_de_hidden_1 = 64, const int& n_de_hidden_2 = 64) {
+    const int& n_de_hidden_0 = 64, const int& n_de_hidden_1 = 64, const int& n_de_hidden_2 = 0) {
     model.setId(0);
     model.setName("VAE-Decoder");
     ModelBuilder<TensorT> model_builder;
@@ -819,7 +819,7 @@ public:
 
   @param[in] sample_group_name_expected
   */
-  TensorT scoreReconstructionSimilarity(const std::string& sample_group_name_expected, const Eigen::Tensor<TensorT, 4>& reconstructed_output,
+  std::pair<TensorT,TensorT> scoreReconstructionSimilarity(const std::string& sample_group_name_expected, const Eigen::Tensor<TensorT, 4>& reconstructed_output,
     MetricFunctionTensorOp<TensorT, Eigen::DefaultDevice>& metric_function, ModelTrainerDefaultDevice<TensorT>& model_trainer, ModelLogger<TensorT>& model_logger) {
     // Make the input nodes
     std::vector<std::string> input_nodes;
@@ -853,10 +853,14 @@ public:
     // score the decoded data using the classification model
     Eigen::Tensor<TensorT, 3> expected = normalization_output.chip(0, 1);
     Eigen::Tensor<TensorT, 2> predicted = reconstructed_output.chip(0, 3).chip(0, 1);
-    Eigen::Tensor<TensorT, 2> score(1, 1); score.setZero();
+    Eigen::Tensor<TensorT, 2> score_mean(1, 1); score_mean.setZero();
+    Eigen::Tensor<TensorT, 2> score_var(1, 1); score_var.setZero();
     Eigen::DefaultDevice device;
-    metric_function(predicted.data(), expected.data(), score.data(), model_trainer.getBatchSize(), model_trainer.getMemorySize(), this->n_input_nodes_, 1, 0, 0, device);
-    return score(0, 0) / TensorT(model_trainer.getBatchSize());
+    metric_function.setReductionFunc(std::string("Mean"));
+    metric_function(predicted.data(), expected.data(), score_mean.data(), model_trainer.getBatchSize(), model_trainer.getMemorySize(), this->n_input_nodes_, 1, 0, 0, device);
+    metric_function.setReductionFunc(std::string("Var"));
+    metric_function(predicted.data(), expected.data(), score_var.data(), model_trainer.getBatchSize(), model_trainer.getMemorySize(), this->n_input_nodes_, 1, 0, 0, device);
+    return std::make_pair(score_mean(0, 0), score_var(0, 0));
   };
 
   /*
@@ -864,7 +868,7 @@ public:
 
   @param[in] sample_group_name_expected
   */
-  TensorT scoreDataSimilarity(const std::string& sample_group_name_expected, const std::string& sample_group_name_predicted,
+  std::pair<TensorT,TensorT> scoreDataSimilarity(const std::string& sample_group_name_expected, const std::string& sample_group_name_predicted,
     MetricFunctionTensorOp<TensorT, Eigen::DefaultDevice>& metric_function, ModelTrainerDefaultDevice<TensorT>& model_trainer, ModelLogger<TensorT>& model_logger) {
     // Make the input nodes
     std::vector<std::string> input_nodes;
@@ -909,10 +913,14 @@ public:
     // score the decoded data using the classification model
     Eigen::Tensor<TensorT, 3> expected = normalization_output_1.chip(0, 1);
     Eigen::Tensor<TensorT, 2> predicted = normalization_output_2.chip(0, 3).chip(0, 1);
-    Eigen::Tensor<TensorT, 2> score(1, 1); score.setZero();
+    Eigen::Tensor<TensorT, 2> score_mean(1, 1); score_mean.setZero();
+    Eigen::Tensor<TensorT, 2> score_var(1, 1); score_var.setZero();
     Eigen::DefaultDevice device;
-    metric_function(predicted.data(), expected.data(), score.data(), model_trainer.getBatchSize(), model_trainer.getMemorySize(), this->n_input_nodes_, 1, 0, 0, device);
-    return score(0, 0) / TensorT(model_trainer.getBatchSize());
+    metric_function.setReductionFunc(std::string("Mean"));
+    metric_function(predicted.data(), expected.data(), score_mean.data(), model_trainer.getBatchSize(), model_trainer.getMemorySize(), this->n_input_nodes_, 1, 0, 0, device);
+    metric_function.setReductionFunc(std::string("Var"));
+    metric_function(predicted.data(), expected.data(), score_var.data(), model_trainer.getBatchSize(), model_trainer.getMemorySize(), this->n_input_nodes_, 1, 0, 0, device);
+    return std::make_pair(score_mean(0,0), score_var(0,0));
   };
 
   int getNInputNodes() const { return n_input_nodes_; }
@@ -976,7 +984,7 @@ int main(int argc, char** argv)
   ModelResources model_resources = { ModelDevice(0, 1) };
   ModelInterpreterDefaultDevice<float> model_interpreter(model_resources);
   ModelTrainerExt<float> model_trainer;
-  model_trainer.setBatchSize(128);
+  model_trainer.setBatchSize(512);
   model_trainer.setMemorySize(1);
   model_trainer.setNEpochsEvaluation(1);
   model_trainer.setVerbosityLevel(1);
@@ -1030,8 +1038,8 @@ int main(int argc, char** argv)
       model_trainer.setResetInterpreter(false);
 
       // Calculate the similarity
-      float score = latentArithmetic.scoreDataSimilarity(expected_reference.at(case_iter), predicted_reference.at(case_iter), ManhattanDistTensorOp<float, Eigen::DefaultDevice>(), model_trainer, model_logger);
-      std::cout << expected_reference.at(case_iter) << " -> " << predicted_reference.at(case_iter) << ": " << score << std::endl;
+      std::pair<float,float> score = latentArithmetic.scoreDataSimilarity(expected_reference.at(case_iter), predicted_reference.at(case_iter), ManhattanDistTensorOp<float, Eigen::DefaultDevice>(), model_trainer, model_logger);
+      std::cout << expected_reference.at(case_iter) << " -> " << predicted_reference.at(case_iter) << ": " << score.first << " +/- " << score.second << std::endl;
     }
 
     predicted_reference = std::vector<std::string>({ "Evo04gnd", "Evo04pgi", "Evo04ptsHIcrr", "Evo04sdhCB", "Evo04tpiA" });
@@ -1039,8 +1047,8 @@ int main(int argc, char** argv)
     assert(predicted_reference.size() == expected_reference.size());
     for (int case_iter = 0; case_iter < predicted_reference.size(); ++case_iter) {
       // Calculate the similarity
-      float score = latentArithmetic.scoreDataSimilarity(expected_reference.at(case_iter), predicted_reference.at(case_iter), ManhattanDistTensorOp<float, Eigen::DefaultDevice>(), model_trainer, model_logger);
-      std::cout << expected_reference.at(case_iter) << " -> " << predicted_reference.at(case_iter) << ": " << score << std::endl;
+      std::pair<float,float> score = latentArithmetic.scoreDataSimilarity(expected_reference.at(case_iter), predicted_reference.at(case_iter), ManhattanDistTensorOp<float, Eigen::DefaultDevice>(), model_trainer, model_logger);
+      std::cout << expected_reference.at(case_iter) << " -> " << predicted_reference.at(case_iter) << ": " << score.first << " +/- " << score.second << std::endl;
     }
 
     predicted_reference = std::vector<std::string>({ "Evo04Evo01EP", "Evo04Evo02EP", "Evo04gndEvo01EP", "Evo04gndEvo02EP", "Evo04pgiEvo01EP", "Evo04pgiEvo02EP",
@@ -1050,8 +1058,8 @@ int main(int argc, char** argv)
     assert(predicted_reference.size() == expected_reference.size());
     for (int case_iter = 0; case_iter < predicted_reference.size(); ++case_iter) {
       // Calculate the similarity
-      float score = latentArithmetic.scoreDataSimilarity(expected_reference.at(case_iter), predicted_reference.at(case_iter), ManhattanDistTensorOp<float, Eigen::DefaultDevice>(), model_trainer, model_logger);
-      std::cout << expected_reference.at(case_iter) << " -> " << predicted_reference.at(case_iter) << ": " << score << std::endl;
+      std::pair<float,float> score = latentArithmetic.scoreDataSimilarity(expected_reference.at(case_iter), predicted_reference.at(case_iter), ManhattanDistTensorOp<float, Eigen::DefaultDevice>(), model_trainer, model_logger);
+      std::cout << expected_reference.at(case_iter) << " -> " << predicted_reference.at(case_iter) << ": " << score.first << " +/- " << score.second << std::endl;
     }
 
     predicted_reference = std::vector<std::string>({ "Evo04", "Evo04Evo01EP", "Evo04Evo02EP", "Evo04gnd", "Evo04gndEvo01EP", "Evo04gndEvo02EP", "Evo04pgi", "Evo04pgiEvo01EP", "Evo04pgiEvo02EP",
@@ -1061,8 +1069,8 @@ int main(int argc, char** argv)
     assert(predicted_reference.size() == expected_reference.size());
     for (int case_iter = 0; case_iter < predicted_reference.size(); ++case_iter) {
       // Calculate the similarity
-      float score = latentArithmetic.scoreDataSimilarity(expected_reference.at(case_iter), predicted_reference.at(case_iter), ManhattanDistTensorOp<float, Eigen::DefaultDevice>(), model_trainer, model_logger);
-      std::cout << expected_reference.at(case_iter) << " -> " << predicted_reference.at(case_iter) << ": " << score << std::endl;
+      std::pair<float,float> score = latentArithmetic.scoreDataSimilarity(expected_reference.at(case_iter), predicted_reference.at(case_iter), ManhattanDistTensorOp<float, Eigen::DefaultDevice>(), model_trainer, model_logger);
+      std::cout << expected_reference.at(case_iter) << " -> " << predicted_reference.at(case_iter) << ": " << score.first << " +/- " << score.second << std::endl;
     }
   }
 
@@ -1093,8 +1101,8 @@ int main(int argc, char** argv)
       // Generate the encoding and decoding and score the result
       auto encoding_output = latentArithmetic.generateEncoding(condition_1_test_none.at(case_iter), model_trainer, model_logger);
       reconstruction_output = latentArithmetic.generateReconstruction(encoding_output, model_trainer, model_logger);
-      float score = latentArithmetic.scoreReconstructionSimilarity(expected_test_none.at(case_iter), reconstruction_output, ManhattanDistTensorOp<float, Eigen::DefaultDevice>(), model_trainer, model_logger);
-      std::cout << condition_1_test_none.at(case_iter) << " -> " << expected_test_none.at(case_iter) << ": " << score << std::endl;
+      std::pair<float,float> score = latentArithmetic.scoreReconstructionSimilarity(expected_test_none.at(case_iter), reconstruction_output, ManhattanDistTensorOp<float, Eigen::DefaultDevice>(), model_trainer, model_logger);
+      std::cout << condition_1_test_none.at(case_iter) << " -> " << expected_test_none.at(case_iter) << ": " << score.first << " +/- " << score.second << std::endl;
     }
 
     // 1. EPi - KO -> Ref
@@ -1114,8 +1122,8 @@ int main(int argc, char** argv)
       auto encoding_output_2 = latentArithmetic.generateEncoding(condition_2_arithmetic_1.at(case_iter), model_trainer, model_logger);
       Eigen::Tensor<float, 4> encoding_output = encoding_output_1 - encoding_output_2;
       reconstruction_output = latentArithmetic.generateReconstruction(encoding_output, model_trainer, model_logger);
-      float score = latentArithmetic.scoreReconstructionSimilarity(expected_arithmetic_1.at(case_iter), reconstruction_output, ManhattanDistTensorOp<float, Eigen::DefaultDevice>(), model_trainer, model_logger);
-      std::cout << condition_1_arithmetic_1.at(case_iter) << " - " << condition_2_arithmetic_1.at(case_iter) << " -> " << expected_arithmetic_1.at(case_iter) << ": " << score << std::endl;
+      std::pair<float,float> score = latentArithmetic.scoreReconstructionSimilarity(expected_arithmetic_1.at(case_iter), reconstruction_output, ManhattanDistTensorOp<float, Eigen::DefaultDevice>(), model_trainer, model_logger);
+      std::cout << condition_1_arithmetic_1.at(case_iter) << " - " << condition_2_arithmetic_1.at(case_iter) << " -> " << expected_arithmetic_1.at(case_iter) << ": " << score.first << " +/- " << score.second << std::endl;
     }
 
     // 2. EPi - Ref -> KO
@@ -1135,8 +1143,8 @@ int main(int argc, char** argv)
       auto encoding_output_2 = latentArithmetic.generateEncoding(condition_2_arithmetic_2.at(case_iter), model_trainer, model_logger);
       Eigen::Tensor<float, 4> encoding_output = encoding_output_1 - encoding_output_2;
       reconstruction_output = latentArithmetic.generateReconstruction(encoding_output, model_trainer, model_logger);
-      float score = latentArithmetic.scoreReconstructionSimilarity(expected_arithmetic_2.at(case_iter), reconstruction_output, ManhattanDistTensorOp<float, Eigen::DefaultDevice>(), model_trainer, model_logger);
-      std::cout << condition_1_arithmetic_2.at(case_iter) << " - " << condition_2_arithmetic_2.at(case_iter) << " -> " << expected_arithmetic_2.at(case_iter) << ": " << score << std::endl;
+      std::pair<float,float> score = latentArithmetic.scoreReconstructionSimilarity(expected_arithmetic_2.at(case_iter), reconstruction_output, ManhattanDistTensorOp<float, Eigen::DefaultDevice>(), model_trainer, model_logger);
+      std::cout << condition_1_arithmetic_2.at(case_iter) << " - " << condition_2_arithmetic_2.at(case_iter) << " -> " << expected_arithmetic_2.at(case_iter) << ": " << score.first << " +/- " << score.second << std::endl;
     }
 
     // 3. KOi + Ref -> EPi
@@ -1156,8 +1164,8 @@ int main(int argc, char** argv)
       auto encoding_output_2 = latentArithmetic.generateEncoding(condition_2_arithmetic_3.at(case_iter), model_trainer, model_logger);
       Eigen::Tensor<float, 4> encoding_output = encoding_output_1 + encoding_output_2;
       reconstruction_output = latentArithmetic.generateReconstruction(encoding_output, model_trainer, model_logger);
-      float score = latentArithmetic.scoreReconstructionSimilarity(expected_arithmetic_3.at(case_iter), reconstruction_output, ManhattanDistTensorOp<float, Eigen::DefaultDevice>(), model_trainer, model_logger);
-      std::cout << condition_1_arithmetic_3.at(case_iter) << " + " << condition_2_arithmetic_3.at(case_iter) << " -> " << expected_arithmetic_3.at(case_iter) << ": " << score << std::endl;
+      std::pair<float,float> score = latentArithmetic.scoreReconstructionSimilarity(expected_arithmetic_3.at(case_iter), reconstruction_output, ManhattanDistTensorOp<float, Eigen::DefaultDevice>(), model_trainer, model_logger);
+      std::cout << condition_1_arithmetic_3.at(case_iter) << " + " << condition_2_arithmetic_3.at(case_iter) << " -> " << expected_arithmetic_3.at(case_iter) << ": " << score.first << " +/- " << score.second << std::endl;
     }
   }
 
@@ -1167,20 +1175,26 @@ int main(int argc, char** argv)
       "Evo04ptsHIcrr", "Evo04ptsHIcrr", "Evo04sdhCB", "Evo04sdhCB", "Evo04tpiA", "Evo04tpiA" };
     const std::vector<std::string> condition_2_arithmetic_4 = { "Evo04gndEvo01EP", "Evo04gndEvo02EP", "Evo04pgiEvo01EP", "Evo04pgiEvo02EP",
       "Evo04ptsHIcrrEvo01EP", "Evo04ptsHIcrrEvo02EP", "Evo04sdhCBEvo01EP", "Evo04sdhCBEvo02EP", "Evo04tpiAEvo01EP", "Evo04tpiAEvo02EP" };
-    const std::vector<std::string> expected_arithmetic_4 = { "Evo04gndEvo01EP", "Evo04gndEvo02EP", "Evo04pgiEvo01EP", "Evo04pgiEvo02EP",
-      "Evo04ptsHIcrrEvo01EP", "Evo04ptsHIcrrEvo02EP", "Evo04sdhCBEvo01EP", "Evo04sdhCBEvo02EP", "Evo04tpiAEvo01EP", "Evo04tpiAEvo02EP" };
+    const std::vector<std::vector<std::string>> expected_arithmetic_4 = { 
+      {"Evo04gnd", "Evo04gndEvo01EP"}, {"Evo04gnd", "Evo04gndEvo02EP"}, 
+      {"Evo04pgi", "Evo04pgiEvo01EP"}, {"Evo04pgi", "Evo04pgiEvo02EP"},
+      {"Evo04ptsHIcrr", "Evo04ptsHIcrrEvo01EP"}, {"Evo04ptsHIcrr", "Evo04ptsHIcrrEvo02EP"},
+      {"Evo04sdhCB", "Evo04sdhCBEvo01EP"}, {"Evo04sdhCB", "Evo04sdhCBEvo02EP"},
+      {"Evo04tpiA", "Evo04tpiAEvo01EP"}, {"Evo04tpiA", "Evo04tpiAEvo02EP"} };
     assert(condition_1_arithmetic_4.size() == condition_2_arithmetic_4.size());
     assert(expected_arithmetic_4.size() == condition_2_arithmetic_4.size());
     assert(condition_1_arithmetic_4.size() == expected_arithmetic_4.size());
 
-    std::cout << "Running KOi + Ref -> EPi" << std::endl;
+    std::cout << "Running 0.5*KOi + 0.5*EPi -> J0?" << std::endl;
     for (int case_iter = 0; case_iter < condition_1_arithmetic_4.size(); ++case_iter) {
       auto encoding_output_1 = latentArithmetic.generateEncoding(condition_1_arithmetic_4.at(case_iter), model_trainer, model_logger);
       auto encoding_output_2 = latentArithmetic.generateEncoding(condition_2_arithmetic_4.at(case_iter), model_trainer, model_logger);
       Eigen::Tensor<float, 4> encoding_output = encoding_output_1 * encoding_output_1.constant(0.5) + encoding_output_2 * encoding_output_2.constant(0.5);
       reconstruction_output = latentArithmetic.generateReconstruction(encoding_output, model_trainer, model_logger);
-      float score = latentArithmetic.scoreReconstructionSimilarity(expected_arithmetic_4.at(case_iter), reconstruction_output, ManhattanDistTensorOp<float, Eigen::DefaultDevice>(), model_trainer, model_logger);
-      std::cout << "0.5 * " << condition_1_arithmetic_4.at(case_iter) << " + " << condition_2_arithmetic_4.at(case_iter) << "0.5 * " << " -> " << expected_arithmetic_4.at(case_iter) << ": " << score << std::endl;
+      for (int trial_iter = 0; trial_iter < 2; ++trial_iter) {
+        std::pair<float, float> score = latentArithmetic.scoreReconstructionSimilarity(expected_arithmetic_4.at(case_iter).at(trial_iter), reconstruction_output, ManhattanDistTensorOp<float, Eigen::DefaultDevice>(), model_trainer, model_logger);
+        std::cout << "0.5 * " << condition_1_arithmetic_4.at(case_iter) << " + 0.5 * " << condition_2_arithmetic_4.at(case_iter) << " -> " << expected_arithmetic_4.at(case_iter).at(trial_iter) << ": " << score.first << " +/- " << score.second << std::endl;
+      }
     }
   }
 
