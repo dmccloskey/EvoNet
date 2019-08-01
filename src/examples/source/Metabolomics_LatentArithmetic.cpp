@@ -601,8 +601,7 @@ public:
     model_decoder_.clear();
 
     // define the encoder and decoders
-    //model_trainer.makeModelFCVAE_Encoder(model_encoder_, n_input_nodes_, encoding_size_, true, false, false, false); // normalization type 1
-    model_trainer.makeModelFCVAE_Encoder(model_encoder_, n_input_nodes_, encoding_size_, true, true, false, false); // normalization type 2
+    model_trainer.makeModelFCVAE_Encoder(model_encoder_, n_input_nodes_, encoding_size_, true, false, false, false); // normalization type 1
     model_trainer.makeModelFCVAE_Decoder(model_decoder_, n_input_nodes_, encoding_size_, false);
 
     // read in the encoder and decoder weights
@@ -675,8 +674,7 @@ public:
     model_normalization_.clear();
 
     // define the model
-    //model_trainer.makeModelNormalization(model_normalization_, n_input_nodes_, true, false, false); // Normalization type 1
-    model_trainer.makeModelNormalization(model_normalization_, n_input_nodes_, true, true, false); // Normalization type 2
+    model_trainer.makeModelNormalization(model_normalization_, n_input_nodes_, true, false, false); // Normalization type 1
   };
 
   /*
