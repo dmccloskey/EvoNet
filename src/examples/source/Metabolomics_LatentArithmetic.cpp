@@ -86,7 +86,7 @@ public:
               value = this->model_validation_.getRandomConcentration(
                 this->model_validation_.metabolomicsData_.at(sample_group_name_),
                 this->model_validation_.component_group_names_.at(nodes_iter));
-            input_data(batch_iter, memory_iter, nodes_iter, epoch_iter) = value + 1e-6;
+            input_data(batch_iter, memory_iter, nodes_iter, epoch_iter) = value;
           }
         }
       }
@@ -462,7 +462,9 @@ public:
         std::shared_ptr<IntegrationErrorOp<TensorT>>(new SumErrorOp<TensorT>()),
         std::shared_ptr<IntegrationWeightGradOp<TensorT>>(new SumWeightGradOp<TensorT>()),
         std::shared_ptr<WeightInitOp<TensorT>>(new ConstWeightInitOp<TensorT>(1)),
-        std::shared_ptr<SolverOp<TensorT>>(new DummySolverOp<TensorT>()), 0.0, 0.0, true, true);
+        std::shared_ptr<SolverOp<TensorT>>(new DummySolverOp<TensorT>()), 0.0, 0.0, false, true);
+      model_builder.addBiases(model, "LogScaleInput", node_names, std::shared_ptr<WeightInitOp<TensorT>>(new ConstWeightInitOp<TensorT>(1e-6)),
+        std::shared_ptr<SolverOp<TensorT>>(new DummySolverOp<TensorT>()), 0.0, true);
     }
     if (linear_scale_input) {
       node_names = model_builder.addLinearScale(model, "LinearScaleInput", "LinearScaleInput", node_names, 0, 1, true);
