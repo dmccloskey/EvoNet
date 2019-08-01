@@ -345,18 +345,13 @@ template<typename TensorT>
 class ModelTrainerExt : public ModelTrainerDefaultDevice<TensorT>
 {
 public:
-  Model<TensorT> makeModel() { return Model<TensorT>(); }
   /*
   @brief Fully connected classifier
   */
-  void makeModelFCClass(Model<TensorT>& model, const int& n_inputs, const int& n_outputs, const bool& linear_scale_input, const bool& log_transform_input, const bool& standardize_input, bool add_norm = true) {
+  void makeModelFCClass(Model<TensorT>& model, const int& n_inputs, const int& n_outputs, const bool& linear_scale_input, const bool& log_transform_input, const bool& standardize_input, const bool& add_norm = true,
+    const int& n_hidden_0 = 32, const int& n_hidden_1 = 0, const int& n_hidden_2 = 0) {
     model.setId(0);
     model.setName("Classifier");
-
-    const int n_hidden_0 = 32;
-    const int n_hidden_1 = 0;
-    const int n_hidden_2 = 0;
-
     ModelBuilder<TensorT> model_builder;
 
     // Add the inputs
@@ -653,7 +648,9 @@ public:
         std::shared_ptr<IntegrationErrorOp<TensorT>>(new SumErrorOp<TensorT>()),
         std::shared_ptr<IntegrationWeightGradOp<TensorT>>(new SumWeightGradOp<TensorT>()),
         std::shared_ptr<WeightInitOp<TensorT>>(new ConstWeightInitOp<TensorT>(1)),
-        std::shared_ptr<SolverOp<TensorT>>(new DummySolverOp<TensorT>()), 0.0, 0.0, true, true);
+        std::shared_ptr<SolverOp<TensorT>>(new DummySolverOp<TensorT>()), 0.0, 0.0, false, true);
+      model_builder.addBiases(model, "LogScaleInput", node_names, std::shared_ptr<WeightInitOp<TensorT>>(new ConstWeightInitOp<TensorT>(1e-6)),
+        std::shared_ptr<SolverOp<TensorT>>(new DummySolverOp<TensorT>()), 0.0, true);
     }
     if (linear_scale_input) {
       node_names = model_builder.addLinearScale(model, "LinearScaleInput", "LinearScaleInput", node_names, 0, 1, true);
@@ -671,10 +668,14 @@ public:
     // Check point the model every 1000 epochs
     if (n_epochs % 1000 == 0 && n_epochs != 0) {
       model_interpreter.getModelResults(model, false, true, false);
-      ModelFile<TensorT> data;
-      data.storeModelBinary(model.getName() + "_" + std::to_string(n_epochs) + "_model.binary", model);
-      ModelInterpreterFileDefaultDevice<TensorT> interpreter_data;
-      interpreter_data.storeModelInterpreterBinary(model.getName() + "_" + std::to_string(n_epochs) + "_interpreter.binary", model_interpreter);
+      // save the model weights
+      WeightFile<float> weight_data;
+      weight_data.storeWeightValuesCsv(model.getName() + "_" + std::to_string(n_epochs) + "_weights.csv", model.weights_);
+      //// save the model and interpreter in binary format
+      //ModelFile<TensorT> data;
+      //data.storeModelBinary(model.getName() + "_" + std::to_string(n_epochs) + "_model.binary", model);
+      //ModelInterpreterFileDefaultDevice<TensorT> interpreter_data;
+      //interpreter_data.storeModelInterpreterBinary(model.getName() + "_" + std::to_string(n_epochs) + "_interpreter.binary", model_interpreter);
     }
   }
   void trainingModelLogger(const int & n_epochs, Model<TensorT>& model, ModelInterpreterDefaultDevice<TensorT>& model_interpreter, ModelLogger<TensorT>& model_logger,
@@ -789,14 +790,18 @@ void main_classification(const std::string& biochem_rxns_filename,
   if (simulate_MARs) n_input_nodes = reaction_model.reaction_ids_.size();
   else n_input_nodes = reaction_model.component_group_names_.size();
   const int n_output_nodes = reaction_model.labels_.size();
+
+  // define the input nodes
   std::vector<std::string> input_nodes;
-  std::vector<std::string> output_nodes;
   for (int i = 0; i < n_input_nodes; ++i) {
     char name_char[512];
     sprintf(name_char, "Input_%012d", i);
     std::string name(name_char);
     input_nodes.push_back(name);
   }
+
+  // define the output nodes
+  std::vector<std::string> output_nodes;
   for (int i = 0; i < n_output_nodes; ++i) {
     char name_char[512];
     sprintf(name_char, "Output_%012d", i);
@@ -845,11 +850,11 @@ void main_classification(const std::string& biochem_rxns_filename,
   //std::vector<Model<float>> population;
   Model<float> model;
   if (make_model) {
-    //model_trainer.makeModelFCClass(model, n_input_nodes, n_output_nodes, false, false, false, false); // normalization type 0
-    model_trainer.makeModelFCClass(model, n_input_nodes, n_output_nodes, true, false, false, false); // normalization type 1
-    //model_trainer.makeModelFCClass(model, n_input_nodes, n_output_nodes, true, false, true, false); // normalization type 2
-    //model_trainer.makeModelFCClass(model, n_input_nodes, n_output_nodes, true, true, false, false); // normalization type 3
-    //model_trainer.makeModelFCClass(model, n_input_nodes, n_output_nodes, true, true, true, false); // normalization type 4
+    //model_trainer.makeModelFCClass(model, n_input_nodes, n_output_nodes, false, false, false, false, 64, 64, 0); // normalization type 0
+    //model_trainer.makeModelFCClass(model, n_input_nodes, n_output_nodes, true, false, false, false, 64, 64, 0); // normalization type 1
+    //model_trainer.makeModelFCClass(model, n_input_nodes, n_output_nodes, true, false, true, false, 64, 64, 0); // normalization type 2
+    model_trainer.makeModelFCClass(model, n_input_nodes, n_output_nodes, true, true, false, false, 64, 64, 0); // normalization type 3
+    //model_trainer.makeModelFCClass(model, n_input_nodes, n_output_nodes, true, true, true, false, 64, 64, 0); // normalization type 4
 
     //model_trainer.makeModelCovNetClass(model, n_input_nodes, n_output_nodes, true, true, false, 64, 16, 0, 32, false, true); // normalization type 3
 
@@ -872,6 +877,34 @@ void main_classification(const std::string& biochem_rxns_filename,
   //population_trainer_file.storeModelValidations("MetabolomicsValidationErrors.csv", models_validation_errors_per_generation);
 }
 
+template<typename TensorT>
+void calculateInputLayer0Correlation() {
+  // Read in the weights
+  Model<TensorT> model;
+
+  // Calculate the average per node weight magnitude for the first layer
+  const int n_fc_0 = 64;
+  const int n_input = 92;
+  Eigen::Tensor<TensorT, 1> weight_ave_values(n_input);
+  for (int i = 0; i < n_input; ++i) {
+    TensorT weight_sum = 0;
+    for (int j = 0; j < n_fc_0; ++j) {
+      char weight_name_char[512];
+      sprintf(weight_name_char, "Input_%012d_to_FC%012d", i, j);
+      std::string weight_name(weight_name_char);
+      TensorT weight_value = model.getWeightsMap().at(weight_name)->getWeight();
+      weight_sum += weight_value;
+    }
+    weight_ave_values(i) = weight_sum / n_fc_0;
+  }
+
+  // Generate a large sample of input
+
+  // Calculate the Pearson Correlation
+
+
+}
+
 // Main
 int main(int argc, char** argv)
 {
@@ -883,17 +916,17 @@ int main(int argc, char** argv)
   // Make the filenames
   const std::string biochem_rxns_filename = data_dir + "iJO1366.csv";
 
-  //// ALEsKOs01
-  //const std::string metabo_data_filename_train = data_dir + "ALEsKOs01_Metabolomics_train.csv";
-  //const std::string meta_data_filename_train = data_dir + "ALEsKOs01_MetaData_train.csv";
-  //const std::string metabo_data_filename_test = data_dir + "ALEsKOs01_Metabolomics_test.csv";
-  //const std::string meta_data_filename_test = data_dir + "ALEsKOs01_MetaData_test.csv";
+  // ALEsKOs01
+  const std::string metabo_data_filename_train = data_dir + "ALEsKOs01_Metabolomics_train.csv";
+  const std::string meta_data_filename_train = data_dir + "ALEsKOs01_MetaData_train.csv";
+  const std::string metabo_data_filename_test = data_dir + "ALEsKOs01_Metabolomics_test.csv";
+  const std::string meta_data_filename_test = data_dir + "ALEsKOs01_MetaData_test.csv";
 
-  // IndustrialStrains0103
-  const std::string metabo_data_filename_train = data_dir + "IndustrialStrains0103_Metabolomics_train.csv";
-  const std::string meta_data_filename_train = data_dir + "IndustrialStrains0103_MetaData_train.csv";
-  const std::string metabo_data_filename_test = data_dir + "IndustrialStrains0103_Metabolomics_test.csv";
-  const std::string meta_data_filename_test = data_dir + "IndustrialStrains0103_MetaData_test.csv";
+  //// IndustrialStrains0103
+  //const std::string metabo_data_filename_train = data_dir + "IndustrialStrains0103_Metabolomics_train.csv";
+  //const std::string meta_data_filename_train = data_dir + "IndustrialStrains0103_MetaData_train.csv";
+  //const std::string metabo_data_filename_test = data_dir + "IndustrialStrains0103_Metabolomics_test.csv";
+  //const std::string meta_data_filename_test = data_dir + "IndustrialStrains0103_MetaData_test.csv";
 
   main_classification(biochem_rxns_filename, metabo_data_filename_train, meta_data_filename_train,
     metabo_data_filename_test, meta_data_filename_test, true, false, true);
