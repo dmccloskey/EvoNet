@@ -355,22 +355,9 @@ public:
       }
     }
 
-    // Add a log scale layer
-    node_names = model_builder.addFullyConnected(model, "DE-LogScale", "DE-LogScale", node_names, node_names.size(),
-      std::shared_ptr<ActivationOp<TensorT>>(new LogOp<TensorT>()), // Nonlinearity occures after the normalization
-      std::shared_ptr<ActivationOp<TensorT>>(new LogGradOp<TensorT>()),
-      std::shared_ptr<IntegrationOp<TensorT>>(new SumOp<TensorT>()),
-      std::shared_ptr<IntegrationErrorOp<TensorT>>(new SumErrorOp<TensorT>()),
-      std::shared_ptr<IntegrationWeightGradOp<TensorT>>(new SumWeightGradOp<TensorT>()),
-      std::shared_ptr<WeightInitOp<TensorT>>(new ConstWeightInitOp<TensorT>(1)),
-      std::shared_ptr<SolverOp<TensorT>>(new DummySolverOp<TensorT>()),
-      0.0, 0.0, false, true);
-    model_builder.addBiases(model, "DE-LogScale", node_names, std::shared_ptr<WeightInitOp<TensorT>>(new ConstWeightInitOp<TensorT>(1e-6)),
-      std::shared_ptr<SolverOp<TensorT>>(new DummySolverOp<TensorT>()), 0.0, true);
-
     // Add the final output layer
-    //node_names = model_builder.addFullyConnected(model, "Output", "Output", node_names, n_outputs, // Originally
-    node_names = model_builder.addSinglyConnected(model, "Output", "Output", node_names, n_outputs,
+    std::vector<std::string> node_names_output;
+    node_names_output = model_builder.addFullyConnected(model, "Output", "Output", node_names, n_outputs,
       std::shared_ptr<ActivationOp<TensorT>>(new LeakyReLUOp<TensorT>()),
       std::shared_ptr<ActivationOp<TensorT>>(new LeakyReLUGradOp<TensorT>()),
       std::shared_ptr<IntegrationOp<TensorT>>(new SumOp<TensorT>()),
@@ -380,24 +367,12 @@ public:
       std::shared_ptr<SolverOp<TensorT>>(new AdamOp<TensorT>(1e-4, 0.9, 0.999, 1e-8, 10)), 0.0f, 0.0f, false, true);
 
     // Subtract out the pre-processed input data to test against all 0's
-    std::vector<std::string> node_names_input_scale = model_builder.addSinglyConnected(model, "Expected-LogScale", "Expected-LogScale", node_names_input, node_names_input.size(),
-      std::shared_ptr<ActivationOp<TensorT>>(new LogOp<TensorT>()), // Nonlinearity occures after the normalization
-      std::shared_ptr<ActivationOp<TensorT>>(new LogGradOp<TensorT>()),
-      std::shared_ptr<IntegrationOp<TensorT>>(new SumOp<TensorT>()),
-      std::shared_ptr<IntegrationErrorOp<TensorT>>(new SumErrorOp<TensorT>()),
-      std::shared_ptr<IntegrationWeightGradOp<TensorT>>(new SumWeightGradOp<TensorT>()),
-      std::shared_ptr<WeightInitOp<TensorT>>(new ConstWeightInitOp<TensorT>(1)),
-      std::shared_ptr<SolverOp<TensorT>>(new DummySolverOp<TensorT>()),
-      0.0, 0.0, false, true);
-    model_builder.addBiases(model, "Expected-LogScale", node_names_input_scale, std::shared_ptr<WeightInitOp<TensorT>>(new ConstWeightInitOp<TensorT>(1e-6)),
-      std::shared_ptr<SolverOp<TensorT>>(new DummySolverOp<TensorT>()), 0.0, true);
-    //model_builder.addSinglyConnected(model, "Output", node_names_input, node_names, // originally
-    model_builder.addSinglyConnected(model, "Output", node_names_input_scale, node_names,
+    model_builder.addSinglyConnected(model, "Output", node_names_input, node_names_output,
       std::shared_ptr<WeightInitOp<TensorT>>(new ConstWeightInitOp<TensorT>(-1)),
       std::shared_ptr<SolverOp<TensorT>>(new DummySolverOp<TensorT>()), 0.0f, true);
 
     // Specify the output node types manually
-    for (const std::string& node_name : node_names)
+    for (const std::string& node_name : node_names_output)
       model.getNodesMap().at(node_name)->setType(NodeType::output);
     model.setInputAndOutputNodes();
   }
@@ -417,8 +392,6 @@ public:
         std::shared_ptr<IntegrationWeightGradOp<TensorT>>(new SumWeightGradOp<TensorT>()),
         std::shared_ptr<WeightInitOp<TensorT>>(new ConstWeightInitOp<TensorT>(1)),
         std::shared_ptr<SolverOp<TensorT>>(new DummySolverOp<TensorT>()), 0.0, 0.0, false, true);
-      model_builder.addBiases(model, "LogScaleInput", node_names, std::shared_ptr<WeightInitOp<TensorT>>(new ConstWeightInitOp<TensorT>(1e-6)),
-        std::shared_ptr<SolverOp<TensorT>>(new DummySolverOp<TensorT>()), 0.0, true);
     }
     if (linear_scale_input) {
       node_names = model_builder.addLinearScale(model, "LinearScaleInput", "LinearScaleInput", node_names, 0, 1, true);
@@ -620,11 +593,11 @@ void main_reconstruction(const std::string& biochem_rxns_filename,
   model_trainer.setFastInterpreter(true);
   model_trainer.setPreserveOoO(true);
   model_trainer.setLossFunctions({
-    std::shared_ptr<LossFunctionOp<float>>(new MSEOp<float>(1e-6, 1.0)),
+    std::shared_ptr<LossFunctionOp<float>>(new EuclideanDistanceOp<float>(1e-6, 1.0)),
     std::shared_ptr<LossFunctionOp<float>>(new KLDivergenceMuOp<float>(1e-6, 0.0)),
     std::shared_ptr<LossFunctionOp<float>>(new KLDivergenceLogVarOp<float>(1e-6, 0.0)) });
   model_trainer.setLossFunctionGrads({
-    std::shared_ptr<LossFunctionGradOp<float>>(new MSEGradOp<float>(1e-6, 1.0)),
+    std::shared_ptr<LossFunctionGradOp<float>>(new EuclideanDistanceGradOp<float>(1e-6, 1.0)),
     std::shared_ptr<LossFunctionGradOp<float>>(new KLDivergenceMuGradOp<float>(1e-6, 0.0)),
     std::shared_ptr<LossFunctionGradOp<float>>(new KLDivergenceLogVarGradOp<float>(1e-6, 0.0)) });
   model_trainer.setLossOutputNodes({ output_nodes, encoding_nodes_mu, encoding_nodes_logvar });
@@ -640,10 +613,10 @@ void main_reconstruction(const std::string& biochem_rxns_filename,
 
   // define the initial population
   std::cout << "Initializing the population..." << std::endl;
-  //std::vector<Model<float>> population;
   Model<float> model;
   if (make_model) {
-    model_trainer.makeModelFCVAE(model, n_input_nodes, n_output_nodes, encoding_size, true, false, false, false); // normalization type 1
+    model_trainer.makeModelFCVAE(model, n_input_nodes, n_output_nodes, encoding_size, true, false, false, false,
+      64, 64, 0, 64, 64, 0); // normalization type 1
   }
   else {
     // TODO: load in the trained model

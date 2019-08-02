@@ -45,6 +45,8 @@ namespace SmartPeak
 
   /**
     @brief EuclideanDistance loss function.
+
+    TODO: rename to ManhattanDistance and implement the correct EuclideanDistance
   */
   template<typename TensorT, typename DeviceT>
   class EuclideanDistanceTensorOp : public LossFunctionTensorOp<TensorT, DeviceT>
