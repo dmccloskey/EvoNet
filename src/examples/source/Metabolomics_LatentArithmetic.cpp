@@ -1051,7 +1051,7 @@ void computeLatentArithmeticSimilarity(const std::vector<std::string>& condition
     }
 
     // Score the reconstruction similarity to the expected
-    std::pair<TensorT, TensorT> score = latentArithmetic.scoreReconstructionSimilarity(expected_arithmetic_1.at(case_iter), reconstruction_output, metric_function, model_trainer, model_logger);
+    std::pair<TensorT, TensorT> score = latentArithmetic.scoreReconstructionSimilarity(expected.at(case_iter), reconstruction_output, metric_function, model_trainer, model_logger);
     std::cout << condition_1.at(case_iter) << " " << latent_operation << " " << condition_2.at(case_iter) << " -> " << expected.at(case_iter) << ": " << score.first << " +/- " << score.second << std::endl;
   }
 }
@@ -1115,33 +1115,10 @@ void computeLatentInterpolationSimilarity(const std::vector<std::string>& condit
   }
 }
 
-// Main
-int main(int argc, char** argv)
-{
-  // Set the data directories
-  //const std::string data_dir = "C:/Users/dmccloskey/Dropbox (UCSD SBRG)/Metabolomics_KALE/";
-  const std::string data_dir = "C:/Users/domccl/Dropbox (UCSD SBRG)/Metabolomics_KALE/";
-  //const std::string data_dir = "/home/user/Data/";
-
-  // Make the filenames
-  const std::string biochem_rxns_filename = data_dir + "iJO1366.csv";
-  const std::string model_encoder_weights_filename = data_dir + "TrainTestData/SampledArithmeticMath/VAE_weights.csv"; 
-  const std::string model_decoder_weights_filename = data_dir + "TrainTestData/SampledArithmeticMath/VAE_weights.csv"; 
-  // NOTE: be sure to re-name the Input_000000000000-LinearScale_to_... weights to Input_000000000000_to_...
-  //       using regex "-LinearScale_to_FC0" with "_to_FC0"
-  const std::string model_classifier_weights_filename = data_dir + "TrainTestData/SampledArithmeticMath/Classifier_5000_weights.csv";
-
-  // ALEsKOs01
-  const std::string metabo_data_filename_train = data_dir + "ALEsKOs01_Metabolomics_train.csv";
-  const std::string meta_data_filename_train = data_dir + "ALEsKOs01_MetaData_train.csv";
-  const std::string metabo_data_filename_test = data_dir + "ALEsKOs01_Metabolomics_test.csv";
-  const std::string meta_data_filename_test = data_dir + "ALEsKOs01_MetaData_test.csv";
-
-  //// IndustrialStrains0103
-  //const std::string metabo_data_filename_train = data_dir + "IndustrialStrains0103_Metabolomics_train.csv";
-  //const std::string meta_data_filename_train = data_dir + "IndustrialStrains0103_MetaData_train.csv";
-  //const std::string metabo_data_filename_test = data_dir + "IndustrialStrains0103_Metabolomics_test.csv";
-  //const std::string meta_data_filename_test = data_dir + "IndustrialStrains0103_MetaData_test.csv";
+/// KALE Latent arithmetic and interpolation script
+void main_KALE(const std::string& biochem_rxns_filename, const std::string& model_encoder_weights_filename,  const std::string& model_decoder_weights_filename, 
+  const std::string& metabo_data_filename_train, const std::string& meta_data_filename_train, 
+  const std::string& metabo_data_filename_test, const std::string& meta_data_filename_test) {
 
   // define the model trainers and resources for the trainers
   ModelResources model_resources = { ModelDevice(0, 1) };
@@ -1165,171 +1142,90 @@ int main(int argc, char** argv)
     metabo_data_filename_test, meta_data_filename_test);
   latentArithmetic.setEncDecModels(model_trainer, model_encoder_weights_filename, model_decoder_weights_filename);
   latentArithmetic.setEncDecModelInterpreters(model_interpreter, model_interpreter);
-  latentArithmetic.setClassifierModel(model_trainer, model_classifier_weights_filename);
-  latentArithmetic.setClassifierModelInterpreter(model_interpreter);
+  //latentArithmetic.setClassifierModel(model_trainer, model_classifier_weights_filename);
+  //latentArithmetic.setClassifierModelInterpreter(model_interpreter);
   latentArithmetic.setNormalizationModel(model_trainer);
   latentArithmetic.setNormalizationModelInterpreter(model_interpreter);
-
-  // define the reconstruction output
-  Eigen::Tensor<float, 4> reconstruction_output(model_trainer.getBatchSize(), model_trainer.getMemorySize(), latentArithmetic.getNInputNodes(), model_trainer.getNEpochsEvaluation());
 
   // NOTE: similarity metric of Manhattan distance used as per 10.1109/TCBB.2016.2586065
   //  that found the following similarity metrics to work well for metabolomic prfile data:
   //    Minkowski distance, Euclidean distance, Manhattan distance, Jeffreys & Matusita distance, Dice’s coefficient, Jaccard similarity coefficient
   //  and the following similarity metrics to be unsuitable for metabolomic profile data:
   //    Canberra distance, relative distance, and cosine of angle
-  const bool compute_reference_similarities = false;
+  const bool compute_data_similarities = false;
+  const bool compute_generation_similarity = false;
   const bool compute_latent_arithmetic = true;
   const bool compute_latent_interpolation = false;
-  if (compute_reference_similarities) {
+  std::vector<std::string> condition_1, condition_2, predicted, expected;
+
+  if (compute_data_similarities) {
     // Reference similarity metrics
-    std::vector<std::string> predicted_reference = { "Evo04Evo01EP", "Evo04Evo02EP", "Evo04gndEvo01EP", "Evo04gndEvo02EP", "Evo04pgiEvo01EP", "Evo04pgiEvo02EP",
+    std::vector<std::string> predicted = { "Evo04Evo01EP", "Evo04Evo02EP", "Evo04gndEvo01EP", "Evo04gndEvo02EP", "Evo04pgiEvo01EP", "Evo04pgiEvo02EP",
       "Evo04ptsHIcrrEvo01EP", "Evo04ptsHIcrrEvo02EP", "Evo04sdhCBEvo01EP", "Evo04sdhCBEvo02EP", "Evo04tpiAEvo01EP", "Evo04tpiAEvo02EP" };
-    std::vector<std::string> expected_reference = { "Evo04", "Evo04", "Evo04gnd", "Evo04gnd", "Evo04pgi", "Evo04pgi",
+    expected = { "Evo04", "Evo04", "Evo04gnd", "Evo04gnd", "Evo04pgi", "Evo04pgi",
       "Evo04ptsHIcrr", "Evo04ptsHIcrr", "Evo04sdhCB", "Evo04sdhCB", "Evo04tpiA", "Evo04tpiA" };
-    assert(predicted_reference.size() == expected_reference.size());
-    std::cout << "Running reference similarity metrics" << std::endl;
-    for (int case_iter = 0; case_iter < predicted_reference.size(); ++case_iter) {
-      // Determine when to initialize the model interpreter
-      if (case_iter == 0) {
-        model_trainer.setInterpretModel(true);
-      }
-      else {
-        model_trainer.setInterpretModel(false);
-      }
-      model_trainer.setResetModel(false);
-      model_trainer.setResetInterpreter(false);
+    computeDataSimilarity(predicted, expected, latentArithmetic, ManhattanDistTensorOp<float, Eigen::DefaultDevice>(), model_trainer, model_logger,
+      true);
 
-      // Calculate the similarity
-      std::pair<float,float> score = latentArithmetic.scoreDataSimilarity(expected_reference.at(case_iter), predicted_reference.at(case_iter), ManhattanDistTensorOp<float, Eigen::DefaultDevice>(), model_trainer, model_logger);
-      std::cout << expected_reference.at(case_iter) << " -> " << predicted_reference.at(case_iter) << ": " << score.first << " +/- " << score.second << std::endl;
-    }
+    predicted = std::vector<std::string>({ "Evo04gnd", "Evo04pgi", "Evo04ptsHIcrr", "Evo04sdhCB", "Evo04tpiA" });
+    expected = std::vector<std::string>({ "Evo04", "Evo04", "Evo04", "Evo04", "Evo04" });
+    computeDataSimilarity(predicted, expected, latentArithmetic, ManhattanDistTensorOp<float, Eigen::DefaultDevice>(), model_trainer, model_logger,
+      true);
 
-    predicted_reference = std::vector<std::string>({ "Evo04gnd", "Evo04pgi", "Evo04ptsHIcrr", "Evo04sdhCB", "Evo04tpiA" });
-    expected_reference = std::vector<std::string>({ "Evo04", "Evo04", "Evo04", "Evo04", "Evo04" });
-    assert(predicted_reference.size() == expected_reference.size());
-    for (int case_iter = 0; case_iter < predicted_reference.size(); ++case_iter) {
-      // Calculate the similarity
-      std::pair<float,float> score = latentArithmetic.scoreDataSimilarity(expected_reference.at(case_iter), predicted_reference.at(case_iter), ManhattanDistTensorOp<float, Eigen::DefaultDevice>(), model_trainer, model_logger);
-      std::cout << expected_reference.at(case_iter) << " -> " << predicted_reference.at(case_iter) << ": " << score.first << " +/- " << score.second << std::endl;
-    }
-
-    predicted_reference = std::vector<std::string>({ "Evo04Evo01EP", "Evo04Evo02EP", "Evo04gndEvo01EP", "Evo04gndEvo02EP", "Evo04pgiEvo01EP", "Evo04pgiEvo02EP",
+    predicted = std::vector<std::string>({ "Evo04Evo01EP", "Evo04Evo02EP", "Evo04gndEvo01EP", "Evo04gndEvo02EP", "Evo04pgiEvo01EP", "Evo04pgiEvo02EP",
       "Evo04ptsHIcrrEvo01EP", "Evo04ptsHIcrrEvo02EP", "Evo04sdhCBEvo01EP", "Evo04sdhCBEvo02EP", "Evo04tpiAEvo01EP", "Evo04tpiAEvo02EP" });
-    expected_reference = std::vector<std::string>({ "Evo04", "Evo04", "Evo04", "Evo04", "Evo04", "Evo04",
+    expected = std::vector<std::string>({ "Evo04", "Evo04", "Evo04", "Evo04", "Evo04", "Evo04",
       "Evo04", "Evo04", "Evo04", "Evo04", "Evo04", "Evo04" });
-    assert(predicted_reference.size() == expected_reference.size());
-    for (int case_iter = 0; case_iter < predicted_reference.size(); ++case_iter) {
-      // Calculate the similarity
-      std::pair<float,float> score = latentArithmetic.scoreDataSimilarity(expected_reference.at(case_iter), predicted_reference.at(case_iter), ManhattanDistTensorOp<float, Eigen::DefaultDevice>(), model_trainer, model_logger);
-      std::cout << expected_reference.at(case_iter) << " -> " << predicted_reference.at(case_iter) << ": " << score.first << " +/- " << score.second << std::endl;
-    }
+    computeDataSimilarity(predicted, expected, latentArithmetic, ManhattanDistTensorOp<float, Eigen::DefaultDevice>(), model_trainer, model_logger,
+      true);
 
-    predicted_reference = std::vector<std::string>({ "Evo04", "Evo04Evo01EP", "Evo04Evo02EP", "Evo04gnd", "Evo04gndEvo01EP", "Evo04gndEvo02EP", "Evo04pgi", "Evo04pgiEvo01EP", "Evo04pgiEvo02EP",
+    predicted = std::vector<std::string>({ "Evo04", "Evo04Evo01EP", "Evo04Evo02EP", "Evo04gnd", "Evo04gndEvo01EP", "Evo04gndEvo02EP", "Evo04pgi", "Evo04pgiEvo01EP", "Evo04pgiEvo02EP",
       "Evo04ptsHIcrr", "Evo04ptsHIcrrEvo01EP", "Evo04ptsHIcrrEvo02EP", "Evo04sdhCB", "Evo04sdhCBEvo01EP", "Evo04sdhCBEvo02EP", "Evo04tpiA", "Evo04tpiAEvo01EP", "Evo04tpiAEvo02EP" });
-    expected_reference = std::vector<std::string>({ "Evo04", "Evo04Evo01EP", "Evo04Evo02EP", "Evo04gnd", "Evo04gndEvo01EP", "Evo04gndEvo02EP", "Evo04pgi", "Evo04pgiEvo01EP", "Evo04pgiEvo02EP",
+    expected = std::vector<std::string>({ "Evo04", "Evo04Evo01EP", "Evo04Evo02EP", "Evo04gnd", "Evo04gndEvo01EP", "Evo04gndEvo02EP", "Evo04pgi", "Evo04pgiEvo01EP", "Evo04pgiEvo02EP",
       "Evo04ptsHIcrr", "Evo04ptsHIcrrEvo01EP", "Evo04ptsHIcrrEvo02EP", "Evo04sdhCB", "Evo04sdhCBEvo01EP", "Evo04sdhCBEvo02EP", "Evo04tpiA", "Evo04tpiAEvo01EP", "Evo04tpiAEvo02EP" });
-    assert(predicted_reference.size() == expected_reference.size());
-    for (int case_iter = 0; case_iter < predicted_reference.size(); ++case_iter) {
-      // Calculate the similarity
-      std::pair<float,float> score = latentArithmetic.scoreDataSimilarity(expected_reference.at(case_iter), predicted_reference.at(case_iter), ManhattanDistTensorOp<float, Eigen::DefaultDevice>(), model_trainer, model_logger);
-      std::cout << expected_reference.at(case_iter) << " -> " << predicted_reference.at(case_iter) << ": " << score.first << " +/- " << score.second << std::endl;
-    }
+    computeDataSimilarity(predicted, expected, latentArithmetic, ManhattanDistTensorOp<float, Eigen::DefaultDevice>(), model_trainer, model_logger,
+      true);
+  }
+
+  if (compute_generation_similarity) {
+    predicted = { "Evo04", "Evo04Evo01EP", "Evo04Evo02EP", "Evo04gnd", "Evo04gndEvo01EP", "Evo04gndEvo02EP", "Evo04pgi", "Evo04pgiEvo01EP", "Evo04pgiEvo02EP",
+      "Evo04ptsHIcrr", "Evo04ptsHIcrrEvo01EP", "Evo04ptsHIcrrEvo02EP", "Evo04sdhCB", "Evo04sdhCBEvo01EP", "Evo04sdhCBEvo02EP", "Evo04tpiA", "Evo04tpiAEvo01EP", "Evo04tpiAEvo02EP" };
+    expected = { "Evo04", "Evo04Evo01EP", "Evo04Evo02EP", "Evo04gnd", "Evo04gndEvo01EP", "Evo04gndEvo02EP", "Evo04pgi", "Evo04pgiEvo01EP", "Evo04pgiEvo02EP",
+      "Evo04ptsHIcrr", "Evo04ptsHIcrrEvo01EP", "Evo04ptsHIcrrEvo02EP", "Evo04sdhCB", "Evo04sdhCBEvo01EP", "Evo04sdhCBEvo02EP", "Evo04tpiA", "Evo04tpiAEvo01EP", "Evo04tpiAEvo02EP" };
+    computeGenerationSimilarity(predicted, expected, latentArithmetic, ManhattanDistTensorOp<float, Eigen::DefaultDevice>(), model_trainer, model_logger,
+      true);
   }
 
   if (compute_latent_arithmetic) {
-    // 0. Control (None)
-    const std::vector<std::string> condition_1_test_none = { "Evo04", "Evo04Evo01EP", "Evo04Evo02EP", "Evo04gnd", "Evo04gndEvo01EP", "Evo04gndEvo02EP", "Evo04pgi", "Evo04pgiEvo01EP", "Evo04pgiEvo02EP",
-      "Evo04ptsHIcrr", "Evo04ptsHIcrrEvo01EP", "Evo04ptsHIcrrEvo02EP", "Evo04sdhCB", "Evo04sdhCBEvo01EP", "Evo04sdhCBEvo02EP", "Evo04tpiA", "Evo04tpiAEvo01EP", "Evo04tpiAEvo02EP" };
-    const std::vector<std::string> condition_2_test_none = { "Evo04", "Evo04Evo01EP", "Evo04Evo02EP", "Evo04gnd", "Evo04gndEvo01EP", "Evo04gndEvo02EP", "Evo04pgi", "Evo04pgiEvo01EP", "Evo04pgiEvo02EP",
-      "Evo04ptsHIcrr", "Evo04ptsHIcrrEvo01EP", "Evo04ptsHIcrrEvo02EP", "Evo04sdhCB", "Evo04sdhCBEvo01EP", "Evo04sdhCBEvo02EP", "Evo04tpiA", "Evo04tpiAEvo01EP", "Evo04tpiAEvo02EP" };
-    const std::vector<std::string> expected_test_none = { "Evo04", "Evo04Evo01EP", "Evo04Evo02EP", "Evo04gnd", "Evo04gndEvo01EP", "Evo04gndEvo02EP", "Evo04pgi", "Evo04pgiEvo01EP", "Evo04pgiEvo02EP",
-      "Evo04ptsHIcrr", "Evo04ptsHIcrrEvo01EP", "Evo04ptsHIcrrEvo02EP", "Evo04sdhCB", "Evo04sdhCBEvo01EP", "Evo04sdhCBEvo02EP", "Evo04tpiA", "Evo04tpiAEvo01EP", "Evo04tpiAEvo02EP" };
-    assert(condition_1_test_none.size() == condition_2_test_none.size());
-    assert(expected_test_none.size() == condition_2_test_none.size());
-    assert(condition_1_test_none.size() == expected_test_none.size());
-
-    std::cout << "Running Control (None)" << std::endl;
-    for (int case_iter = 0; case_iter < condition_1_test_none.size(); ++case_iter) {
-      // Determine when to initialize the model interpreter
-      if (case_iter == 0) {
-        model_trainer.setInterpretModel(true);
-      }
-      else {
-        model_trainer.setInterpretModel(false);
-      }
-      model_trainer.setResetModel(false);
-      model_trainer.setResetInterpreter(false);
-
-      // Generate the encoding and decoding and score the result
-      auto encoding_output = latentArithmetic.generateEncoding(condition_1_test_none.at(case_iter), model_trainer, model_logger);
-      reconstruction_output = latentArithmetic.generateReconstruction(encoding_output, model_trainer, model_logger);
-      std::pair<float,float> score = latentArithmetic.scoreReconstructionSimilarity(expected_test_none.at(case_iter), reconstruction_output, ManhattanDistTensorOp<float, Eigen::DefaultDevice>(), model_trainer, model_logger);
-      std::cout << condition_1_test_none.at(case_iter) << " -> " << expected_test_none.at(case_iter) << ": " << score.first << " +/- " << score.second << std::endl;
-    }
-
     // 1. EPi - KO -> Ref
-    const std::vector<std::string> condition_1_arithmetic_1 = { "Evo04gndEvo01EP", "Evo04gndEvo02EP", "Evo04pgiEvo01EP", "Evo04pgiEvo02EP",
+    condition_1 = { "Evo04gndEvo01EP", "Evo04gndEvo02EP", "Evo04pgiEvo01EP", "Evo04pgiEvo02EP",
       "Evo04ptsHIcrrEvo01EP", "Evo04ptsHIcrrEvo02EP", "Evo04sdhCBEvo01EP", "Evo04sdhCBEvo02EP", "Evo04tpiAEvo01EP", "Evo04tpiAEvo02EP" };
-    const std::vector<std::string> condition_2_arithmetic_1 = { "Evo04gnd", "Evo04gnd", "Evo04pgi", "Evo04pgi",
+    condition_2 = { "Evo04gnd", "Evo04gnd", "Evo04pgi", "Evo04pgi",
       "Evo04ptsHIcrr", "Evo04ptsHIcrr", "Evo04sdhCB", "Evo04sdhCB", "Evo04tpiA", "Evo04tpiA" };
-    const std::vector<std::string> expected_arithmetic_1 = { "Evo04", "Evo04", "Evo04", "Evo04",
-      "Evo04", "Evo04", "Evo04", "Evo04", "Evo04", "Evo04" };
-    assert(condition_1_arithmetic_1.size() == condition_2_arithmetic_1.size());
-    assert(expected_arithmetic_1.size() == condition_2_arithmetic_1.size());
-    assert(condition_1_arithmetic_1.size() == expected_arithmetic_1.size());
-
-    std::cout << "Running EPi - KO -> Ref" << std::endl;
-    for (int case_iter = 0; case_iter < condition_1_arithmetic_1.size(); ++case_iter) {
-      auto encoding_output_1 = latentArithmetic.generateEncoding(condition_1_arithmetic_1.at(case_iter), model_trainer, model_logger);
-      auto encoding_output_2 = latentArithmetic.generateEncoding(condition_2_arithmetic_1.at(case_iter), model_trainer, model_logger);
-      Eigen::Tensor<float, 4> encoding_output = encoding_output_1 - encoding_output_2;
-      reconstruction_output = latentArithmetic.generateReconstruction(encoding_output, model_trainer, model_logger);
-      std::pair<float,float> score = latentArithmetic.scoreReconstructionSimilarity(expected_arithmetic_1.at(case_iter), reconstruction_output, ManhattanDistTensorOp<float, Eigen::DefaultDevice>(), model_trainer, model_logger);
-      std::cout << condition_1_arithmetic_1.at(case_iter) << " - " << condition_2_arithmetic_1.at(case_iter) << " -> " << expected_arithmetic_1.at(case_iter) << ": " << score.first << " +/- " << score.second << std::endl;
-    }
+    expected = { "Evo04", "Evo04", "Evo04", "Evo04",
+     "Evo04", "Evo04", "Evo04", "Evo04", "Evo04", "Evo04" };
+    computeLatentArithmeticSimilarity(condition_1, condition_2, expected, latentArithmetic, ManhattanDistTensorOp<float, Eigen::DefaultDevice>(), model_trainer, model_logger,
+      true, "-");
 
     // 2. EPi - Ref -> KO
-    const std::vector<std::string> condition_1_arithmetic_2 = { "Evo04gndEvo01EP", "Evo04gndEvo02EP", "Evo04pgiEvo01EP", "Evo04pgiEvo02EP",
+    condition_1 = { "Evo04gndEvo01EP", "Evo04gndEvo02EP", "Evo04pgiEvo01EP", "Evo04pgiEvo02EP",
       "Evo04ptsHIcrrEvo01EP", "Evo04ptsHIcrrEvo02EP", "Evo04sdhCBEvo01EP", "Evo04sdhCBEvo02EP", "Evo04tpiAEvo01EP", "Evo04tpiAEvo02EP" };
-    const std::vector<std::string> condition_2_arithmetic_2 = { "Evo04", "Evo04", "Evo04", "Evo04",
+    condition_2 = { "Evo04", "Evo04", "Evo04", "Evo04",
       "Evo04", "Evo04", "Evo04", "Evo04", "Evo04", "Evo04" };
-    const std::vector<std::string> expected_arithmetic_2 = { "Evo04gnd", "Evo04gnd", "Evo04pgi", "Evo04pgi",
+    expected = { "Evo04gnd", "Evo04gnd", "Evo04pgi", "Evo04pgi",
       "Evo04ptsHIcrr", "Evo04ptsHIcrr", "Evo04sdhCB", "Evo04sdhCB", "Evo04tpiA", "Evo04tpiA" };
-    assert(condition_1_arithmetic_2.size() == condition_2_arithmetic_2.size());
-    assert(expected_arithmetic_2.size() == condition_2_arithmetic_2.size());
-    assert(condition_1_arithmetic_2.size() == expected_arithmetic_2.size());
-
-    std::cout << "Running EPi - Ref -> KO" << std::endl;
-    for (int case_iter = 0; case_iter < condition_1_arithmetic_2.size(); ++case_iter) {
-      auto encoding_output_1 = latentArithmetic.generateEncoding(condition_1_arithmetic_2.at(case_iter), model_trainer, model_logger);
-      auto encoding_output_2 = latentArithmetic.generateEncoding(condition_2_arithmetic_2.at(case_iter), model_trainer, model_logger);
-      Eigen::Tensor<float, 4> encoding_output = encoding_output_1 - encoding_output_2;
-      reconstruction_output = latentArithmetic.generateReconstruction(encoding_output, model_trainer, model_logger);
-      std::pair<float,float> score = latentArithmetic.scoreReconstructionSimilarity(expected_arithmetic_2.at(case_iter), reconstruction_output, ManhattanDistTensorOp<float, Eigen::DefaultDevice>(), model_trainer, model_logger);
-      std::cout << condition_1_arithmetic_2.at(case_iter) << " - " << condition_2_arithmetic_2.at(case_iter) << " -> " << expected_arithmetic_2.at(case_iter) << ": " << score.first << " +/- " << score.second << std::endl;
-    }
+    computeLatentArithmeticSimilarity(condition_1, condition_2, expected, latentArithmetic, ManhattanDistTensorOp<float, Eigen::DefaultDevice>(), model_trainer, model_logger,
+      false, "-");
 
     // 3. KOi + Ref -> EPi
-    const std::vector<std::string> condition_1_arithmetic_3 = { "Evo04gnd", "Evo04gnd", "Evo04pgi", "Evo04pgi",
+    condition_1 = { "Evo04gnd", "Evo04gnd", "Evo04pgi", "Evo04pgi",
       "Evo04ptsHIcrr", "Evo04ptsHIcrr", "Evo04sdhCB", "Evo04sdhCB", "Evo04tpiA", "Evo04tpiA" };
-    const std::vector<std::string> condition_2_arithmetic_3 = { "Evo04", "Evo04", "Evo04", "Evo04",
+    condition_2 = { "Evo04", "Evo04", "Evo04", "Evo04",
       "Evo04", "Evo04", "Evo04", "Evo04", "Evo04", "Evo04" };
-    const std::vector<std::string> expected_arithmetic_3 = { "Evo04gndEvo01EP", "Evo04gndEvo02EP", "Evo04pgiEvo01EP", "Evo04pgiEvo02EP",
+    expected = { "Evo04gndEvo01EP", "Evo04gndEvo02EP", "Evo04pgiEvo01EP", "Evo04pgiEvo02EP",
       "Evo04ptsHIcrrEvo01EP", "Evo04ptsHIcrrEvo02EP", "Evo04sdhCBEvo01EP", "Evo04sdhCBEvo02EP", "Evo04tpiAEvo01EP", "Evo04tpiAEvo02EP" };
-    assert(condition_1_arithmetic_3.size() == condition_2_arithmetic_3.size());
-    assert(expected_arithmetic_3.size() == condition_2_arithmetic_3.size());
-    assert(condition_1_arithmetic_3.size() == expected_arithmetic_3.size());
-
-    std::cout << "Running KOi + Ref -> EPi" << std::endl;
-    for (int case_iter = 0; case_iter < condition_1_arithmetic_3.size(); ++case_iter) {
-      auto encoding_output_1 = latentArithmetic.generateEncoding(condition_1_arithmetic_3.at(case_iter), model_trainer, model_logger);
-      auto encoding_output_2 = latentArithmetic.generateEncoding(condition_2_arithmetic_3.at(case_iter), model_trainer, model_logger);
-      Eigen::Tensor<float, 4> encoding_output = encoding_output_1 + encoding_output_2;
-      reconstruction_output = latentArithmetic.generateReconstruction(encoding_output, model_trainer, model_logger);
-      std::pair<float,float> score = latentArithmetic.scoreReconstructionSimilarity(expected_arithmetic_3.at(case_iter), reconstruction_output, ManhattanDistTensorOp<float, Eigen::DefaultDevice>(), model_trainer, model_logger);
-      std::cout << condition_1_arithmetic_3.at(case_iter) << " + " << condition_2_arithmetic_3.at(case_iter) << " -> " << expected_arithmetic_3.at(case_iter) << ": " << score.first << " +/- " << score.second << std::endl;
-    }
+    computeLatentArithmeticSimilarity(condition_1, condition_2, expected, latentArithmetic, ManhattanDistTensorOp<float, Eigen::DefaultDevice>(), model_trainer, model_logger,
+      false, "+");
   }
 
   if (compute_latent_interpolation) {
@@ -1338,15 +1234,45 @@ int main(int argc, char** argv)
     const std::vector<std::string> condition_2 = { "Evo04gndEvo01EP", "Evo04gndEvo02EP", "Evo04pgiEvo01EP", "Evo04pgiEvo02EP",
       "Evo04ptsHIcrrEvo01EP", "Evo04ptsHIcrrEvo02EP", "Evo04sdhCBEvo01EP", "Evo04sdhCBEvo02EP", "Evo04tpiAEvo01EP", "Evo04tpiAEvo02EP" };
     const std::vector<std::vector<std::string>> expected = {
-      {"Evo04gnd", "Evo04gndEvo01EP"}, {"Evo04gnd", "Evo04gndEvo02EP"}, 
+      {"Evo04gnd", "Evo04gndEvo01EP"}, {"Evo04gnd", "Evo04gndEvo02EP"},
       {"Evo04pgi", "Evo04pgiEvo01EP"}, {"Evo04pgi", "Evo04pgiEvo02EP"},
       {"Evo04ptsHIcrr", "Evo04ptsHIcrrEvo01EP"}, {"Evo04ptsHIcrr", "Evo04ptsHIcrrEvo02EP"},
       {"Evo04sdhCB", "Evo04sdhCBEvo01EP"}, {"Evo04sdhCB", "Evo04sdhCBEvo02EP"},
       {"Evo04tpiA", "Evo04tpiAEvo01EP"}, {"Evo04tpiA", "Evo04tpiAEvo02EP"} };
-    computeLatentInterpolationSimilarity(condition_1, condition_2, expected, latentArithmetic,
-      ManhattanDistTensorOp<float, Eigen::DefaultDevice>(), model_trainer, model_logger,
+    computeLatentInterpolationSimilarity(condition_1, condition_2, expected, latentArithmetic, ManhattanDistTensorOp<float, Eigen::DefaultDevice>(), model_trainer, model_logger,
       true, true, true, true);
   }
+}
+void main_PLT(const std::string& biochem_rxns_filename, const std::string& model_encoder_weights_filename, const std::string& model_decoder_weights_filename,
+  const std::string& metabo_data_filename_train, const std::string& meta_data_filename_train,
+  const std::string& metabo_data_filename_test, const std::string& meta_data_filename_test) {
+
+}
+
+// Main
+int main(int argc, char** argv)
+{
+  // Set the data directories
+  //const std::string data_dir = "C:/Users/dmccloskey/Dropbox (UCSD SBRG)/Metabolomics_KALE/";
+  const std::string data_dir = "C:/Users/domccl/Dropbox (UCSD SBRG)/Metabolomics_KALE/";
+  //const std::string data_dir = "/home/user/Data/";
+
+  // Make the filenames
+  const std::string biochem_rxns_filename = data_dir + "iJO1366.csv";
+  const std::string model_encoder_weights_filename = data_dir + "TrainTestData/SampledArithmeticMath/VAE_weights.csv"; 
+  const std::string model_decoder_weights_filename = data_dir + "TrainTestData/SampledArithmeticMath/VAE_weights.csv"; 
+  // NOTE: be sure to re-name the Input_000000000000-LinearScale_to_... weights to Input_000000000000_to_...
+  //       using regex "-LinearScale_to_FC0" with "_to_FC0"
+  const std::string model_classifier_weights_filename = data_dir + "TrainTestData/SampledArithmeticMath/Classifier_5000_weights.csv";
+
+  // ALEsKOs01
+  const std::string metabo_data_filename_train = data_dir + "ALEsKOs01_Metabolomics_train.csv";
+  const std::string meta_data_filename_train = data_dir + "ALEsKOs01_MetaData_train.csv";
+  const std::string metabo_data_filename_test = data_dir + "ALEsKOs01_Metabolomics_test.csv";
+  const std::string meta_data_filename_test = data_dir + "ALEsKOs01_MetaData_test.csv";
+
+  main_KALE(biochem_rxns_filename, model_encoder_weights_filename, model_decoder_weights_filename,
+    metabo_data_filename_train, meta_data_filename_train, metabo_data_filename_test, meta_data_filename_test);
 
   return 0;
 }
