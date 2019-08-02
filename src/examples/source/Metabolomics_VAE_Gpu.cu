@@ -24,40 +24,6 @@ template<typename TensorT>
 class MetDataSimReconstruction : public DataSimulator<TensorT>
 {
 public:
-  void simulateData(Eigen::Tensor<TensorT, 4>& input_data, Eigen::Tensor<TensorT, 4>& output_data, Eigen::Tensor<TensorT, 3>& time_steps)
-  {
-    // infer data dimensions based on the input tensors
-    const int batch_size = input_data.dimension(0);
-    const int memory_size = input_data.dimension(1);
-    const int n_input_nodes = input_data.dimension(2);
-    const int n_output_nodes = output_data.dimension(2);
-    const int n_epochs = input_data.dimension(3);
-
-    for (int batch_iter = 0; batch_iter < batch_size; ++batch_iter) {
-      for (int memory_iter = 0; memory_iter < memory_size; ++memory_iter) {
-        for (int epochs_iter = 0; epochs_iter < n_epochs; ++epochs_iter) {
-
-          // pick a random sample group name
-          //std::string sample_group_name = selectRandomElement(sample_group_names_);
-          std::string sample_group_name = this->model_training_.sample_group_names_[0];
-
-          for (int nodes_iter = 0; nodes_iter < n_input_nodes; ++nodes_iter) {
-            const TensorT mar = this->model_training_.calculateMAR(
-              this->model_training_.metabolomicsData_.at(sample_group_name),
-              this->model_training_.biochemicalReactions_.at(this->model_training_.reaction_ids_[nodes_iter]));
-            input_data(batch_iter, memory_iter, nodes_iter, epochs_iter) = mar;
-            output_data(batch_iter, memory_iter, nodes_iter, epochs_iter) = mar;
-          }
-        }
-      }
-    }
-  }
-  void simulateTrainingData(Eigen::Tensor<TensorT, 4>& input_data, Eigen::Tensor<TensorT, 4>& output_data, Eigen::Tensor<TensorT, 3>& time_steps) {
-    simulateData(input_data, output_data, time_steps);
-  }
-  void simulateValidationData(Eigen::Tensor<TensorT, 4>& input_data, Eigen::Tensor<TensorT, 4>& output_data, Eigen::Tensor<TensorT, 3>& time_steps) {
-    simulateData(input_data, output_data, time_steps);
-  }
   void simulateDataReconMARs(Eigen::Tensor<TensorT, 3>& input_data, Eigen::Tensor<TensorT, 3>& loss_output_data, Eigen::Tensor<TensorT, 3>& metric_output_data, Eigen::Tensor<TensorT, 2>& time_steps, const bool& train)
   {
     // infer data dimensions based on the input tensors
@@ -201,15 +167,10 @@ public:
   /*
   @brief Fully connected variational reconstruction model
   */
-  void makeModelFCVAE(Model<TensorT>& model, const int& n_inputs, const int& n_outputs, const int& n_encodings, const bool& linear_scale_input, const bool& log_transform_input, const bool& standardize_input, bool add_norm = true) {
+  void makeModelFCVAE(Model<TensorT>& model, const int& n_inputs, const int& n_outputs, const int& n_encodings, const bool& linear_scale_input, const bool& log_transform_input, const bool& standardize_input, const bool& add_norm = false,
+    const int& n_en_hidden_0 = 64, const int& n_en_hidden_1 = 64, const int& n_en_hidden_2 = 0, const int& n_de_hidden_0 = 64, const int& n_de_hidden_1 = 64, const int& n_de_hidden_2 = 0) {
     model.setId(0);
     model.setName("VAE");
-    const int n_en_hidden_0 = 64;
-    const int n_en_hidden_1 = 64;
-    const int n_en_hidden_2 = 0;
-    const int n_de_hidden_0 = 64;
-    const int n_de_hidden_1 = 64;
-    const int n_de_hidden_2 = 0;
     ModelBuilder<TensorT> model_builder;
 
     // Add the inputs
@@ -394,8 +355,22 @@ public:
       }
     }
 
+    // Add a log scale layer
+    node_names = model_builder.addFullyConnected(model, "DE-LogScale", "DE-LogScale", node_names, node_names.size(),
+      std::shared_ptr<ActivationOp<TensorT>>(new LogOp<TensorT>()), // Nonlinearity occures after the normalization
+      std::shared_ptr<ActivationOp<TensorT>>(new LogGradOp<TensorT>()),
+      std::shared_ptr<IntegrationOp<TensorT>>(new SumOp<TensorT>()),
+      std::shared_ptr<IntegrationErrorOp<TensorT>>(new SumErrorOp<TensorT>()),
+      std::shared_ptr<IntegrationWeightGradOp<TensorT>>(new SumWeightGradOp<TensorT>()),
+      std::shared_ptr<WeightInitOp<TensorT>>(new ConstWeightInitOp<TensorT>(1)),
+      std::shared_ptr<SolverOp<TensorT>>(new DummySolverOp<TensorT>()),
+      0.0, 0.0, false, true);
+    model_builder.addBiases(model, "DE-LogScale", node_names, std::shared_ptr<WeightInitOp<TensorT>>(new ConstWeightInitOp<TensorT>(1e-6)),
+      std::shared_ptr<SolverOp<TensorT>>(new DummySolverOp<TensorT>()), 0.0, true);
+
     // Add the final output layer
-    node_names = model_builder.addFullyConnected(model, "Output", "Output", node_names, n_outputs,
+    //node_names = model_builder.addFullyConnected(model, "Output", "Output", node_names, n_outputs, // Originally
+    node_names = model_builder.addSinglyConnected(model, "Output", "Output", node_names, n_outputs,
       std::shared_ptr<ActivationOp<TensorT>>(new LeakyReLUOp<TensorT>()),
       std::shared_ptr<ActivationOp<TensorT>>(new LeakyReLUGradOp<TensorT>()),
       std::shared_ptr<IntegrationOp<TensorT>>(new SumOp<TensorT>()),
@@ -403,8 +378,21 @@ public:
       std::shared_ptr<IntegrationWeightGradOp<TensorT>>(new SumWeightGradOp<TensorT>()),
       std::shared_ptr<WeightInitOp<TensorT>>(new RandWeightInitOp<TensorT>((int)(node_names.size() + n_outputs) / 2, 1)),
       std::shared_ptr<SolverOp<TensorT>>(new AdamOp<TensorT>(1e-4, 0.9, 0.999, 1e-8, 10)), 0.0f, 0.0f, false, true);
+
     // Subtract out the pre-processed input data to test against all 0's
-    model_builder.addSinglyConnected(model, "Output", node_names_input, node_names,
+    std::vector<std::string> node_names_input_scale = model_builder.addSinglyConnected(model, "Expected-LogScale", "Expected-LogScale", node_names_input, node_names_input.size(),
+      std::shared_ptr<ActivationOp<TensorT>>(new LogOp<TensorT>()), // Nonlinearity occures after the normalization
+      std::shared_ptr<ActivationOp<TensorT>>(new LogGradOp<TensorT>()),
+      std::shared_ptr<IntegrationOp<TensorT>>(new SumOp<TensorT>()),
+      std::shared_ptr<IntegrationErrorOp<TensorT>>(new SumErrorOp<TensorT>()),
+      std::shared_ptr<IntegrationWeightGradOp<TensorT>>(new SumWeightGradOp<TensorT>()),
+      std::shared_ptr<WeightInitOp<TensorT>>(new ConstWeightInitOp<TensorT>(1)),
+      std::shared_ptr<SolverOp<TensorT>>(new DummySolverOp<TensorT>()),
+      0.0, 0.0, false, true);
+    model_builder.addBiases(model, "Expected-LogScale", node_names_input_scale, std::shared_ptr<WeightInitOp<TensorT>>(new ConstWeightInitOp<TensorT>(1e-6)),
+      std::shared_ptr<SolverOp<TensorT>>(new DummySolverOp<TensorT>()), 0.0, true);
+    //model_builder.addSinglyConnected(model, "Output", node_names_input, node_names, // originally
+    model_builder.addSinglyConnected(model, "Output", node_names_input_scale, node_names,
       std::shared_ptr<WeightInitOp<TensorT>>(new ConstWeightInitOp<TensorT>(-1)),
       std::shared_ptr<SolverOp<TensorT>>(new DummySolverOp<TensorT>()), 0.0f, true);
 
@@ -502,24 +490,6 @@ void main_reconstruction(const std::string& biochem_rxns_filename,
   const std::string& metabo_data_filename_test, const std::string& meta_data_filename_test,
   bool make_model = true, bool simulate_MARs = true, bool sample_concs = true)
 {
-  // define the population trainer parameters
-  PopulationTrainerExt<float> population_trainer;
-  population_trainer.setNGenerations(1);
-  population_trainer.setNTop(3);
-  population_trainer.setNRandom(3);
-  population_trainer.setNReplicatesPerModel(3);
-  population_trainer.setLogging(true);
-
-  // define the population logger
-  PopulationLogger<float> population_logger(true, true);
-
-  // define the multithreading parameters
-  const int n_hard_threads = std::thread::hardware_concurrency();
-  //const int n_threads = n_hard_threads / 2; // the number of threads
-  //char threads_cout[512];
-  //sprintf(threads_cout, "Threads for population training: %d, Threads for model training/validation: %d\n",
-  //	n_hard_threads, 2);
-  //std::cout << threads_cout;
   const int n_threads = 1;
 
   // define the data simulator
@@ -539,7 +509,7 @@ void main_reconstruction(const std::string& biochem_rxns_filename,
     reaction_model.findMARs(false, true);
     reaction_model.removeRedundantMARs();
   }
-  reaction_model.findLabels("subject");
+  reaction_model.findLabels();
   metabolomics_data.model_training_ = reaction_model;
 
   // Validation data
@@ -554,7 +524,7 @@ void main_reconstruction(const std::string& biochem_rxns_filename,
     reaction_model.findMARs(false, true);
     reaction_model.removeRedundantMARs();
   }
-  reaction_model.findLabels("subject");
+  reaction_model.findLabels();
   metabolomics_data.model_validation_ = reaction_model;
   metabolomics_data.simulate_MARs_ = simulate_MARs;
   metabolomics_data.sample_concs_ = sample_concs;
@@ -673,9 +643,7 @@ void main_reconstruction(const std::string& biochem_rxns_filename,
   //std::vector<Model<float>> population;
   Model<float> model;
   if (make_model) {
-    //model_trainer.makeModelFCVAE(model, n_input_nodes, n_output_nodes, encoding_size, true, false, false, false); // normalization type 1
-    model_trainer.makeModelFCVAE(model, n_input_nodes, n_output_nodes, encoding_size, true, true, false, false); // normalization type 2
-    //population = { model };
+    model_trainer.makeModelFCVAE(model, n_input_nodes, n_output_nodes, encoding_size, true, false, false, false); // normalization type 1
   }
   else {
     // TODO: load in the trained model
@@ -684,14 +652,6 @@ void main_reconstruction(const std::string& biochem_rxns_filename,
   // Train the model
   std::pair<std::vector<float>, std::vector<float>> model_errors = model_trainer.trainModel(model, metabolomics_data,
     input_nodes, model_logger, model_interpreters.front());
-
-  //// Evolve the population
-  //std::vector<std::vector<std::tuple<int, std::string, float>>> models_validation_errors_per_generation = population_trainer.evolveModels(
-  //	population, model_trainer, model_interpreters, model_replicator, metabolomics_data, model_logger, population_logger, input_nodes);
-
-  //PopulationTrainerFile<float> population_trainer_file;
-  //population_trainer_file.storeModels(population, "Metabolomics");
-  //population_trainer_file.storeModelValidations("MetabolomicsValidationErrors.csv", models_validation_errors_per_generation);
 }
 
 void main_loadBinaryModelAndStoreWeightsCsv(const std::string& model_filename) {
@@ -710,11 +670,15 @@ int main(int argc, char** argv)
 {
   // Set the data directories
   //const std::string data_dir = "C:/Users/dmccloskey/Dropbox (UCSD SBRG)/Metabolomics_KALE/";
+  //const std::string data_dir = "C:/Users/dmccloskey/Dropbox (UCSD SBRG)/Metabolomics_RBC_Platelet/";
   const std::string data_dir = "C:/Users/domccl/Dropbox (UCSD SBRG)/Metabolomics_KALE/";
+  //const std::string data_dir = "C:/Users/domccl/Dropbox (UCSD SBRG)/Metabolomics_RBC_Platelet/";
   //const std::string data_dir = "/home/user/Data/";
 
   // Make the filenames
   const std::string biochem_rxns_filename = data_dir + "iJO1366.csv";
+  //const std::string biochem_rxns_filename = data_dir + "iAT_PLT_636.csv";
+  //const std::string biochem_rxns_filename = data_dir + "iAB_RBC_283.csv";
 
   // ALEsKOs01
   const std::string metabo_data_filename_train = data_dir + "ALEsKOs01_Metabolomics_train.csv";
@@ -727,6 +691,12 @@ int main(int argc, char** argv)
   //const std::string meta_data_filename_train = data_dir + "IndustrialStrains0103_MetaData_train.csv";
   //const std::string metabo_data_filename_test = data_dir + "IndustrialStrains0103_Metabolomics_test.csv";
   //const std::string meta_data_filename_test = data_dir + "IndustrialStrains0103_MetaData_test.csv";
+
+  //// Platelets
+  //const std::string metabo_data_filename_train = data_dir + "PLT_timeCourse_Metabolomics_train.csv";
+  //const std::string meta_data_filename_train = data_dir + "PLT_timeCourse_MetaData_train.csv";
+  //const std::string metabo_data_filename_test = data_dir + "PLT_timeCourse_Metabolomics_test.csv";
+  //const std::string meta_data_filename_test = data_dir + "PLT_timeCourse_MetaData_test.csv";
 
   main_reconstruction(biochem_rxns_filename, metabo_data_filename_train, meta_data_filename_train,
     metabo_data_filename_test, meta_data_filename_test, true, false, true);

@@ -1032,7 +1032,7 @@ BOOST_AUTO_TEST_CASE(destructorLogTensorOp)
 BOOST_AUTO_TEST_CASE(operationfunctionLogTensorOp)
 {
 	LogTensorOp<double, Eigen::DefaultDevice> operation;
-	const int batch_size = 3; //5;
+	const int batch_size = 5;
 	const int memory_size = 2;
 	const int layer_size = 2;
 	Eigen::DefaultDevice device;
@@ -1040,19 +1040,19 @@ BOOST_AUTO_TEST_CASE(operationfunctionLogTensorOp)
 	input.setValues({
 		{{0,0}, {0,0}},
 		{{1,1}, {0,0}},
-		{{10,10}, {0,0}}//,
-		//{{-1,-1}, {0,0}},
-		//{{-10,-10}, {0,0}} 
+		{{10,10}, {0,0}},
+		{{-1,-1}, {0,0}},
+		{{-10,-10}, {0,0}} 
 		});
 	Eigen::Tensor<double, 3> output(batch_size, memory_size, layer_size);
 	output.setZero();
 	Eigen::Tensor<double, 3> test(batch_size, memory_size, layer_size);
 	test.setValues({
-		{{-1000000000,-1000000000}, {0,0}},
+		{{-13.815510557964274,-13.815510557964274}, {0,0}},
 		{{0,0}, {0,0}},
-		{{2.3025850929940459,2.3025850929940459}, {0,0}}//,
-		//{{0.367879441,0.367879441}, {0,0}}, //TODO: change to -NaN
-		//{{4.53999E-05,4.53999E-05}, {0,0}} //TODO: change to -Nan
+		{{2.3025850929940459,2.3025850929940459}, {0,0}},
+		{{-13.815510557964274,-13.815510557964274}, {0,0}},
+		{{-13.815510557964274,-13.815510557964274}, {0,0}}
 		});
 
 	operation(input.data(), output.data(), batch_size, memory_size, layer_size, 0, device);

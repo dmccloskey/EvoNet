@@ -901,8 +901,6 @@ void calculateInputLayer0Correlation() {
   // Generate a large sample of input
 
   // Calculate the Pearson Correlation
-
-
 }
 
 // Main
