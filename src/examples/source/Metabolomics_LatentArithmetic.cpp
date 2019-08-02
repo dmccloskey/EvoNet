@@ -866,6 +866,8 @@ public:
   /*
   @brief Score the similarity between data sets using a similarity metric function
 
+  TODO: refactor to allow for using the GPU
+
   @param[in] sample_group_name_expected
   */
   std::pair<TensorT,TensorT> scoreDataSimilarity(const std::string& sample_group_name_expected, const std::string& sample_group_name_predicted,
@@ -951,6 +953,167 @@ protected:
   Model<TensorT> model_normalization_;
   ModelInterpreterDefaultDevice<TensorT> model_interpreter_normalization_;
 };
+
+/*
+@brief Compute the similarity between data sets
+
+TODO: refactor to allow for running on the GPU
+*/
+template<typename TensorT>
+void computeDataSimilarity(const std::vector<std::string>& predicted, const std::vector<std::string>& expected, LatentArithmetic<TensorT>& latentArithmetic, MetricFunctionTensorOp<TensorT, Eigen::DefaultDevice>& metric_function, ModelTrainerExt<TensorT>& model_trainer, ModelLogger<TensorT>& model_logger,
+  const bool& init_interpreter) {
+  assert(predicted.size() == expected.size());
+  for (int case_iter = 0; case_iter < predicted.size(); ++case_iter) {
+    // Determine when to initialize the model interpreter
+    if (case_iter == 0 && init_interpreter) {
+      model_trainer.setInterpretModel(true);
+    }
+    else {
+      model_trainer.setInterpretModel(false);
+    }
+    model_trainer.setResetModel(false);
+    model_trainer.setResetInterpreter(false);
+
+    // Calculate the similarity
+    std::pair<TensorT, TensorT> score = latentArithmetic.scoreDataSimilarity(expected.at(case_iter), predicted.at(case_iter), metric_function, model_trainer, model_logger);
+    std::cout << expected.at(case_iter) << " -> " << predicted.at(case_iter) << ": " << score.first << " +/- " << score.second << std::endl;
+  }
+}
+
+/*
+@brief Compute the similarity between the data and the generated data
+
+TODO: refactor to allow for running on the GPU
+*/
+template<typename TensorT>
+void computeGenerationSimilarity(const std::vector<std::string>& predicted, const std::vector<std::string>& expected, LatentArithmetic<TensorT>& latentArithmetic, MetricFunctionTensorOp<TensorT, Eigen::DefaultDevice>& metric_function, ModelTrainerExt<TensorT>& model_trainer, ModelLogger<TensorT>& model_logger,
+  const bool& init_interpreter) {
+  assert(predicted.size() == expected.size());
+  // define the reconstruction output
+  Eigen::Tensor<TensorT, 4> reconstruction_output(model_trainer.getBatchSize(), model_trainer.getMemorySize(), latentArithmetic.getNInputNodes(), model_trainer.getNEpochsEvaluation());
+
+  for (int case_iter = 0; case_iter < predicted.size(); ++case_iter) {
+    // Determine when to initialize the model interpreter
+    if (case_iter == 0 && init_interpreter) {
+      model_trainer.setInterpretModel(true);
+    }
+    else {
+      model_trainer.setInterpretModel(false);
+    }
+    model_trainer.setResetModel(false);
+    model_trainer.setResetInterpreter(false);
+
+    // Generate the encoding and decoding and score the result
+    auto encoding_output = latentArithmetic.generateEncoding(predicted.at(case_iter), model_trainer, model_logger);
+    reconstruction_output = latentArithmetic.generateReconstruction(encoding_output, model_trainer, model_logger);
+    std::pair<TensorT, TensorT> score = latentArithmetic.scoreReconstructionSimilarity(expected.at(case_iter), reconstruction_output, metric_function, model_trainer, model_logger);
+    std::cout << predicted.at(case_iter) << " -> " << expected.at(case_iter) << ": " << score.first << " +/- " << score.second << std::endl;
+  }
+}
+
+/*
+@brief Compute the similarity between the data and the generated data after a latent arithmetic operation
+
+TODO: refactor to allow for running on the GPU
+*/
+template<typename TensorT>
+void computeLatentArithmeticSimilarity(const std::vector<std::string>& condition_1, const std::vector<std::string>& condition_2, 
+  const std::vector<std::string>& expected, LatentArithmetic<TensorT>& latentArithmetic,
+  MetricFunctionTensorOp<TensorT, Eigen::DefaultDevice>& metric_function, ModelTrainerExt<TensorT>& model_trainer, ModelLogger<TensorT>& model_logger,
+  const bool& init_interpreter, const std::string& latent_operation) {
+  assert(condition_1.size() == condition_2.size());
+  assert(expected.size() == condition_2.size());
+  assert(condition_1.size() == expected.size());
+  // define the reconstruction output
+  Eigen::Tensor<TensorT, 4> reconstruction_output(model_trainer.getBatchSize(), model_trainer.getMemorySize(), latentArithmetic.getNInputNodes(), model_trainer.getNEpochsEvaluation());
+
+  for (int case_iter = 0; case_iter < condition_1.size(); ++case_iter) {
+    // Determine when to initialize the model interpreter
+    if (case_iter == 0) {
+      model_trainer.setInterpretModel(true);
+    }
+    else {
+      model_trainer.setInterpretModel(false);
+    }
+    model_trainer.setResetModel(false);
+    model_trainer.setResetInterpreter(false);
+
+    // Calculate the latent arithmetic
+    auto encoding_output_1 = latentArithmetic.generateEncoding(condition_1.at(case_iter), model_trainer, model_logger);
+    auto encoding_output_2 = latentArithmetic.generateEncoding(condition_2.at(case_iter), model_trainer, model_logger);
+    if (latent_operation == "-") {
+      Eigen::Tensor<TensorT, 4> encoding_output = encoding_output_1 - encoding_output_2;
+      reconstruction_output = latentArithmetic.generateReconstruction(encoding_output, model_trainer, model_logger);
+    }
+    else if (latent_operation == "+") {
+      Eigen::Tensor<TensorT, 4> encoding_output = encoding_output_1 - encoding_output_2;
+      reconstruction_output = latentArithmetic.generateReconstruction(encoding_output, model_trainer, model_logger);
+    }
+
+    // Score the reconstruction similarity to the expected
+    std::pair<TensorT, TensorT> score = latentArithmetic.scoreReconstructionSimilarity(expected_arithmetic_1.at(case_iter), reconstruction_output, metric_function, model_trainer, model_logger);
+    std::cout << condition_1.at(case_iter) << " " << latent_operation << " " << condition_2.at(case_iter) << " -> " << expected.at(case_iter) << ": " << score.first << " +/- " << score.second << std::endl;
+  }
+}
+
+/*
+@brief Compute the similarity between the data and the generated data after a latent interpolation
+
+TODO: refactor to allow for running on the GPU
+*/
+template<typename TensorT>
+void computeLatentInterpolationSimilarity(const std::vector<std::string>& condition_1, const std::vector<std::string>& condition_2,
+  const std::vector<std::vector<std::string>>& expected, LatentArithmetic<TensorT>& latentArithmetic,
+  MetricFunctionTensorOp<TensorT, Eigen::DefaultDevice>& metric_function, ModelTrainerExt<TensorT>& model_trainer, ModelLogger<TensorT>& model_logger,
+  const bool& init_interpreter, const bool& interp_q1, const bool& interp_median, const bool& interp_q3) {
+  assert(condition_1.size() == condition_2.size());
+  assert(expected.size() == condition_2.size());
+  assert(condition_1.size() == expected.size());
+  // define the reconstruction output
+  Eigen::Tensor<TensorT, 4> reconstruction_output(model_trainer.getBatchSize(), model_trainer.getMemorySize(), latentArithmetic.getNInputNodes(), model_trainer.getNEpochsEvaluation());
+
+  for (int case_iter = 0; case_iter < condition_1.size(); ++case_iter) {
+    // Determine when to initialize the model interpreter
+    if (case_iter == 0) {
+      model_trainer.setInterpretModel(true);
+    }
+    else {
+      model_trainer.setInterpretModel(false);
+    }
+    model_trainer.setResetModel(false);
+    model_trainer.setResetInterpreter(false);
+
+    // Generate the encodings
+    auto encoding_output_1 = latentArithmetic.generateEncoding(condition_1.at(case_iter), model_trainer, model_logger);
+    auto encoding_output_2 = latentArithmetic.generateEncoding(condition_2.at(case_iter), model_trainer, model_logger);
+
+    // Interpolations
+    if (interp_q1) {
+      Eigen::Tensor<TensorT, 4> encoding_output = encoding_output_1 * encoding_output_1.constant(0.25) + encoding_output_2 * encoding_output_2.constant(0.75);
+      reconstruction_output = latentArithmetic.generateReconstruction(encoding_output, model_trainer, model_logger);
+      for (int trial_iter = 0; trial_iter < 2; ++trial_iter) {
+        std::pair<TensorT, TensorT> score = latentArithmetic.scoreReconstructionSimilarity(expected.at(case_iter).at(trial_iter), reconstruction_output, metric_function, model_trainer, model_logger);
+        std::cout << "0.25 * " << condition_1.at(case_iter) << " + 0.75 * " << condition_2.at(case_iter) << " -> " << expected.at(case_iter).at(trial_iter) << ": " << score.first << " +/- " << score.second << std::endl;
+      }
+    }
+    if (interp_median) {
+      Eigen::Tensor<TensorT, 4> encoding_output = encoding_output_1 * encoding_output_1.constant(0.5) + encoding_output_2 * encoding_output_2.constant(0.5);
+      reconstruction_output = latentArithmetic.generateReconstruction(encoding_output, model_trainer, model_logger);
+      for (int trial_iter = 0; trial_iter < 2; ++trial_iter) {
+        std::pair<TensorT, TensorT> score = latentArithmetic.scoreReconstructionSimilarity(expected.at(case_iter).at(trial_iter), reconstruction_output, metric_function, model_trainer, model_logger);
+        std::cout << "0.5 * " << condition_1.at(case_iter) << " + 0.5 * " << condition_2.at(case_iter) << " -> " << expected.at(case_iter).at(trial_iter) << ": " << score.first << " +/- " << score.second << std::endl;
+      }
+    }
+    if (interp_q3) {
+      Eigen::Tensor<TensorT, 4> encoding_output = encoding_output_1 * encoding_output_1.constant(0.25) + encoding_output_2 * encoding_output_2.constant(0.75);
+      reconstruction_output = latentArithmetic.generateReconstruction(encoding_output, model_trainer, model_logger);
+      for (int trial_iter = 0; trial_iter < 2; ++trial_iter) {
+        std::pair<TensorT, TensorT> score = latentArithmetic.scoreReconstructionSimilarity(expected.at(case_iter).at(trial_iter), reconstruction_output, metric_function, model_trainer, model_logger);
+        std::cout << "0.75 * " << condition_1.at(case_iter) << " + 0.25 * " << condition_2.at(case_iter) << " -> " << expected.at(case_iter).at(trial_iter) << ": " << score.first << " +/- " << score.second << std::endl;
+      }
+    }
+  }
+}
 
 // Main
 int main(int argc, char** argv)
@@ -1170,32 +1333,19 @@ int main(int argc, char** argv)
   }
 
   if (compute_latent_interpolation) {
-    // 4. 0.5*KOi + 0.5*EPi -> J0?
-    const std::vector<std::string> condition_1_arithmetic_4 = { "Evo04gnd", "Evo04gnd", "Evo04pgi", "Evo04pgi",
+    const std::vector<std::string> condition_1 = { "Evo04gnd", "Evo04gnd", "Evo04pgi", "Evo04pgi",
       "Evo04ptsHIcrr", "Evo04ptsHIcrr", "Evo04sdhCB", "Evo04sdhCB", "Evo04tpiA", "Evo04tpiA" };
-    const std::vector<std::string> condition_2_arithmetic_4 = { "Evo04gndEvo01EP", "Evo04gndEvo02EP", "Evo04pgiEvo01EP", "Evo04pgiEvo02EP",
+    const std::vector<std::string> condition_2 = { "Evo04gndEvo01EP", "Evo04gndEvo02EP", "Evo04pgiEvo01EP", "Evo04pgiEvo02EP",
       "Evo04ptsHIcrrEvo01EP", "Evo04ptsHIcrrEvo02EP", "Evo04sdhCBEvo01EP", "Evo04sdhCBEvo02EP", "Evo04tpiAEvo01EP", "Evo04tpiAEvo02EP" };
-    const std::vector<std::vector<std::string>> expected_arithmetic_4 = { 
+    const std::vector<std::vector<std::string>> expected = {
       {"Evo04gnd", "Evo04gndEvo01EP"}, {"Evo04gnd", "Evo04gndEvo02EP"}, 
       {"Evo04pgi", "Evo04pgiEvo01EP"}, {"Evo04pgi", "Evo04pgiEvo02EP"},
       {"Evo04ptsHIcrr", "Evo04ptsHIcrrEvo01EP"}, {"Evo04ptsHIcrr", "Evo04ptsHIcrrEvo02EP"},
       {"Evo04sdhCB", "Evo04sdhCBEvo01EP"}, {"Evo04sdhCB", "Evo04sdhCBEvo02EP"},
       {"Evo04tpiA", "Evo04tpiAEvo01EP"}, {"Evo04tpiA", "Evo04tpiAEvo02EP"} };
-    assert(condition_1_arithmetic_4.size() == condition_2_arithmetic_4.size());
-    assert(expected_arithmetic_4.size() == condition_2_arithmetic_4.size());
-    assert(condition_1_arithmetic_4.size() == expected_arithmetic_4.size());
-
-    std::cout << "Running 0.5*KOi + 0.5*EPi -> J0?" << std::endl;
-    for (int case_iter = 0; case_iter < condition_1_arithmetic_4.size(); ++case_iter) {
-      auto encoding_output_1 = latentArithmetic.generateEncoding(condition_1_arithmetic_4.at(case_iter), model_trainer, model_logger);
-      auto encoding_output_2 = latentArithmetic.generateEncoding(condition_2_arithmetic_4.at(case_iter), model_trainer, model_logger);
-      Eigen::Tensor<float, 4> encoding_output = encoding_output_1 * encoding_output_1.constant(0.5) + encoding_output_2 * encoding_output_2.constant(0.5);
-      reconstruction_output = latentArithmetic.generateReconstruction(encoding_output, model_trainer, model_logger);
-      for (int trial_iter = 0; trial_iter < 2; ++trial_iter) {
-        std::pair<float, float> score = latentArithmetic.scoreReconstructionSimilarity(expected_arithmetic_4.at(case_iter).at(trial_iter), reconstruction_output, ManhattanDistTensorOp<float, Eigen::DefaultDevice>(), model_trainer, model_logger);
-        std::cout << "0.5 * " << condition_1_arithmetic_4.at(case_iter) << " + 0.5 * " << condition_2_arithmetic_4.at(case_iter) << " -> " << expected_arithmetic_4.at(case_iter).at(trial_iter) << ": " << score.first << " +/- " << score.second << std::endl;
-      }
-    }
+    computeLatentInterpolationSimilarity(condition_1, condition_2, expected, latentArithmetic,
+      ManhattanDistTensorOp<float, Eigen::DefaultDevice>(), model_trainer, model_logger,
+      true, true, true, true);
   }
 
   return 0;
