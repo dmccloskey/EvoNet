@@ -593,14 +593,18 @@ public:
   @param[in] model_encoder_weights_filename
   @param[in] model_decoder_weights_filename
   */
-  void setEncDecModels(ModelTrainerExt<TensorT>& model_trainer, const std::string& model_encoder_weights_filename, const std::string& model_decoder_weights_filename) {
+  void setEncDecModels(ModelTrainerExt<TensorT>& model_trainer, const std::string& model_encoder_weights_filename, const std::string& model_decoder_weights_filename,
+    const int& n_en_hidden_0 = 64, const int& n_en_hidden_1 = 64, const int& n_en_hidden_2 = 0,
+    const int& n_de_hidden_0 = 64, const int& n_de_hidden_1 = 64, const int& n_de_hidden_2 = 0) {
     // initialize the models
     model_encoder_.clear();
     model_decoder_.clear();
 
     // define the encoder and decoders
-    model_trainer.makeModelFCVAE_Encoder(model_encoder_, n_input_nodes_, encoding_size_, true, false, false, false); // normalization type 1
-    model_trainer.makeModelFCVAE_Decoder(model_decoder_, n_input_nodes_, encoding_size_, false);
+    model_trainer.makeModelFCVAE_Encoder(model_encoder_, n_input_nodes_, encoding_size_, true, false, false, false,
+      n_en_hidden_0, n_en_hidden_1, n_en_hidden_2); // normalization type 1
+    model_trainer.makeModelFCVAE_Decoder(model_decoder_, n_input_nodes_, encoding_size_, false,
+      n_de_hidden_0, n_de_hidden_1, n_de_hidden_2);
 
     // read in the encoder and decoder weights
     WeightFile<TensorT> data;
@@ -636,12 +640,13 @@ public:
 
   @param[in] model_classifier_weights_filename
   */
-  void setClassifierModel(ModelTrainerExt<TensorT>& model_trainer, const std::string& model_classifier_weights_filename) {
+  void setClassifierModel(ModelTrainerExt<TensorT>& model_trainer, const std::string& model_classifier_weights_filename, 
+    const int& n_hidden_0 = 64, const int& n_hidden_1 = 0, const int& n_hidden_2 = 0) {
     // initialize the models
     model_classifier_.clear();
 
     // define the encoder and decoders
-    model_trainer.makeModelFCClass(model_classifier_, n_input_nodes_, n_output_nodes_, false);
+    model_trainer.makeModelFCClass(model_classifier_, n_input_nodes_, n_output_nodes_, false, n_hidden_0, n_hidden_1, n_hidden_2);
 
     // read in the encoder and decoder weights
     WeightFile<TensorT> data;
@@ -1116,51 +1121,22 @@ void computeLatentInterpolationSimilarity(const std::vector<std::string>& condit
 }
 
 /// KALE Latent arithmetic and interpolation script
-void main_KALE(const std::string& biochem_rxns_filename, const std::string& model_encoder_weights_filename,  const std::string& model_decoder_weights_filename, 
-  const std::string& metabo_data_filename_train, const std::string& meta_data_filename_train, 
-  const std::string& metabo_data_filename_test, const std::string& meta_data_filename_test) {
-
-  // define the model trainers and resources for the trainers
-  ModelResources model_resources = { ModelDevice(0, 1) };
-  ModelInterpreterDefaultDevice<float> model_interpreter(model_resources);
-  ModelTrainerExt<float> model_trainer;
-  model_trainer.setBatchSize(512);
-  model_trainer.setMemorySize(1);
-  model_trainer.setNEpochsEvaluation(1);
-  model_trainer.setVerbosityLevel(1);
-  model_trainer.setLogging(false, false, false);
-  model_trainer.setFindCycles(false);
-  model_trainer.setFastInterpreter(true);
-  model_trainer.setPreserveOoO(true);
-
-  // define the model logger
-  ModelLogger<float> model_logger(true, true, false, false, false, false, false, false);
-
-  // read in the metabolomics data and models
-  LatentArithmetic<float> latentArithmetic(16, false, true);
-  latentArithmetic.setMetabolomicsData(biochem_rxns_filename, metabo_data_filename_train, meta_data_filename_train,
-    metabo_data_filename_test, meta_data_filename_test);
-  latentArithmetic.setEncDecModels(model_trainer, model_encoder_weights_filename, model_decoder_weights_filename);
-  latentArithmetic.setEncDecModelInterpreters(model_interpreter, model_interpreter);
-  //latentArithmetic.setClassifierModel(model_trainer, model_classifier_weights_filename);
-  //latentArithmetic.setClassifierModelInterpreter(model_interpreter);
-  latentArithmetic.setNormalizationModel(model_trainer);
-  latentArithmetic.setNormalizationModelInterpreter(model_interpreter);
+template<typename TensorT>
+void main_KALE(ModelInterpreterDefaultDevice<TensorT>& model_interpreter, ModelTrainerExt<TensorT>& model_trainer,
+  ModelLogger<TensorT>& model_logger, LatentArithmetic<TensorT>& latentArithmetic,
+  const bool& compute_data_similarities,  const bool& compute_generation_similarity,
+  const bool& compute_latent_arithmetic,  const bool& compute_latent_interpolation) {
 
   // NOTE: similarity metric of Manhattan distance used as per 10.1109/TCBB.2016.2586065
   //  that found the following similarity metrics to work well for metabolomic prfile data:
   //    Minkowski distance, Euclidean distance, Manhattan distance, Jeffreys & Matusita distance, Dice’s coefficient, Jaccard similarity coefficient
   //  and the following similarity metrics to be unsuitable for metabolomic profile data:
   //    Canberra distance, relative distance, and cosine of angle
-  const bool compute_data_similarities = false;
-  const bool compute_generation_similarity = false;
-  const bool compute_latent_arithmetic = true;
-  const bool compute_latent_interpolation = false;
   std::vector<std::string> condition_1, condition_2, predicted, expected;
 
   if (compute_data_similarities) {
     // Reference similarity metrics
-    std::vector<std::string> predicted = { "Evo04Evo01EP", "Evo04Evo02EP", "Evo04gndEvo01EP", "Evo04gndEvo02EP", "Evo04pgiEvo01EP", "Evo04pgiEvo02EP",
+    predicted = { "Evo04Evo01EP", "Evo04Evo02EP", "Evo04gndEvo01EP", "Evo04gndEvo02EP", "Evo04pgiEvo01EP", "Evo04pgiEvo02EP",
       "Evo04ptsHIcrrEvo01EP", "Evo04ptsHIcrrEvo02EP", "Evo04sdhCBEvo01EP", "Evo04sdhCBEvo02EP", "Evo04tpiAEvo01EP", "Evo04tpiAEvo02EP" };
     expected = { "Evo04", "Evo04", "Evo04gnd", "Evo04gnd", "Evo04pgi", "Evo04pgi",
       "Evo04ptsHIcrr", "Evo04ptsHIcrr", "Evo04sdhCB", "Evo04sdhCB", "Evo04tpiA", "Evo04tpiA" };
@@ -1243,10 +1219,108 @@ void main_KALE(const std::string& biochem_rxns_filename, const std::string& mode
       true, true, true, true);
   }
 }
-void main_PLT(const std::string& biochem_rxns_filename, const std::string& model_encoder_weights_filename, const std::string& model_decoder_weights_filename,
-  const std::string& metabo_data_filename_train, const std::string& meta_data_filename_train,
-  const std::string& metabo_data_filename_test, const std::string& meta_data_filename_test) {
 
+/// PLT time-course Latent arithmetic and interpolation script
+template<typename TensorT>
+void main_PLT(ModelInterpreterDefaultDevice<TensorT>& model_interpreter, ModelTrainerExt<TensorT>& model_trainer,
+  ModelLogger<TensorT>& model_logger, LatentArithmetic<TensorT>& latentArithmetic,
+  const bool& compute_data_similarities, const bool& compute_generation_similarity,
+  const bool& compute_latent_arithmetic, const bool& compute_latent_interpolation) {
+
+  // NOTE: similarity metric of Manhattan distance used as per 10.1109/TCBB.2016.2586065
+  //  that found the following similarity metrics to work well for metabolomic prfile data:
+  //    Minkowski distance, Euclidean distance, Manhattan distance, Jeffreys & Matusita distance, Dice’s coefficient, Jaccard similarity coefficient
+  //  and the following similarity metrics to be unsuitable for metabolomic profile data:
+  //    Canberra distance, relative distance, and cosine of angle
+  std::vector<std::string> condition_1, condition_2, predicted, expected;
+
+  if (compute_data_similarities) {
+    // Reference similarity metrics
+    predicted = { "S01_D01_PLT_37C_22hr", "S01_D01_PLT_25C_22hr", "S01_D01_PLT_25C_6.5hr", "S01_D01_PLT_25C_0hr",
+                  "S01_D02_PLT_37C_22hr", "S01_D02_PLT_25C_22hr", "S01_D02_PLT_25C_6.5hr", "S01_D02_PLT_25C_0hr",
+                  "S01_D05_PLT_37C_22hr", "S01_D05_PLT_25C_22hr", "S01_D05_PLT_25C_6.5hr", "S01_D05_PLT_25C_0hr" };
+    expected = { "S01_D01_PLT_25C_0hr", "S01_D01_PLT_25C_0hr", "S01_D01_PLT_25C_0hr", "S01_D01_PLT_25C_0hr", 
+      "S01_D02_PLT_25C_0hr", "S01_D02_PLT_25C_0hr","S01_D02_PLT_25C_0hr","S01_D02_PLT_25C_0hr",
+      "S01_D05_PLT_25C_0hr", "S01_D05_PLT_25C_0hr", "S01_D05_PLT_25C_0hr", "S01_D05_PLT_25C_0hr" };
+    computeDataSimilarity(predicted, expected, latentArithmetic, ManhattanDistTensorOp<float, Eigen::DefaultDevice>(), model_trainer, model_logger,
+      true);
+
+    predicted = { "S01_D02_PLT_37C_22hr", "S01_D02_PLT_25C_22hr", "S01_D02_PLT_25C_6.5hr", "S01_D02_PLT_25C_0hr",
+                  "S01_D05_PLT_37C_22hr", "S01_D05_PLT_25C_22hr", "S01_D05_PLT_25C_6.5hr", "S01_D05_PLT_25C_0hr" };
+    expected = { "S01_D01_PLT_37C_22hr", "S01_D01_PLT_25C_22hr", "S01_D01_PLT_25C_6.5hr", "S01_D01_PLT_25C_0hr",
+                  "S01_D01_PLT_37C_22hr", "S01_D01_PLT_25C_22hr", "S01_D01_PLT_25C_6.5hr", "S01_D01_PLT_25C_0hr" };
+    computeDataSimilarity(predicted, expected, latentArithmetic, ManhattanDistTensorOp<float, Eigen::DefaultDevice>(), model_trainer, model_logger,
+      false);
+
+    predicted = { "S01_D01_PLT_37C_22hr", "S01_D01_PLT_25C_22hr", "S01_D01_PLT_25C_6.5hr", "S01_D01_PLT_25C_0hr",
+                  "S01_D02_PLT_37C_22hr", "S01_D02_PLT_25C_22hr", "S01_D02_PLT_25C_6.5hr", "S01_D02_PLT_25C_0hr",
+                  "S01_D05_PLT_37C_22hr", "S01_D05_PLT_25C_22hr", "S01_D05_PLT_25C_6.5hr", "S01_D05_PLT_25C_0hr" };
+    expected = { "S01_D01_PLT_37C_22hr", "S01_D01_PLT_25C_22hr", "S01_D01_PLT_25C_6.5hr", "S01_D01_PLT_25C_0hr",
+                  "S01_D02_PLT_37C_22hr", "S01_D02_PLT_25C_22hr", "S01_D02_PLT_25C_6.5hr", "S01_D02_PLT_25C_0hr",
+                  "S01_D05_PLT_37C_22hr", "S01_D05_PLT_25C_22hr", "S01_D05_PLT_25C_6.5hr", "S01_D05_PLT_25C_0hr" };
+    computeDataSimilarity(predicted, expected, latentArithmetic, ManhattanDistTensorOp<float, Eigen::DefaultDevice>(), model_trainer, model_logger,
+      false);
+  }
+
+  if (compute_generation_similarity) {
+    predicted = { "S01_D01_PLT_37C_22hr", "S01_D01_PLT_25C_22hr", "S01_D01_PLT_25C_6.5hr", "S01_D01_PLT_25C_0hr",
+                  "S01_D02_PLT_37C_22hr", "S01_D02_PLT_25C_22hr", "S01_D02_PLT_25C_6.5hr", "S01_D02_PLT_25C_0hr",
+                  "S01_D05_PLT_37C_22hr", "S01_D05_PLT_25C_22hr", "S01_D05_PLT_25C_6.5hr", "S01_D05_PLT_25C_0hr" };
+    expected = { "S01_D01_PLT_37C_22hr", "S01_D01_PLT_25C_22hr", "S01_D01_PLT_25C_6.5hr", "S01_D01_PLT_25C_0hr",
+                  "S01_D02_PLT_37C_22hr", "S01_D02_PLT_25C_22hr", "S01_D02_PLT_25C_6.5hr", "S01_D02_PLT_25C_0hr",
+                  "S01_D05_PLT_37C_22hr", "S01_D05_PLT_25C_22hr", "S01_D05_PLT_25C_6.5hr", "S01_D05_PLT_25C_0hr" };
+    computeGenerationSimilarity(predicted, expected, latentArithmetic, ManhattanDistTensorOp<float, Eigen::DefaultDevice>(), model_trainer, model_logger,
+      true);
+  }
+
+  if (compute_latent_arithmetic) {
+    // 1. drug + degradation -> drug & degradation 
+    condition_1 = { "S01_D02_PLT_25C_0hr", "S01_D05_PLT_25C_0hr" };
+    condition_2 = { "S01_D01_PLT_37C_22hr", "S01_D01_PLT_37C_22hr" };
+    expected = { "S01_D02_PLT_37C_22hr", "S01_D05_PLT_37C_22hr" };
+    computeLatentArithmeticSimilarity(condition_1, condition_2, expected, latentArithmetic, ManhattanDistTensorOp<float, Eigen::DefaultDevice>(), model_trainer, model_logger,
+      true, "+");
+
+    // 2. drug + metabolic -> drug & metabolic
+    condition_1 = { "S01_D02_PLT_25C_0hr", "S01_D05_PLT_25C_0hr" };
+    condition_2 = { "S01_D01_PLT_25C_22hr", "S01_D01_PLT_25C_22hr" };
+    expected = { "S01_D02_PLT_25C_22hr", "S01_D05_PLT_25C_22hr" };
+    computeLatentArithmeticSimilarity(condition_1, condition_2, expected, latentArithmetic, ManhattanDistTensorOp<float, Eigen::DefaultDevice>(), model_trainer, model_logger,
+      false, "+");
+
+    // 3. drug & metabolic - metabolic -> drug
+    condition_1 = { "S01_D02_PLT_25C_22hr", "S01_D05_PLT_25C_22hr" };
+    condition_2 = { "S01_D01_PLT_25C_22hr", "S01_D01_PLT_25C_22hr" };
+    expected = { "S01_D02_PLT_25C_0hr", "S01_D05_PLT_25C_0hr" };
+    computeLatentArithmeticSimilarity(condition_1, condition_2, expected, latentArithmetic, ManhattanDistTensorOp<float, Eigen::DefaultDevice>(), model_trainer, model_logger,
+      false, "-");
+
+    // 4. drug & metabolic - drug -> metabolic
+    condition_1 = { "S01_D02_PLT_25C_22hr", "S01_D05_PLT_25C_22hr" };
+    condition_2 = { "S01_D02_PLT_25C_0hr", "S01_D05_PLT_25C_0hr" };
+    expected = { "S01_D01_PLT_25C_22hr", "S01_D01_PLT_25C_22hr" };
+    computeLatentArithmeticSimilarity(condition_1, condition_2, expected, latentArithmetic, ManhattanDistTensorOp<float, Eigen::DefaultDevice>(), model_trainer, model_logger,
+      false, "-");
+
+    // 5. drug & degradation - degradation -> drug
+    condition_1 = { "S01_D02_PLT_37C_22hr", "S01_D05_PLT_37C_22hr" };
+    condition_2 = { "S01_D01_PLT_37C_22hr", "S01_D01_PLT_37C_22hr" };
+    expected = { "S01_D02_PLT_25C_0hr", "S01_D05_PLT_25C_0hr" };
+    computeLatentArithmeticSimilarity(condition_1, condition_2, expected, latentArithmetic, ManhattanDistTensorOp<float, Eigen::DefaultDevice>(), model_trainer, model_logger,
+      false, "-");
+  }
+
+  if (compute_latent_interpolation) {
+    condition_1 = { "S01_D01_PLT_25C_0hr", "S01_D02_PLT_25C_0hr", "S01_D05_PLT_25C_0hr" };
+    condition_2 = { "S01_D01_PLT_25C_22hr", "S01_D02_PLT_25C_22hr", "S01_D05_PLT_25C_22hr" };
+    const std::vector<std::vector<std::string>> expected = {
+      {"S01_D01_PLT_25C_0hr", "S01_D01_PLT_25C_2hr", "S01_D01_PLT_25C_6.5hr", "S01_D01_PLT_25C_22hr"},
+      {"S01_D02_PLT_25C_0hr", "S01_D02_PLT_25C_2hr", "S01_D02_PLT_25C_6.5hr", "S01_D02_PLT_25C_22hr"},
+      {"S01_D05_PLT_25C_0hr", "S01_D05_PLT_25C_2hr", "S01_D05_PLT_25C_6.5hr", "S01_D05_PLT_25C_22hr"},
+    };
+    computeLatentInterpolationSimilarity(condition_1, condition_2, expected, latentArithmetic, ManhattanDistTensorOp<float, Eigen::DefaultDevice>(), model_trainer, model_logger,
+      true, true, true, true);
+  }
 }
 
 // Main
@@ -1254,25 +1328,68 @@ int main(int argc, char** argv)
 {
   // Set the data directories
   //const std::string data_dir = "C:/Users/dmccloskey/Dropbox (UCSD SBRG)/Metabolomics_KALE/";
-  const std::string data_dir = "C:/Users/domccl/Dropbox (UCSD SBRG)/Metabolomics_KALE/";
+  //const std::string data_dir = "C:/Users/dmccloskey/Dropbox (UCSD SBRG)/Metabolomics_RBC_Platelet/";
+  //const std::string data_dir = "C:/Users/domccl/Dropbox (UCSD SBRG)/Metabolomics_KALE/";
+  const std::string data_dir = "C:/Users/domccl/Dropbox (UCSD SBRG)/Metabolomics_RBC_Platelet/";
   //const std::string data_dir = "/home/user/Data/";
 
-  // Make the filenames
-  const std::string biochem_rxns_filename = data_dir + "iJO1366.csv";
-  const std::string model_encoder_weights_filename = data_dir + "TrainTestData/SampledArithmeticMath/VAE_weights.csv"; 
-  const std::string model_decoder_weights_filename = data_dir + "TrainTestData/SampledArithmeticMath/VAE_weights.csv"; 
+  // Set the biochemical reaction filenames
+  //const std::string biochem_rxns_filename = data_dir + "iJO1366.csv";
+  const std::string biochem_rxns_filename = data_dir + "iAT_PLT_636.csv";
+  //const std::string biochem_rxns_filename = data_dir + "iAB_RBC_283.csv";
+
+  // Set the model filenames
+  //const std::string model_encoder_weights_filename = data_dir + "TrainTestData/SampledArithmeticMath/VAE_weights.csv"; 
+  //const std::string model_decoder_weights_filename = data_dir + "TrainTestData/SampledArithmeticMath/VAE_weights.csv";
+  const std::string model_encoder_weights_filename = data_dir + "VAE_weights.csv";
+  const std::string model_decoder_weights_filename = data_dir + "VAE_weights.csv";
   // NOTE: be sure to re-name the Input_000000000000-LinearScale_to_... weights to Input_000000000000_to_...
   //       using regex "-LinearScale_to_FC0" with "_to_FC0"
   const std::string model_classifier_weights_filename = data_dir + "TrainTestData/SampledArithmeticMath/Classifier_5000_weights.csv";
 
-  // ALEsKOs01
-  const std::string metabo_data_filename_train = data_dir + "ALEsKOs01_Metabolomics_train.csv";
-  const std::string meta_data_filename_train = data_dir + "ALEsKOs01_MetaData_train.csv";
-  const std::string metabo_data_filename_test = data_dir + "ALEsKOs01_Metabolomics_test.csv";
-  const std::string meta_data_filename_test = data_dir + "ALEsKOs01_MetaData_test.csv";
+  //// ALEsKOs01
+  //const std::string metabo_data_filename_train = data_dir + "ALEsKOs01_Metabolomics_train.csv";
+  //const std::string meta_data_filename_train = data_dir + "ALEsKOs01_MetaData_train.csv";
+  //const std::string metabo_data_filename_test = data_dir + "ALEsKOs01_Metabolomics_test.csv";
+  //const std::string meta_data_filename_test = data_dir + "ALEsKOs01_MetaData_test.csv";
 
-  main_KALE(biochem_rxns_filename, model_encoder_weights_filename, model_decoder_weights_filename,
-    metabo_data_filename_train, meta_data_filename_train, metabo_data_filename_test, meta_data_filename_test);
+  // Platelets
+  const std::string metabo_data_filename_train = data_dir + "PLT_timeCourse_Metabolomics_train.csv";
+  const std::string meta_data_filename_train = data_dir + "PLT_timeCourse_MetaData_train.csv";
+  const std::string metabo_data_filename_test = data_dir + "PLT_timeCourse_Metabolomics_test.csv";
+  const std::string meta_data_filename_test = data_dir + "PLT_timeCourse_MetaData_test.csv";
+
+  // Define the model trainers and resources for the trainers
+  ModelResources model_resources = { ModelDevice(0, 1) };
+  ModelInterpreterDefaultDevice<float> model_interpreter(model_resources);
+  ModelTrainerExt<float> model_trainer;
+  model_trainer.setBatchSize(512);
+  model_trainer.setMemorySize(1);
+  model_trainer.setNEpochsEvaluation(1);
+  model_trainer.setVerbosityLevel(1);
+  model_trainer.setLogging(false, false, false);
+  model_trainer.setFindCycles(false);
+  model_trainer.setFastInterpreter(true);
+  model_trainer.setPreserveOoO(true);
+
+  // Define the model logger
+  ModelLogger<float> model_logger(false, false, false, false, false, false, false, false);
+
+  // Read in the metabolomics data and models
+  LatentArithmetic<float> latentArithmetic(16, false, true);
+  latentArithmetic.setMetabolomicsData(biochem_rxns_filename, metabo_data_filename_train, meta_data_filename_train,
+    metabo_data_filename_test, meta_data_filename_test);
+  latentArithmetic.setEncDecModels(model_trainer, model_encoder_weights_filename, model_decoder_weights_filename,
+    64, 0, 0, 64, 0, 0);
+  latentArithmetic.setEncDecModelInterpreters(model_interpreter, model_interpreter);
+  //latentArithmetic.setClassifierModel(model_trainer, model_classifier_weights_filename, 64, 0, 0);
+  //latentArithmetic.setClassifierModelInterpreter(model_interpreter);
+  latentArithmetic.setNormalizationModel(model_trainer);
+  latentArithmetic.setNormalizationModelInterpreter(model_interpreter);
+
+  // Run the script
+  //main_KALE(model_interpreter, model_trainer, model_logger, latentArithmetic, false, false, false, true);
+  main_PLT(model_interpreter, model_trainer, model_logger, latentArithmetic, false, true, false, false);
 
   return 0;
 }
