@@ -627,8 +627,8 @@ BOOST_AUTO_TEST_CASE(operationfunctionMRSEOp)
 
   operation(y_pred.data(), y_true.data(), error_ptr, batch_size, memory_size, layer_size, time_step, device);
   Eigen::TensorMap<Eigen::Tensor<float, 2>> error(error_ptr, batch_size, memory_size);
-  BOOST_CHECK_CLOSE(error(0, 0), 0.0857864246, 1e-6);
-  BOOST_CHECK_CLOSE(error(1, 0), 0.0857864246, 1e-6);
+  BOOST_CHECK_CLOSE(error(0, 0), 1.5, 1e-6);
+  BOOST_CHECK_CLOSE(error(1, 0), 1.5, 1e-6);
   BOOST_CHECK_CLOSE(error(0, 1), 0, 1e-6);
   BOOST_CHECK_CLOSE(error(1, 1), 0, 1e-6);
 }
@@ -673,13 +673,13 @@ BOOST_AUTO_TEST_CASE(operationfunctionMRSEGradOp)
 
   operation(y_pred.data(), y_true.data(), error_ptr, batch_size, memory_size, layer_size, time_step, device);
   Eigen::TensorMap<Eigen::Tensor<float, 3>> error(error_ptr, batch_size, memory_size, layer_size);
-  BOOST_CHECK_CLOSE(error(0, 0, 0), 0.0, 1e-6);
+  BOOST_CHECK_CLOSE(error(0, 0, 0), -499999.969, 1e-6);
   BOOST_CHECK_CLOSE(error(0, 1, 0), 0.0, 1e-6);
-  BOOST_CHECK_CLOSE(error(1, 0, 0), 0, 1e-6);
+  BOOST_CHECK_CLOSE(error(1, 0, 0), -499999.969, 1e-6);
   BOOST_CHECK_CLOSE(error(1, 1, 0), 0.0, 1e-6);
-  BOOST_CHECK_CLOSE(error(0, 0, 1), 0.207106963, 1e-6);
+  BOOST_CHECK_CLOSE(error(0, 0, 1), -707106.688, 1e-6);
   BOOST_CHECK_CLOSE(error(0, 1, 1), 0, 1e-6);
-  BOOST_CHECK_CLOSE(error(1, 0, 1), 0.207106963, 1e-6);
+  BOOST_CHECK_CLOSE(error(1, 0, 1), -707106.688, 1e-6);
   BOOST_CHECK_CLOSE(error(1, 1, 1), 0.0, 1e-6);
 }
 
@@ -769,13 +769,13 @@ BOOST_AUTO_TEST_CASE(operationfunctionMLEGradOp)
 
   operation(y_pred.data(), y_true.data(), error_ptr, batch_size, memory_size, layer_size, time_step, device);
   Eigen::TensorMap<Eigen::Tensor<float, 3>> error(error_ptr, batch_size, memory_size, layer_size);
-  BOOST_CHECK_CLOSE(error(0, 0, 0), 0.500000536, 1e-6);
+  BOOST_CHECK_CLOSE(error(0, 0, 0), -0.500000536, 1e-6);
   BOOST_CHECK_CLOSE(error(0, 1, 0), 0.0, 1e-6);
-  BOOST_CHECK_CLOSE(error(1, 0, 0), 0.500000536, 1e-6);
+  BOOST_CHECK_CLOSE(error(1, 0, 0), -0.500000536, 1e-6);
   BOOST_CHECK_CLOSE(error(1, 1, 0), 0.0, 1e-6);
-  BOOST_CHECK_CLOSE(error(0, 0, 1), 0.250000119, 1e-6);
+  BOOST_CHECK_CLOSE(error(0, 0, 1), -0.250000119, 1e-6);
   BOOST_CHECK_CLOSE(error(0, 1, 1), 0, 1e-6);
-  BOOST_CHECK_CLOSE(error(1, 0, 1), 0.250000119, 1e-6);
+  BOOST_CHECK_CLOSE(error(1, 0, 1), -0.250000119, 1e-6);
   BOOST_CHECK_CLOSE(error(1, 1, 1), 0.0, 1e-6);
 }
 

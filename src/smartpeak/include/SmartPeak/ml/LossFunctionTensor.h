@@ -302,7 +302,11 @@ public:
   };
 
   /**
-    @brief MRSE Mean Root Squared Error loss function.
+    @brief MRSE Mean Root Squared Error loss function. WIP.
+
+    Based on the following references:
+    https://stats.stackexchange.com/questions/102810/pros-of-jeffries-matusita-distance
+    https://en.wikipedia.org/wiki/Bhattacharyya_distance
   */
   template<typename TensorT, typename DeviceT>
   class MRSELossTensorOp : public LossFunctionTensorOp<TensorT, DeviceT>
@@ -315,7 +319,7 @@ public:
       Eigen::TensorMap<Eigen::Tensor<TensorT, 4>> predicted_tensor(predicted, batch_size, memory_size, layer_size, 1);
       Eigen::TensorMap<Eigen::Tensor<TensorT, 2>> error_tensor(error, batch_size, memory_size);
       auto predicted_chip = predicted_tensor.chip(time_step, 1);
-      auto min_offset = predicted_chip.chip(0, 2) - predicted_chip.minimum(Eigen::array<Eigen::Index, 1>({1})).broadcast(Eigen::array<Eigen::Index, 2>({ 1, layer_size })) + predicted_chip.chip(0, 2).constant(TensorT(1));
+      auto min_offset = predicted_chip.chip(0, 2) - predicted_chip.minimum(Eigen::array<Eigen::Index, 1>({1})).broadcast(Eigen::array<Eigen::Index, 2>({ 1, layer_size }));
 
       error_tensor.chip(time_step, 1).device(device) += (((expected_tensor.sqrt() - min_offset.sqrt()).pow(TensorT(2)) / expected_tensor.constant(TensorT(layer_size))).sum(Eigen::array<int, 1>({ 1 }))
         *error_tensor.chip(time_step, 1).constant(this->scale_)).clip(TensorT(-1e9), TensorT(1e9));
@@ -323,7 +327,7 @@ public:
   };
 
   /**
-    @brief MRSE Mean Root Squared Error loss function gradient.
+    @brief MRSE Mean Root Squared Error loss function gradient. WIP.
   */
   template<typename TensorT, typename DeviceT>
   class MRSELossGradTensorOp : public LossFunctionGradTensorOp<TensorT, DeviceT>
@@ -337,7 +341,7 @@ public:
       Eigen::TensorMap<Eigen::Tensor<TensorT, 4>> predicted_tensor(predicted, batch_size, memory_size, layer_size, 1);
       Eigen::TensorMap<Eigen::Tensor<TensorT, 3>> error_tensor(error, batch_size, memory_size, layer_size);
       auto predicted_chip = predicted_tensor.chip(time_step, 1);
-      auto min_offset = predicted_chip.chip(0, 2) - predicted_chip.minimum(Eigen::array<Eigen::Index, 1>({ 1 })).broadcast(Eigen::array<Eigen::Index, 2>({ 1, layer_size })) + predicted_chip.chip(0, 2).constant(TensorT(1));
+      auto min_offset = predicted_chip.chip(0, 2) - predicted_chip.minimum(Eigen::array<Eigen::Index, 1>({ 1 })).broadcast(Eigen::array<Eigen::Index, 2>({ 1, layer_size }));
       error_tensor.chip(time_step, 1).device(device) += (((expected_tensor.sqrt() - min_offset.sqrt()) / (min_offset.sqrt() - expected_tensor.constant(this->eps_)) / expected_tensor.constant(TensorT(layer_size)))
         *error_tensor.chip(time_step, 1).constant(this->scale_)).clip(TensorT(-1e9), TensorT(1e9));
     };
@@ -381,7 +385,7 @@ public:
       auto predicted_chip = predicted_tensor.chip(time_step, 1);
       auto diff = expected_tensor - predicted_chip;
       auto min_offset = diff.chip(0, 2) - diff.minimum(Eigen::array<Eigen::Index, 1>({ 1 })).broadcast(Eigen::array<Eigen::Index, 2>({ 1, layer_size })) + diff.chip(0, 2).constant(TensorT(1));
-      error_tensor.chip(time_step, 1).device(device) += ((1 / (min_offset - expected_tensor.chip(0, 2).constant(this->eps_)) / expected_tensor.chip(0, 2).constant(TensorT(layer_size)))
+      error_tensor.chip(time_step, 1).device(device) -= ((1 / (min_offset - expected_tensor.chip(0, 2).constant(this->eps_)) / expected_tensor.chip(0, 2).constant(TensorT(layer_size)))
         *error_tensor.chip(time_step, 1).constant(this->scale_)).clip(TensorT(-1e9), TensorT(1e9));
     };
   };

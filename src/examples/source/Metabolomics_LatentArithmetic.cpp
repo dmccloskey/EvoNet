@@ -1220,6 +1220,35 @@ void main_KALE(ModelInterpreterDefaultDevice<TensorT>& model_interpreter, ModelT
   }
 }
 
+/// Industrial strain reconstruction script
+template<typename TensorT>
+void main_IndustrialStrains(ModelInterpreterDefaultDevice<TensorT>& model_interpreter, ModelTrainerExt<TensorT>& model_trainer,
+  ModelLogger<TensorT>& model_logger, LatentArithmetic<TensorT>& latentArithmetic,
+  const bool& compute_data_similarities, const bool& compute_generation_similarity) {
+
+  // NOTE: similarity metric of Manhattan distance used as per 10.1109/TCBB.2016.2586065
+  //  that found the following similarity metrics to work well for metabolomic prfile data:
+  //    Minkowski distance, Euclidean distance, Manhattan distance, Jeffreys & Matusita distance, Dice’s coefficient, Jaccard similarity coefficient
+  //  and the following similarity metrics to be unsuitable for metabolomic profile data:
+  //    Canberra distance, relative distance, and cosine of angle
+  std::vector<std::string> condition_1, condition_2, predicted, expected;
+
+  if (compute_data_similarities) {
+    // Reference similarity metrics
+    predicted = { "EColi_BL21","EColi_C","EColi_Crooks","EColi_DH5a","EColi_MG1655","EColi_W","EColi_W3110" };
+    expected = { "EColi_BL21","EColi_C","EColi_Crooks","EColi_DH5a","EColi_MG1655","EColi_W","EColi_W3110" };
+    computeDataSimilarity(predicted, expected, latentArithmetic, ManhattanDistTensorOp<float, Eigen::DefaultDevice>(), model_trainer, model_logger,
+      true);
+  }
+
+  if (compute_generation_similarity) {
+    predicted = { "EColi_BL21","EColi_C","EColi_Crooks","EColi_DH5a","EColi_MG1655","EColi_W","EColi_W3110" };
+    expected = { "EColi_BL21","EColi_C","EColi_Crooks","EColi_DH5a","EColi_MG1655","EColi_W","EColi_W3110" };
+    computeGenerationSimilarity(predicted, expected, latentArithmetic, ManhattanDistTensorOp<float, Eigen::DefaultDevice>(), model_trainer, model_logger,
+      true);
+  }
+}
+
 /// PLT time-course Latent arithmetic and interpolation script
 template<typename TensorT>
 void main_PLT(ModelInterpreterDefaultDevice<TensorT>& model_interpreter, ModelTrainerExt<TensorT>& model_trainer,
@@ -1329,35 +1358,41 @@ int main(int argc, char** argv)
   // Set the data directories
   //const std::string data_dir = "C:/Users/dmccloskey/Dropbox (UCSD SBRG)/Metabolomics_KALE/";
   //const std::string data_dir = "C:/Users/dmccloskey/Dropbox (UCSD SBRG)/Metabolomics_RBC_Platelet/";
-  //const std::string data_dir = "C:/Users/domccl/Dropbox (UCSD SBRG)/Metabolomics_KALE/";
-  const std::string data_dir = "C:/Users/domccl/Dropbox (UCSD SBRG)/Metabolomics_RBC_Platelet/";
+  const std::string data_dir = "C:/Users/domccl/Dropbox (UCSD SBRG)/Metabolomics_KALE/";
+  //const std::string data_dir = "C:/Users/domccl/Dropbox (UCSD SBRG)/Metabolomics_RBC_Platelet/";
   //const std::string data_dir = "/home/user/Data/";
 
   // Set the biochemical reaction filenames
-  //const std::string biochem_rxns_filename = data_dir + "iJO1366.csv";
-  const std::string biochem_rxns_filename = data_dir + "iAT_PLT_636.csv";
+  const std::string biochem_rxns_filename = data_dir + "iJO1366.csv";
+  //const std::string biochem_rxns_filename = data_dir + "iAT_PLT_636.csv";
   //const std::string biochem_rxns_filename = data_dir + "iAB_RBC_283.csv";
 
   // Set the model filenames
-  //const std::string model_encoder_weights_filename = data_dir + "TrainTestData/SampledArithmeticMath/VAE_weights.csv"; 
-  //const std::string model_decoder_weights_filename = data_dir + "TrainTestData/SampledArithmeticMath/VAE_weights.csv";
-  const std::string model_encoder_weights_filename = data_dir + "VAE_weights.csv";
-  const std::string model_decoder_weights_filename = data_dir + "VAE_weights.csv";
+  const std::string model_encoder_weights_filename = data_dir + "TrainTestData/SampledArithmeticMath/VAE_weights.csv"; 
+  const std::string model_decoder_weights_filename = data_dir + "TrainTestData/SampledArithmeticMath/VAE_weights.csv";
+  //const std::string model_encoder_weights_filename = data_dir + "VAE_weights.csv";
+  //const std::string model_decoder_weights_filename = data_dir + "VAE_weights.csv";
   // NOTE: be sure to re-name the Input_000000000000-LinearScale_to_... weights to Input_000000000000_to_...
   //       using regex "-LinearScale_to_FC0" with "_to_FC0"
   const std::string model_classifier_weights_filename = data_dir + "TrainTestData/SampledArithmeticMath/Classifier_5000_weights.csv";
 
-  //// ALEsKOs01
-  //const std::string metabo_data_filename_train = data_dir + "ALEsKOs01_Metabolomics_train.csv";
-  //const std::string meta_data_filename_train = data_dir + "ALEsKOs01_MetaData_train.csv";
-  //const std::string metabo_data_filename_test = data_dir + "ALEsKOs01_Metabolomics_test.csv";
-  //const std::string meta_data_filename_test = data_dir + "ALEsKOs01_MetaData_test.csv";
+  // ALEsKOs01
+  const std::string metabo_data_filename_train = data_dir + "ALEsKOs01_Metabolomics_train.csv";
+  const std::string meta_data_filename_train = data_dir + "ALEsKOs01_MetaData_train.csv";
+  const std::string metabo_data_filename_test = data_dir + "ALEsKOs01_Metabolomics_test.csv";
+  const std::string meta_data_filename_test = data_dir + "ALEsKOs01_MetaData_test.csv";
 
-  // Platelets
-  const std::string metabo_data_filename_train = data_dir + "PLT_timeCourse_Metabolomics_train.csv";
-  const std::string meta_data_filename_train = data_dir + "PLT_timeCourse_MetaData_train.csv";
-  const std::string metabo_data_filename_test = data_dir + "PLT_timeCourse_Metabolomics_test.csv";
-  const std::string meta_data_filename_test = data_dir + "PLT_timeCourse_MetaData_test.csv";
+  //// IndustrialStrains0103
+  //const std::string metabo_data_filename_train = data_dir + "IndustrialStrains0103_Metabolomics_train.csv";
+  //const std::string meta_data_filename_train = data_dir + "IndustrialStrains0103_MetaData_train.csv";
+  //const std::string metabo_data_filename_test = data_dir + "IndustrialStrains0103_Metabolomics_test.csv";
+  //const std::string meta_data_filename_test = data_dir + "IndustrialStrains0103_MetaData_test.csv";
+
+  //// Platelets
+  //const std::string metabo_data_filename_train = data_dir + "PLT_timeCourse_Metabolomics_train.csv";
+  //const std::string meta_data_filename_train = data_dir + "PLT_timeCourse_MetaData_train.csv";
+  //const std::string metabo_data_filename_test = data_dir + "PLT_timeCourse_Metabolomics_test.csv";
+  //const std::string meta_data_filename_test = data_dir + "PLT_timeCourse_MetaData_test.csv";
 
   // Define the model trainers and resources for the trainers
   ModelResources model_resources = { ModelDevice(0, 1) };
