@@ -46,26 +46,26 @@ namespace SmartPeak
 	};
 
   /**
-    @brief EuclideanDistance loss function.
+    @brief ManhattanDistance loss function.
   */
   template<typename TensorT>
-  class EuclideanDistanceOp : public LossFunctionOp<TensorT>
+  class ManhattanDistanceLossOp : public LossFunctionOp<TensorT>
   {
 public: 
 		using LossFunctionOp<TensorT>::LossFunctionOp;
-		std::string getName() {	return "EuclideanDistanceOp"; };
+		std::string getName() {	return "ManhattanDistanceLossOp"; };
 		std::vector<TensorT> getParameters() const { return std::vector<TensorT>({this->eps_, this->scale_}); }
   };
 
   /**
-    @brief EuclideanDistance loss function gradient.
+    @brief ManhattanDistance loss function gradient.
   */
   template<typename TensorT>
-  class EuclideanDistanceGradOp : public LossFunctionGradOp<TensorT>
+  class ManhattanDistanceLossGradOp : public LossFunctionGradOp<TensorT>
   {
 public: 
 		using LossFunctionGradOp<TensorT>::LossFunctionGradOp;
-		std::string getName() { return "EuclideanDistanceGradOp"; };
+		std::string getName() { return "ManhattanDistanceLossGradOp"; };
 		std::vector<TensorT> getParameters() const { return std::vector<TensorT>({this->eps_, this->scale_}); }
   };
 
@@ -73,11 +73,11 @@ public:
     @brief L2Norm loss function.
   */
   template<typename TensorT>
-  class L2NormOp : public LossFunctionOp<TensorT>
+  class L2NormLossOp : public LossFunctionOp<TensorT>
   {
 public:
 		using LossFunctionOp<TensorT>::LossFunctionOp;
-		std::string getName() { return "L2NormOp"; };
+		std::string getName() { return "L2NormLossOp"; };
 		std::vector<TensorT> getParameters() const { return std::vector<TensorT>({this->eps_, this->scale_}); }
   };
 
@@ -85,11 +85,11 @@ public:
     @brief L2Norm loss function gradient.
   */
   template<typename TensorT>
-  class L2NormGradOp : public LossFunctionGradOp<TensorT>
+  class L2NormLossGradOp : public LossFunctionGradOp<TensorT>
   {
 public:
 		using LossFunctionGradOp<TensorT>::LossFunctionGradOp;
-		std::string getName() { return "L2NormGradOp"; };
+		std::string getName() { return "L2NormLossGradOp"; };
 		std::vector<TensorT> getParameters() const { return std::vector<TensorT>({this->eps_, this->scale_}); }
   };
 
@@ -97,11 +97,11 @@ public:
     @brief Binary Cross Entropy loss function.
   */
   template<typename TensorT>
-  class BCEOp : public LossFunctionOp<TensorT>
+  class BCELossOp : public LossFunctionOp<TensorT>
   {
 public:
 		using LossFunctionOp<TensorT>::LossFunctionOp;
-		std::string getName() { return "BCEOp"; };
+		std::string getName() { return "BCELossOp"; };
 		std::vector<TensorT> getParameters() const { return std::vector<TensorT>({this->eps_, this->scale_}); }
   };
 
@@ -113,11 +113,11 @@ public:
 		= -(x-z)/((x-1)*x)
   */
   template<typename TensorT>
-  class BCEGradOp : public LossFunctionGradOp<TensorT>
+  class BCELossGradOp : public LossFunctionGradOp<TensorT>
   {
 public:
 		using LossFunctionGradOp<TensorT>::LossFunctionGradOp;
-		std::string getName() { return "BCEGradOp"; };
+		std::string getName() { return "BCELossGradOp"; };
 		std::vector<TensorT> getParameters() const { return std::vector<TensorT>({this->eps_, this->scale_}); }
   };
 
@@ -132,11 +132,11 @@ public:
 				return -log(1 - yHat)
   */
   template<typename TensorT>
-  class NegativeLogLikelihoodOp : public LossFunctionOp<TensorT>
+  class NegativeLogLikelihoodLossOp : public LossFunctionOp<TensorT>
   {
 public:
 		using LossFunctionOp<TensorT>::LossFunctionOp;
-		std::string getName() { return "NegativeLogLikelihoodOp"; };
+		std::string getName() { return "NegativeLogLikelihoodLossOp"; };
 		std::vector<TensorT> getParameters() const { return std::vector<TensorT>({this->eps_, this->scale_}); }
   };
 
@@ -144,11 +144,11 @@ public:
     @brief NegativeLogLikelihood loss function gradient.
   */
   template<typename TensorT>
-  class NegativeLogLikelihoodGradOp : public LossFunctionGradOp<TensorT>
+  class NegativeLogLikelihoodLossGradOp : public LossFunctionGradOp<TensorT>
   {
 public:
 		using LossFunctionGradOp<TensorT>::LossFunctionGradOp;
-		std::string getName() { return "NegativeLogLikelihoodGradOp"; };
+		std::string getName() { return "NegativeLogLikelihoodLossGradOp"; };
 		std::vector<TensorT> getParameters() const { return std::vector<TensorT>({this->eps_, this->scale_}); }
   };
 
@@ -156,11 +156,11 @@ public:
     @brief MSE Mean Squared Error loss function.
   */
   template<typename TensorT>
-  class MSEOp : public LossFunctionOp<TensorT>
+  class MSELossOp : public LossFunctionOp<TensorT>
   {
 public:
 		using LossFunctionOp<TensorT>::LossFunctionOp;
-		std::string getName() { return "MSEOp"; };
+		std::string getName() { return "MSELossOp"; };
 		std::vector<TensorT> getParameters() const { return std::vector<TensorT>({this->eps_, this->scale_}); }
   };
 
@@ -168,11 +168,11 @@ public:
     @brief MSE Mean Squared Error loss function gradient.
   */
   template<typename TensorT>
-  class MSEGradOp : public LossFunctionGradOp<TensorT>
+  class MSELossGradOp : public LossFunctionGradOp<TensorT>
   {
 public:
 		using LossFunctionGradOp<TensorT>::LossFunctionGradOp;
-		std::string getName() { return "MSEGradOp"; };
+		std::string getName() { return "MSELossGradOp"; };
 		std::vector<TensorT> getParameters() const { return std::vector<TensorT>({this->eps_, this->scale_}); }
   };
 

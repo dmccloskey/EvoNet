@@ -931,8 +931,8 @@ BOOST_AUTO_TEST_CASE(CETT)
 		{ { 6 },{ 5 },{ 5 },{ 4 },{ 4 },{ 3 },{ 3 },{ 2 } },
 		{ { 6 },{ 6 },{ 5 },{ 5 },{ 4 },{ 4 },{ 3 },{ 3 } } }
 	);
-	LossFunctionOp<float>* loss_function = new MSEOp<float>();
-	LossFunctionGradOp<float>* loss_function_grad = new MSEGradOp<float>();
+	LossFunctionOp<float>* loss_function = new MSELossOp<float>();
+	LossFunctionGradOp<float>* loss_function_grad = new MSELossGradOp<float>();
 	model_interpreter.CETT(model_CETT, expected, output_nodes, loss_function, loss_function_grad, 4);
 
 	// test values of errors of the output nodes
@@ -1064,8 +1064,8 @@ BOOST_AUTO_TEST_CASE(TBPTT)
 		{ { 6 },{ 5 },{ 5 },{ 4 },{ 4 },{ 3 },{ 3 },{ 2 } },
 		{ { 6 },{ 6 },{ 5 },{ 5 },{ 4 },{ 4 },{ 3 },{ 3 } } }
 	);
-	LossFunctionOp<float>* loss_function = new MSEOp<float>();
-	LossFunctionGradOp<float>* loss_function_grad = new MSEGradOp<float>();
+	LossFunctionOp<float>* loss_function = new MSELossOp<float>();
+	LossFunctionGradOp<float>* loss_function_grad = new MSELossGradOp<float>();
 	model_interpreter.CETT(model_TBPTT, expected, output_nodes, loss_function, loss_function_grad, 4);
 
 	model_interpreter.TBPTT(4);
@@ -1141,8 +1141,8 @@ BOOST_AUTO_TEST_CASE(updateWeights)
 		{ { 5 },{ 5 },{ 4 },{ 4 },{ 3 },{ 3 },{ 2 },{ 2 } },
 		{ { 6 },{ 5 },{ 5 },{ 4 },{ 4 },{ 3 },{ 3 },{ 2 } },
 		{ { 6 },{ 6 },{ 5 },{ 5 },{ 4 },{ 4 },{ 3 },{ 3 } } });
-	LossFunctionOp<float>* loss_function = new MSEOp<float>();
-	LossFunctionGradOp<float>* loss_function_grad = new MSEGradOp<float>();
+	LossFunctionOp<float>* loss_function = new MSELossOp<float>();
+	LossFunctionGradOp<float>* loss_function_grad = new MSELossGradOp<float>();
 	model_interpreter.CETT(model_updateWeights, expected, output_nodes, loss_function, loss_function_grad, 4);
 
 	model_interpreter.TBPTT(4);
@@ -1200,8 +1200,8 @@ BOOST_AUTO_TEST_CASE(modelTrainer2)
 		{ { 5 },{ 5 },{ 4 },{ 4 },{ 3 },{ 3 },{ 2 },{ 2 } },
 		{ { 6 },{ 5 },{ 5 },{ 4 },{ 4 },{ 3 },{ 3 },{ 2 } },
 		{ { 6 },{ 6 },{ 5 },{ 5 },{ 4 },{ 4 },{ 3 },{ 3 } } });
-	LossFunctionOp<float>* loss_function = new MSEOp<float>();
-	LossFunctionGradOp<float>* loss_function_grad = new MSEGradOp<float>();
+	LossFunctionOp<float>* loss_function = new MSELossOp<float>();
+	LossFunctionGradOp<float>* loss_function_grad = new MSELossGradOp<float>();
 
 	// iterate until we find the optimal values
 	const int max_iter = 50;
@@ -1269,8 +1269,8 @@ BOOST_AUTO_TEST_CASE(getModelResults)
 		{ { 5 },{ 5 },{ 4 },{ 4 },{ 3 },{ 3 },{ 2 },{ 2 } },
 		{ { 6 },{ 5 },{ 5 },{ 4 },{ 4 },{ 3 },{ 3 },{ 2 } },
 		{ { 6 },{ 6 },{ 5 },{ 5 },{ 4 },{ 4 },{ 3 },{ 3 } } });
-	LossFunctionOp<float>* loss_function = new MSEOp<float>();
-	LossFunctionGradOp<float>* loss_function_grad = new MSEGradOp<float>();
+	LossFunctionOp<float>* loss_function = new MSELossOp<float>();
+	LossFunctionGradOp<float>* loss_function_grad = new MSELossGradOp<float>();
   MetricFunctionOp<float>* metric_function = new MAEOp<float>();
 	model_interpreter.CETT(model_getModelResults, expected, output_nodes, loss_function, loss_function_grad, 4);
   model_interpreter.CMTT(model_getModelResults, expected, output_nodes, metric_function, 4, 0);
@@ -1426,8 +1426,8 @@ BOOST_AUTO_TEST_CASE(modelTrainer3)
 		}
 	}  
 
-	LossFunctionOp<float>* loss_function = new MSEOp<float>();
-	LossFunctionGradOp<float>* loss_function_grad = new MSEGradOp<float>();
+	LossFunctionOp<float>* loss_function = new MSELossOp<float>();
+	LossFunctionGradOp<float>* loss_function_grad = new MSELossGradOp<float>();
 
 	// iterate until we find the optimal values
 	const int max_iter = 50;

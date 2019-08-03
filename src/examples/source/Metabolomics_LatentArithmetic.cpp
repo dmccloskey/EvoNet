@@ -1380,7 +1380,7 @@ int main(int argc, char** argv)
   latentArithmetic.setMetabolomicsData(biochem_rxns_filename, metabo_data_filename_train, meta_data_filename_train,
     metabo_data_filename_test, meta_data_filename_test);
   latentArithmetic.setEncDecModels(model_trainer, model_encoder_weights_filename, model_decoder_weights_filename,
-    64, 0, 0, 64, 0, 0);
+    64, 64, 0, 64, 64, 0);
   latentArithmetic.setEncDecModelInterpreters(model_interpreter, model_interpreter);
   //latentArithmetic.setClassifierModel(model_trainer, model_classifier_weights_filename, 64, 0, 0);
   //latentArithmetic.setClassifierModelInterpreter(model_interpreter);
@@ -1389,7 +1389,7 @@ int main(int argc, char** argv)
 
   // Run the script
   //main_KALE(model_interpreter, model_trainer, model_logger, latentArithmetic, false, false, false, true);
-  main_PLT(model_interpreter, model_trainer, model_logger, latentArithmetic, false, true, false, false);
+  main_PLT(model_interpreter, model_trainer, model_logger, latentArithmetic, false, false, true, true);
 
   return 0;
 }

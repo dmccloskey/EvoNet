@@ -509,8 +509,8 @@ int main(int argc, char** argv)
 	model_trainer.setLogging(true, false);
 	model_trainer.setPreserveOoO(true);
 	model_trainer.setFastInterpreter(false); // NOTE: change back to false for experiments with Minimal and Solution!
-	model_trainer.setLossFunctions({ std::shared_ptr<LossFunctionOp<float>>(new MSEOp<float>()) });
-	model_trainer.setLossFunctionGrads({ std::shared_ptr<LossFunctionGradOp<float>>(new MSEGradOp<float>()) });
+	model_trainer.setLossFunctions({ std::shared_ptr<LossFunctionOp<float>>(new MSELossOp<float>()) });
+	model_trainer.setLossFunctionGrads({ std::shared_ptr<LossFunctionGradOp<float>>(new MSELossGradOp<float>()) });
 	model_trainer.setLossOutputNodes({ output_nodes });
 
 	// define the model logger

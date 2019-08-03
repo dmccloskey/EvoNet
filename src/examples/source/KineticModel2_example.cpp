@@ -372,8 +372,8 @@ void main_KineticModel(const bool& make_model, const bool& train_model, const st
    //model_trainer.setFindCycles(false);  // manually specifying the cycles
    //model_trainer.setFastInterpreter(true);
    //model_trainer.setPreserveOoO(true);
-  model_trainer.setLossFunctions({ std::shared_ptr<LossFunctionOp<float>>(new MSEOp<float>()) });
-  model_trainer.setLossFunctionGrads({ std::shared_ptr<LossFunctionGradOp<float>>(new MSEGradOp<float>()) });
+  model_trainer.setLossFunctions({ std::shared_ptr<LossFunctionOp<float>>(new MSELossOp<float>()) });
+  model_trainer.setLossFunctionGrads({ std::shared_ptr<LossFunctionGradOp<float>>(new MSELossGradOp<float>()) });
   model_trainer.setLossOutputNodes({ output_nodes });
 
   // define the model logger

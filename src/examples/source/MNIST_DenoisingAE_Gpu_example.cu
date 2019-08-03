@@ -352,11 +352,11 @@ void main_AE(const bool& make_model, const bool& train_model) {
   model_trainer.setFindCycles(false);
   model_trainer.setFastInterpreter(true);
   model_trainer.setLossFunctions({
-    std::shared_ptr<LossFunctionOp<float>>(new MSEOp<float>(1e-6, 1.0))
+    std::shared_ptr<LossFunctionOp<float>>(new MSELossOp<float>(1e-6, 1.0))
     //,std::shared_ptr<LossFunctionOp<float>>(new BCEWithLogitsOp<float>(1e-6, 0.05))
     });
   model_trainer.setLossFunctionGrads({
-    std::shared_ptr<LossFunctionGradOp<float>>(new MSEGradOp<float>(1e-6, 1.0))
+    std::shared_ptr<LossFunctionGradOp<float>>(new MSELossGradOp<float>(1e-6, 1.0))
     //,std::shared_ptr<LossFunctionGradOp<float>>(new BCEWithLogitsGradOp<float>(1e-6, 0.05))
     });
   model_trainer.setOutputNodes({ output_nodes

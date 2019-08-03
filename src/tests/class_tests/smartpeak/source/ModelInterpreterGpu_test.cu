@@ -1001,8 +1001,8 @@ void test_CETT()
 		{ { 6 },{ 5 },{ 5 },{ 4 },{ 4 },{ 3 },{ 3 },{ 2 } },
 		{ { 6 },{ 6 },{ 5 },{ 5 },{ 4 },{ 4 },{ 3 },{ 3 } } }
 	);
-	LossFunctionOp<float>* loss_function = new MSEOp<float>();
-	LossFunctionGradOp<float>* loss_function_grad = new MSEGradOp<float>();
+	LossFunctionOp<float>* loss_function = new MSELossOp<float>();
+	LossFunctionGradOp<float>* loss_function_grad = new MSELossGradOp<float>();
 	model_interpreter.CETT(model_CETT, expected, output_nodes, loss_function, loss_function_grad, 4);
 
 	// Retrieve the model and node errors from the device
@@ -1157,8 +1157,8 @@ void test_TBPTT()
 		{ { 6 },{ 5 },{ 5 },{ 4 },{ 4 },{ 3 },{ 3 },{ 2 } },
 		{ { 6 },{ 6 },{ 5 },{ 5 },{ 4 },{ 4 },{ 3 },{ 3 } } }
 	);
-	LossFunctionOp<float>* loss_function = new MSEOp<float>();
-	LossFunctionGradOp<float>* loss_function_grad = new MSEGradOp<float>();
+	LossFunctionOp<float>* loss_function = new MSELossOp<float>();
+	LossFunctionGradOp<float>* loss_function_grad = new MSELossGradOp<float>();
 	model_interpreter.CETT(model_TBPTT, expected, output_nodes, loss_function, loss_function_grad, 4);
 
 	model_interpreter.TBPTT(4);
@@ -1249,8 +1249,8 @@ void test_updateWeights()
 		{ { 5 },{ 5 },{ 4 },{ 4 },{ 3 },{ 3 },{ 2 },{ 2 } },
 		{ { 6 },{ 5 },{ 5 },{ 4 },{ 4 },{ 3 },{ 3 },{ 2 } },
 		{ { 6 },{ 6 },{ 5 },{ 5 },{ 4 },{ 4 },{ 3 },{ 3 } } });
-	LossFunctionOp<float>* loss_function = new MSEOp<float>();
-	LossFunctionGradOp<float>* loss_function_grad = new MSEGradOp<float>();
+	LossFunctionOp<float>* loss_function = new MSELossOp<float>();
+	LossFunctionGradOp<float>* loss_function_grad = new MSELossGradOp<float>();
 	model_interpreter.CETT(model_updateWeights, expected, output_nodes, loss_function, loss_function_grad, 4);
 
 	model_interpreter.TBPTT(4);
@@ -1323,8 +1323,8 @@ void test_modelTrainer2()
 		{ { 5 },{ 5 },{ 4 },{ 4 },{ 3 },{ 3 },{ 2 },{ 2 } },
 		{ { 6 },{ 5 },{ 5 },{ 4 },{ 4 },{ 3 },{ 3 },{ 2 } },
 		{ { 6 },{ 6 },{ 5 },{ 5 },{ 4 },{ 4 },{ 3 },{ 3 } } });
-	LossFunctionOp<float>* loss_function = new MSEOp<float>();
-	LossFunctionGradOp<float>* loss_function_grad = new MSEGradOp<float>();
+	LossFunctionOp<float>* loss_function = new MSELossOp<float>();
+	LossFunctionGradOp<float>* loss_function_grad = new MSELossGradOp<float>();
 
 	// iterate until we find the optimal values
 	const int max_iter = 50;
@@ -1402,8 +1402,8 @@ void test_getModelResults()
 		{ { 5 },{ 5 },{ 4 },{ 4 },{ 3 },{ 3 },{ 2 },{ 2 } },
 		{ { 6 },{ 5 },{ 5 },{ 4 },{ 4 },{ 3 },{ 3 },{ 2 } },
 		{ { 6 },{ 6 },{ 5 },{ 5 },{ 4 },{ 4 },{ 3 },{ 3 } } });
-	LossFunctionOp<float>* loss_function = new MSEOp<float>();
-	LossFunctionGradOp<float>* loss_function_grad = new MSEGradOp<float>();
+	LossFunctionOp<float>* loss_function = new MSELossOp<float>();
+	LossFunctionGradOp<float>* loss_function_grad = new MSELossGradOp<float>();
 	model_interpreter.CETT(model_getModelResults, expected, output_nodes, loss_function, loss_function_grad, 4);
   MetricFunctionOp<float>* metric_function = new MAEOp<float>();
   model_interpreter.CMTT(model_getModelResults, expected, output_nodes, metric_function, 4, 0);

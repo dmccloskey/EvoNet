@@ -1228,9 +1228,9 @@ void main_batchCorrectionAE(const std::string& biochem_rxns_filename,
   model_trainer.setFastInterpreter(true);
   model_trainer.setPreserveOoO(true);
   model_trainer.setLossFunctions({
-    std::shared_ptr<LossFunctionOp<float>>(new MSEOp<float>(1e-6, 1.0)) });
+    std::shared_ptr<LossFunctionOp<float>>(new MSELossOp<float>(1e-6, 1.0)) });
   model_trainer.setLossFunctionGrads({
-    std::shared_ptr<LossFunctionGradOp<float>>(new MSEGradOp<float>(1e-6, 1.0)) });
+    std::shared_ptr<LossFunctionGradOp<float>>(new MSELossGradOp<float>(1e-6, 1.0)) });
   model_trainer.setLossOutputNodes({ output_nodes_ae });
   model_trainer.setMetricFunctions({ std::shared_ptr<MetricFunctionOp<float>>(new MAEOp<float>()) });
   model_trainer.setMetricOutputNodes({ output_nodes_ae });
@@ -1351,10 +1351,10 @@ void main_batchCorrectionClassification(const std::string& biochem_rxns_filename
   model_trainer.setPreserveOoO(true);
   model_trainer.setLossFunctions({
     std::shared_ptr<LossFunctionOp<float>>(new CrossEntropyWithLogitsOp<float>()),
-    std::shared_ptr<LossFunctionOp<float>>(new MSEOp<float>()) });
+    std::shared_ptr<LossFunctionOp<float>>(new MSELossOp<float>()) });
   model_trainer.setLossFunctionGrads({
     std::shared_ptr<LossFunctionGradOp<float>>(new CrossEntropyWithLogitsGradOp<float>()),
-    std::shared_ptr<LossFunctionGradOp<float>>(new MSEGradOp<float>()) });
+    std::shared_ptr<LossFunctionGradOp<float>>(new MSELossGradOp<float>()) });
   model_trainer.setLossOutputNodes({
     output_nodes,
     output_nodes });

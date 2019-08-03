@@ -12,7 +12,7 @@ using namespace std;
 BOOST_AUTO_TEST_SUITE(lossFunctionTensor)
 
 /**
-  EuclideanDistanceOp Tests
+  ManhattanDistanceLossOp Tests
 */
 BOOST_AUTO_TEST_CASE(constructorEuclideanDistanceOp)
 {
@@ -58,7 +58,7 @@ BOOST_AUTO_TEST_CASE(operationfunctionEuclideanDistanceOp)
 }
 
 /**
-  EuclideanDistanceGradOp Tests
+  ManhattanDistanceLossGradOp Tests
 */
 BOOST_AUTO_TEST_CASE(constructorEuclideanDistanceGradOp)
 {
@@ -108,7 +108,7 @@ BOOST_AUTO_TEST_CASE(operationfunctionEuclideanDistanceGradOp)
 }
 
 /**
-  L2NormOp Tests
+  L2NormLossOp Tests
 */
 BOOST_AUTO_TEST_CASE(constructorL2NormOp)
 {
@@ -154,7 +154,7 @@ BOOST_AUTO_TEST_CASE(operationfunctionL2NormOp)
 }
 
 /**
-  L2NormGradOp Tests
+  L2NormLossGradOp Tests
 */
 BOOST_AUTO_TEST_CASE(constructorL2NormGradOp)
 {
@@ -300,7 +300,7 @@ BOOST_AUTO_TEST_CASE(operationfunctionCrossEntropyGradOp)
 }
 
 /**
-  NegativeLogLikelihoodOp Tests
+  NegativeLogLikelihoodLossOp Tests
 */
 BOOST_AUTO_TEST_CASE(constructorNegativeLogLikelihoodOp)
 {
@@ -346,7 +346,7 @@ BOOST_AUTO_TEST_CASE(operationfunctionNegativeLogLikelihoodOp)
 }
 
 /**
-  NegativeLogLikelihoodGradOp Tests
+  NegativeLogLikelihoodLossGradOp Tests
 */
 BOOST_AUTO_TEST_CASE(constructorNegativeLogLikelihoodGradOp)
 {
@@ -396,7 +396,7 @@ BOOST_AUTO_TEST_CASE(operationfunctionNegativeLogLikelihoodGradOp)
 }
 
 /**
-  MSEOp Tests
+  MSELossOp Tests
 */
 BOOST_AUTO_TEST_CASE(constructorMSEOp)
 {
@@ -442,7 +442,7 @@ BOOST_AUTO_TEST_CASE(operationfunctionMSEOp)
 }
 
 /**
-  MSEGradOp Tests
+  MSELossGradOp Tests
 */
 BOOST_AUTO_TEST_CASE(constructorMSEGradOp)
 {

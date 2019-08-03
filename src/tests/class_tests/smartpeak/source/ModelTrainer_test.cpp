@@ -231,11 +231,11 @@ BOOST_AUTO_TEST_CASE(checkLossFunctions)
   BOOST_CHECK(!model_trainer.checkLossFunctions());
 
   model_trainer.setLossFunctions({
-    std::shared_ptr<LossFunctionOp<float>>(new MSEOp<float>(1e-6, 1.0)),
+    std::shared_ptr<LossFunctionOp<float>>(new MSELossOp<float>(1e-6, 1.0)),
     std::shared_ptr<LossFunctionOp<float>>(new KLDivergenceMuOp<float>(1e-6, 0.1)),
     std::shared_ptr<LossFunctionOp<float>>(new KLDivergenceLogVarOp<float>(1e-6, 0.1)) });
   model_trainer.setLossFunctionGrads({
-    std::shared_ptr<LossFunctionGradOp<float>>(new MSEGradOp<float>(1e-6, 1.0)),
+    std::shared_ptr<LossFunctionGradOp<float>>(new MSELossGradOp<float>(1e-6, 1.0)),
     std::shared_ptr<LossFunctionGradOp<float>>(new KLDivergenceMuGradOp<float>(1e-6, 0.1)),
     std::shared_ptr<LossFunctionGradOp<float>>(new KLDivergenceLogVarGradOp<float>(1e-6, 0.1)) });
   std::vector<std::string> output_nodes, encoding_nodes_mu, encoding_nodes_logvar;
@@ -243,9 +243,9 @@ BOOST_AUTO_TEST_CASE(checkLossFunctions)
   BOOST_CHECK(model_trainer.checkLossFunctions());
 
   model_trainer.setLossFunctions({
-    std::shared_ptr<LossFunctionOp<float>>(new MSEOp<float>(1e-6, 1.0)) });
+    std::shared_ptr<LossFunctionOp<float>>(new MSELossOp<float>(1e-6, 1.0)) });
   model_trainer.setLossFunctionGrads({
-    std::shared_ptr<LossFunctionGradOp<float>>(new MSEGradOp<float>(1e-6, 1.0)),
+    std::shared_ptr<LossFunctionGradOp<float>>(new MSELossGradOp<float>(1e-6, 1.0)),
     std::shared_ptr<LossFunctionGradOp<float>>(new KLDivergenceMuGradOp<float>(1e-6, 0.1)),
     std::shared_ptr<LossFunctionGradOp<float>>(new KLDivergenceLogVarGradOp<float>(1e-6, 0.1)) });
   model_trainer.setLossOutputNodes({ output_nodes, encoding_nodes_mu });
@@ -382,8 +382,8 @@ BOOST_AUTO_TEST_CASE(DAGToy1)
 	trainer.setLogging(false, false);
   const std::vector<std::string> input_nodes = {"0", "1", "6", "7"}; // true inputs + biases
   const std::vector<std::string> output_nodes = {"4", "5"};
-	trainer.setLossFunctions({ std::shared_ptr<LossFunctionOp<float>>(new MSEOp<float>()) });
-	trainer.setLossFunctionGrads({ std::shared_ptr<LossFunctionGradOp<float>>(new MSEGradOp<float>()) });
+	trainer.setLossFunctions({ std::shared_ptr<LossFunctionOp<float>>(new MSELossOp<float>()) });
+	trainer.setLossFunctionGrads({ std::shared_ptr<LossFunctionGradOp<float>>(new MSELossGradOp<float>()) });
 	trainer.setLossOutputNodes({ output_nodes });
 
   // Make the input data
@@ -460,8 +460,8 @@ BOOST_AUTO_TEST_CASE(DAGToy2)
   trainer.setLogging(false, false);
   const std::vector<std::string> input_nodes = { "0", "1", "6", "7" }; // true inputs + biases
   const std::vector<std::string> output_nodes = { "4", "5" };
-  trainer.setLossFunctions({ std::shared_ptr<LossFunctionOp<float>>(new MSEOp<float>()) });
-  trainer.setLossFunctionGrads({ std::shared_ptr<LossFunctionGradOp<float>>(new MSEGradOp<float>()) });
+  trainer.setLossFunctions({ std::shared_ptr<LossFunctionOp<float>>(new MSELossOp<float>()) });
+  trainer.setLossFunctionGrads({ std::shared_ptr<LossFunctionGradOp<float>>(new MSELossGradOp<float>()) });
   trainer.setLossOutputNodes({ output_nodes });
   trainer.setMetricFunctions({ std::shared_ptr<MetricFunctionOp<float>>(new MAEOp<float>()) });
   trainer.setMetricOutputNodes({ output_nodes });
@@ -556,8 +556,8 @@ BOOST_AUTO_TEST_CASE(DCGToy1)
 	trainer.setNEpochsValidation(50);
   const std::vector<std::string> input_nodes = {"0", "3", "4"}; // true inputs + biases
   const std::vector<std::string> output_nodes = {"2"};
-	trainer.setLossFunctions({ std::shared_ptr<LossFunctionOp<float>>(new MSEOp<float>()) });
-	trainer.setLossFunctionGrads({ std::shared_ptr<LossFunctionGradOp<float>>(new MSEGradOp<float>()) });
+	trainer.setLossFunctions({ std::shared_ptr<LossFunctionOp<float>>(new MSELossOp<float>()) });
+	trainer.setLossFunctionGrads({ std::shared_ptr<LossFunctionGradOp<float>>(new MSELossGradOp<float>()) });
 	trainer.setLossOutputNodes({ output_nodes });
 
   // Make the input data
@@ -638,8 +638,8 @@ BOOST_AUTO_TEST_CASE(DCGToy2)
   trainer.setNEpochsValidation(50);
   const std::vector<std::string> input_nodes = { "0", "3", "4" }; // true inputs + biases
   const std::vector<std::string> output_nodes = { "2" };
-  trainer.setLossFunctions({ std::shared_ptr<LossFunctionOp<float>>(new MSEOp<float>()) });
-  trainer.setLossFunctionGrads({ std::shared_ptr<LossFunctionGradOp<float>>(new MSEGradOp<float>()) });
+  trainer.setLossFunctions({ std::shared_ptr<LossFunctionOp<float>>(new MSELossOp<float>()) });
+  trainer.setLossFunctionGrads({ std::shared_ptr<LossFunctionGradOp<float>>(new MSELossGradOp<float>()) });
   trainer.setLossOutputNodes({ output_nodes });
   trainer.setMetricFunctions({ std::shared_ptr<MetricFunctionOp<float>>(new MAEOp<float>()) });
   trainer.setMetricOutputNodes({ output_nodes });

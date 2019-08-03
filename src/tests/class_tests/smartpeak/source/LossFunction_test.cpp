@@ -12,95 +12,95 @@ using namespace std;
 BOOST_AUTO_TEST_SUITE(lossFunction)
 
 /**
-  EuclideanDistanceOp Tests
+  ManhattanDistanceLossOp Tests
 */ 
 BOOST_AUTO_TEST_CASE(constructorEuclideanDistanceOp) 
 {
-  EuclideanDistanceOp<double>* ptrReLU = nullptr;
-  EuclideanDistanceOp<double>* nullPointerReLU = nullptr;
+  ManhattanDistanceLossOp<double>* ptrReLU = nullptr;
+  ManhattanDistanceLossOp<double>* nullPointerReLU = nullptr;
   BOOST_CHECK_EQUAL(ptrReLU, nullPointerReLU);
 }
 
 BOOST_AUTO_TEST_CASE(destructorEuclideanDistanceOp) 
 {
-  EuclideanDistanceOp<double>* ptrReLU = nullptr;
-	ptrReLU = new EuclideanDistanceOp<double>();
+  ManhattanDistanceLossOp<double>* ptrReLU = nullptr;
+	ptrReLU = new ManhattanDistanceLossOp<double>();
   delete ptrReLU;
 }
 
 BOOST_AUTO_TEST_CASE(gettersAndSettersEuclideanDistanceOp)
 {
-  EuclideanDistanceOp<float> operation;
-  BOOST_CHECK_EQUAL(operation.getName(), "EuclideanDistanceOp");
+  ManhattanDistanceLossOp<float> operation;
+  BOOST_CHECK_EQUAL(operation.getName(), "ManhattanDistanceLossOp");
 }
 
 /**
-  EuclideanDistanceGradOp Tests
+  ManhattanDistanceLossGradOp Tests
 */ 
 BOOST_AUTO_TEST_CASE(constructorEuclideanDistanceGradOp) 
 {
-  EuclideanDistanceGradOp<double>* ptrReLU = nullptr;
-  EuclideanDistanceGradOp<double>* nullPointerReLU = nullptr;
+  ManhattanDistanceLossGradOp<double>* ptrReLU = nullptr;
+  ManhattanDistanceLossGradOp<double>* nullPointerReLU = nullptr;
   BOOST_CHECK_EQUAL(ptrReLU, nullPointerReLU);
 }
 
 BOOST_AUTO_TEST_CASE(destructorEuclideanDistanceGradOp) 
 {
-  EuclideanDistanceGradOp<double>* ptrReLU = nullptr;
-	ptrReLU = new EuclideanDistanceGradOp<double>();
+  ManhattanDistanceLossGradOp<double>* ptrReLU = nullptr;
+	ptrReLU = new ManhattanDistanceLossGradOp<double>();
   delete ptrReLU;
 }
 
 BOOST_AUTO_TEST_CASE(gettersAndSettersEuclideanDistanceGradOp)
 {
-  EuclideanDistanceGradOp<float> operation;
-  BOOST_CHECK_EQUAL(operation.getName(), "EuclideanDistanceGradOp");
+  ManhattanDistanceLossGradOp<float> operation;
+  BOOST_CHECK_EQUAL(operation.getName(), "ManhattanDistanceLossGradOp");
 }
 
 /**
-  L2NormOp Tests
+  L2NormLossOp Tests
 */ 
 BOOST_AUTO_TEST_CASE(constructorL2NormOp) 
 {
-  L2NormOp<double>* ptrL2Norm = nullptr;
-  L2NormOp<double>* nullPointerL2Norm = nullptr;
+  L2NormLossOp<double>* ptrL2Norm = nullptr;
+  L2NormLossOp<double>* nullPointerL2Norm = nullptr;
   BOOST_CHECK_EQUAL(ptrL2Norm, nullPointerL2Norm);
 }
 
 BOOST_AUTO_TEST_CASE(destructorL2NormOp) 
 {
-  L2NormOp<double>* ptrL2Norm = nullptr;
-	ptrL2Norm = new L2NormOp<double>();
+  L2NormLossOp<double>* ptrL2Norm = nullptr;
+	ptrL2Norm = new L2NormLossOp<double>();
   delete ptrL2Norm;
 }
 
 BOOST_AUTO_TEST_CASE(gettersAndSettersL2NormOp)
 {
-  L2NormOp<float> operation;
-  BOOST_CHECK_EQUAL(operation.getName(), "L2NormOp");
+  L2NormLossOp<float> operation;
+  BOOST_CHECK_EQUAL(operation.getName(), "L2NormLossOp");
 }
 
 /**
-  L2NormGradOp Tests
+  L2NormLossGradOp Tests
 */ 
 BOOST_AUTO_TEST_CASE(constructorL2NormGradOp) 
 {
-  L2NormGradOp<double>* ptrL2Norm = nullptr;
-  L2NormGradOp<double>* nullPointerL2Norm = nullptr;
+  L2NormLossGradOp<double>* ptrL2Norm = nullptr;
+  L2NormLossGradOp<double>* nullPointerL2Norm = nullptr;
   BOOST_CHECK_EQUAL(ptrL2Norm, nullPointerL2Norm);
 }
 
 BOOST_AUTO_TEST_CASE(destructorL2NormGradOp) 
 {
-  L2NormGradOp<double>* ptrL2Norm = nullptr;
-	ptrL2Norm = new L2NormGradOp<double>();
+  L2NormLossGradOp<double>* ptrL2Norm = nullptr;
+	ptrL2Norm = new L2NormLossGradOp<double>();
   delete ptrL2Norm;
 }
 
 BOOST_AUTO_TEST_CASE(gettersAndSettersL2NormGradOp)
 {
-  L2NormGradOp<float> operation;
-  BOOST_CHECK_EQUAL(operation.getName(), "L2NormGradOp");
+  L2NormLossGradOp<float> operation;
+  BOOST_CHECK_EQUAL(operation.getName(), "L2NormLossGradOp");
 }
 
 /**
@@ -108,22 +108,22 @@ BOOST_AUTO_TEST_CASE(gettersAndSettersL2NormGradOp)
 */ 
 BOOST_AUTO_TEST_CASE(constructorCrossEntropyOp) 
 {
-  BCEOp<double>* ptrCrossEntropy = nullptr;
-  BCEOp<double>* nullPointerCrossEntropy = nullptr;
+  BCELossOp<double>* ptrCrossEntropy = nullptr;
+  BCELossOp<double>* nullPointerCrossEntropy = nullptr;
   BOOST_CHECK_EQUAL(ptrCrossEntropy, nullPointerCrossEntropy);
 }
 
 BOOST_AUTO_TEST_CASE(destructorCrossEntropyOp) 
 {
-  BCEOp<double>* ptrCrossEntropy = nullptr;
-	ptrCrossEntropy = new BCEOp<double>();
+  BCELossOp<double>* ptrCrossEntropy = nullptr;
+	ptrCrossEntropy = new BCELossOp<double>();
   delete ptrCrossEntropy;
 }
 
 BOOST_AUTO_TEST_CASE(gettersAndSettersBCEOp)
 {
-  BCEOp<float> operation;
-  BOOST_CHECK_EQUAL(operation.getName(), "BCEOp");
+  BCELossOp<float> operation;
+  BOOST_CHECK_EQUAL(operation.getName(), "BCELossOp");
 }
 
 /**
@@ -131,89 +131,89 @@ BOOST_AUTO_TEST_CASE(gettersAndSettersBCEOp)
 */ 
 BOOST_AUTO_TEST_CASE(constructorCrossEntropyGradOp) 
 {
-  BCEGradOp<double>* ptrCrossEntropy = nullptr;
-  BCEGradOp<double>* nullPointerCrossEntropy = nullptr;
+  BCELossGradOp<double>* ptrCrossEntropy = nullptr;
+  BCELossGradOp<double>* nullPointerCrossEntropy = nullptr;
   BOOST_CHECK_EQUAL(ptrCrossEntropy, nullPointerCrossEntropy);
 }
 
 BOOST_AUTO_TEST_CASE(destructorCrossEntropyGradOp) 
 {
-  BCEGradOp<double>* ptrCrossEntropy = nullptr;
-	ptrCrossEntropy = new BCEGradOp<double>();
+  BCELossGradOp<double>* ptrCrossEntropy = nullptr;
+	ptrCrossEntropy = new BCELossGradOp<double>();
   delete ptrCrossEntropy;
 }
 
 BOOST_AUTO_TEST_CASE(gettersAndSettersBCEGradOp)
 {
-  BCEGradOp<float> operation;
-  BOOST_CHECK_EQUAL(operation.getName(), "BCEGradOp");
+  BCELossGradOp<float> operation;
+  BOOST_CHECK_EQUAL(operation.getName(), "BCELossGradOp");
 }
 
 /**
-  NegativeLogLikelihoodOp Tests
+  NegativeLogLikelihoodLossOp Tests
 */ 
 BOOST_AUTO_TEST_CASE(constructorNegativeLogLikelihoodOp) 
 {
-  NegativeLogLikelihoodOp<double>* ptrNegativeLogLikelihood = nullptr;
-  NegativeLogLikelihoodOp<double>* nullPointerNegativeLogLikelihood = nullptr;
+  NegativeLogLikelihoodLossOp<double>* ptrNegativeLogLikelihood = nullptr;
+  NegativeLogLikelihoodLossOp<double>* nullPointerNegativeLogLikelihood = nullptr;
   BOOST_CHECK_EQUAL(ptrNegativeLogLikelihood, nullPointerNegativeLogLikelihood);
 }
 
 BOOST_AUTO_TEST_CASE(destructorNegativeLogLikelihoodOp) 
 {
-  NegativeLogLikelihoodOp<double>* ptrNegativeLogLikelihood = nullptr;
-	ptrNegativeLogLikelihood = new NegativeLogLikelihoodOp<double>();
+  NegativeLogLikelihoodLossOp<double>* ptrNegativeLogLikelihood = nullptr;
+	ptrNegativeLogLikelihood = new NegativeLogLikelihoodLossOp<double>();
   delete ptrNegativeLogLikelihood;
 }
 
 /**
-  NegativeLogLikelihoodGradOp Tests
+  NegativeLogLikelihoodLossGradOp Tests
 */ 
 BOOST_AUTO_TEST_CASE(constructorNegativeLogLikelihoodGradOp) 
 {
-  NegativeLogLikelihoodGradOp<double>* ptrNegativeLogLikelihood = nullptr;
-  NegativeLogLikelihoodGradOp<double>* nullPointerNegativeLogLikelihood = nullptr;
+  NegativeLogLikelihoodLossGradOp<double>* ptrNegativeLogLikelihood = nullptr;
+  NegativeLogLikelihoodLossGradOp<double>* nullPointerNegativeLogLikelihood = nullptr;
   BOOST_CHECK_EQUAL(ptrNegativeLogLikelihood, nullPointerNegativeLogLikelihood);
 }
 
 BOOST_AUTO_TEST_CASE(destructorNegativeLogLikelihoodGradOp) 
 {
-  NegativeLogLikelihoodGradOp<double>* ptrNegativeLogLikelihood = nullptr;
-	ptrNegativeLogLikelihood = new NegativeLogLikelihoodGradOp<double>();
+  NegativeLogLikelihoodLossGradOp<double>* ptrNegativeLogLikelihood = nullptr;
+	ptrNegativeLogLikelihood = new NegativeLogLikelihoodLossGradOp<double>();
   delete ptrNegativeLogLikelihood;
 }
 
 /**
-  MSEOp Tests
+  MSELossOp Tests
 */ 
 BOOST_AUTO_TEST_CASE(constructorMSEOp) 
 {
-  MSEOp<double>* ptrMSE = nullptr;
-  MSEOp<double>* nullPointerMSE = nullptr;
+  MSELossOp<double>* ptrMSE = nullptr;
+  MSELossOp<double>* nullPointerMSE = nullptr;
   BOOST_CHECK_EQUAL(ptrMSE, nullPointerMSE);
 }
 
 BOOST_AUTO_TEST_CASE(destructorMSEOp) 
 {
-  MSEOp<double>* ptrMSE = nullptr;
-	ptrMSE = new MSEOp<double>();
+  MSELossOp<double>* ptrMSE = nullptr;
+	ptrMSE = new MSELossOp<double>();
   delete ptrMSE;
 }
 
 /**
-  MSEGradOp Tests
+  MSELossGradOp Tests
 */ 
 BOOST_AUTO_TEST_CASE(constructorMSEGradOp) 
 {
-  MSEGradOp<double>* ptrMSE = nullptr;
-  MSEGradOp<double>* nullPointerMSE = nullptr;
+  MSELossGradOp<double>* ptrMSE = nullptr;
+  MSELossGradOp<double>* nullPointerMSE = nullptr;
   BOOST_CHECK_EQUAL(ptrMSE, nullPointerMSE);
 }
 
 BOOST_AUTO_TEST_CASE(destructorMSEGradOp) 
 {
-  MSEGradOp<double>* ptrMSE = nullptr;
-	ptrMSE = new MSEGradOp<double>();
+  MSELossGradOp<double>* ptrMSE = nullptr;
+	ptrMSE = new MSELossGradOp<double>();
   delete ptrMSE;
 }
 

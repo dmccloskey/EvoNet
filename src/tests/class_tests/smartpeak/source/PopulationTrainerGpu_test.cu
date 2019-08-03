@@ -174,8 +174,8 @@ void test_trainModels()
 	model_trainer.setNEpochsTraining(n_epochs_training);
 	model_trainer.setNEpochsValidation(n_epochs_validation);
 	model_trainer.setNEpochsEvaluation(n_epochs_evaluation);
-	model_trainer.setLossFunctions({ std::shared_ptr<LossFunctionOp<float>>(new MSEOp<float>()) });
-	model_trainer.setLossFunctionGrads({ std::shared_ptr<LossFunctionGradOp<float>>(new MSEGradOp<float>()) });
+	model_trainer.setLossFunctions({ std::shared_ptr<LossFunctionOp<float>>(new MSELossOp<float>()) });
+	model_trainer.setLossFunctionGrads({ std::shared_ptr<LossFunctionGradOp<float>>(new MSELossGradOp<float>()) });
 	model_trainer.setOutputNodes({ output_nodes });
 
   ModelReplicatorExt<float> model_replicator;
@@ -303,8 +303,8 @@ void test_evalModels()
 	model_trainer.setNEpochsTraining(n_epochs_training);
 	model_trainer.setNEpochsValidation(n_epochs_validation);
 	model_trainer.setNEpochsEvaluation(n_epochs_evaluation);
-	model_trainer.setLossFunctions({ std::shared_ptr<LossFunctionOp<float>>(new MSEOp<float>()) });
-	model_trainer.setLossFunctionGrads({ std::shared_ptr<LossFunctionGradOp<float>>(new MSEGradOp<float>()) });
+	model_trainer.setLossFunctions({ std::shared_ptr<LossFunctionOp<float>>(new MSELossOp<float>()) });
+	model_trainer.setLossFunctionGrads({ std::shared_ptr<LossFunctionGradOp<float>>(new MSELossGradOp<float>()) });
 	model_trainer.setOutputNodes({ output_nodes });
 
 	ModelReplicatorExt<float> model_replicator;
@@ -437,8 +437,8 @@ void test_exampleUsage()
 	model_trainer.setNEpochsTraining(n_epochs_training);
 	model_trainer.setNEpochsValidation(n_epochs_validation);
 	model_trainer.setNEpochsEvaluation(n_epochs_evaluation);
-	model_trainer.setLossFunctions({ std::shared_ptr<LossFunctionOp<float>>(new MSEOp<float>()) });
-	model_trainer.setLossFunctionGrads({ std::shared_ptr<LossFunctionGradOp<float>>(new MSEGradOp<float>()) });
+	model_trainer.setLossFunctions({ std::shared_ptr<LossFunctionOp<float>>(new MSELossOp<float>()) });
+	model_trainer.setLossFunctionGrads({ std::shared_ptr<LossFunctionGradOp<float>>(new MSELossGradOp<float>()) });
 	model_trainer.setOutputNodes({ output_nodes });
 
   // define the model replicator for growth mode

@@ -231,8 +231,8 @@ void main_EvoNet() {
 		std::shared_ptr<SolverOp<float>> solver;
 		weight_init.reset(new RandWeightInitOp<float>(input_nodes.size()));
 		solver.reset(new AdamOp<float>(0.01, 0.9, 0.999, 1e-8));
-		std::shared_ptr<LossFunctionOp<float>> loss_function(new MSEOp<float>());
-		std::shared_ptr<LossFunctionGradOp<float>> loss_function_grad(new MSEGradOp<float>());
+		std::shared_ptr<LossFunctionOp<float>> loss_function(new MSELossOp<float>());
+		std::shared_ptr<LossFunctionGradOp<float>> loss_function_grad(new MSELossGradOp<float>());
 		Model<float> model; //TODO
 		model.setId(i);
 		population.push_back(model);

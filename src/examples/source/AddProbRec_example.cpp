@@ -728,8 +728,8 @@ void main_AddProbRec(const std::string& mode) {
   model_trainer.setLogging(true, false);
   model_trainer.setPreserveOoO(true);
   model_trainer.setFastInterpreter(false);
-  model_trainer.setLossFunctions({ std::shared_ptr<LossFunctionOp<float>>(new MSEOp<float>()) });
-  model_trainer.setLossFunctionGrads({ std::shared_ptr<LossFunctionGradOp<float>>(new MSEGradOp<float>()) });
+  model_trainer.setLossFunctions({ std::shared_ptr<LossFunctionOp<float>>(new MSELossOp<float>()) });
+  model_trainer.setLossFunctionGrads({ std::shared_ptr<LossFunctionGradOp<float>>(new MSELossGradOp<float>()) });
   model_trainer.setLossOutputNodes({ output_nodes });
 
   // define the model logger
