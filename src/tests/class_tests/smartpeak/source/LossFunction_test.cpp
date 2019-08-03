@@ -218,6 +218,40 @@ BOOST_AUTO_TEST_CASE(destructorMSEGradOp)
 }
 
 /**
+  MAELossOp Tests
+*/
+BOOST_AUTO_TEST_CASE(constructorMAEOp)
+{
+  MAELossOp<double>* ptrMAE = nullptr;
+  MAELossOp<double>* nullPointerMAE = nullptr;
+  BOOST_CHECK_EQUAL(ptrMAE, nullPointerMAE);
+}
+
+BOOST_AUTO_TEST_CASE(destructorMAEOp)
+{
+  MAELossOp<double>* ptrMAE = nullptr;
+  ptrMAE = new MAELossOp<double>();
+  delete ptrMAE;
+}
+
+/**
+  MAELossGradOp Tests
+*/
+BOOST_AUTO_TEST_CASE(constructorMAEGradOp)
+{
+  MAELossGradOp<double>* ptrMAE = nullptr;
+  MAELossGradOp<double>* nullPointerMAE = nullptr;
+  BOOST_CHECK_EQUAL(ptrMAE, nullPointerMAE);
+}
+
+BOOST_AUTO_TEST_CASE(destructorMAEGradOp)
+{
+  MAELossGradOp<double>* ptrMAE = nullptr;
+  ptrMAE = new MAELossGradOp<double>();
+  delete ptrMAE;
+}
+
+/**
 	KLDivergenceMuLossOp Tests
 */
 BOOST_AUTO_TEST_CASE(constructorKLDivergenceMuOp)

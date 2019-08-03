@@ -44,7 +44,48 @@ namespace SmartPeak
 	};
 
   /**
-    @brief EuclideanDistance loss function.
+    @brief Euclidean loss function.
+  */
+  template<typename TensorT, typename DeviceT>
+  class EuclideanDistanceLossTensorOp : public LossFunctionTensorOp<TensorT, DeviceT>
+  {
+  public:
+    using LossFunctionTensorOp<TensorT, DeviceT>::LossFunctionTensorOp;
+    std::string getName() { return "EuclideanDistanceLossTensorOp"; }
+    void operator()(TensorT* predicted, TensorT* expected, TensorT* error, const int& batch_size, const int& memory_size, const int& layer_size, const int& time_step, DeviceT& device) const
+    {
+      Eigen::TensorMap<Eigen::Tensor<TensorT, 2>> expected_tensor(expected, batch_size, layer_size);
+      Eigen::TensorMap<Eigen::Tensor<TensorT, 3>> predicted_tensor(predicted, batch_size, memory_size, layer_size);
+      Eigen::TensorMap<Eigen::Tensor<TensorT, 2>> error_tensor(error, batch_size, memory_size);
+      auto predicted_chip = predicted_tensor.chip(time_step, 1);
+      error_tensor.chip(time_step, 1).device(device) += (((expected_tensor - predicted_chip).pow(TensorT(2))).sum(Eigen::array<int, 1>({ 1 })).sqrt() * error_tensor.chip(time_step, 1).constant(this->scale_)).clip(TensorT(-1e9), TensorT(1e9));
+    };
+  };
+
+  /**
+    @brief Euclidean distance loss function gradient.
+
+    TODO: fix
+  */
+  template<typename TensorT, typename DeviceT>
+  class EuclideanDistanceLossGradTensorOp : public LossFunctionGradTensorOp<TensorT, DeviceT>
+  {
+  public:
+    using LossFunctionGradTensorOp<TensorT, DeviceT>::LossFunctionGradTensorOp;
+    std::string getName() { return "EuclideanDistanceLossGradTensorOp"; }
+    void operator()(TensorT* predicted, TensorT* expected, TensorT* error, const int& batch_size, const int& memory_size, const int& layer_size, const int& time_step, DeviceT& device) const
+    {
+      Eigen::TensorMap<Eigen::Tensor<TensorT, 2>> expected_tensor(expected, batch_size, layer_size);
+      Eigen::TensorMap<Eigen::Tensor<TensorT, 3>> predicted_tensor(predicted, batch_size, memory_size, layer_size);
+      Eigen::TensorMap<Eigen::Tensor<TensorT, 3>> error_tensor(error, batch_size, memory_size, layer_size);
+      auto predicted_chip = predicted_tensor.chip(time_step, 1);
+
+      error_tensor.chip(time_step, 1).device(device) += ((expected_tensor - predicted_chip) / ((expected_tensor - predicted_chip - expected_tensor.constant(this->eps_)).pow(TensorT(2)).sqrt()))*error_tensor.chip(time_step, 1).constant(this->scale_);
+    };
+  };
+
+  /**
+    @brief Manhattan loss function.
   */
   template<typename TensorT, typename DeviceT>
   class ManhattanDistanceLossTensorOp : public LossFunctionTensorOp<TensorT, DeviceT>
@@ -63,7 +104,7 @@ public:
   };
 
   /**
-    @brief EuclideanDistance loss function gradient.
+    @brief Manhattan distance loss function gradient.
   */
   template<typename TensorT, typename DeviceT>
   class ManhattanDistanceLossGradTensorOp : public LossFunctionGradTensorOp<TensorT, DeviceT>
@@ -258,6 +299,47 @@ public:
 			error_tensor.chip(time_step, 1).device(device) += (((expected_tensor - predicted_chip) / expected_tensor.constant(TensorT(layer_size)))
 				*error_tensor.chip(time_step, 1).constant(this->scale_)).clip(TensorT(-1e9),TensorT(1e9));
 		};
+  };
+
+  /**
+    @brief MAE Mean Absolute Error loss function.
+  */
+  template<typename TensorT, typename DeviceT>
+  class MAELossTensorOp : public LossFunctionTensorOp<TensorT, DeviceT>
+  {
+  public:
+    using LossFunctionTensorOp<TensorT, DeviceT>::LossFunctionTensorOp;
+    std::string getName() { return "MAELossTensorOp"; }
+    void operator()(TensorT* predicted, TensorT* expected, TensorT* error, const int& batch_size, const int& memory_size, const int& layer_size, const int& time_step, DeviceT& device) const {
+      Eigen::TensorMap<Eigen::Tensor<TensorT, 2>> expected_tensor(expected, batch_size, layer_size);
+      Eigen::TensorMap<Eigen::Tensor<TensorT, 3>> predicted_tensor(predicted, batch_size, memory_size, layer_size);
+      Eigen::TensorMap<Eigen::Tensor<TensorT, 2>> error_tensor(error, batch_size, memory_size);
+      auto predicted_chip = predicted_tensor.chip(time_step, 1);
+
+      error_tensor.chip(time_step, 1).device(device) += (((expected_tensor - predicted_chip).pow(TensorT(2)).sqrt() / expected_tensor.constant(TensorT(layer_size))).sum(Eigen::array<int, 1>({ 1 }))
+        *error_tensor.chip(time_step, 1).constant(this->scale_)).clip(TensorT(-1e9), TensorT(1e9));
+    };
+  };
+
+  /**
+    @brief MAE Mean Absolute Error loss function gradient.
+  */
+  template<typename TensorT, typename DeviceT>
+  class MAELossGradTensorOp : public LossFunctionGradTensorOp<TensorT, DeviceT>
+  {
+  public:
+    using LossFunctionGradTensorOp<TensorT, DeviceT>::LossFunctionGradTensorOp;
+    std::string getName() { return "MAELossGradTensorOp"; }
+    void operator()(TensorT* predicted, TensorT* expected, TensorT* error, const int& batch_size, const int& memory_size, const int& layer_size, const int& time_step, DeviceT& device) const
+    {
+      Eigen::TensorMap<Eigen::Tensor<TensorT, 2>> expected_tensor(expected, batch_size, layer_size);
+      Eigen::TensorMap<Eigen::Tensor<TensorT, 3>> predicted_tensor(predicted, batch_size, memory_size, layer_size);
+      Eigen::TensorMap<Eigen::Tensor<TensorT, 3>> error_tensor(error, batch_size, memory_size, layer_size);
+      auto predicted_chip = predicted_tensor.chip(time_step, 1);
+
+      error_tensor.chip(time_step, 1).device(device) += (((expected_tensor - predicted_chip) / (expected_tensor - predicted_chip - expected_tensor.constant(this->eps_)).pow(TensorT(2)).sqrt() / expected_tensor.constant(TensorT(layer_size)))
+        *error_tensor.chip(time_step, 1).constant(this->scale_)).clip(TensorT(-1e9), TensorT(1e9));
+    };
   };
 
 	/**

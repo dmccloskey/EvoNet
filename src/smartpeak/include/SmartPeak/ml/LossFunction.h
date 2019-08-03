@@ -176,6 +176,30 @@ public:
 		std::vector<TensorT> getParameters() const { return std::vector<TensorT>({this->eps_, this->scale_}); }
   };
 
+  /**
+    @brief MAE Mean Absolute Error loss function.
+  */
+  template<typename TensorT>
+  class MAELossOp : public LossFunctionOp<TensorT>
+  {
+  public:
+    using LossFunctionOp<TensorT>::LossFunctionOp;
+    std::string getName() { return "MAELossOp"; };
+    std::vector<TensorT> getParameters() const { return std::vector<TensorT>({ this->eps_, this->scale_ }); }
+  };
+
+  /**
+    @brief MAE Mean Abasolute Error loss function gradient.
+  */
+  template<typename TensorT>
+  class MAELossGradOp : public LossFunctionGradOp<TensorT>
+  {
+  public:
+    using LossFunctionGradOp<TensorT>::LossFunctionGradOp;
+    std::string getName() { return "MAELossGradOp"; };
+    std::vector<TensorT> getParameters() const { return std::vector<TensorT>({ this->eps_, this->scale_ }); }
+  };
+
 	/**
 		@brief KLDivergenceMu loss function.
 
