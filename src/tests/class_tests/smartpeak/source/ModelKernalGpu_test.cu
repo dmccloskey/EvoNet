@@ -429,8 +429,8 @@ void test_modelErrorGpuDevice()
 	const int device_id = 0;
 	ModelKernalGpu<float> kernal;
 
-	MSETensorOp<float, Eigen::GpuDevice>* loss_function = new MSETensorOp<float, Eigen::GpuDevice>;
-	MSEGradTensorOp<float, Eigen::GpuDevice>* loss_grad_function = new MSEGradTensorOp<float, Eigen::GpuDevice>;
+	MSELossTensorOp<float, Eigen::GpuDevice>* loss_function = new MSELossTensorOp<float, Eigen::GpuDevice>;
+	MSELossGradTensorOp<float, Eigen::GpuDevice>* loss_grad_function = new MSELossGradTensorOp<float, Eigen::GpuDevice>;
 	const int batch_size = 4;
 	const int memory_size = 2;
 	const int layer_size = 2;

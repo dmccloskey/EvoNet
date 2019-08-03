@@ -697,25 +697,25 @@ BOOST_AUTO_TEST_CASE(convertOpToTensorOpLossFunctionGradOpToLossFunctionGradTens
 
 	op_class = new ManhattanDistanceLossGradOp<float>();
 	op_tensor_class = op_to_tensor_op.convertOpToTensorOp(op_class);
-	BOOST_CHECK_EQUAL(op_tensor_class->getName(), "EuclideanDistanceGradTensorOp");
+	BOOST_CHECK_EQUAL(op_tensor_class->getName(), "ManhattanDistanceLossGradTensorOp");
 
 	op_class = new L2NormLossGradOp<float>();
 	op_tensor_class = op_to_tensor_op.convertOpToTensorOp(op_class);
-	BOOST_CHECK_EQUAL(op_tensor_class->getName(), "L2NormGradTensorOp");
+	BOOST_CHECK_EQUAL(op_tensor_class->getName(), "L2NormLossGradTensorOp");
 
 	op_class = new L2NormLossGradOp<float>();
 	op_tensor_class = op_to_tensor_op.convertOpToTensorOp(op_class);
-	BOOST_CHECK_EQUAL(op_tensor_class->getName(), "L2NormGradTensorOp");
+	BOOST_CHECK_EQUAL(op_tensor_class->getName(), "L2NormLossGradTensorOp");
 
 	op_class = new NegativeLogLikelihoodLossGradOp<float>();
 	op_tensor_class = op_to_tensor_op.convertOpToTensorOp(op_class);
-	BOOST_CHECK_EQUAL(op_tensor_class->getName(), "NegativeLogLikelihoodGradTensorOp");
+	BOOST_CHECK_EQUAL(op_tensor_class->getName(), "NegativeLogLikelihoodLossGradTensorOp");
 
 	op_class = new MSELossGradOp<float>();
 	op_tensor_class = op_to_tensor_op.convertOpToTensorOp(op_class);
-	BOOST_CHECK_EQUAL(op_tensor_class->getName(), "MSEGradTensorOp");
+	BOOST_CHECK_EQUAL(op_tensor_class->getName(), "MSELossGradTensorOp");
 
-	op_class = new KLDivergenceMuGradOp<float>();
+	op_class = new KLDivergenceMuLossGradOp<float>();
 	op_tensor_class = op_to_tensor_op.convertOpToTensorOp(op_class);
 	BOOST_CHECK_EQUAL(op_tensor_class->getName(), "KLDivergenceMuGradTensorOp");
 
@@ -770,7 +770,7 @@ BOOST_AUTO_TEST_CASE(getTensorParamsLossFunctionGradOpToLossFunctionGradTensorOp
 	params = op_to_tensor_op.getTensorParams(op_class);
 	BOOST_CHECK_EQUAL(params.size(), 0);
 
-	op_class = new KLDivergenceMuGradOp<float>();
+	op_class = new KLDivergenceMuLossGradOp<float>();
 	params = op_to_tensor_op.getTensorParams(op_class);
 	BOOST_CHECK_EQUAL(params.size(), 0);
 
@@ -822,25 +822,25 @@ BOOST_AUTO_TEST_CASE(convertOpToTensorOpLossFunctionOpToLossFunctionTensorOp)
 
 	op_class = new ManhattanDistanceLossOp<float>();
 	op_tensor_class = op_to_tensor_op.convertOpToTensorOp(op_class);
-	BOOST_CHECK_EQUAL(op_tensor_class->getName(), "EuclideanDistanceTensorOp");
+	BOOST_CHECK_EQUAL(op_tensor_class->getName(), "ManhattanDistanceLossTensorOp");
 
 	op_class = new L2NormLossOp<float>();
 	op_tensor_class = op_to_tensor_op.convertOpToTensorOp(op_class);
-	BOOST_CHECK_EQUAL(op_tensor_class->getName(), "L2NormTensorOp");
+	BOOST_CHECK_EQUAL(op_tensor_class->getName(), "L2NormLossTensorOp");
 
 	op_class = new L2NormLossOp<float>();
 	op_tensor_class = op_to_tensor_op.convertOpToTensorOp(op_class);
-	BOOST_CHECK_EQUAL(op_tensor_class->getName(), "L2NormTensorOp");
+	BOOST_CHECK_EQUAL(op_tensor_class->getName(), "L2NormLossTensorOp");
 
 	op_class = new NegativeLogLikelihoodLossOp<float>();
 	op_tensor_class = op_to_tensor_op.convertOpToTensorOp(op_class);
-	BOOST_CHECK_EQUAL(op_tensor_class->getName(), "NegativeLogLikelihoodTensorOp");
+	BOOST_CHECK_EQUAL(op_tensor_class->getName(), "NegativeLogLikelihoodLossTensorOp");
 
 	op_class = new MSELossOp<float>();
 	op_tensor_class = op_to_tensor_op.convertOpToTensorOp(op_class);
-	BOOST_CHECK_EQUAL(op_tensor_class->getName(), "MSETensorOp");
+	BOOST_CHECK_EQUAL(op_tensor_class->getName(), "MSELossTensorOp");
 
-	op_class = new KLDivergenceMuOp<float>();
+	op_class = new KLDivergenceMuLossOp<float>();
 	op_tensor_class = op_to_tensor_op.convertOpToTensorOp(op_class);
 	BOOST_CHECK_EQUAL(op_tensor_class->getName(), "KLDivergenceMuTensorOp");
 
@@ -895,7 +895,7 @@ BOOST_AUTO_TEST_CASE(getTensorParamsLossFunctionOpToLossFunctionTensorOp)
 	params = op_to_tensor_op.getTensorParams(op_class);
 	BOOST_CHECK_EQUAL(params.size(), 0);
 
-	op_class = new KLDivergenceMuOp<float>();
+	op_class = new KLDivergenceMuLossOp<float>();
 	params = op_to_tensor_op.getTensorParams(op_class);
 	BOOST_CHECK_EQUAL(params.size(), 0);
 

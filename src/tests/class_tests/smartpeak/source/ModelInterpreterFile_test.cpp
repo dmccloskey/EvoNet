@@ -170,8 +170,8 @@ BOOST_AUTO_TEST_CASE(loadModelBinary2)
 	std::vector<std::string> output_nodes = { "4", "5" };
 	Eigen::Tensor<float, 2> expected(batch_size, (int)output_nodes.size());
 	expected.setValues({ {0, 1}, {0, 1}, {0, 1}, {0, 1} });
-	LossFunctionTensorOp<float, Eigen::DefaultDevice>* loss_function = new MSETensorOp<float, Eigen::DefaultDevice>();
-	LossFunctionGradTensorOp<float, Eigen::DefaultDevice>* loss_function_grad = new MSEGradTensorOp<float, Eigen::DefaultDevice>();
+	LossFunctionTensorOp<float, Eigen::DefaultDevice>* loss_function = new MSELossTensorOp<float, Eigen::DefaultDevice>();
+	LossFunctionGradTensorOp<float, Eigen::DefaultDevice>* loss_function_grad = new MSELossGradTensorOp<float, Eigen::DefaultDevice>();
 	const int layer_id = model2.getNode("4").getTensorIndex().first;
 
 	// iterate until we find the optimal values

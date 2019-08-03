@@ -188,26 +188,26 @@ namespace SmartPeak
 	public:
 		LossFunctionTensorOp<TensorT, DeviceT>* convertOpToTensorOp(LossFunctionOp<TensorT>* op_class) const {
 			if (op_class->getName() == "ManhattanDistanceLossOp") {
-				LossFunctionTensorOp<TensorT, DeviceT>* op_tensor_class = new EuclideanDistanceTensorOp<TensorT, DeviceT>(op_class->getParameters()[0], op_class->getParameters()[1]);
+				LossFunctionTensorOp<TensorT, DeviceT>* op_tensor_class = new ManhattanDistanceLossTensorOp<TensorT, DeviceT>(op_class->getParameters()[0], op_class->getParameters()[1]);
 				return op_tensor_class;
 			}
 			else if (op_class->getName() == "L2NormLossOp") {
-				LossFunctionTensorOp<TensorT, DeviceT>* op_tensor_class = new L2NormTensorOp<TensorT, DeviceT>(op_class->getParameters()[0], op_class->getParameters()[1]);
+				LossFunctionTensorOp<TensorT, DeviceT>* op_tensor_class = new L2NormLossTensorOp<TensorT, DeviceT>(op_class->getParameters()[0], op_class->getParameters()[1]);
 				return op_tensor_class;
 			}
 			else if (op_class->getName() == "BCELossOp") {
-				LossFunctionTensorOp<TensorT, DeviceT>* op_tensor_class = new BCETensorOp<TensorT, DeviceT>(op_class->getParameters()[0], op_class->getParameters()[1]);
+				LossFunctionTensorOp<TensorT, DeviceT>* op_tensor_class = new BCELossTensorOp<TensorT, DeviceT>(op_class->getParameters()[0], op_class->getParameters()[1]);
 				return op_tensor_class;
 			}
 			else if (op_class->getName() == "NegativeLogLikelihoodLossOp") {
-				LossFunctionTensorOp<TensorT, DeviceT>* op_tensor_class = new NegativeLogLikelihoodTensorOp<TensorT, DeviceT>(op_class->getParameters()[0], op_class->getParameters()[1]);
+				LossFunctionTensorOp<TensorT, DeviceT>* op_tensor_class = new NegativeLogLikelihoodLossTensorOp<TensorT, DeviceT>(op_class->getParameters()[0], op_class->getParameters()[1]);
 				return op_tensor_class;
 			}
 			else if (op_class->getName() == "MSELossOp") {
-				LossFunctionTensorOp<TensorT, DeviceT>* op_tensor_class = new MSETensorOp<TensorT, DeviceT>(op_class->getParameters()[0], op_class->getParameters()[1]);
+				LossFunctionTensorOp<TensorT, DeviceT>* op_tensor_class = new MSELossTensorOp<TensorT, DeviceT>(op_class->getParameters()[0], op_class->getParameters()[1]);
 				return op_tensor_class;
 			}
-			else if (op_class->getName() == "KLDivergenceMuOp") {
+			else if (op_class->getName() == "KLDivergenceMuLossOp") {
 				LossFunctionTensorOp<TensorT, DeviceT>* op_tensor_class = new KLDivergenceMuTensorOp<TensorT, DeviceT>(op_class->getParameters()[0], op_class->getParameters()[1]);
 				return op_tensor_class;
 			}
@@ -237,7 +237,7 @@ namespace SmartPeak
       }
 			else {
 				std::cout << "No conversion available for " << op_class->getName() << "." << std::endl;
-				LossFunctionTensorOp<TensorT, DeviceT>* op_tensor_class = new MSETensorOp<TensorT, DeviceT>(op_class->getParameters()[0], op_class->getParameters()[1]);
+				LossFunctionTensorOp<TensorT, DeviceT>* op_tensor_class = new MSELossTensorOp<TensorT, DeviceT>(op_class->getParameters()[0], op_class->getParameters()[1]);
 				return op_tensor_class;
 			}
 		}
@@ -250,26 +250,26 @@ namespace SmartPeak
 	public:
 		LossFunctionGradTensorOp<TensorT, DeviceT>* convertOpToTensorOp(LossFunctionGradOp<TensorT>* op_class) const {
 			if (op_class->getName() == "ManhattanDistanceLossGradOp") {
-				LossFunctionGradTensorOp<TensorT, DeviceT>* op_tensor_class = new EuclideanDistanceGradTensorOp<TensorT, DeviceT>(op_class->getParameters()[0], op_class->getParameters()[1]);
+				LossFunctionGradTensorOp<TensorT, DeviceT>* op_tensor_class = new ManhattanDistanceLossGradTensorOp<TensorT, DeviceT>(op_class->getParameters()[0], op_class->getParameters()[1]);
 				return op_tensor_class;
 			}
 			else if (op_class->getName() == "L2NormLossGradOp") {
-				LossFunctionGradTensorOp<TensorT, DeviceT>* op_tensor_class = new L2NormGradTensorOp<TensorT, DeviceT>(op_class->getParameters()[0], op_class->getParameters()[1]);
+				LossFunctionGradTensorOp<TensorT, DeviceT>* op_tensor_class = new L2NormLossGradTensorOp<TensorT, DeviceT>(op_class->getParameters()[0], op_class->getParameters()[1]);
 				return op_tensor_class;
 			}
 			else if (op_class->getName() == "BCELossGradOp") {
-				LossFunctionGradTensorOp<TensorT, DeviceT>* op_tensor_class = new BCEGradTensorOp<TensorT, DeviceT>(op_class->getParameters()[0], op_class->getParameters()[1]);
+				LossFunctionGradTensorOp<TensorT, DeviceT>* op_tensor_class = new BCELossGradTensorOp<TensorT, DeviceT>(op_class->getParameters()[0], op_class->getParameters()[1]);
 				return op_tensor_class;
 			}
 			else if (op_class->getName() == "NegativeLogLikelihoodLossGradOp") {
-				LossFunctionGradTensorOp<TensorT, DeviceT>* op_tensor_class = new NegativeLogLikelihoodGradTensorOp<TensorT, DeviceT>(op_class->getParameters()[0], op_class->getParameters()[1]);
+				LossFunctionGradTensorOp<TensorT, DeviceT>* op_tensor_class = new NegativeLogLikelihoodLossGradTensorOp<TensorT, DeviceT>(op_class->getParameters()[0], op_class->getParameters()[1]);
 				return op_tensor_class;
 			}
 			else if (op_class->getName() == "MSELossGradOp") {
-				LossFunctionGradTensorOp<TensorT, DeviceT>* op_tensor_class = new MSEGradTensorOp<TensorT, DeviceT>(op_class->getParameters()[0], op_class->getParameters()[1]);
+				LossFunctionGradTensorOp<TensorT, DeviceT>* op_tensor_class = new MSELossGradTensorOp<TensorT, DeviceT>(op_class->getParameters()[0], op_class->getParameters()[1]);
 				return op_tensor_class;
 			}
-			else if (op_class->getName() == "KLDivergenceMuGradOp") {
+			else if (op_class->getName() == "KLDivergenceMuLossGradOp") {
 				LossFunctionGradTensorOp<TensorT, DeviceT>* op_tensor_class = new KLDivergenceMuGradTensorOp<TensorT, DeviceT>(op_class->getParameters()[0], op_class->getParameters()[1]);
 				return op_tensor_class;
 			}
@@ -299,7 +299,7 @@ namespace SmartPeak
       }
 			else {
 				std::cout << "No conversion available for " << op_class->getName() << "." << std::endl;
-				LossFunctionGradTensorOp<TensorT, DeviceT>* op_tensor_class = new MSEGradTensorOp<TensorT, DeviceT>(op_class->getParameters()[0], op_class->getParameters()[1]);
+				LossFunctionGradTensorOp<TensorT, DeviceT>* op_tensor_class = new MSELossGradTensorOp<TensorT, DeviceT>(op_class->getParameters()[0], op_class->getParameters()[1]);
 				return op_tensor_class;
 			}
 		}

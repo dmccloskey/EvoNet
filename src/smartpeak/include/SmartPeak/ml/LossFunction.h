@@ -185,11 +185,11 @@ public:
 		KLD = -0.5 * torch.sum(1 + logvar - mu.pow(2) - logvar.exp())
 	*/
 	template<typename TensorT>
-	class KLDivergenceMuOp : public LossFunctionOp<TensorT>
+	class KLDivergenceMuLossOp : public LossFunctionOp<TensorT>
 	{
 	public:
 		using LossFunctionOp<TensorT>::LossFunctionOp;
-		std::string getName() { return "KLDivergenceMuOp"; };
+		std::string getName() { return "KLDivergenceMuLossOp"; };
 		std::vector<TensorT> getParameters() const { return std::vector<TensorT>({this->eps_, this->scale_}); }
 	};
 
@@ -197,11 +197,11 @@ public:
 		@brief KLDivergenceMu  loss function gradient.
 	*/
 	template<typename TensorT>
-	class KLDivergenceMuGradOp : public LossFunctionGradOp<TensorT>
+	class KLDivergenceMuLossGradOp : public LossFunctionGradOp<TensorT>
 	{
 	public:
 		using LossFunctionGradOp<TensorT>::LossFunctionGradOp;
-		std::string getName() { return "KLDivergenceMuGradOp"; };
+		std::string getName() { return "KLDivergenceMuLossGradOp"; };
 		std::vector<TensorT> getParameters() const { return std::vector<TensorT>({this->eps_, this->scale_}); }
 	};
 

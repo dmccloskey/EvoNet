@@ -67,8 +67,8 @@ BOOST_AUTO_TEST_CASE(addFullyConnected1)
   input_values.setConstant(1);
   Eigen::Tensor<float, 2> output_values(batch_size, output_size);
   output_values.setConstant(0);
-  std::shared_ptr<LossFunctionTensorOp<float, Eigen::DefaultDevice>> loss_function = std::make_shared<MSETensorOp<float, Eigen::DefaultDevice>>(MSETensorOp<float, Eigen::DefaultDevice>());
-  std::shared_ptr<LossFunctionGradTensorOp<float, Eigen::DefaultDevice>> loss_function_grad = std::make_shared<MSEGradTensorOp<float, Eigen::DefaultDevice>>(MSEGradTensorOp<float, Eigen::DefaultDevice>());
+  std::shared_ptr<LossFunctionTensorOp<float, Eigen::DefaultDevice>> loss_function = std::make_shared<MSELossTensorOp<float, Eigen::DefaultDevice>>(MSELossTensorOp<float, Eigen::DefaultDevice>());
+  std::shared_ptr<LossFunctionGradTensorOp<float, Eigen::DefaultDevice>> loss_function_grad = std::make_shared<MSELossGradTensorOp<float, Eigen::DefaultDevice>>(MSELossGradTensorOp<float, Eigen::DefaultDevice>());
   trainModel(model, node_names_input, node_names_output, input_values, output_values, batch_size, memory_size, loss_function, loss_function_grad);
 
   // test for the expected model error
@@ -141,8 +141,8 @@ BOOST_AUTO_TEST_CASE(addSoftMax)
   input_values.setValues({ {{1, 4}} });
   Eigen::Tensor<float, 2> output_values(batch_size, output_size);
   output_values.setValues({ {0.0474259, 0.952574} });
-  std::shared_ptr<LossFunctionTensorOp<float, Eigen::DefaultDevice>> loss_function = std::make_shared<MSETensorOp<float, Eigen::DefaultDevice>>(MSETensorOp<float, Eigen::DefaultDevice>());
-  std::shared_ptr<LossFunctionGradTensorOp<float, Eigen::DefaultDevice>> loss_function_grad = std::make_shared<MSEGradTensorOp<float, Eigen::DefaultDevice>>(MSEGradTensorOp<float, Eigen::DefaultDevice>());
+  std::shared_ptr<LossFunctionTensorOp<float, Eigen::DefaultDevice>> loss_function = std::make_shared<MSELossTensorOp<float, Eigen::DefaultDevice>>(MSELossTensorOp<float, Eigen::DefaultDevice>());
+  std::shared_ptr<LossFunctionGradTensorOp<float, Eigen::DefaultDevice>> loss_function_grad = std::make_shared<MSELossGradTensorOp<float, Eigen::DefaultDevice>>(MSELossGradTensorOp<float, Eigen::DefaultDevice>());
   trainModel(model, node_names_input, node_names_output, input_values, output_values, batch_size, memory_size, loss_function, loss_function_grad);
 
   // test for the expected model error
@@ -193,8 +193,8 @@ BOOST_AUTO_TEST_CASE(addStableSoftMax)
   input_values.setValues({ {{1, 4}} });
   Eigen::Tensor<float, 2> output_values(batch_size, output_size);
   output_values.setValues({ {0.0474259, 0.952574} });
-  std::shared_ptr<LossFunctionTensorOp<float, Eigen::DefaultDevice>> loss_function = std::make_shared<MSETensorOp<float, Eigen::DefaultDevice>>(MSETensorOp<float, Eigen::DefaultDevice>());
-  std::shared_ptr<LossFunctionGradTensorOp<float, Eigen::DefaultDevice>> loss_function_grad = std::make_shared<MSEGradTensorOp<float, Eigen::DefaultDevice>>(MSEGradTensorOp<float, Eigen::DefaultDevice>());
+  std::shared_ptr<LossFunctionTensorOp<float, Eigen::DefaultDevice>> loss_function = std::make_shared<MSELossTensorOp<float, Eigen::DefaultDevice>>(MSELossTensorOp<float, Eigen::DefaultDevice>());
+  std::shared_ptr<LossFunctionGradTensorOp<float, Eigen::DefaultDevice>> loss_function_grad = std::make_shared<MSELossGradTensorOp<float, Eigen::DefaultDevice>>(MSELossGradTensorOp<float, Eigen::DefaultDevice>());
   trainModel(model, node_names_input, node_names_output, input_values, output_values, batch_size, memory_size, loss_function, loss_function_grad);
 
   // test for the expected model error
@@ -250,8 +250,8 @@ BOOST_AUTO_TEST_CASE(addConvolution1)
   input_values.setValues({ {{1, 2, 1, 2, 0, 0, 1, 2, 1, 2, 0, 0, 1, 2, 1, 2}} });
   Eigen::Tensor<float, 2> output_values(batch_size, output_size);
   output_values.setValues({ {0, 0, 0, 0, 0, 0, 0, 0, 0} });
-  std::shared_ptr<LossFunctionTensorOp<float, Eigen::DefaultDevice>> loss_function = std::make_shared<MSETensorOp<float, Eigen::DefaultDevice>>(MSETensorOp<float, Eigen::DefaultDevice>());
-  std::shared_ptr<LossFunctionGradTensorOp<float, Eigen::DefaultDevice>> loss_function_grad = std::make_shared<MSEGradTensorOp<float, Eigen::DefaultDevice>>(MSEGradTensorOp<float, Eigen::DefaultDevice>());
+  std::shared_ptr<LossFunctionTensorOp<float, Eigen::DefaultDevice>> loss_function = std::make_shared<MSELossTensorOp<float, Eigen::DefaultDevice>>(MSELossTensorOp<float, Eigen::DefaultDevice>());
+  std::shared_ptr<LossFunctionGradTensorOp<float, Eigen::DefaultDevice>> loss_function_grad = std::make_shared<MSELossGradTensorOp<float, Eigen::DefaultDevice>>(MSELossGradTensorOp<float, Eigen::DefaultDevice>());
   trainModel(model, node_names_input, node_names_output, input_values, output_values, batch_size, memory_size, loss_function, loss_function_grad);
 
   // test for the expected model error
@@ -350,8 +350,8 @@ BOOST_AUTO_TEST_CASE(addConvolution2)
   input_values.setValues({ {{1, 2, 1, 2, 0, 0, 1, 2, 1, 2, 0, 0, 1, 2, 1, 2}} });
   Eigen::Tensor<float, 2> output_values(batch_size, output_size);
   output_values.setValues({ {0, 0, 0, 0, 0, 0, 0, 0, 0} });
-  std::shared_ptr<LossFunctionTensorOp<float, Eigen::DefaultDevice>> loss_function = std::make_shared<MSETensorOp<float, Eigen::DefaultDevice>>(MSETensorOp<float, Eigen::DefaultDevice>());
-  std::shared_ptr<LossFunctionGradTensorOp<float, Eigen::DefaultDevice>> loss_function_grad = std::make_shared<MSEGradTensorOp<float, Eigen::DefaultDevice>>(MSEGradTensorOp<float, Eigen::DefaultDevice>());
+  std::shared_ptr<LossFunctionTensorOp<float, Eigen::DefaultDevice>> loss_function = std::make_shared<MSELossTensorOp<float, Eigen::DefaultDevice>>(MSELossTensorOp<float, Eigen::DefaultDevice>());
+  std::shared_ptr<LossFunctionGradTensorOp<float, Eigen::DefaultDevice>> loss_function_grad = std::make_shared<MSELossGradTensorOp<float, Eigen::DefaultDevice>>(MSELossGradTensorOp<float, Eigen::DefaultDevice>());
   trainModel(model, node_names_input, node_names_output, input_values, output_values, batch_size, memory_size, loss_function, loss_function_grad);
 
   // test for the expected model error
@@ -431,8 +431,8 @@ BOOST_AUTO_TEST_CASE(addNormalization1)
   input_values.setValues({ {{1, 2, 3, 4, 5}} });
   Eigen::Tensor<float, 2> output_values(batch_size, output_size);
   output_values.setValues({ {-1.414213562,-0.707106781,0,0.707106781,1.414213562} });
-  std::shared_ptr<LossFunctionTensorOp<float, Eigen::DefaultDevice>> loss_function = std::make_shared<MSETensorOp<float, Eigen::DefaultDevice>>(MSETensorOp<float, Eigen::DefaultDevice>());
-  std::shared_ptr<LossFunctionGradTensorOp<float, Eigen::DefaultDevice>> loss_function_grad = std::make_shared<MSEGradTensorOp<float, Eigen::DefaultDevice>>(MSEGradTensorOp<float, Eigen::DefaultDevice>());
+  std::shared_ptr<LossFunctionTensorOp<float, Eigen::DefaultDevice>> loss_function = std::make_shared<MSELossTensorOp<float, Eigen::DefaultDevice>>(MSELossTensorOp<float, Eigen::DefaultDevice>());
+  std::shared_ptr<LossFunctionGradTensorOp<float, Eigen::DefaultDevice>> loss_function_grad = std::make_shared<MSELossGradTensorOp<float, Eigen::DefaultDevice>>(MSELossGradTensorOp<float, Eigen::DefaultDevice>());
   trainModel(model, node_names_input, node_names_output, input_values, output_values, batch_size, memory_size, loss_function, loss_function_grad);
 
   // test for the expected model error
@@ -508,8 +508,8 @@ BOOST_AUTO_TEST_CASE(addLinearScale1)
   input_values.setValues({ {{1, 4}} });
   Eigen::Tensor<float, 2> output_values(batch_size, output_size);
   output_values.setValues({ {0, 1} });
-  std::shared_ptr<LossFunctionTensorOp<float, Eigen::DefaultDevice>> loss_function = std::make_shared<MSETensorOp<float, Eigen::DefaultDevice>>(MSETensorOp<float, Eigen::DefaultDevice>());
-  std::shared_ptr<LossFunctionGradTensorOp<float, Eigen::DefaultDevice>> loss_function_grad = std::make_shared<MSEGradTensorOp<float, Eigen::DefaultDevice>>(MSEGradTensorOp<float, Eigen::DefaultDevice>());
+  std::shared_ptr<LossFunctionTensorOp<float, Eigen::DefaultDevice>> loss_function = std::make_shared<MSELossTensorOp<float, Eigen::DefaultDevice>>(MSELossTensorOp<float, Eigen::DefaultDevice>());
+  std::shared_ptr<LossFunctionGradTensorOp<float, Eigen::DefaultDevice>> loss_function_grad = std::make_shared<MSELossGradTensorOp<float, Eigen::DefaultDevice>>(MSELossGradTensorOp<float, Eigen::DefaultDevice>());
   trainModel(model, node_names_input, node_names_output, input_values, output_values, batch_size, memory_size, loss_function, loss_function_grad);
 
   // test for the expected model error
@@ -579,8 +579,8 @@ BOOST_AUTO_TEST_CASE(addGaussianEncoding)
   input_values.setValues({ {{1, 2, 0.1, 0.2, -0.1, 0.1}} });
   Eigen::Tensor<float, 2> output_values(batch_size, output_size);
   output_values.setValues({ {0, 0} });
-  std::shared_ptr<LossFunctionTensorOp<float, Eigen::DefaultDevice>> loss_function = std::make_shared<MSETensorOp<float, Eigen::DefaultDevice>>(MSETensorOp<float, Eigen::DefaultDevice>());
-  std::shared_ptr<LossFunctionGradTensorOp<float, Eigen::DefaultDevice>> loss_function_grad = std::make_shared<MSEGradTensorOp<float, Eigen::DefaultDevice>>(MSEGradTensorOp<float, Eigen::DefaultDevice>());
+  std::shared_ptr<LossFunctionTensorOp<float, Eigen::DefaultDevice>> loss_function = std::make_shared<MSELossTensorOp<float, Eigen::DefaultDevice>>(MSELossTensorOp<float, Eigen::DefaultDevice>());
+  std::shared_ptr<LossFunctionGradTensorOp<float, Eigen::DefaultDevice>> loss_function_grad = std::make_shared<MSELossGradTensorOp<float, Eigen::DefaultDevice>>(MSELossGradTensorOp<float, Eigen::DefaultDevice>());
   trainModel(model, node_names_input, node_names_output, input_values, output_values, batch_size, memory_size, loss_function, loss_function_grad);
 
   // test for the expected model error
@@ -649,8 +649,8 @@ BOOST_AUTO_TEST_CASE(addCategoricalEncoding)
   input_values.setValues({ {{1, 2, -0.1, 0.1, 1.5, 1.5}} });
   Eigen::Tensor<float, 2> output_values(batch_size, output_size);
   output_values.setValues({ {0, 0} });
-  std::shared_ptr<LossFunctionTensorOp<float, Eigen::DefaultDevice>> loss_function = std::make_shared<MSETensorOp<float, Eigen::DefaultDevice>>(MSETensorOp<float, Eigen::DefaultDevice>());
-  std::shared_ptr<LossFunctionGradTensorOp<float, Eigen::DefaultDevice>> loss_function_grad = std::make_shared<MSEGradTensorOp<float, Eigen::DefaultDevice>>(MSEGradTensorOp<float, Eigen::DefaultDevice>());
+  std::shared_ptr<LossFunctionTensorOp<float, Eigen::DefaultDevice>> loss_function = std::make_shared<MSELossTensorOp<float, Eigen::DefaultDevice>>(MSELossTensorOp<float, Eigen::DefaultDevice>());
+  std::shared_ptr<LossFunctionGradTensorOp<float, Eigen::DefaultDevice>> loss_function_grad = std::make_shared<MSELossGradTensorOp<float, Eigen::DefaultDevice>>(MSELossGradTensorOp<float, Eigen::DefaultDevice>());
   trainModel(model, node_names_input, node_names_output, input_values, output_values, batch_size, memory_size, loss_function, loss_function_grad);
 
   // test for the expected model error
@@ -734,8 +734,8 @@ BOOST_AUTO_TEST_CASE(addLSTMBlock1)
   input_values.setValues({ {{1, 2}} });
   Eigen::Tensor<float, 2> output_values(batch_size, output_size);
   output_values.setValues({ {0, 0} });
-  std::shared_ptr<LossFunctionTensorOp<float, Eigen::DefaultDevice>> loss_function = std::make_shared<MSETensorOp<float, Eigen::DefaultDevice>>(MSETensorOp<float, Eigen::DefaultDevice>());
-  std::shared_ptr<LossFunctionGradTensorOp<float, Eigen::DefaultDevice>> loss_function_grad = std::make_shared<MSEGradTensorOp<float, Eigen::DefaultDevice>>(MSEGradTensorOp<float, Eigen::DefaultDevice>());
+  std::shared_ptr<LossFunctionTensorOp<float, Eigen::DefaultDevice>> loss_function = std::make_shared<MSELossTensorOp<float, Eigen::DefaultDevice>>(MSELossTensorOp<float, Eigen::DefaultDevice>());
+  std::shared_ptr<LossFunctionGradTensorOp<float, Eigen::DefaultDevice>> loss_function_grad = std::make_shared<MSELossGradTensorOp<float, Eigen::DefaultDevice>>(MSELossGradTensorOp<float, Eigen::DefaultDevice>());
   trainModel(model, node_names_input, node_names_output, input_values, output_values, batch_size, memory_size, loss_function, loss_function_grad);
 
   // test for the expected model error
@@ -800,8 +800,8 @@ BOOST_AUTO_TEST_CASE(addDotProdAttention1)
   input_values.setValues({ {{1, 4}} });
   Eigen::Tensor<float, 2> output_values(batch_size, output_size);
   output_values.setValues({ {0, 0, 0} });
-  std::shared_ptr<LossFunctionTensorOp<float, Eigen::DefaultDevice>> loss_function = std::make_shared<MSETensorOp<float, Eigen::DefaultDevice>>(MSETensorOp<float, Eigen::DefaultDevice>());
-  std::shared_ptr<LossFunctionGradTensorOp<float, Eigen::DefaultDevice>> loss_function_grad = std::make_shared<MSEGradTensorOp<float, Eigen::DefaultDevice>>(MSEGradTensorOp<float, Eigen::DefaultDevice>());
+  std::shared_ptr<LossFunctionTensorOp<float, Eigen::DefaultDevice>> loss_function = std::make_shared<MSELossTensorOp<float, Eigen::DefaultDevice>>(MSELossTensorOp<float, Eigen::DefaultDevice>());
+  std::shared_ptr<LossFunctionGradTensorOp<float, Eigen::DefaultDevice>> loss_function_grad = std::make_shared<MSELossGradTensorOp<float, Eigen::DefaultDevice>>(MSELossGradTensorOp<float, Eigen::DefaultDevice>());
   trainModel(model, node_names_input, node_names_output, input_values, output_values, batch_size, memory_size, loss_function, loss_function_grad);
 
   // test for the expected model error
@@ -993,8 +993,8 @@ BOOST_AUTO_TEST_CASE(checkStableSoftMaxXEntropy)
   input_values.setValues({ {{1, 1}} });
   Eigen::Tensor<float, 2> output_values(batch_size, output_size);
   output_values.setValues({ {0, 1} });
-  std::shared_ptr<LossFunctionTensorOp<float, Eigen::DefaultDevice>> loss_function = std::make_shared<NegativeLogLikelihoodTensorOp<float, Eigen::DefaultDevice>>(NegativeLogLikelihoodTensorOp<float, Eigen::DefaultDevice>());
-  std::shared_ptr<LossFunctionGradTensorOp<float, Eigen::DefaultDevice>> loss_function_grad = std::make_shared<NegativeLogLikelihoodGradTensorOp<float, Eigen::DefaultDevice>>(NegativeLogLikelihoodGradTensorOp<float, Eigen::DefaultDevice>());
+  std::shared_ptr<LossFunctionTensorOp<float, Eigen::DefaultDevice>> loss_function = std::make_shared<NegativeLogLikelihoodLossTensorOp<float, Eigen::DefaultDevice>>(NegativeLogLikelihoodLossTensorOp<float, Eigen::DefaultDevice>());
+  std::shared_ptr<LossFunctionGradTensorOp<float, Eigen::DefaultDevice>> loss_function_grad = std::make_shared<NegativeLogLikelihoodLossGradTensorOp<float, Eigen::DefaultDevice>>(NegativeLogLikelihoodLossGradTensorOp<float, Eigen::DefaultDevice>());
   trainModel(model, node_names_input, node_names_output, input_values, output_values, batch_size, memory_size, loss_function, loss_function_grad);
 
   // test for the expected model error

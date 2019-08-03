@@ -218,36 +218,36 @@ BOOST_AUTO_TEST_CASE(destructorMSEGradOp)
 }
 
 /**
-	KLDivergenceMuOp Tests
+	KLDivergenceMuLossOp Tests
 */
 BOOST_AUTO_TEST_CASE(constructorKLDivergenceMuOp)
 {
-	KLDivergenceMuOp<double>* ptrKLDivergenceMu = nullptr;
-	KLDivergenceMuOp<double>* nullPointerKLDivergenceMu = nullptr;
+	KLDivergenceMuLossOp<double>* ptrKLDivergenceMu = nullptr;
+	KLDivergenceMuLossOp<double>* nullPointerKLDivergenceMu = nullptr;
 	BOOST_CHECK_EQUAL(ptrKLDivergenceMu, nullPointerKLDivergenceMu);
 }
 
 BOOST_AUTO_TEST_CASE(destructorKLDivergenceMuOp)
 {
-	KLDivergenceMuOp<double>* ptrKLDivergenceMu = nullptr;
-	ptrKLDivergenceMu = new KLDivergenceMuOp<double>();
+	KLDivergenceMuLossOp<double>* ptrKLDivergenceMu = nullptr;
+	ptrKLDivergenceMu = new KLDivergenceMuLossOp<double>();
 	delete ptrKLDivergenceMu;
 }
 
 /**
-	KLDivergenceMuGradOp Tests
+	KLDivergenceMuLossGradOp Tests
 */
 BOOST_AUTO_TEST_CASE(constructorKLDivergenceMuGradOp)
 {
-	KLDivergenceMuGradOp<double>* ptrKLDivergenceMu = nullptr;
-	KLDivergenceMuGradOp<double>* nullPointerKLDivergenceMu = nullptr;
+	KLDivergenceMuLossGradOp<double>* ptrKLDivergenceMu = nullptr;
+	KLDivergenceMuLossGradOp<double>* nullPointerKLDivergenceMu = nullptr;
 	BOOST_CHECK_EQUAL(ptrKLDivergenceMu, nullPointerKLDivergenceMu);
 }
 
 BOOST_AUTO_TEST_CASE(destructorKLDivergenceMuGradOp)
 {
-	KLDivergenceMuGradOp<double>* ptrKLDivergenceMu = nullptr;
-	ptrKLDivergenceMu = new KLDivergenceMuGradOp<double>();
+	KLDivergenceMuLossGradOp<double>* ptrKLDivergenceMu = nullptr;
+	ptrKLDivergenceMu = new KLDivergenceMuLossGradOp<double>();
 	delete ptrKLDivergenceMu;
 }
 

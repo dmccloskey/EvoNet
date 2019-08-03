@@ -440,8 +440,8 @@ BOOST_AUTO_TEST_CASE(modelErrorDefaultDevice)
 	const int device_id = 0;
 	ModelKernalDefaultDevice<float> kernal;
 
-	MSETensorOp<float, Eigen::DefaultDevice>* loss_function = new MSETensorOp<float, Eigen::DefaultDevice>;
-	MSEGradTensorOp<float, Eigen::DefaultDevice>* loss_grad_function = new MSEGradTensorOp<float, Eigen::DefaultDevice>;
+	MSELossTensorOp<float, Eigen::DefaultDevice>* loss_function = new MSELossTensorOp<float, Eigen::DefaultDevice>;
+	MSELossGradTensorOp<float, Eigen::DefaultDevice>* loss_grad_function = new MSELossGradTensorOp<float, Eigen::DefaultDevice>;
 	const int batch_size = 4;
 	const int memory_size = 2;
 	const int layer_size = 2;

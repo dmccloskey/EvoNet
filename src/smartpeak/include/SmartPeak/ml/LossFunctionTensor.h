@@ -45,15 +45,13 @@ namespace SmartPeak
 
   /**
     @brief EuclideanDistance loss function.
-
-    TODO: rename to ManhattanDistance and implement the correct EuclideanDistance
   */
   template<typename TensorT, typename DeviceT>
-  class EuclideanDistanceTensorOp : public LossFunctionTensorOp<TensorT, DeviceT>
+  class ManhattanDistanceLossTensorOp : public LossFunctionTensorOp<TensorT, DeviceT>
   {
 public: 
 		using LossFunctionTensorOp<TensorT, DeviceT>::LossFunctionTensorOp;
-		std::string getName() { return "EuclideanDistanceTensorOp"; }
+		std::string getName() { return "ManhattanDistanceLossTensorOp"; }
 		void operator()(TensorT* predicted, TensorT* expected, TensorT* error, const int& batch_size, const int& memory_size, const int& layer_size, const int& time_step, DeviceT& device) const
 		{
 			Eigen::TensorMap<Eigen::Tensor<TensorT, 2>> expected_tensor(expected, batch_size, layer_size);
@@ -68,11 +66,11 @@ public:
     @brief EuclideanDistance loss function gradient.
   */
   template<typename TensorT, typename DeviceT>
-  class EuclideanDistanceGradTensorOp : public LossFunctionGradTensorOp<TensorT, DeviceT>
+  class ManhattanDistanceLossGradTensorOp : public LossFunctionGradTensorOp<TensorT, DeviceT>
   {
 public:
 		using LossFunctionGradTensorOp<TensorT, DeviceT>::LossFunctionGradTensorOp;
-		std::string getName() { return "EuclideanDistanceGradTensorOp"; }
+		std::string getName() { return "ManhattanDistanceLossGradTensorOp"; }
 		void operator()(TensorT* predicted, TensorT* expected, TensorT* error, const int& batch_size, const int& memory_size, const int& layer_size, const int& time_step, DeviceT& device) const
 		{
 			Eigen::TensorMap<Eigen::Tensor<TensorT, 2>> expected_tensor(expected, batch_size, layer_size);
@@ -88,11 +86,11 @@ public:
     @brief L2Norm loss function.
   */
   template<typename TensorT, typename DeviceT>
-  class L2NormTensorOp : public LossFunctionTensorOp<TensorT, DeviceT>
+  class L2NormLossTensorOp : public LossFunctionTensorOp<TensorT, DeviceT>
   {
 public:
 		using LossFunctionTensorOp<TensorT, DeviceT>::LossFunctionTensorOp;
-		std::string getName() { return "L2NormTensorOp"; }
+		std::string getName() { return "L2NormLossTensorOp"; }
 		void operator()(TensorT* predicted, TensorT* expected, TensorT* error, const int& batch_size, const int& memory_size, const int& layer_size, const int& time_step, DeviceT& device) const
 		{
 			Eigen::TensorMap<Eigen::Tensor<TensorT, 2>> expected_tensor(expected, batch_size, layer_size);
@@ -107,11 +105,11 @@ public:
     @brief L2Norm loss function gradient.
   */
   template<typename TensorT, typename DeviceT>
-  class L2NormGradTensorOp : public LossFunctionGradTensorOp<TensorT, DeviceT>
+  class L2NormLossGradTensorOp : public LossFunctionGradTensorOp<TensorT, DeviceT>
   {
 public:
 		using LossFunctionGradTensorOp<TensorT, DeviceT>::LossFunctionGradTensorOp;
-		std::string getName() { return "L2NormGradTensorOp"; }
+		std::string getName() { return "L2NormLossGradTensorOp"; }
 		void operator()(TensorT* predicted, TensorT* expected, TensorT* error, const int& batch_size, const int& memory_size, const int& layer_size, const int& time_step, DeviceT& device) const
 		{
 			Eigen::TensorMap<Eigen::Tensor<TensorT, 2>> expected_tensor(expected, batch_size, layer_size);
@@ -127,11 +125,11 @@ public:
     @brief Binary Cross Entropy loss function.
   */
   template<typename TensorT, typename DeviceT>
-  class BCETensorOp : public LossFunctionTensorOp<TensorT, DeviceT>
+  class BCELossTensorOp : public LossFunctionTensorOp<TensorT, DeviceT>
   {
 public:
 		using LossFunctionTensorOp<TensorT, DeviceT>::LossFunctionTensorOp;
-		std::string getName() { return "BCETensorOp"; }
+		std::string getName() { return "BCELossTensorOp"; }
 		void operator()(TensorT* predicted, TensorT* expected, TensorT* error, const int& batch_size, const int& memory_size, const int& layer_size, const int& time_step, DeviceT& device) const
 		{
 			Eigen::TensorMap<Eigen::Tensor<TensorT, 2>> expected_tensor(expected, batch_size, layer_size);
@@ -154,11 +152,11 @@ public:
 		= -(x-z)/((x-1)*x)
   */
   template<typename TensorT, typename DeviceT>
-  class BCEGradTensorOp : public LossFunctionGradTensorOp<TensorT, DeviceT>
+  class BCELossGradTensorOp : public LossFunctionGradTensorOp<TensorT, DeviceT>
   {
 public:
 		using LossFunctionGradTensorOp<TensorT, DeviceT>::LossFunctionGradTensorOp;
-		std::string getName() { return "BCEGradTensorOp"; }
+		std::string getName() { return "BCELossGradTensorOp"; }
 		void operator()(TensorT* predicted, TensorT* expected, TensorT* error, const int& batch_size, const int& memory_size, const int& layer_size, const int& time_step, DeviceT& device) const
 		{
 			Eigen::TensorMap<Eigen::Tensor<TensorT, 2>> expected_tensor(expected, batch_size, layer_size);
@@ -177,12 +175,12 @@ public:
     @brief NegativeLogLikelihood loss function.
   */
   template<typename TensorT, typename DeviceT>
-  class NegativeLogLikelihoodTensorOp : public LossFunctionTensorOp<TensorT, DeviceT>
+  class NegativeLogLikelihoodLossTensorOp : public LossFunctionTensorOp<TensorT, DeviceT>
   {
 public:
 		using LossFunctionTensorOp<TensorT, DeviceT>::LossFunctionTensorOp;
 		void setN(const TensorT& n) { n_ = n; }
-		std::string getName() { return "NegativeLogLikelihoodTensorOp"; }
+		std::string getName() { return "NegativeLogLikelihoodLossTensorOp"; }
 		void operator()(TensorT* predicted, TensorT* expected, TensorT* error, const int& batch_size, const int& memory_size, const int& layer_size, const int& time_step, DeviceT& device) const
 		{
 			Eigen::TensorMap<Eigen::Tensor<TensorT, 2>> expected_tensor(expected, batch_size, layer_size);
@@ -201,12 +199,12 @@ public:
     @brief NegativeLogLikelihood loss function gradient.
   */
   template<typename TensorT, typename DeviceT>
-  class NegativeLogLikelihoodGradTensorOp : public LossFunctionGradTensorOp<TensorT, DeviceT>
+  class NegativeLogLikelihoodLossGradTensorOp : public LossFunctionGradTensorOp<TensorT, DeviceT>
   {
 public:
 		using LossFunctionGradTensorOp<TensorT, DeviceT>::LossFunctionGradTensorOp;
 		void setN(const TensorT& n) { n_ = n; }
-		std::string getName() { return "NegativeLogLikelihoodGradTensorOp"; }
+		std::string getName() { return "NegativeLogLikelihoodLossGradTensorOp"; }
 		void operator()(TensorT* predicted, TensorT* expected, TensorT* error, const int& batch_size, const int& memory_size, const int& layer_size, const int& time_step, DeviceT& device) const
 		{
 			Eigen::TensorMap<Eigen::Tensor<TensorT, 2>> expected_tensor(expected, batch_size, layer_size);
@@ -225,11 +223,11 @@ public:
     @brief MSE Mean Squared Error loss function.
   */
   template<typename TensorT, typename DeviceT>
-  class MSETensorOp : public LossFunctionTensorOp<TensorT, DeviceT>
+  class MSELossTensorOp : public LossFunctionTensorOp<TensorT, DeviceT>
   {
 public:
 		using LossFunctionTensorOp<TensorT, DeviceT>::LossFunctionTensorOp;
-		std::string getName() { return "MSETensorOp"; }
+		std::string getName() { return "MSELossTensorOp"; }
 		void operator()(TensorT* predicted, TensorT* expected, TensorT* error, const int& batch_size, const int& memory_size, const int& layer_size, const int& time_step, DeviceT& device) const	{
 			Eigen::TensorMap<Eigen::Tensor<TensorT, 2>> expected_tensor(expected, batch_size, layer_size);
 			Eigen::TensorMap<Eigen::Tensor<TensorT, 3>> predicted_tensor(predicted, batch_size, memory_size, layer_size);
@@ -245,11 +243,11 @@ public:
     @brief MSE Mean Squared Error loss function gradient.
   */
   template<typename TensorT, typename DeviceT>
-  class MSEGradTensorOp : public LossFunctionGradTensorOp<TensorT, DeviceT>
+  class MSELossGradTensorOp : public LossFunctionGradTensorOp<TensorT, DeviceT>
   {
 public:
 		using LossFunctionGradTensorOp<TensorT, DeviceT>::LossFunctionGradTensorOp;
-		std::string getName() { return "MSEGradTensorOp"; }
+		std::string getName() { return "MSELossGradTensorOp"; }
 		void operator()(TensorT* predicted, TensorT* expected, TensorT* error, const int& batch_size, const int& memory_size, const int& layer_size, const int& time_step, DeviceT& device) const
 		{
 			Eigen::TensorMap<Eigen::Tensor<TensorT, 2>> expected_tensor(expected, batch_size, layer_size);

@@ -16,21 +16,21 @@ BOOST_AUTO_TEST_SUITE(lossFunctionTensor)
 */
 BOOST_AUTO_TEST_CASE(constructorEuclideanDistanceOp)
 {
-  EuclideanDistanceTensorOp<float, Eigen::DefaultDevice>* ptrReLU = nullptr;
-  EuclideanDistanceTensorOp<float, Eigen::DefaultDevice>* nullPointerReLU = nullptr;
+  ManhattanDistanceLossTensorOp<float, Eigen::DefaultDevice>* ptrReLU = nullptr;
+  ManhattanDistanceLossTensorOp<float, Eigen::DefaultDevice>* nullPointerReLU = nullptr;
   BOOST_CHECK_EQUAL(ptrReLU, nullPointerReLU);
 }
 
 BOOST_AUTO_TEST_CASE(destructorEuclideanDistanceOp)
 {
-  EuclideanDistanceTensorOp<float, Eigen::DefaultDevice>* ptrReLU = nullptr;
-  ptrReLU = new EuclideanDistanceTensorOp<float, Eigen::DefaultDevice>();
+  ManhattanDistanceLossTensorOp<float, Eigen::DefaultDevice>* ptrReLU = nullptr;
+  ptrReLU = new ManhattanDistanceLossTensorOp<float, Eigen::DefaultDevice>();
   delete ptrReLU;
 }
 
 BOOST_AUTO_TEST_CASE(operationfunctionEuclideanDistanceOp)
 {
-  EuclideanDistanceTensorOp<float, Eigen::DefaultDevice> operation;
+  ManhattanDistanceLossTensorOp<float, Eigen::DefaultDevice> operation;
 
   const int memory_size = 2;
   const int batch_size = 2;
@@ -62,21 +62,21 @@ BOOST_AUTO_TEST_CASE(operationfunctionEuclideanDistanceOp)
 */
 BOOST_AUTO_TEST_CASE(constructorEuclideanDistanceGradOp)
 {
-  EuclideanDistanceGradTensorOp<float, Eigen::DefaultDevice>* ptrReLU = nullptr;
-  EuclideanDistanceGradTensorOp<float, Eigen::DefaultDevice>* nullPointerReLU = nullptr;
+  ManhattanDistanceLossGradTensorOp<float, Eigen::DefaultDevice>* ptrReLU = nullptr;
+  ManhattanDistanceLossGradTensorOp<float, Eigen::DefaultDevice>* nullPointerReLU = nullptr;
   BOOST_CHECK_EQUAL(ptrReLU, nullPointerReLU);
 }
 
 BOOST_AUTO_TEST_CASE(destructorEuclideanDistanceGradOp)
 {
-  EuclideanDistanceGradTensorOp<float, Eigen::DefaultDevice>* ptrReLU = nullptr;
-  ptrReLU = new EuclideanDistanceGradTensorOp<float, Eigen::DefaultDevice>();
+  ManhattanDistanceLossGradTensorOp<float, Eigen::DefaultDevice>* ptrReLU = nullptr;
+  ptrReLU = new ManhattanDistanceLossGradTensorOp<float, Eigen::DefaultDevice>();
   delete ptrReLU;
 }
 
 BOOST_AUTO_TEST_CASE(operationfunctionEuclideanDistanceGradOp)
 {
-  EuclideanDistanceGradTensorOp<float, Eigen::DefaultDevice> operation;
+  ManhattanDistanceLossGradTensorOp<float, Eigen::DefaultDevice> operation;
 
   const int memory_size = 2;
   const int batch_size = 2;
@@ -112,21 +112,21 @@ BOOST_AUTO_TEST_CASE(operationfunctionEuclideanDistanceGradOp)
 */
 BOOST_AUTO_TEST_CASE(constructorL2NormOp)
 {
-  L2NormTensorOp<float, Eigen::DefaultDevice>* ptrL2Norm = nullptr;
-  L2NormTensorOp<float, Eigen::DefaultDevice>* nullPointerL2Norm = nullptr;
+  L2NormLossTensorOp<float, Eigen::DefaultDevice>* ptrL2Norm = nullptr;
+  L2NormLossTensorOp<float, Eigen::DefaultDevice>* nullPointerL2Norm = nullptr;
   BOOST_CHECK_EQUAL(ptrL2Norm, nullPointerL2Norm);
 }
 
 BOOST_AUTO_TEST_CASE(destructorL2NormOp)
 {
-  L2NormTensorOp<float, Eigen::DefaultDevice>* ptrL2Norm = nullptr;
-  ptrL2Norm = new L2NormTensorOp<float, Eigen::DefaultDevice>();
+  L2NormLossTensorOp<float, Eigen::DefaultDevice>* ptrL2Norm = nullptr;
+  ptrL2Norm = new L2NormLossTensorOp<float, Eigen::DefaultDevice>();
   delete ptrL2Norm;
 }
 
 BOOST_AUTO_TEST_CASE(operationfunctionL2NormOp)
 {
-  L2NormTensorOp<float, Eigen::DefaultDevice> operation;
+  L2NormLossTensorOp<float, Eigen::DefaultDevice> operation;
 
   const int memory_size = 2;
   const int batch_size = 2;
@@ -158,21 +158,21 @@ BOOST_AUTO_TEST_CASE(operationfunctionL2NormOp)
 */
 BOOST_AUTO_TEST_CASE(constructorL2NormGradOp)
 {
-  L2NormGradTensorOp<float, Eigen::DefaultDevice>* ptrL2Norm = nullptr;
-  L2NormGradTensorOp<float, Eigen::DefaultDevice>* nullPointerL2Norm = nullptr;
+  L2NormLossGradTensorOp<float, Eigen::DefaultDevice>* ptrL2Norm = nullptr;
+  L2NormLossGradTensorOp<float, Eigen::DefaultDevice>* nullPointerL2Norm = nullptr;
   BOOST_CHECK_EQUAL(ptrL2Norm, nullPointerL2Norm);
 }
 
 BOOST_AUTO_TEST_CASE(destructorL2NormGradOp)
 {
-  L2NormGradTensorOp<float, Eigen::DefaultDevice>* ptrL2Norm = nullptr;
-  ptrL2Norm = new L2NormGradTensorOp<float, Eigen::DefaultDevice>();
+  L2NormLossGradTensorOp<float, Eigen::DefaultDevice>* ptrL2Norm = nullptr;
+  ptrL2Norm = new L2NormLossGradTensorOp<float, Eigen::DefaultDevice>();
   delete ptrL2Norm;
 }
 
 BOOST_AUTO_TEST_CASE(operationfunctionL2NormGradOp)
 {
-  L2NormGradTensorOp<float, Eigen::DefaultDevice> operation;
+  L2NormLossGradTensorOp<float, Eigen::DefaultDevice> operation;
 
   const int memory_size = 2;
   const int batch_size = 2;
@@ -208,21 +208,21 @@ BOOST_AUTO_TEST_CASE(operationfunctionL2NormGradOp)
 */
 BOOST_AUTO_TEST_CASE(constructorCrossEntropyOp)
 {
-  BCETensorOp<float, Eigen::DefaultDevice>* ptrCrossEntropy = nullptr;
-  BCETensorOp<float, Eigen::DefaultDevice>* nullPointerCrossEntropy = nullptr;
+  BCELossTensorOp<float, Eigen::DefaultDevice>* ptrCrossEntropy = nullptr;
+  BCELossTensorOp<float, Eigen::DefaultDevice>* nullPointerCrossEntropy = nullptr;
   BOOST_CHECK_EQUAL(ptrCrossEntropy, nullPointerCrossEntropy);
 }
 
 BOOST_AUTO_TEST_CASE(destructorCrossEntropyOp)
 {
-  BCETensorOp<float, Eigen::DefaultDevice>* ptrCrossEntropy = nullptr;
-  ptrCrossEntropy = new BCETensorOp<float, Eigen::DefaultDevice>();
+  BCELossTensorOp<float, Eigen::DefaultDevice>* ptrCrossEntropy = nullptr;
+  ptrCrossEntropy = new BCELossTensorOp<float, Eigen::DefaultDevice>();
   delete ptrCrossEntropy;
 }
 
 BOOST_AUTO_TEST_CASE(operationfunctionCrossEntropyOp)
 {
-  BCETensorOp<float, Eigen::DefaultDevice> operation;
+  BCELossTensorOp<float, Eigen::DefaultDevice> operation;
 
   const int memory_size = 2;
   const int batch_size = 2;
@@ -254,21 +254,21 @@ BOOST_AUTO_TEST_CASE(operationfunctionCrossEntropyOp)
 */
 BOOST_AUTO_TEST_CASE(constructorCrossEntropyGradOp)
 {
-  BCEGradTensorOp<float, Eigen::DefaultDevice>* ptrCrossEntropy = nullptr;
-  BCEGradTensorOp<float, Eigen::DefaultDevice>* nullPointerCrossEntropy = nullptr;
+  BCELossGradTensorOp<float, Eigen::DefaultDevice>* ptrCrossEntropy = nullptr;
+  BCELossGradTensorOp<float, Eigen::DefaultDevice>* nullPointerCrossEntropy = nullptr;
   BOOST_CHECK_EQUAL(ptrCrossEntropy, nullPointerCrossEntropy);
 }
 
 BOOST_AUTO_TEST_CASE(destructorCrossEntropyGradOp)
 {
-  BCEGradTensorOp<float, Eigen::DefaultDevice>* ptrCrossEntropy = nullptr;
-  ptrCrossEntropy = new BCEGradTensorOp<float, Eigen::DefaultDevice>();
+  BCELossGradTensorOp<float, Eigen::DefaultDevice>* ptrCrossEntropy = nullptr;
+  ptrCrossEntropy = new BCELossGradTensorOp<float, Eigen::DefaultDevice>();
   delete ptrCrossEntropy;
 }
 
 BOOST_AUTO_TEST_CASE(operationfunctionCrossEntropyGradOp)
 {
-  BCEGradTensorOp<float, Eigen::DefaultDevice> operation;
+  BCELossGradTensorOp<float, Eigen::DefaultDevice> operation;
 
   const int memory_size = 2;
   const int batch_size = 2;
@@ -304,21 +304,21 @@ BOOST_AUTO_TEST_CASE(operationfunctionCrossEntropyGradOp)
 */
 BOOST_AUTO_TEST_CASE(constructorNegativeLogLikelihoodOp)
 {
-  NegativeLogLikelihoodTensorOp<float, Eigen::DefaultDevice>* ptrNegativeLogLikelihood = nullptr;
-  NegativeLogLikelihoodTensorOp<float, Eigen::DefaultDevice>* nullPointerNegativeLogLikelihood = nullptr;
+  NegativeLogLikelihoodLossTensorOp<float, Eigen::DefaultDevice>* ptrNegativeLogLikelihood = nullptr;
+  NegativeLogLikelihoodLossTensorOp<float, Eigen::DefaultDevice>* nullPointerNegativeLogLikelihood = nullptr;
   BOOST_CHECK_EQUAL(ptrNegativeLogLikelihood, nullPointerNegativeLogLikelihood);
 }
 
 BOOST_AUTO_TEST_CASE(destructorNegativeLogLikelihoodOp)
 {
-  NegativeLogLikelihoodTensorOp<float, Eigen::DefaultDevice>* ptrNegativeLogLikelihood = nullptr;
-  ptrNegativeLogLikelihood = new NegativeLogLikelihoodTensorOp<float, Eigen::DefaultDevice>();
+  NegativeLogLikelihoodLossTensorOp<float, Eigen::DefaultDevice>* ptrNegativeLogLikelihood = nullptr;
+  ptrNegativeLogLikelihood = new NegativeLogLikelihoodLossTensorOp<float, Eigen::DefaultDevice>();
   delete ptrNegativeLogLikelihood;
 }
 
 BOOST_AUTO_TEST_CASE(operationfunctionNegativeLogLikelihoodOp)
 {
-  NegativeLogLikelihoodTensorOp<float, Eigen::DefaultDevice> operation;
+  NegativeLogLikelihoodLossTensorOp<float, Eigen::DefaultDevice> operation;
 
   const int memory_size = 2;
   const int batch_size = 2;
@@ -350,21 +350,21 @@ BOOST_AUTO_TEST_CASE(operationfunctionNegativeLogLikelihoodOp)
 */
 BOOST_AUTO_TEST_CASE(constructorNegativeLogLikelihoodGradOp)
 {
-  NegativeLogLikelihoodGradTensorOp<float, Eigen::DefaultDevice>* ptrNegativeLogLikelihood = nullptr;
-  NegativeLogLikelihoodGradTensorOp<float, Eigen::DefaultDevice>* nullPointerNegativeLogLikelihood = nullptr;
+  NegativeLogLikelihoodLossGradTensorOp<float, Eigen::DefaultDevice>* ptrNegativeLogLikelihood = nullptr;
+  NegativeLogLikelihoodLossGradTensorOp<float, Eigen::DefaultDevice>* nullPointerNegativeLogLikelihood = nullptr;
   BOOST_CHECK_EQUAL(ptrNegativeLogLikelihood, nullPointerNegativeLogLikelihood);
 }
 
 BOOST_AUTO_TEST_CASE(destructorNegativeLogLikelihoodGradOp)
 {
-  NegativeLogLikelihoodGradTensorOp<float, Eigen::DefaultDevice>* ptrNegativeLogLikelihood = nullptr;
-  ptrNegativeLogLikelihood = new NegativeLogLikelihoodGradTensorOp<float, Eigen::DefaultDevice>();
+  NegativeLogLikelihoodLossGradTensorOp<float, Eigen::DefaultDevice>* ptrNegativeLogLikelihood = nullptr;
+  ptrNegativeLogLikelihood = new NegativeLogLikelihoodLossGradTensorOp<float, Eigen::DefaultDevice>();
   delete ptrNegativeLogLikelihood;
 }
 
 BOOST_AUTO_TEST_CASE(operationfunctionNegativeLogLikelihoodGradOp)
 {
-  NegativeLogLikelihoodGradTensorOp<float, Eigen::DefaultDevice> operation;
+  NegativeLogLikelihoodLossGradTensorOp<float, Eigen::DefaultDevice> operation;
 
   const int memory_size = 2;
   const int batch_size = 2;
@@ -400,21 +400,21 @@ BOOST_AUTO_TEST_CASE(operationfunctionNegativeLogLikelihoodGradOp)
 */
 BOOST_AUTO_TEST_CASE(constructorMSEOp)
 {
-  MSETensorOp<float, Eigen::DefaultDevice>* ptrMSE = nullptr;
-  MSETensorOp<float, Eigen::DefaultDevice>* nullPointerMSE = nullptr;
+  MSELossTensorOp<float, Eigen::DefaultDevice>* ptrMSE = nullptr;
+  MSELossTensorOp<float, Eigen::DefaultDevice>* nullPointerMSE = nullptr;
   BOOST_CHECK_EQUAL(ptrMSE, nullPointerMSE);
 }
 
 BOOST_AUTO_TEST_CASE(destructorMSEOp)
 {
-  MSETensorOp<float, Eigen::DefaultDevice>* ptrMSE = nullptr;
-  ptrMSE = new MSETensorOp<float, Eigen::DefaultDevice>();
+  MSELossTensorOp<float, Eigen::DefaultDevice>* ptrMSE = nullptr;
+  ptrMSE = new MSELossTensorOp<float, Eigen::DefaultDevice>();
   delete ptrMSE;
 }
 
 BOOST_AUTO_TEST_CASE(operationfunctionMSEOp)
 {
-  MSETensorOp<float, Eigen::DefaultDevice> operation;
+  MSELossTensorOp<float, Eigen::DefaultDevice> operation;
 
   const int memory_size = 2;
   const int batch_size = 2;
@@ -446,21 +446,21 @@ BOOST_AUTO_TEST_CASE(operationfunctionMSEOp)
 */
 BOOST_AUTO_TEST_CASE(constructorMSEGradOp)
 {
-  MSEGradTensorOp<float, Eigen::DefaultDevice>* ptrMSE = nullptr;
-  MSEGradTensorOp<float, Eigen::DefaultDevice>* nullPointerMSE = nullptr;
+  MSELossGradTensorOp<float, Eigen::DefaultDevice>* ptrMSE = nullptr;
+  MSELossGradTensorOp<float, Eigen::DefaultDevice>* nullPointerMSE = nullptr;
   BOOST_CHECK_EQUAL(ptrMSE, nullPointerMSE);
 }
 
 BOOST_AUTO_TEST_CASE(destructorMSEGradOp)
 {
-  MSEGradTensorOp<float, Eigen::DefaultDevice>* ptrMSE = nullptr;
-  ptrMSE = new MSEGradTensorOp<float, Eigen::DefaultDevice>();
+  MSELossGradTensorOp<float, Eigen::DefaultDevice>* ptrMSE = nullptr;
+  ptrMSE = new MSELossGradTensorOp<float, Eigen::DefaultDevice>();
   delete ptrMSE;
 }
 
 BOOST_AUTO_TEST_CASE(operationfunctionMSEGradOp)
 {
-  MSEGradTensorOp<float, Eigen::DefaultDevice> operation;
+  MSELossGradTensorOp<float, Eigen::DefaultDevice> operation;
 
   const int memory_size = 2;
   const int batch_size = 2;
@@ -492,7 +492,7 @@ BOOST_AUTO_TEST_CASE(operationfunctionMSEGradOp)
 }
 
 /**
-  KLDivergenceMuOp Tests
+  KLDivergenceMuLossOp Tests
 */
 BOOST_AUTO_TEST_CASE(constructorKLDivergenceMuOp)
 {
@@ -538,7 +538,7 @@ BOOST_AUTO_TEST_CASE(operationfunctionKLDivergenceMuOp)
 }
 
 /**
-  KLDivergenceMuGradOp Tests
+  KLDivergenceMuLossGradOp Tests
 */
 BOOST_AUTO_TEST_CASE(constructorKLDivergenceMuGradOp)
 {

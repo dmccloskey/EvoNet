@@ -454,8 +454,8 @@ void test_executeModelErrorOperations()
 	std::vector<std::string> output_nodes = { "4", "5" };
 	Eigen::Tensor<float, 2> expected(batch_size, (int)output_nodes.size());
 	expected.setValues({ {0, 1}, {0, 1}, {0, 1}, {0, 1} });
-	LossFunctionTensorOp<float, Eigen::GpuDevice>* solver = new MSETensorOp<float, Eigen::GpuDevice>();
-	LossFunctionGradTensorOp<float, Eigen::GpuDevice>* solver_grad = new MSEGradTensorOp<float, Eigen::GpuDevice>();
+	LossFunctionTensorOp<float, Eigen::GpuDevice>* solver = new MSELossTensorOp<float, Eigen::GpuDevice>();
+	LossFunctionGradTensorOp<float, Eigen::GpuDevice>* solver_grad = new MSELossGradTensorOp<float, Eigen::GpuDevice>();
 	const int layer_id = model_executeModelErrorOperations.getNode("4").getTensorIndex().first;
 	model_interpreter.executeModelErrorOperations(expected, layer_id, solver, solver_grad, 0);
 
@@ -585,8 +585,8 @@ void test_executeBackwardPropogationOperations()
 	std::vector<std::string> output_nodes = { "4", "5" };
 	Eigen::Tensor<float, 2> expected(batch_size, (int)output_nodes.size());
 	expected.setValues({ {0, 1}, {0, 1}, {0, 1}, {0, 1} });
-	LossFunctionTensorOp<float, Eigen::GpuDevice>* solver = new MSETensorOp<float, Eigen::GpuDevice>();
-	LossFunctionGradTensorOp<float, Eigen::GpuDevice>* solver_grad = new MSEGradTensorOp<float, Eigen::GpuDevice>();
+	LossFunctionTensorOp<float, Eigen::GpuDevice>* solver = new MSELossTensorOp<float, Eigen::GpuDevice>();
+	LossFunctionGradTensorOp<float, Eigen::GpuDevice>* solver_grad = new MSELossGradTensorOp<float, Eigen::GpuDevice>();
 	const int layer_id = model_executeBackwardPropogationOperations.getNode("4").getTensorIndex().first;
 	model_interpreter.executeModelErrorOperations(expected, layer_id, solver, solver_grad, 0);
 
@@ -657,8 +657,8 @@ void test_executeWeightErrorOperations()
 	std::vector<std::string> output_nodes = { "4", "5" };
 	Eigen::Tensor<float, 2> expected(batch_size, (int)output_nodes.size());
 	expected.setValues({ {0, 1}, {0, 1}, {0, 1}, {0, 1} });
-	LossFunctionTensorOp<float, Eigen::GpuDevice>* solver = new MSETensorOp<float, Eigen::GpuDevice>();
-	LossFunctionGradTensorOp<float, Eigen::GpuDevice>* solver_grad = new MSEGradTensorOp<float, Eigen::GpuDevice>();
+	LossFunctionTensorOp<float, Eigen::GpuDevice>* solver = new MSELossTensorOp<float, Eigen::GpuDevice>();
+	LossFunctionGradTensorOp<float, Eigen::GpuDevice>* solver_grad = new MSELossGradTensorOp<float, Eigen::GpuDevice>();
 	const int layer_id = model_executeWeightErrorOperations.getNode("4").getTensorIndex().first;
 	model_interpreter.executeModelErrorOperations(expected, layer_id, solver, solver_grad, 0);
 
@@ -724,8 +724,8 @@ void test_executeWeightUpdateOperations()
 	std::vector<std::string> output_nodes = { "4", "5" };
 	Eigen::Tensor<float, 2> expected(batch_size, (int)output_nodes.size());
 	expected.setValues({ {0, 1}, {0, 1}, {0, 1}, {0, 1} });
-	LossFunctionTensorOp<float, Eigen::GpuDevice>* solver = new MSETensorOp<float, Eigen::GpuDevice>();
-	LossFunctionGradTensorOp<float, Eigen::GpuDevice>* solver_grad = new MSEGradTensorOp<float, Eigen::GpuDevice>();
+	LossFunctionTensorOp<float, Eigen::GpuDevice>* solver = new MSELossTensorOp<float, Eigen::GpuDevice>();
+	LossFunctionGradTensorOp<float, Eigen::GpuDevice>* solver_grad = new MSELossGradTensorOp<float, Eigen::GpuDevice>();
 	const int layer_id = model_executeWeightUpdateOperations.getNode("4").getTensorIndex().first;
 	model_interpreter.executeModelErrorOperations(expected, layer_id, solver, solver_grad, 0);
 
@@ -795,8 +795,8 @@ void test_modelTrainer1()
 	std::vector<std::string> output_nodes = { "4", "5" };
 	Eigen::Tensor<float, 2> expected(batch_size, (int)output_nodes.size());
 	expected.setValues({ {0, 1}, {0, 1}, {0, 1}, {0, 1} });
-	LossFunctionTensorOp<float, Eigen::GpuDevice>* loss_function = new MSETensorOp<float, Eigen::GpuDevice>();
-	LossFunctionGradTensorOp<float, Eigen::GpuDevice>* loss_function_grad = new MSEGradTensorOp<float, Eigen::GpuDevice>();
+	LossFunctionTensorOp<float, Eigen::GpuDevice>* loss_function = new MSELossTensorOp<float, Eigen::GpuDevice>();
+	LossFunctionGradTensorOp<float, Eigen::GpuDevice>* loss_function_grad = new MSELossGradTensorOp<float, Eigen::GpuDevice>();
 	const int layer_id = model_modelTrainer1.getNode("4").getTensorIndex().first;
 
 	// iterate until we find the optimal values
