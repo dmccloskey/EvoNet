@@ -252,6 +252,74 @@ BOOST_AUTO_TEST_CASE(destructorMAEGradOp)
 }
 
 /**
+  MRSELossOp Tests
+*/
+BOOST_AUTO_TEST_CASE(constructorMRSEOp)
+{
+  MRSELossOp<double>* ptrMRSE = nullptr;
+  MRSELossOp<double>* nullPointerMRSE = nullptr;
+  BOOST_CHECK_EQUAL(ptrMRSE, nullPointerMRSE);
+}
+
+BOOST_AUTO_TEST_CASE(destructorMRSEOp)
+{
+  MRSELossOp<double>* ptrMRSE = nullptr;
+  ptrMRSE = new MRSELossOp<double>();
+  delete ptrMRSE;
+}
+
+/**
+  MRSELossGradOp Tests
+*/
+BOOST_AUTO_TEST_CASE(constructorMRSEGradOp)
+{
+  MRSELossGradOp<double>* ptrMRSE = nullptr;
+  MRSELossGradOp<double>* nullPointerMRSE = nullptr;
+  BOOST_CHECK_EQUAL(ptrMRSE, nullPointerMRSE);
+}
+
+BOOST_AUTO_TEST_CASE(destructorMRSEGradOp)
+{
+  MRSELossGradOp<double>* ptrMRSE = nullptr;
+  ptrMRSE = new MRSELossGradOp<double>();
+  delete ptrMRSE;
+}
+
+/**
+  MLELossOp Tests
+*/
+BOOST_AUTO_TEST_CASE(constructorMLEOp)
+{
+  MLELossOp<double>* ptrMLE = nullptr;
+  MLELossOp<double>* nullPointerMLE = nullptr;
+  BOOST_CHECK_EQUAL(ptrMLE, nullPointerMLE);
+}
+
+BOOST_AUTO_TEST_CASE(destructorMLEOp)
+{
+  MLELossOp<double>* ptrMLE = nullptr;
+  ptrMLE = new MLELossOp<double>();
+  delete ptrMLE;
+}
+
+/**
+  MLELossGradOp Tests
+*/
+BOOST_AUTO_TEST_CASE(constructorMLEGradOp)
+{
+  MLELossGradOp<double>* ptrMLE = nullptr;
+  MLELossGradOp<double>* nullPointerMLE = nullptr;
+  BOOST_CHECK_EQUAL(ptrMLE, nullPointerMLE);
+}
+
+BOOST_AUTO_TEST_CASE(destructorMLEGradOp)
+{
+  MLELossGradOp<double>* ptrMLE = nullptr;
+  ptrMLE = new MLELossGradOp<double>();
+  delete ptrMLE;
+}
+
+/**
 	KLDivergenceMuLossOp Tests
 */
 BOOST_AUTO_TEST_CASE(constructorKLDivergenceMuOp)

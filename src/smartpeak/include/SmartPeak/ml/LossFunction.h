@@ -199,6 +199,54 @@ public:
     std::string getName() { return "MAELossGradOp"; };
     std::vector<TensorT> getParameters() const { return std::vector<TensorT>({ this->eps_, this->scale_ }); }
   };
+  
+  /**
+    @brief MRSE Mean Roote Squared Error loss function.
+  */
+  template<typename TensorT>
+  class MRSELossOp : public LossFunctionOp<TensorT>
+  {
+  public:
+    using LossFunctionOp<TensorT>::LossFunctionOp;
+    std::string getName() { return "MRSELossOp"; };
+    std::vector<TensorT> getParameters() const { return std::vector<TensorT>({ this->eps_, this->scale_ }); }
+  };
+
+  /**
+    @brief MRSE Mean Root Squared Error loss function gradient.
+  */
+  template<typename TensorT>
+  class MRSELossGradOp : public LossFunctionGradOp<TensorT>
+  {
+  public:
+    using LossFunctionGradOp<TensorT>::LossFunctionGradOp;
+    std::string getName() { return "MRSELossGradOp"; };
+    std::vector<TensorT> getParameters() const { return std::vector<TensorT>({ this->eps_, this->scale_ }); }
+  };
+
+  /**
+    @brief MLE Mean Logarithmic Error loss function.
+  */
+  template<typename TensorT>
+  class MLELossOp : public LossFunctionOp<TensorT>
+  {
+  public:
+    using LossFunctionOp<TensorT>::LossFunctionOp;
+    std::string getName() { return "MLELossOp"; };
+    std::vector<TensorT> getParameters() const { return std::vector<TensorT>({ this->eps_, this->scale_ }); }
+  };
+
+  /**
+    @brief MLE Mean Logarithmic Error loss function gradient.
+  */
+  template<typename TensorT>
+  class MLELossGradOp : public LossFunctionGradOp<TensorT>
+  {
+  public:
+    using LossFunctionGradOp<TensorT>::LossFunctionGradOp;
+    std::string getName() { return "MLELossGradOp"; };
+    std::vector<TensorT> getParameters() const { return std::vector<TensorT>({ this->eps_, this->scale_ }); }
+  };
 
 	/**
 		@brief KLDivergenceMu loss function.
