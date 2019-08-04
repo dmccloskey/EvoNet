@@ -1062,7 +1062,7 @@ void computeLatentArithmeticSimilarity(const std::vector<std::string>& condition
       reconstruction_output = latentArithmetic.generateReconstruction(encoding_output, model_trainer, model_logger);
     }
     else if (latent_operation == "+") {
-      Eigen::Tensor<TensorT, 4> encoding_output = encoding_output_1 - encoding_output_2;
+      Eigen::Tensor<TensorT, 4> encoding_output = encoding_output_1 + encoding_output_2;
       reconstruction_output = latentArithmetic.generateReconstruction(encoding_output, model_trainer, model_logger);
     }
 
@@ -1445,7 +1445,7 @@ int main(int argc, char** argv)
   latentArithmetic.setNormalizationModelInterpreter(model_interpreter);
 
   // Run the script
-  main_KALE(model_interpreter, model_trainer, model_logger, latentArithmetic, false, false, false, true);
+  main_KALE(model_interpreter, model_trainer, model_logger, latentArithmetic, false, false, true, false);
   //main_IndustrialStrains(model_interpreter, model_trainer, model_logger, latentArithmetic, true, false);
   //main_PLT(model_interpreter, model_trainer, model_logger, latentArithmetic, false, false, true, true);
 

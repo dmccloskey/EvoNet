@@ -649,8 +649,6 @@ public:
         std::shared_ptr<IntegrationWeightGradOp<TensorT>>(new SumWeightGradOp<TensorT>()),
         std::shared_ptr<WeightInitOp<TensorT>>(new ConstWeightInitOp<TensorT>(1)),
         std::shared_ptr<SolverOp<TensorT>>(new DummySolverOp<TensorT>()), 0.0, 0.0, false, true);
-      model_builder.addBiases(model, "LogScaleInput", node_names, std::shared_ptr<WeightInitOp<TensorT>>(new ConstWeightInitOp<TensorT>(1e-6)),
-        std::shared_ptr<SolverOp<TensorT>>(new DummySolverOp<TensorT>()), 0.0, true);
     }
     if (linear_scale_input) {
       node_names = model_builder.addLinearScale(model, "LinearScaleInput", "LinearScaleInput", node_names, 0, 1, true);
@@ -851,9 +849,9 @@ void main_classification(const std::string& biochem_rxns_filename,
   Model<float> model;
   if (make_model) {
     //model_trainer.makeModelFCClass(model, n_input_nodes, n_output_nodes, false, false, false, false, 64, 64, 0); // normalization type 0
-    //model_trainer.makeModelFCClass(model, n_input_nodes, n_output_nodes, true, false, false, false, 64, 64, 0); // normalization type 1
+    model_trainer.makeModelFCClass(model, n_input_nodes, n_output_nodes, true, false, false, false, 64, 64, 0); // normalization type 1
     //model_trainer.makeModelFCClass(model, n_input_nodes, n_output_nodes, true, false, true, false, 64, 64, 0); // normalization type 2
-    model_trainer.makeModelFCClass(model, n_input_nodes, n_output_nodes, true, true, false, false, 64, 64, 0); // normalization type 3
+    //model_trainer.makeModelFCClass(model, n_input_nodes, n_output_nodes, true, true, false, false, 64, 64, 0); // normalization type 3
     //model_trainer.makeModelFCClass(model, n_input_nodes, n_output_nodes, true, true, true, false, 64, 64, 0); // normalization type 4
 
     //model_trainer.makeModelCovNetClass(model, n_input_nodes, n_output_nodes, true, true, false, 64, 16, 0, 32, false, true); // normalization type 3
