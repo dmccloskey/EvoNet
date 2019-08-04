@@ -1107,7 +1107,7 @@ void computeLatentInterpolationSimilarity(const std::vector<std::string>& condit
     if (interp_q1) {
       Eigen::Tensor<TensorT, 4> encoding_output = encoding_output_1 * encoding_output_1.constant(0.25) + encoding_output_2 * encoding_output_2.constant(0.75);
       reconstruction_output = latentArithmetic.generateReconstruction(encoding_output, model_trainer, model_logger);
-      for (int trial_iter = 0; trial_iter < 2; ++trial_iter) {
+      for (int trial_iter = 0; trial_iter < expected.at(case_iter).size(); ++trial_iter) {
         std::pair<TensorT, TensorT> score = latentArithmetic.scoreReconstructionSimilarity(expected.at(case_iter).at(trial_iter), reconstruction_output, metric_function, model_trainer, model_logger);
         std::cout << "0.25 * " << condition_1.at(case_iter) << " + 0.75 * " << condition_2.at(case_iter) << " -> " << expected.at(case_iter).at(trial_iter) << ": " << score.first << " +/- " << score.second << std::endl;
       }
@@ -1115,7 +1115,7 @@ void computeLatentInterpolationSimilarity(const std::vector<std::string>& condit
     if (interp_median) {
       Eigen::Tensor<TensorT, 4> encoding_output = encoding_output_1 * encoding_output_1.constant(0.5) + encoding_output_2 * encoding_output_2.constant(0.5);
       reconstruction_output = latentArithmetic.generateReconstruction(encoding_output, model_trainer, model_logger);
-      for (int trial_iter = 0; trial_iter < 2; ++trial_iter) {
+      for (int trial_iter = 0; trial_iter < expected.at(case_iter).size(); ++trial_iter) {
         std::pair<TensorT, TensorT> score = latentArithmetic.scoreReconstructionSimilarity(expected.at(case_iter).at(trial_iter), reconstruction_output, metric_function, model_trainer, model_logger);
         std::cout << "0.5 * " << condition_1.at(case_iter) << " + 0.5 * " << condition_2.at(case_iter) << " -> " << expected.at(case_iter).at(trial_iter) << ": " << score.first << " +/- " << score.second << std::endl;
       }
@@ -1123,7 +1123,7 @@ void computeLatentInterpolationSimilarity(const std::vector<std::string>& condit
     if (interp_q3) {
       Eigen::Tensor<TensorT, 4> encoding_output = encoding_output_1 * encoding_output_1.constant(0.25) + encoding_output_2 * encoding_output_2.constant(0.75);
       reconstruction_output = latentArithmetic.generateReconstruction(encoding_output, model_trainer, model_logger);
-      for (int trial_iter = 0; trial_iter < 2; ++trial_iter) {
+      for (int trial_iter = 0; trial_iter < expected.at(case_iter).size(); ++trial_iter) {
         std::pair<TensorT, TensorT> score = latentArithmetic.scoreReconstructionSimilarity(expected.at(case_iter).at(trial_iter), reconstruction_output, metric_function, model_trainer, model_logger);
         std::cout << "0.75 * " << condition_1.at(case_iter) << " + 0.25 * " << condition_2.at(case_iter) << " -> " << expected.at(case_iter).at(trial_iter) << ": " << score.first << " +/- " << score.second << std::endl;
       }
@@ -1216,16 +1216,27 @@ void main_KALE(ModelInterpreterDefaultDevice<TensorT>& model_interpreter, ModelT
   }
 
   if (compute_latent_interpolation) {
-    const std::vector<std::string> condition_1 = { "Evo04gnd", "Evo04gnd", "Evo04pgi", "Evo04pgi",
-      "Evo04ptsHIcrr", "Evo04ptsHIcrr", "Evo04sdhCB", "Evo04sdhCB", "Evo04tpiA", "Evo04tpiA" };
-    const std::vector<std::string> condition_2 = { "Evo04gndEvo01EP", "Evo04gndEvo02EP", "Evo04pgiEvo01EP", "Evo04pgiEvo02EP",
-      "Evo04ptsHIcrrEvo01EP", "Evo04ptsHIcrrEvo02EP", "Evo04sdhCBEvo01EP", "Evo04sdhCBEvo02EP", "Evo04tpiAEvo01EP", "Evo04tpiAEvo02EP" };
+    const std::vector<std::string> condition_1 = { 
+      //"Evo04gnd", "Evo04gnd", 
+      "Evo04pgi", "Evo04pgi",
+      "Evo04ptsHIcrr", "Evo04ptsHIcrr", 
+      //"Evo04sdhCB", "Evo04sdhCB", 
+      "Evo04tpiA", "Evo04tpiA" };
+    const std::vector<std::string> condition_2 = { 
+      //"Evo04gndEvo01EP", "Evo04gndEvo02EP", 
+      "Evo04pgiEvo01EP", "Evo04pgiEvo02EP",
+      "Evo04ptsHIcrrEvo01EP", "Evo04ptsHIcrrEvo02EP", 
+      //"Evo04sdhCBEvo01EP", "Evo04sdhCBEvo02EP", 
+      "Evo04tpiAEvo01EP", "Evo04tpiAEvo02EP" };
     const std::vector<std::vector<std::string>> expected = {
-      {"Evo04gnd", "Evo04gndEvo01EP"}, {"Evo04gnd", "Evo04gndEvo02EP"},
-      {"Evo04pgi", "Evo04pgiEvo01EP"}, {"Evo04pgi", "Evo04pgiEvo02EP"},
-      {"Evo04ptsHIcrr", "Evo04ptsHIcrrEvo01EP"}, {"Evo04ptsHIcrr", "Evo04ptsHIcrrEvo02EP"},
-      {"Evo04sdhCB", "Evo04sdhCBEvo01EP"}, {"Evo04sdhCB", "Evo04sdhCBEvo02EP"},
-      {"Evo04tpiA", "Evo04tpiAEvo01EP"}, {"Evo04tpiA", "Evo04tpiAEvo02EP"} };
+      //{"Evo04gnd", "Evo04gndEvo01EP"}, {"Evo04gnd", "Evo04gndEvo02EP"},
+      // Pgi: J01 and J02 for Evo01, J01, J02, and J03 for all others
+      {"Evo04pgi", "Evo04pgiEvo01J01", "Evo04pgiEvo01J02", "Evo04pgiEvo01EP"}, {"Evo04pgi", "Evo04pgiEvo02J01", "Evo04pgiEvo02J02", "Evo04pgiEvo02J03", "Evo04pgiEvo02EP"},
+      // PtsHIcrr: J01 and J03 for Evo01 and EVo02, J01, J03, J04 for Evo03 and Ev04
+      {"Evo04ptsHIcrr", "Evo04ptsHIcrrEvo01J01", "Evo04ptsHIcrrEvo01J03", "Evo04ptsHIcrrEvo01EP"}, {"Evo04ptsHIcrr", "Evo04ptsHIcrrEvo02J01", "Evo04ptsHIcrrEvo02J03", "Evo04ptsHIcrrEvo02EP"},
+      //{"Evo04sdhCB", "Evo04sdhCBEvo01EP"}, {"Evo04sdhCB", "Evo04sdhCBEvo02EP"},
+      // TpiA: J01 and J03 for all
+      {"Evo04tpiA", "Evo04tpiAEvo01J01", "Evo04tpiAEvo01J03", "Evo04tpiAEvo01EP"}, {"Evo04tpiA", "Evo04tpiAEvo02J01", "Evo04tpiAEvo02J03", "Evo04tpiAEvo02EP"} };
     computeLatentInterpolationSimilarity(condition_1, condition_2, expected, latentArithmetic, ManhattanDistTensorOp<float, Eigen::DefaultDevice>(), model_trainer, model_logger,
       true, true, true, true);
   }
@@ -1434,7 +1445,7 @@ int main(int argc, char** argv)
   latentArithmetic.setNormalizationModelInterpreter(model_interpreter);
 
   // Run the script
-  main_KALE(model_interpreter, model_trainer, model_logger, latentArithmetic, false, true, false, false);
+  main_KALE(model_interpreter, model_trainer, model_logger, latentArithmetic, false, false, false, true);
   //main_IndustrialStrains(model_interpreter, model_trainer, model_logger, latentArithmetic, true, false);
   //main_PLT(model_interpreter, model_trainer, model_logger, latentArithmetic, false, false, true, true);
 
