@@ -303,17 +303,28 @@ public:
     }
 
     // Add the final output layer
-    node_names = model_builder.addFullyConnected(model, "Output", "Output", node_names, n_outputs,
+    node_names = model_builder.addFullyConnected(model, "DE-Output", "DE-Output", node_names, n_outputs,
       std::shared_ptr<ActivationOp<TensorT>>(new LeakyReLUOp<TensorT>()),
       std::shared_ptr<ActivationOp<TensorT>>(new LeakyReLUGradOp<TensorT>()),
       std::shared_ptr<IntegrationOp<TensorT>>(new SumOp<TensorT>()),
       std::shared_ptr<IntegrationErrorOp<TensorT>>(new SumErrorOp<TensorT>()),
       std::shared_ptr<IntegrationWeightGradOp<TensorT>>(new SumWeightGradOp<TensorT>()),
       std::shared_ptr<WeightInitOp<TensorT>>(new RandWeightInitOp<TensorT>((int)(node_names.size() + n_outputs) / 2, 1)),
-      std::shared_ptr<SolverOp<TensorT>>(new AdamOp<TensorT>(1e-4, 0.9, 0.999, 1e-8)), 0.0f, 0.0f, false, true);
+      std::shared_ptr<SolverOp<TensorT>>(new AdamOp<TensorT>(1e-3, 0.9, 0.999, 1e-8, 10)), 0.0f, 0.0f, false, true);
+
+    // Add the final output layer
+    std::vector<std::string> node_names_output;
+    node_names_output = model_builder.addSinglyConnected(model, "Output", "Output", node_names, n_outputs,
+      std::shared_ptr<ActivationOp<TensorT>>(new LinearOp<TensorT>()),
+      std::shared_ptr<ActivationOp<TensorT>>(new LinearGradOp<TensorT>()),
+      std::shared_ptr<IntegrationOp<TensorT>>(new SumOp<TensorT>()),
+      std::shared_ptr<IntegrationErrorOp<TensorT>>(new SumErrorOp<TensorT>()),
+      std::shared_ptr<IntegrationWeightGradOp<TensorT>>(new SumWeightGradOp<TensorT>()),
+      std::shared_ptr<WeightInitOp<TensorT>>(new ConstWeightInitOp<TensorT>(1)),
+      std::shared_ptr<SolverOp<TensorT>>(new DummySolverOp<TensorT>()), 0.0f, 0.0f, false, true);
 
     // Specify the output node types manually
-    for (const std::string& node_name : node_names)
+    for (const std::string& node_name : node_names_output)
       model.getNodesMap().at(node_name)->setType(NodeType::output);
     model.setInputAndOutputNodes();
   }
@@ -1423,8 +1434,9 @@ int main(int argc, char** argv)
   latentArithmetic.setNormalizationModelInterpreter(model_interpreter);
 
   // Run the script
-  //main_KALE(model_interpreter, model_trainer, model_logger, latentArithmetic, false, false, false, true);
-  main_PLT(model_interpreter, model_trainer, model_logger, latentArithmetic, false, false, true, true);
+  main_KALE(model_interpreter, model_trainer, model_logger, latentArithmetic, false, true, false, false);
+  //main_IndustrialStrains(model_interpreter, model_trainer, model_logger, latentArithmetic, true, false);
+  //main_PLT(model_interpreter, model_trainer, model_logger, latentArithmetic, false, false, true, true);
 
   return 0;
 }
