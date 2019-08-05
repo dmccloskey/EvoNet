@@ -1095,7 +1095,7 @@ void computeLatentInterpolationSimilarity(const std::vector<std::string>& condit
     }
     else {
       model_trainer.setInterpretModel(false);
-    }
+    }    
     model_trainer.setResetModel(false);
     model_trainer.setResetInterpreter(false);
 
@@ -1121,7 +1121,7 @@ void computeLatentInterpolationSimilarity(const std::vector<std::string>& condit
       }
     }
     if (interp_q3) {
-      Eigen::Tensor<TensorT, 4> encoding_output = encoding_output_1 * encoding_output_1.constant(0.25) + encoding_output_2 * encoding_output_2.constant(0.75);
+      Eigen::Tensor<TensorT, 4> encoding_output = encoding_output_1 * encoding_output_1.constant(0.75) + encoding_output_2 * encoding_output_2.constant(0.25);
       reconstruction_output = latentArithmetic.generateReconstruction(encoding_output, model_trainer, model_logger);
       for (int trial_iter = 0; trial_iter < expected.at(case_iter).size(); ++trial_iter) {
         std::pair<TensorT, TensorT> score = latentArithmetic.scoreReconstructionSimilarity(expected.at(case_iter).at(trial_iter), reconstruction_output, metric_function, model_trainer, model_logger);
@@ -1202,7 +1202,7 @@ void main_KALE(ModelInterpreterDefaultDevice<TensorT>& model_interpreter, ModelT
     expected = { "Evo04gnd", "Evo04gnd", "Evo04pgi", "Evo04pgi",
       "Evo04ptsHIcrr", "Evo04ptsHIcrr", "Evo04sdhCB", "Evo04sdhCB", "Evo04tpiA", "Evo04tpiA" };
     computeLatentArithmeticSimilarity(condition_1, condition_2, expected, latentArithmetic, ManhattanDistTensorOp<float, Eigen::DefaultDevice>(), model_trainer, model_logger,
-      false, "-");
+      true, "-");
 
     // 3. KOi + Ref -> EPi
     condition_1 = { "Evo04gnd", "Evo04gnd", "Evo04pgi", "Evo04pgi",
@@ -1212,7 +1212,7 @@ void main_KALE(ModelInterpreterDefaultDevice<TensorT>& model_interpreter, ModelT
     expected = { "Evo04gndEvo01EP", "Evo04gndEvo02EP", "Evo04pgiEvo01EP", "Evo04pgiEvo02EP",
       "Evo04ptsHIcrrEvo01EP", "Evo04ptsHIcrrEvo02EP", "Evo04sdhCBEvo01EP", "Evo04sdhCBEvo02EP", "Evo04tpiAEvo01EP", "Evo04tpiAEvo02EP" };
     computeLatentArithmeticSimilarity(condition_1, condition_2, expected, latentArithmetic, ManhattanDistTensorOp<float, Eigen::DefaultDevice>(), model_trainer, model_logger,
-      false, "+");
+      true, "+");
   }
 
   if (compute_latent_interpolation) {
