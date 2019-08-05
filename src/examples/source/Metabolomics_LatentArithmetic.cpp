@@ -1005,8 +1005,9 @@ template<typename TensorT>
 void computeGenerationSimilarity(const std::vector<std::string>& predicted, const std::vector<std::string>& expected, LatentArithmetic<TensorT>& latentArithmetic, MetricFunctionTensorOp<TensorT, Eigen::DefaultDevice>& metric_function, ModelTrainerExt<TensorT>& model_trainer, ModelLogger<TensorT>& model_logger,
   const bool& init_interpreter) {
   assert(predicted.size() == expected.size());
-  // define the reconstruction output
-  Eigen::Tensor<TensorT, 4> reconstruction_output(model_trainer.getBatchSize(), model_trainer.getMemorySize(), latentArithmetic.getNInputNodes(), model_trainer.getNEpochsEvaluation());
+
+  //// define the reconstruction output
+  //Eigen::Tensor<TensorT, 4> reconstruction_output(model_trainer.getBatchSize(), model_trainer.getMemorySize(), latentArithmetic.getNInputNodes(), model_trainer.getNEpochsEvaluation());
 
   for (int case_iter = 0; case_iter < predicted.size(); ++case_iter) {
     // Determine when to initialize the model interpreter
@@ -1021,7 +1022,7 @@ void computeGenerationSimilarity(const std::vector<std::string>& predicted, cons
 
     // Generate the encoding and decoding and score the result
     auto encoding_output = latentArithmetic.generateEncoding(predicted.at(case_iter), model_trainer, model_logger);
-    reconstruction_output = latentArithmetic.generateReconstruction(encoding_output, model_trainer, model_logger);
+    auto reconstruction_output = latentArithmetic.generateReconstruction(encoding_output, model_trainer, model_logger);
     std::pair<TensorT, TensorT> score = latentArithmetic.scoreReconstructionSimilarity(expected.at(case_iter), reconstruction_output, metric_function, model_trainer, model_logger);
     std::cout << predicted.at(case_iter) << " -> " << expected.at(case_iter) << ": " << score.first << " +/- " << score.second << std::endl;
   }
@@ -1040,19 +1041,20 @@ void computeLatentArithmeticSimilarity(const std::vector<std::string>& condition
   assert(condition_1.size() == condition_2.size());
   assert(expected.size() == condition_2.size());
   assert(condition_1.size() == expected.size());
-  // define the reconstruction output
-  Eigen::Tensor<TensorT, 4> reconstruction_output(model_trainer.getBatchSize(), model_trainer.getMemorySize(), latentArithmetic.getNInputNodes(), model_trainer.getNEpochsEvaluation());
 
   for (int case_iter = 0; case_iter < condition_1.size(); ++case_iter) {
-    // Determine when to initialize the model interpreter
-    if (case_iter == 0) {
-      model_trainer.setInterpretModel(true);
-    }
-    else {
-      model_trainer.setInterpretModel(false);
-    }
-    model_trainer.setResetModel(false);
-    model_trainer.setResetInterpreter(false);
+    //// Determine when to initialize the model interpreter
+    //if (case_iter == 0) {
+    //  model_trainer.setInterpretModel(true);
+    //}
+    //else {
+    //  model_trainer.setInterpretModel(false);
+    //}
+    //model_trainer.setResetModel(false);
+    //model_trainer.setResetInterpreter(false);
+
+    // define the reconstruction output
+    Eigen::Tensor<TensorT, 4> reconstruction_output(model_trainer.getBatchSize(), model_trainer.getMemorySize(), latentArithmetic.getNInputNodes(), model_trainer.getNEpochsEvaluation());
 
     // Calculate the latent arithmetic
     auto encoding_output_1 = latentArithmetic.generateEncoding(condition_1.at(case_iter), model_trainer, model_logger);
@@ -1085,19 +1087,21 @@ void computeLatentInterpolationSimilarity(const std::vector<std::string>& condit
   assert(condition_1.size() == condition_2.size());
   assert(expected.size() == condition_2.size());
   assert(condition_1.size() == expected.size());
-  // define the reconstruction output
-  Eigen::Tensor<TensorT, 4> reconstruction_output(model_trainer.getBatchSize(), model_trainer.getMemorySize(), latentArithmetic.getNInputNodes(), model_trainer.getNEpochsEvaluation());
+
+  //// define the reconstruction output (is this leading to data corruption?)
+  //Eigen::Tensor<TensorT, 4> reconstruction_output(model_trainer.getBatchSize(), model_trainer.getMemorySize(), latentArithmetic.getNInputNodes(), model_trainer.getNEpochsEvaluation());
 
   for (int case_iter = 0; case_iter < condition_1.size(); ++case_iter) {
+
     // Determine when to initialize the model interpreter
-    if (case_iter == 0) {
-      model_trainer.setInterpretModel(true);
-    }
-    else {
-      model_trainer.setInterpretModel(false);
-    }    
-    model_trainer.setResetModel(false);
-    model_trainer.setResetInterpreter(false);
+    //if (case_iter == 0) {
+    //  model_trainer.setInterpretModel(true);
+    //}
+    //else {
+    //  model_trainer.setInterpretModel(false);
+    //}    
+    //model_trainer.setResetModel(false);
+    //model_trainer.setResetInterpreter(false);
 
     // Generate the encodings
     auto encoding_output_1 = latentArithmetic.generateEncoding(condition_1.at(case_iter), model_trainer, model_logger);
@@ -1106,7 +1110,7 @@ void computeLatentInterpolationSimilarity(const std::vector<std::string>& condit
     // Interpolations
     if (interp_q1) {
       Eigen::Tensor<TensorT, 4> encoding_output = encoding_output_1 * encoding_output_1.constant(0.25) + encoding_output_2 * encoding_output_2.constant(0.75);
-      reconstruction_output = latentArithmetic.generateReconstruction(encoding_output, model_trainer, model_logger);
+      auto reconstruction_output = latentArithmetic.generateReconstruction(encoding_output, model_trainer, model_logger);
       for (int trial_iter = 0; trial_iter < expected.at(case_iter).size(); ++trial_iter) {
         std::pair<TensorT, TensorT> score = latentArithmetic.scoreReconstructionSimilarity(expected.at(case_iter).at(trial_iter), reconstruction_output, metric_function, model_trainer, model_logger);
         std::cout << "0.25 * " << condition_1.at(case_iter) << " + 0.75 * " << condition_2.at(case_iter) << " -> " << expected.at(case_iter).at(trial_iter) << ": " << score.first << " +/- " << score.second << std::endl;
@@ -1114,7 +1118,7 @@ void computeLatentInterpolationSimilarity(const std::vector<std::string>& condit
     }
     if (interp_median) {
       Eigen::Tensor<TensorT, 4> encoding_output = encoding_output_1 * encoding_output_1.constant(0.5) + encoding_output_2 * encoding_output_2.constant(0.5);
-      reconstruction_output = latentArithmetic.generateReconstruction(encoding_output, model_trainer, model_logger);
+      auto reconstruction_output = latentArithmetic.generateReconstruction(encoding_output, model_trainer, model_logger);
       for (int trial_iter = 0; trial_iter < expected.at(case_iter).size(); ++trial_iter) {
         std::pair<TensorT, TensorT> score = latentArithmetic.scoreReconstructionSimilarity(expected.at(case_iter).at(trial_iter), reconstruction_output, metric_function, model_trainer, model_logger);
         std::cout << "0.5 * " << condition_1.at(case_iter) << " + 0.5 * " << condition_2.at(case_iter) << " -> " << expected.at(case_iter).at(trial_iter) << ": " << score.first << " +/- " << score.second << std::endl;
@@ -1122,7 +1126,7 @@ void computeLatentInterpolationSimilarity(const std::vector<std::string>& condit
     }
     if (interp_q3) {
       Eigen::Tensor<TensorT, 4> encoding_output = encoding_output_1 * encoding_output_1.constant(0.75) + encoding_output_2 * encoding_output_2.constant(0.25);
-      reconstruction_output = latentArithmetic.generateReconstruction(encoding_output, model_trainer, model_logger);
+      auto reconstruction_output = latentArithmetic.generateReconstruction(encoding_output, model_trainer, model_logger);
       for (int trial_iter = 0; trial_iter < expected.at(case_iter).size(); ++trial_iter) {
         std::pair<TensorT, TensorT> score = latentArithmetic.scoreReconstructionSimilarity(expected.at(case_iter).at(trial_iter), reconstruction_output, metric_function, model_trainer, model_logger);
         std::cout << "0.75 * " << condition_1.at(case_iter) << " + 0.25 * " << condition_2.at(case_iter) << " -> " << expected.at(case_iter).at(trial_iter) << ": " << score.first << " +/- " << score.second << std::endl;
@@ -1151,26 +1155,26 @@ void main_KALE(ModelInterpreterDefaultDevice<TensorT>& model_interpreter, ModelT
       "Evo04ptsHIcrrEvo01EP", "Evo04ptsHIcrrEvo02EP", "Evo04sdhCBEvo01EP", "Evo04sdhCBEvo02EP", "Evo04tpiAEvo01EP", "Evo04tpiAEvo02EP" };
     expected = { "Evo04", "Evo04", "Evo04gnd", "Evo04gnd", "Evo04pgi", "Evo04pgi",
       "Evo04ptsHIcrr", "Evo04ptsHIcrr", "Evo04sdhCB", "Evo04sdhCB", "Evo04tpiA", "Evo04tpiA" };
-    computeDataSimilarity(predicted, expected, latentArithmetic, ManhattanDistTensorOp<float, Eigen::DefaultDevice>(), model_trainer, model_logger,
+    computeDataSimilarity(predicted, expected, latentArithmetic, ManhattanDistTensorOp<TensorT, Eigen::DefaultDevice>(), model_trainer, model_logger,
       true);
 
     predicted = std::vector<std::string>({ "Evo04gnd", "Evo04pgi", "Evo04ptsHIcrr", "Evo04sdhCB", "Evo04tpiA" });
     expected = std::vector<std::string>({ "Evo04", "Evo04", "Evo04", "Evo04", "Evo04" });
-    computeDataSimilarity(predicted, expected, latentArithmetic, ManhattanDistTensorOp<float, Eigen::DefaultDevice>(), model_trainer, model_logger,
+    computeDataSimilarity(predicted, expected, latentArithmetic, ManhattanDistTensorOp<TensorT, Eigen::DefaultDevice>(), model_trainer, model_logger,
       true);
 
     predicted = std::vector<std::string>({ "Evo04Evo01EP", "Evo04Evo02EP", "Evo04gndEvo01EP", "Evo04gndEvo02EP", "Evo04pgiEvo01EP", "Evo04pgiEvo02EP",
       "Evo04ptsHIcrrEvo01EP", "Evo04ptsHIcrrEvo02EP", "Evo04sdhCBEvo01EP", "Evo04sdhCBEvo02EP", "Evo04tpiAEvo01EP", "Evo04tpiAEvo02EP" });
     expected = std::vector<std::string>({ "Evo04", "Evo04", "Evo04", "Evo04", "Evo04", "Evo04",
       "Evo04", "Evo04", "Evo04", "Evo04", "Evo04", "Evo04" });
-    computeDataSimilarity(predicted, expected, latentArithmetic, ManhattanDistTensorOp<float, Eigen::DefaultDevice>(), model_trainer, model_logger,
+    computeDataSimilarity(predicted, expected, latentArithmetic, ManhattanDistTensorOp<TensorT, Eigen::DefaultDevice>(), model_trainer, model_logger,
       true);
 
     predicted = std::vector<std::string>({ "Evo04", "Evo04Evo01EP", "Evo04Evo02EP", "Evo04gnd", "Evo04gndEvo01EP", "Evo04gndEvo02EP", "Evo04pgi", "Evo04pgiEvo01EP", "Evo04pgiEvo02EP",
       "Evo04ptsHIcrr", "Evo04ptsHIcrrEvo01EP", "Evo04ptsHIcrrEvo02EP", "Evo04sdhCB", "Evo04sdhCBEvo01EP", "Evo04sdhCBEvo02EP", "Evo04tpiA", "Evo04tpiAEvo01EP", "Evo04tpiAEvo02EP" });
     expected = std::vector<std::string>({ "Evo04", "Evo04Evo01EP", "Evo04Evo02EP", "Evo04gnd", "Evo04gndEvo01EP", "Evo04gndEvo02EP", "Evo04pgi", "Evo04pgiEvo01EP", "Evo04pgiEvo02EP",
       "Evo04ptsHIcrr", "Evo04ptsHIcrrEvo01EP", "Evo04ptsHIcrrEvo02EP", "Evo04sdhCB", "Evo04sdhCBEvo01EP", "Evo04sdhCBEvo02EP", "Evo04tpiA", "Evo04tpiAEvo01EP", "Evo04tpiAEvo02EP" });
-    computeDataSimilarity(predicted, expected, latentArithmetic, ManhattanDistTensorOp<float, Eigen::DefaultDevice>(), model_trainer, model_logger,
+    computeDataSimilarity(predicted, expected, latentArithmetic, ManhattanDistTensorOp<TensorT, Eigen::DefaultDevice>(), model_trainer, model_logger,
       true);
   }
 
@@ -1179,7 +1183,7 @@ void main_KALE(ModelInterpreterDefaultDevice<TensorT>& model_interpreter, ModelT
       "Evo04ptsHIcrr", "Evo04ptsHIcrrEvo01EP", "Evo04ptsHIcrrEvo02EP", "Evo04sdhCB", "Evo04sdhCBEvo01EP", "Evo04sdhCBEvo02EP", "Evo04tpiA", "Evo04tpiAEvo01EP", "Evo04tpiAEvo02EP" };
     expected = { "Evo04", "Evo04Evo01EP", "Evo04Evo02EP", "Evo04gnd", "Evo04gndEvo01EP", "Evo04gndEvo02EP", "Evo04pgi", "Evo04pgiEvo01EP", "Evo04pgiEvo02EP",
       "Evo04ptsHIcrr", "Evo04ptsHIcrrEvo01EP", "Evo04ptsHIcrrEvo02EP", "Evo04sdhCB", "Evo04sdhCBEvo01EP", "Evo04sdhCBEvo02EP", "Evo04tpiA", "Evo04tpiAEvo01EP", "Evo04tpiAEvo02EP" };
-    computeGenerationSimilarity(predicted, expected, latentArithmetic, ManhattanDistTensorOp<float, Eigen::DefaultDevice>(), model_trainer, model_logger,
+    computeGenerationSimilarity(predicted, expected, latentArithmetic, ManhattanDistTensorOp<TensorT, Eigen::DefaultDevice>(), model_trainer, model_logger,
       true);
   }
 
@@ -1191,7 +1195,7 @@ void main_KALE(ModelInterpreterDefaultDevice<TensorT>& model_interpreter, ModelT
       "Evo04ptsHIcrr", "Evo04ptsHIcrr", "Evo04sdhCB", "Evo04sdhCB", "Evo04tpiA", "Evo04tpiA" };
     expected = { "Evo04", "Evo04", "Evo04", "Evo04",
      "Evo04", "Evo04", "Evo04", "Evo04", "Evo04", "Evo04" };
-    computeLatentArithmeticSimilarity(condition_1, condition_2, expected, latentArithmetic, ManhattanDistTensorOp<float, Eigen::DefaultDevice>(), model_trainer, model_logger,
+    computeLatentArithmeticSimilarity(condition_1, condition_2, expected, latentArithmetic, ManhattanDistTensorOp<TensorT, Eigen::DefaultDevice>(), model_trainer, model_logger,
       true, "-");
 
     // 2. EPi - Ref -> KO
@@ -1201,7 +1205,7 @@ void main_KALE(ModelInterpreterDefaultDevice<TensorT>& model_interpreter, ModelT
       "Evo04", "Evo04", "Evo04", "Evo04", "Evo04", "Evo04" };
     expected = { "Evo04gnd", "Evo04gnd", "Evo04pgi", "Evo04pgi",
       "Evo04ptsHIcrr", "Evo04ptsHIcrr", "Evo04sdhCB", "Evo04sdhCB", "Evo04tpiA", "Evo04tpiA" };
-    computeLatentArithmeticSimilarity(condition_1, condition_2, expected, latentArithmetic, ManhattanDistTensorOp<float, Eigen::DefaultDevice>(), model_trainer, model_logger,
+    computeLatentArithmeticSimilarity(condition_1, condition_2, expected, latentArithmetic, ManhattanDistTensorOp<TensorT, Eigen::DefaultDevice>(), model_trainer, model_logger,
       true, "-");
 
     // 3. KOi + Ref -> EPi
@@ -1211,7 +1215,7 @@ void main_KALE(ModelInterpreterDefaultDevice<TensorT>& model_interpreter, ModelT
       "Evo04", "Evo04", "Evo04", "Evo04", "Evo04", "Evo04" };
     expected = { "Evo04gndEvo01EP", "Evo04gndEvo02EP", "Evo04pgiEvo01EP", "Evo04pgiEvo02EP",
       "Evo04ptsHIcrrEvo01EP", "Evo04ptsHIcrrEvo02EP", "Evo04sdhCBEvo01EP", "Evo04sdhCBEvo02EP", "Evo04tpiAEvo01EP", "Evo04tpiAEvo02EP" };
-    computeLatentArithmeticSimilarity(condition_1, condition_2, expected, latentArithmetic, ManhattanDistTensorOp<float, Eigen::DefaultDevice>(), model_trainer, model_logger,
+    computeLatentArithmeticSimilarity(condition_1, condition_2, expected, latentArithmetic, ManhattanDistTensorOp<TensorT, Eigen::DefaultDevice>(), model_trainer, model_logger,
       true, "+");
   }
 
@@ -1237,7 +1241,7 @@ void main_KALE(ModelInterpreterDefaultDevice<TensorT>& model_interpreter, ModelT
       //{"Evo04sdhCB", "Evo04sdhCBEvo01EP"}, {"Evo04sdhCB", "Evo04sdhCBEvo02EP"},
       // TpiA: J01 and J03 for all
       {"Evo04tpiA", "Evo04tpiAEvo01J01", "Evo04tpiAEvo01J03", "Evo04tpiAEvo01EP"}, {"Evo04tpiA", "Evo04tpiAEvo02J01", "Evo04tpiAEvo02J03", "Evo04tpiAEvo02EP"} };
-    computeLatentInterpolationSimilarity(condition_1, condition_2, expected, latentArithmetic, ManhattanDistTensorOp<float, Eigen::DefaultDevice>(), model_trainer, model_logger,
+    computeLatentInterpolationSimilarity(condition_1, condition_2, expected, latentArithmetic, ManhattanDistTensorOp<TensorT, Eigen::DefaultDevice>(), model_trainer, model_logger,
       true, true, true, true);
   }
 }
@@ -1259,14 +1263,14 @@ void main_IndustrialStrains(ModelInterpreterDefaultDevice<TensorT>& model_interp
     // Reference similarity metrics
     predicted = { "EColi_BL21","EColi_C","EColi_Crooks","EColi_DH5a","EColi_MG1655","EColi_W","EColi_W3110" };
     expected = { "EColi_BL21","EColi_C","EColi_Crooks","EColi_DH5a","EColi_MG1655","EColi_W","EColi_W3110" };
-    computeDataSimilarity(predicted, expected, latentArithmetic, ManhattanDistTensorOp<float, Eigen::DefaultDevice>(), model_trainer, model_logger,
+    computeDataSimilarity(predicted, expected, latentArithmetic, ManhattanDistTensorOp<TensorT, Eigen::DefaultDevice>(), model_trainer, model_logger,
       true);
   }
 
   if (compute_generation_similarity) {
     predicted = { "EColi_BL21","EColi_C","EColi_Crooks","EColi_DH5a","EColi_MG1655","EColi_W","EColi_W3110" };
     expected = { "EColi_BL21","EColi_C","EColi_Crooks","EColi_DH5a","EColi_MG1655","EColi_W","EColi_W3110" };
-    computeGenerationSimilarity(predicted, expected, latentArithmetic, ManhattanDistTensorOp<float, Eigen::DefaultDevice>(), model_trainer, model_logger,
+    computeGenerationSimilarity(predicted, expected, latentArithmetic, ManhattanDistTensorOp<TensorT, Eigen::DefaultDevice>(), model_trainer, model_logger,
       true);
   }
 }
@@ -1293,14 +1297,14 @@ void main_PLT(ModelInterpreterDefaultDevice<TensorT>& model_interpreter, ModelTr
     expected = { "S01_D01_PLT_25C_0hr", "S01_D01_PLT_25C_0hr", "S01_D01_PLT_25C_0hr", "S01_D01_PLT_25C_0hr", 
       "S01_D02_PLT_25C_0hr", "S01_D02_PLT_25C_0hr","S01_D02_PLT_25C_0hr","S01_D02_PLT_25C_0hr",
       "S01_D05_PLT_25C_0hr", "S01_D05_PLT_25C_0hr", "S01_D05_PLT_25C_0hr", "S01_D05_PLT_25C_0hr" };
-    computeDataSimilarity(predicted, expected, latentArithmetic, ManhattanDistTensorOp<float, Eigen::DefaultDevice>(), model_trainer, model_logger,
+    computeDataSimilarity(predicted, expected, latentArithmetic, ManhattanDistTensorOp<TensorT, Eigen::DefaultDevice>(), model_trainer, model_logger,
       true);
 
     predicted = { "S01_D02_PLT_37C_22hr", "S01_D02_PLT_25C_22hr", "S01_D02_PLT_25C_6.5hr", "S01_D02_PLT_25C_0hr",
                   "S01_D05_PLT_37C_22hr", "S01_D05_PLT_25C_22hr", "S01_D05_PLT_25C_6.5hr", "S01_D05_PLT_25C_0hr" };
     expected = { "S01_D01_PLT_37C_22hr", "S01_D01_PLT_25C_22hr", "S01_D01_PLT_25C_6.5hr", "S01_D01_PLT_25C_0hr",
                   "S01_D01_PLT_37C_22hr", "S01_D01_PLT_25C_22hr", "S01_D01_PLT_25C_6.5hr", "S01_D01_PLT_25C_0hr" };
-    computeDataSimilarity(predicted, expected, latentArithmetic, ManhattanDistTensorOp<float, Eigen::DefaultDevice>(), model_trainer, model_logger,
+    computeDataSimilarity(predicted, expected, latentArithmetic, ManhattanDistTensorOp<TensorT, Eigen::DefaultDevice>(), model_trainer, model_logger,
       false);
 
     predicted = { "S01_D01_PLT_37C_22hr", "S01_D01_PLT_25C_22hr", "S01_D01_PLT_25C_6.5hr", "S01_D01_PLT_25C_0hr",
@@ -1309,7 +1313,7 @@ void main_PLT(ModelInterpreterDefaultDevice<TensorT>& model_interpreter, ModelTr
     expected = { "S01_D01_PLT_37C_22hr", "S01_D01_PLT_25C_22hr", "S01_D01_PLT_25C_6.5hr", "S01_D01_PLT_25C_0hr",
                   "S01_D02_PLT_37C_22hr", "S01_D02_PLT_25C_22hr", "S01_D02_PLT_25C_6.5hr", "S01_D02_PLT_25C_0hr",
                   "S01_D05_PLT_37C_22hr", "S01_D05_PLT_25C_22hr", "S01_D05_PLT_25C_6.5hr", "S01_D05_PLT_25C_0hr" };
-    computeDataSimilarity(predicted, expected, latentArithmetic, ManhattanDistTensorOp<float, Eigen::DefaultDevice>(), model_trainer, model_logger,
+    computeDataSimilarity(predicted, expected, latentArithmetic, ManhattanDistTensorOp<TensorT, Eigen::DefaultDevice>(), model_trainer, model_logger,
       false);
   }
 
@@ -1320,7 +1324,7 @@ void main_PLT(ModelInterpreterDefaultDevice<TensorT>& model_interpreter, ModelTr
     expected = { "S01_D01_PLT_37C_22hr", "S01_D01_PLT_25C_22hr", "S01_D01_PLT_25C_6.5hr", "S01_D01_PLT_25C_0hr",
                   "S01_D02_PLT_37C_22hr", "S01_D02_PLT_25C_22hr", "S01_D02_PLT_25C_6.5hr", "S01_D02_PLT_25C_0hr",
                   "S01_D05_PLT_37C_22hr", "S01_D05_PLT_25C_22hr", "S01_D05_PLT_25C_6.5hr", "S01_D05_PLT_25C_0hr" };
-    computeGenerationSimilarity(predicted, expected, latentArithmetic, ManhattanDistTensorOp<float, Eigen::DefaultDevice>(), model_trainer, model_logger,
+    computeGenerationSimilarity(predicted, expected, latentArithmetic, ManhattanDistTensorOp<TensorT, Eigen::DefaultDevice>(), model_trainer, model_logger,
       true);
   }
 
@@ -1329,36 +1333,36 @@ void main_PLT(ModelInterpreterDefaultDevice<TensorT>& model_interpreter, ModelTr
     condition_1 = { "S01_D02_PLT_25C_0hr", "S01_D05_PLT_25C_0hr" };
     condition_2 = { "S01_D01_PLT_37C_22hr", "S01_D01_PLT_37C_22hr" };
     expected = { "S01_D02_PLT_37C_22hr", "S01_D05_PLT_37C_22hr" };
-    computeLatentArithmeticSimilarity(condition_1, condition_2, expected, latentArithmetic, ManhattanDistTensorOp<float, Eigen::DefaultDevice>(), model_trainer, model_logger,
+    computeLatentArithmeticSimilarity(condition_1, condition_2, expected, latentArithmetic, ManhattanDistTensorOp<TensorT, Eigen::DefaultDevice>(), model_trainer, model_logger,
       true, "+");
 
     // 2. drug + metabolic -> drug & metabolic
     condition_1 = { "S01_D02_PLT_25C_0hr", "S01_D05_PLT_25C_0hr" };
     condition_2 = { "S01_D01_PLT_25C_22hr", "S01_D01_PLT_25C_22hr" };
     expected = { "S01_D02_PLT_25C_22hr", "S01_D05_PLT_25C_22hr" };
-    computeLatentArithmeticSimilarity(condition_1, condition_2, expected, latentArithmetic, ManhattanDistTensorOp<float, Eigen::DefaultDevice>(), model_trainer, model_logger,
-      false, "+");
+    computeLatentArithmeticSimilarity(condition_1, condition_2, expected, latentArithmetic, ManhattanDistTensorOp<TensorT, Eigen::DefaultDevice>(), model_trainer, model_logger,
+      true, "+");
 
     // 3. drug & metabolic - metabolic -> drug
     condition_1 = { "S01_D02_PLT_25C_22hr", "S01_D05_PLT_25C_22hr" };
     condition_2 = { "S01_D01_PLT_25C_22hr", "S01_D01_PLT_25C_22hr" };
     expected = { "S01_D02_PLT_25C_0hr", "S01_D05_PLT_25C_0hr" };
-    computeLatentArithmeticSimilarity(condition_1, condition_2, expected, latentArithmetic, ManhattanDistTensorOp<float, Eigen::DefaultDevice>(), model_trainer, model_logger,
-      false, "-");
+    computeLatentArithmeticSimilarity(condition_1, condition_2, expected, latentArithmetic, ManhattanDistTensorOp<TensorT, Eigen::DefaultDevice>(), model_trainer, model_logger,
+      true, "-");
 
     // 4. drug & metabolic - drug -> metabolic
     condition_1 = { "S01_D02_PLT_25C_22hr", "S01_D05_PLT_25C_22hr" };
     condition_2 = { "S01_D02_PLT_25C_0hr", "S01_D05_PLT_25C_0hr" };
     expected = { "S01_D01_PLT_25C_22hr", "S01_D01_PLT_25C_22hr" };
-    computeLatentArithmeticSimilarity(condition_1, condition_2, expected, latentArithmetic, ManhattanDistTensorOp<float, Eigen::DefaultDevice>(), model_trainer, model_logger,
-      false, "-");
+    computeLatentArithmeticSimilarity(condition_1, condition_2, expected, latentArithmetic, ManhattanDistTensorOp<TensorT, Eigen::DefaultDevice>(), model_trainer, model_logger,
+      true, "-");
 
     // 5. drug & degradation - degradation -> drug
     condition_1 = { "S01_D02_PLT_37C_22hr", "S01_D05_PLT_37C_22hr" };
     condition_2 = { "S01_D01_PLT_37C_22hr", "S01_D01_PLT_37C_22hr" };
     expected = { "S01_D02_PLT_25C_0hr", "S01_D05_PLT_25C_0hr" };
-    computeLatentArithmeticSimilarity(condition_1, condition_2, expected, latentArithmetic, ManhattanDistTensorOp<float, Eigen::DefaultDevice>(), model_trainer, model_logger,
-      false, "-");
+    computeLatentArithmeticSimilarity(condition_1, condition_2, expected, latentArithmetic, ManhattanDistTensorOp<TensorT, Eigen::DefaultDevice>(), model_trainer, model_logger,
+      true, "-");
   }
 
   if (compute_latent_interpolation) {
@@ -1369,7 +1373,7 @@ void main_PLT(ModelInterpreterDefaultDevice<TensorT>& model_interpreter, ModelTr
       {"S01_D02_PLT_25C_0hr", "S01_D02_PLT_25C_2hr", "S01_D02_PLT_25C_6.5hr", "S01_D02_PLT_25C_22hr"},
       {"S01_D05_PLT_25C_0hr", "S01_D05_PLT_25C_2hr", "S01_D05_PLT_25C_6.5hr", "S01_D05_PLT_25C_22hr"},
     };
-    computeLatentInterpolationSimilarity(condition_1, condition_2, expected, latentArithmetic, ManhattanDistTensorOp<float, Eigen::DefaultDevice>(), model_trainer, model_logger,
+    computeLatentInterpolationSimilarity(condition_1, condition_2, expected, latentArithmetic, ManhattanDistTensorOp<TensorT, Eigen::DefaultDevice>(), model_trainer, model_logger,
       true, true, true, true);
   }
 }
@@ -1377,32 +1381,28 @@ void main_PLT(ModelInterpreterDefaultDevice<TensorT>& model_interpreter, ModelTr
 // Main
 int main(int argc, char** argv)
 {
-  // Set the data directories
-  //const std::string data_dir = "C:/Users/dmccloskey/Dropbox (UCSD SBRG)/Metabolomics_KALE/";
-  //const std::string data_dir = "C:/Users/dmccloskey/Dropbox (UCSD SBRG)/Metabolomics_RBC_Platelet/";
-  const std::string data_dir = "C:/Users/domccl/Dropbox (UCSD SBRG)/Metabolomics_KALE/";
-  //const std::string data_dir = "C:/Users/domccl/Dropbox (UCSD SBRG)/Metabolomics_RBC_Platelet/";
-  //const std::string data_dir = "/home/user/Data/";
+  /// KALE and Industrial strains
 
-  // Set the biochemical reaction filenames
-  const std::string biochem_rxns_filename = data_dir + "iJO1366.csv";
-  //const std::string biochem_rxns_filename = data_dir + "iAT_PLT_636.csv";
-  //const std::string biochem_rxns_filename = data_dir + "iAB_RBC_283.csv";
+  ////// Set the data directories
+  ////const std::string data_dir = "C:/Users/dmccloskey/Dropbox (UCSD SBRG)/Metabolomics_KALE/";
+  //const std::string data_dir = "C:/Users/domccl/Dropbox (UCSD SBRG)/Metabolomics_KALE/";
+  ////const std::string data_dir = "/home/user/Data/";
 
-  // Set the model filenames
-  const std::string model_encoder_weights_filename = data_dir + "TrainTestData/SampledArithmeticMath/VAE_weights.csv"; 
-  const std::string model_decoder_weights_filename = data_dir + "TrainTestData/SampledArithmeticMath/VAE_weights.csv";
-  //const std::string model_encoder_weights_filename = data_dir + "VAE_weights.csv";
-  //const std::string model_decoder_weights_filename = data_dir + "VAE_weights.csv";
-  // NOTE: be sure to re-name the Input_000000000000-LinearScale_to_... weights to Input_000000000000_to_...
-  //       using regex "-LinearScale_to_FC0" with "_to_FC0"
-  const std::string model_classifier_weights_filename = data_dir + "TrainTestData/SampledArithmeticMath/Classifier_5000_weights.csv";
+  //// Set the biochemical reaction filenames
+  //const std::string biochem_rxns_filename = data_dir + "iJO1366.csv";
 
-  // ALEsKOs01
-  const std::string metabo_data_filename_train = data_dir + "ALEsKOs01_Metabolomics_train.csv";
-  const std::string meta_data_filename_train = data_dir + "ALEsKOs01_MetaData_train.csv";
-  const std::string metabo_data_filename_test = data_dir + "ALEsKOs01_Metabolomics_test.csv";
-  const std::string meta_data_filename_test = data_dir + "ALEsKOs01_MetaData_test.csv";
+  //// Set the model filenames
+  //const std::string model_encoder_weights_filename = data_dir + "TrainTestData/SampledArithmeticMath/VAE_weights.csv";
+  //const std::string model_decoder_weights_filename = data_dir + "TrainTestData/SampledArithmeticMath/VAE_weights.csv";
+  //// NOTE: be sure to re-name the Input_000000000000-LinearScale_to_... weights to Input_000000000000_to_...
+  ////       using regex "-LinearScale_to_FC0" with "_to_FC0"
+  //const std::string model_classifier_weights_filename = data_dir + "TrainTestData/SampledArithmeticMath/Classifier_5000_weights.csv";
+
+  //// ALEsKOs01
+  //const std::string metabo_data_filename_train = data_dir + "ALEsKOs01_Metabolomics_train.csv";
+  //const std::string meta_data_filename_train = data_dir + "ALEsKOs01_MetaData_train.csv";
+  //const std::string metabo_data_filename_test = data_dir + "ALEsKOs01_Metabolomics_test.csv";
+  //const std::string meta_data_filename_test = data_dir + "ALEsKOs01_MetaData_test.csv";
 
   //// IndustrialStrains0103
   //const std::string metabo_data_filename_train = data_dir + "IndustrialStrains0103_Metabolomics_train.csv";
@@ -1410,11 +1410,26 @@ int main(int argc, char** argv)
   //const std::string metabo_data_filename_test = data_dir + "IndustrialStrains0103_Metabolomics_test.csv";
   //const std::string meta_data_filename_test = data_dir + "IndustrialStrains0103_MetaData_test.csv";
 
-  //// Platelets
-  //const std::string metabo_data_filename_train = data_dir + "PLT_timeCourse_Metabolomics_train.csv";
-  //const std::string meta_data_filename_train = data_dir + "PLT_timeCourse_MetaData_train.csv";
-  //const std::string metabo_data_filename_test = data_dir + "PLT_timeCourse_Metabolomics_test.csv";
-  //const std::string meta_data_filename_test = data_dir + "PLT_timeCourse_MetaData_test.csv";
+  /// PLTs
+
+  // Set the data directories
+  //const std::string data_dir = "C:/Users/dmccloskey/Dropbox (UCSD SBRG)/Metabolomics_RBC_Platelet/";
+  const std::string data_dir = "C:/Users/domccl/Dropbox (UCSD SBRG)/Metabolomics_RBC_Platelet/";
+  //const std::string data_dir = "/home/user/Data/";
+
+  // Set the biochemical reaction filenames
+  const std::string biochem_rxns_filename = data_dir + "iAT_PLT_636.csv";
+  //const std::string biochem_rxns_filename = data_dir + "iAB_RBC_283.csv";
+
+  // Set the model filenames
+  const std::string model_encoder_weights_filename = data_dir + "VAE_weights.csv";
+  const std::string model_decoder_weights_filename = data_dir + "VAE_weights.csv";
+
+  // Platelets
+  const std::string metabo_data_filename_train = data_dir + "PLT_timeCourse_Metabolomics_train.csv";
+  const std::string meta_data_filename_train = data_dir + "PLT_timeCourse_MetaData_train.csv";
+  const std::string metabo_data_filename_test = data_dir + "PLT_timeCourse_Metabolomics_test.csv";
+  const std::string meta_data_filename_test = data_dir + "PLT_timeCourse_MetaData_test.csv";
 
   // Define the model trainers and resources for the trainers
   ModelResources model_resources = { ModelDevice(0, 1) };
@@ -1445,9 +1460,9 @@ int main(int argc, char** argv)
   latentArithmetic.setNormalizationModelInterpreter(model_interpreter);
 
   // Run the script
-  main_KALE(model_interpreter, model_trainer, model_logger, latentArithmetic, false, false, true, false);
+  //main_KALE(model_interpreter, model_trainer, model_logger, latentArithmetic, false, false, false, true);
   //main_IndustrialStrains(model_interpreter, model_trainer, model_logger, latentArithmetic, true, false);
-  //main_PLT(model_interpreter, model_trainer, model_logger, latentArithmetic, false, false, true, true);
+  main_PLT(model_interpreter, model_trainer, model_logger, latentArithmetic, false, true, true, true);
 
   return 0;
 }
