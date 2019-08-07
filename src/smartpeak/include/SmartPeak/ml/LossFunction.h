@@ -459,6 +459,30 @@ public:
     std::vector<TensorT> getParameters() const { return std::vector<TensorT>({ this->eps_, this->scale_ }); }
   };
 
+  /**
+    @brief MAPELoss loss function
+  */
+  template<typename TensorT>
+  class MAPELossOp : public LossFunctionOp<TensorT>
+  {
+  public:
+    using LossFunctionOp<TensorT>::LossFunctionOp;
+    std::string getName() { return "MAPELossOp"; };
+    std::vector<TensorT> getParameters() const { return std::vector<TensorT>({ this->eps_, this->scale_ }); }
+  };
+
+  /**
+    @brief MAPELoss  loss function gradient.
+  */
+  template<typename TensorT>
+  class MAPELossGradOp : public LossFunctionGradOp<TensorT>
+  {
+  public:
+    using LossFunctionGradOp<TensorT>::LossFunctionGradOp;
+    std::string getName() { return "MAPELossGradOp"; };
+    std::vector<TensorT> getParameters() const { return std::vector<TensorT>({ this->eps_, this->scale_ }); }
+  };
+
 	/**
 		@brief Hinge loss function.  
 

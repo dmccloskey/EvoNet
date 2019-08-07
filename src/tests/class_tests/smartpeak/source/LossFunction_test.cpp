@@ -530,6 +530,12 @@ BOOST_AUTO_TEST_CASE(destructorKLDivergenceCatOp)
   delete ptrKLDivergenceCat;
 }
 
+BOOST_AUTO_TEST_CASE(gettersAndSettersKLDivergenceCatOp)
+{
+  KLDivergenceCatOp<float> operation;
+  BOOST_CHECK_EQUAL(operation.getName(), "KLDivergenceCatOp");
+}
+
 /**
   KLDivergenceCatGradOp Tests
 */
@@ -545,6 +551,58 @@ BOOST_AUTO_TEST_CASE(destructorKLDivergenceCatGradOp)
   KLDivergenceCatGradOp<double>* ptrKLDivergenceCat = nullptr;
   ptrKLDivergenceCat = new KLDivergenceCatGradOp<double>();
   delete ptrKLDivergenceCat;
+}
+
+BOOST_AUTO_TEST_CASE(gettersAndSettersKLDivergenceCatGradOp)
+{
+  KLDivergenceCatGradOp<float> operation;
+  BOOST_CHECK_EQUAL(operation.getName(), "KLDivergenceCatGradOp");
+}
+
+/**
+  MAPELossOp Tests
+*/
+BOOST_AUTO_TEST_CASE(constructorMAPELossOp)
+{
+  MAPELossOp<double>* ptrMAPELoss = nullptr;
+  MAPELossOp<double>* nullPointerMAPELoss = nullptr;
+  BOOST_CHECK_EQUAL(ptrMAPELoss, nullPointerMAPELoss);
+}
+
+BOOST_AUTO_TEST_CASE(destructorMAPELossOp)
+{
+  MAPELossOp<double>* ptrMAPELoss = nullptr;
+  ptrMAPELoss = new MAPELossOp<double>();
+  delete ptrMAPELoss;
+}
+
+BOOST_AUTO_TEST_CASE(gettersAndSettersMAPELossOp)
+{
+  MAPELossOp<float> operation;
+  BOOST_CHECK_EQUAL(operation.getName(), "MAPELossOp");
+}
+
+/**
+  MAPELossGradOp Tests
+*/
+BOOST_AUTO_TEST_CASE(constructorMAPELossGradOp)
+{
+  MAPELossGradOp<double>* ptrMAPELoss = nullptr;
+  MAPELossGradOp<double>* nullPointerMAPELoss = nullptr;
+  BOOST_CHECK_EQUAL(ptrMAPELoss, nullPointerMAPELoss);
+}
+
+BOOST_AUTO_TEST_CASE(destructorMAPELossGradOp)
+{
+  MAPELossGradOp<double>* ptrMAPELoss = nullptr;
+  ptrMAPELoss = new MAPELossGradOp<double>();
+  delete ptrMAPELoss;
+}
+
+BOOST_AUTO_TEST_CASE(gettersAndSettersMAPELossGradOp)
+{
+  MAPELossGradOp<float> operation;
+  BOOST_CHECK_EQUAL(operation.getName(), "MAPELossGradOp");
 }
 
 BOOST_AUTO_TEST_SUITE_END()

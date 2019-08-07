@@ -247,6 +247,10 @@ namespace SmartPeak
         LossFunctionTensorOp<TensorT, DeviceT>* op_tensor_class = new KLDivergenceCatTensorOp<TensorT, DeviceT>(op_class->getParameters()[0], op_class->getParameters()[1]);
         return op_tensor_class;
       }
+      else if (op_class->getName() == "MAPELossOp") {
+        LossFunctionTensorOp<TensorT, DeviceT>* op_tensor_class = new MAPELossTensorOp<TensorT, DeviceT>(op_class->getParameters()[0], op_class->getParameters()[1]);
+        return op_tensor_class;
+      }
 			else {
 				std::cout << "No conversion available for " << op_class->getName() << "." << std::endl;
 				LossFunctionTensorOp<TensorT, DeviceT>* op_tensor_class = new MSELossTensorOp<TensorT, DeviceT>(op_class->getParameters()[0], op_class->getParameters()[1]);
@@ -319,6 +323,10 @@ namespace SmartPeak
       }
       else if (op_class->getName() == "KLDivergenceCatGradOp") {
         LossFunctionGradTensorOp<TensorT, DeviceT>* op_tensor_class = new KLDivergenceCatGradTensorOp<TensorT, DeviceT>(op_class->getParameters()[0], op_class->getParameters()[1]);
+        return op_tensor_class;
+      }
+      else if (op_class->getName() == "MAPELossGradOp") {
+        LossFunctionGradTensorOp<TensorT, DeviceT>* op_tensor_class = new MAPELossGradTensorOp<TensorT, DeviceT>(op_class->getParameters()[0], op_class->getParameters()[1]);
         return op_tensor_class;
       }
 			else {

@@ -1479,4 +1479,100 @@ BOOST_AUTO_TEST_CASE(operationfunctionKLDivergenceCatGradOp)
   BOOST_CHECK_CLOSE(error(1, 1, 1), 0.0, 1e-6);
 }
 
+/**
+  MAPELossOp Tests
+*/
+BOOST_AUTO_TEST_CASE(constructorMAPELossOp)
+{
+  MAPELossTensorOp<float, Eigen::DefaultDevice>* ptrMAPELoss = nullptr;
+  MAPELossTensorOp<float, Eigen::DefaultDevice>* nullPointerMAPELoss = nullptr;
+  BOOST_CHECK_EQUAL(ptrMAPELoss, nullPointerMAPELoss);
+}
+
+BOOST_AUTO_TEST_CASE(destructorMAPELossOp)
+{
+  MAPELossTensorOp<float, Eigen::DefaultDevice>* ptrMAPELoss = nullptr;
+  ptrMAPELoss = new MAPELossTensorOp<float, Eigen::DefaultDevice>();
+  delete ptrMAPELoss;
+}
+
+BOOST_AUTO_TEST_CASE(operationfunctionMAPELossOp)
+{
+  MAPELossTensorOp<float, Eigen::DefaultDevice> operation;
+
+  const int memory_size = 2;
+  const int batch_size = 2;
+  const int layer_size = 2;
+  const int time_step = 0;
+  Eigen::Tensor<float, 2> y_true(batch_size, layer_size);
+  y_true.setValues({
+    {1, 2}, {1, 2}
+    });
+  Eigen::Tensor<float, 3> y_pred(batch_size, memory_size, layer_size);
+  y_pred.setValues({
+    {{1, 1}, {0, 0}},
+    {{2, 2}, {0, 0}}
+    });
+
+  float error_ptr[] = { 0, 0, 0, 0 };
+  Eigen::DefaultDevice device;
+
+  operation(y_pred.data(), y_true.data(), error_ptr, batch_size, memory_size, layer_size, time_step, device);
+  Eigen::TensorMap<Eigen::Tensor<float, 2>> error(error_ptr, batch_size, memory_size);
+  BOOST_CHECK_CLOSE(error(0, 0), 0.249999881, 1e-6);
+  BOOST_CHECK_CLOSE(error(1, 0), 0.499999523, 1e-6);
+  BOOST_CHECK_CLOSE(error(0, 1), 0, 1e-6);
+  BOOST_CHECK_CLOSE(error(1, 1), 0, 1e-6);
+}
+
+/**
+  MAPELossGradOp Tests
+*/
+BOOST_AUTO_TEST_CASE(constructorMAPELossGradOp)
+{
+  MAPELossGradTensorOp<float, Eigen::DefaultDevice>* ptrMAPELoss = nullptr;
+  MAPELossGradTensorOp<float, Eigen::DefaultDevice>* nullPointerMAPELoss = nullptr;
+  BOOST_CHECK_EQUAL(ptrMAPELoss, nullPointerMAPELoss);
+}
+
+BOOST_AUTO_TEST_CASE(destructorMAPELossGradOp)
+{
+  MAPELossGradTensorOp<float, Eigen::DefaultDevice>* ptrMAPELoss = nullptr;
+  ptrMAPELoss = new MAPELossGradTensorOp<float, Eigen::DefaultDevice>();
+  delete ptrMAPELoss;
+}
+
+BOOST_AUTO_TEST_CASE(operationfunctionMAPELossGradOp)
+{
+  MAPELossGradTensorOp<float, Eigen::DefaultDevice> operation;
+
+  const int memory_size = 2;
+  const int batch_size = 2;
+  const int layer_size = 2;
+  const int time_step = 0;
+  Eigen::Tensor<float, 2> y_true(batch_size, layer_size);
+  y_true.setValues({
+    {1, 2}, {1, 2}
+    });
+  Eigen::Tensor<float, 3> y_pred(batch_size, memory_size, layer_size);
+  y_pred.setValues({
+    {{1, 1}, {0, 0}},
+    {{2, 2}, {0, 0}}
+    });
+
+  float error_ptr[] = { 0, 0, 0, 0, 0, 0, 0, 0 };
+  Eigen::DefaultDevice device;
+
+  operation(y_pred.data(), y_true.data(), error_ptr, batch_size, memory_size, layer_size, time_step, device);
+  Eigen::TensorMap<Eigen::Tensor<float, 3>> error(error_ptr, batch_size, memory_size, layer_size);
+  BOOST_CHECK_CLOSE(error(0, 0, 0), 0.0, 1e-6);
+  BOOST_CHECK_CLOSE(error(0, 1, 0), 0.0, 1e-6);
+  BOOST_CHECK_CLOSE(error(1, 0, 0), -0.499999046, 1e-6);
+  BOOST_CHECK_CLOSE(error(1, 1, 0), 0.0, 1e-6);
+  BOOST_CHECK_CLOSE(error(0, 0, 1), 0.250000149, 1e-6);
+  BOOST_CHECK_CLOSE(error(0, 1, 1), 0.0, 1e-6);
+  BOOST_CHECK_CLOSE(error(1, 0, 1), 0.0, 1e-6);
+  BOOST_CHECK_CLOSE(error(1, 1, 1), 0.0, 1e-6);
+}
+
 BOOST_AUTO_TEST_SUITE_END()

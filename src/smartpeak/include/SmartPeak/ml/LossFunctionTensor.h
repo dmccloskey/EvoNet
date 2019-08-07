@@ -770,6 +770,47 @@ public:
     };
   };
 
+  /**
+    @brief MAPE Mean Absolute Percent Error loss function.
+  */
+  template<typename TensorT, typename DeviceT>
+  class MAPELossTensorOp : public LossFunctionTensorOp<TensorT, DeviceT>
+  {
+  public:
+    using LossFunctionTensorOp<TensorT, DeviceT>::LossFunctionTensorOp;
+    std::string getName() { return "MAPELossTensorOp"; }
+    void operator()(TensorT* predicted, TensorT* expected, TensorT* error, const int& batch_size, const int& memory_size, const int& layer_size, const int& time_step, DeviceT& device) const {
+      Eigen::TensorMap<Eigen::Tensor<TensorT, 2>> expected_tensor(expected, batch_size, layer_size);
+      Eigen::TensorMap<Eigen::Tensor<TensorT, 3>> predicted_tensor(predicted, batch_size, memory_size, layer_size);
+      Eigen::TensorMap<Eigen::Tensor<TensorT, 2>> error_tensor(error, batch_size, memory_size);
+      auto predicted_chip = predicted_tensor.chip(time_step, 1);
+
+      error_tensor.chip(time_step, 1).device(device) += (((expected_tensor - predicted_chip).pow(TensorT(2)).sqrt() / (expected_tensor + expected_tensor.constant(TensorT(this->eps_))) / expected_tensor.constant(TensorT(layer_size))).sum(Eigen::array<int, 1>({ 1 }))
+        *error_tensor.chip(time_step, 1).constant(this->scale_)).clip(TensorT(-1e9), TensorT(1e9));
+    };
+  };
+
+  /**
+    @brief MAPE Mean Absolute Percent Error loss function gradient.
+  */
+  template<typename TensorT, typename DeviceT>
+  class MAPELossGradTensorOp : public LossFunctionGradTensorOp<TensorT, DeviceT>
+  {
+  public:
+    using LossFunctionGradTensorOp<TensorT, DeviceT>::LossFunctionGradTensorOp;
+    std::string getName() { return "MAPELossGradTensorOp"; }
+    void operator()(TensorT* predicted, TensorT* expected, TensorT* error, const int& batch_size, const int& memory_size, const int& layer_size, const int& time_step, DeviceT& device) const
+    {
+      Eigen::TensorMap<Eigen::Tensor<TensorT, 2>> expected_tensor(expected, batch_size, layer_size);
+      Eigen::TensorMap<Eigen::Tensor<TensorT, 3>> predicted_tensor(predicted, batch_size, memory_size, layer_size);
+      Eigen::TensorMap<Eigen::Tensor<TensorT, 3>> error_tensor(error, batch_size, memory_size, layer_size);
+      auto predicted_chip = predicted_tensor.chip(time_step, 1);
+
+      error_tensor.chip(time_step, 1).device(device) += (((expected_tensor - predicted_chip) / (expected_tensor - predicted_chip - expected_tensor.constant(this->eps_)).pow(TensorT(2)).sqrt() / (expected_tensor + expected_tensor.constant(TensorT(this->eps_))) / expected_tensor.constant(TensorT(layer_size)))
+        *error_tensor.chip(time_step, 1).constant(this->scale_)).clip(TensorT(-1e9), TensorT(1e9));
+    };
+  };
+
 	/**
 		@brief Hinge loss function.  
 

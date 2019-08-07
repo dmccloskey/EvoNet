@@ -754,6 +754,10 @@ BOOST_AUTO_TEST_CASE(convertOpToTensorOpLossFunctionGradOpToLossFunctionGradTens
   op_class = new KLDivergenceCatGradOp<float>();
   op_tensor_class = op_to_tensor_op.convertOpToTensorOp(op_class);
   BOOST_CHECK_EQUAL(op_tensor_class->getName(), "KLDivergenceCatGradTensorOp");
+
+  op_class = new MAPELossGradOp<float>();
+  op_tensor_class = op_to_tensor_op.convertOpToTensorOp(op_class);
+  BOOST_CHECK_EQUAL(op_tensor_class->getName(), "MAPELossGradTensorOp");
 }
 
 BOOST_AUTO_TEST_CASE(getTensorParamsLossFunctionGradOpToLossFunctionGradTensorOp)
@@ -819,6 +823,10 @@ BOOST_AUTO_TEST_CASE(getTensorParamsLossFunctionGradOpToLossFunctionGradTensorOp
   BOOST_CHECK_EQUAL(params.size(), 0);
 
   op_class = new KLDivergenceCatGradOp<float>();
+  params = op_to_tensor_op.getTensorParams(op_class);
+  BOOST_CHECK_EQUAL(params.size(), 0);
+
+  op_class = new MAPELossGradOp<float>();
   params = op_to_tensor_op.getTensorParams(op_class);
   BOOST_CHECK_EQUAL(params.size(), 0);
 }
@@ -903,6 +911,10 @@ BOOST_AUTO_TEST_CASE(convertOpToTensorOpLossFunctionOpToLossFunctionTensorOp)
   op_class = new KLDivergenceCatOp<float>();
   op_tensor_class = op_to_tensor_op.convertOpToTensorOp(op_class);
   BOOST_CHECK_EQUAL(op_tensor_class->getName(), "KLDivergenceCatTensorOp");
+
+  op_class = new MAPELossOp<float>();
+  op_tensor_class = op_to_tensor_op.convertOpToTensorOp(op_class);
+  BOOST_CHECK_EQUAL(op_tensor_class->getName(), "MAPELossTensorOp");
 }
 
 BOOST_AUTO_TEST_CASE(getTensorParamsLossFunctionOpToLossFunctionTensorOp)
@@ -970,8 +982,11 @@ BOOST_AUTO_TEST_CASE(getTensorParamsLossFunctionOpToLossFunctionTensorOp)
   op_class = new KLDivergenceCatOp<float>();
   params = op_to_tensor_op.getTensorParams(op_class);
   BOOST_CHECK_EQUAL(params.size(), 0);
-}
 
+  op_class = new MAPELossOp<float>();
+  params = op_to_tensor_op.getTensorParams(op_class);
+  BOOST_CHECK_EQUAL(params.size(), 0);
+}
 
 BOOST_AUTO_TEST_CASE(constructorMetricFunctionOpToMetricFunctionTensorOp)
 {
