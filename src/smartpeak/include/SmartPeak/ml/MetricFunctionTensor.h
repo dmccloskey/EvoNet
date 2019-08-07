@@ -782,5 +782,66 @@ public:
       }
     };
   };
+
+  /**
+    @brief Logarithmic Distance metric function.
+  */
+  template<typename TensorT, typename DeviceT>
+  class LogarithmicDistTensorOp : public MetricFunctionTensorOp<TensorT, DeviceT>
+  {
+  public:
+    LogarithmicDistTensorOp() = default;
+    LogarithmicDistTensorOp(std::string& reduction_func) : MetricFunctionTensorOp(reduction_func) {};
+    std::string getName() { return "LogarithmicDistTensorOp"; }
+    void operator()(TensorT* predicted, TensorT* expected, TensorT* error, const int& batch_size, const int& memory_size, const int& layer_size,
+      const int& n_metrics, const int& time_step, const int& metric_index, DeviceT& device) const {
+      Eigen::TensorMap<Eigen::Tensor<TensorT, 4>> expected_tensor(expected, batch_size, layer_size, 1, 1);
+      Eigen::TensorMap<Eigen::Tensor<TensorT, 5>> predicted_tensor(predicted, batch_size, memory_size, layer_size, 1, 1);
+      Eigen::TensorMap<Eigen::Tensor<TensorT, 2>> error_tensor(error, n_metrics, memory_size);
+      auto predicted_chip = predicted_tensor.chip(time_step, 1);
+      auto diff = expected_tensor - predicted_chip;
+      auto min_offset = diff.chip(0, 2) - diff.minimum(Eigen::array<Eigen::Index, 1>({ 1 })).broadcast(Eigen::array<Eigen::Index, 3>({ 1, layer_size, 1 })) + diff.chip(0, 2).constant(TensorT(1));
+      auto euclidean_dist = min_offset.log().sum(Eigen::array<int, 1>({ 1 }));
+      if (this->reduction_func_ == "Sum")
+        error_tensor.chip(metric_index, 0).chip(time_step, 0).device(device) += euclidean_dist.sum();
+      else if (this->reduction_func_ == "Mean")
+        error_tensor.chip(metric_index, 0).chip(time_step, 0).device(device) += (euclidean_dist / euclidean_dist.constant(TensorT(batch_size))).sum();
+      else if (this->reduction_func_ == "Var") {
+        auto mean = (euclidean_dist / euclidean_dist.constant(TensorT(batch_size))).sum(Eigen::array<int, 1>({ 0 })).broadcast(Eigen::array<int, 1>({ batch_size }));
+        auto var = ((mean - euclidean_dist.chip(0, 1)).pow(TensorT(2)) / mean.constant(TensorT(batch_size) - 1)).sum();
+        error_tensor.chip(metric_index, 0).chip(time_step, 0).device(device) += var;
+      }
+    };
+  };
+
+
+  /**
+    @brief PercentDifference metric function.
+  */
+  template<typename TensorT, typename DeviceT>
+  class PercentDifferenceTensorOp : public MetricFunctionTensorOp<TensorT, DeviceT>
+  {
+  public:
+    PercentDifferenceTensorOp() = default;
+    PercentDifferenceTensorOp(std::string& reduction_func) : MetricFunctionTensorOp(reduction_func) {};
+    std::string getName() { return "PercentDifferenceTensorOp"; }
+    void operator()(TensorT* predicted, TensorT* expected, TensorT* error, const int& batch_size, const int& memory_size, const int& layer_size,
+      const int& n_metrics, const int& time_step, const int& metric_index, DeviceT& device) const {
+      Eigen::TensorMap<Eigen::Tensor<TensorT, 3>> expected_tensor(expected, batch_size, layer_size, 1);
+      Eigen::TensorMap<Eigen::Tensor<TensorT, 4>> predicted_tensor(predicted, batch_size, memory_size, layer_size, 1);
+      Eigen::TensorMap<Eigen::Tensor<TensorT, 2>> error_tensor(error, n_metrics, memory_size);
+      auto predicted_chip = predicted_tensor.chip(time_step, 1);
+      auto perce_diff = ((expected_tensor - predicted_chip).pow(TensorT(2)).sqrt() / (expected_tensor + expected_tensor.constant(TensorT(1e-6)))).sum(Eigen::array<int, 1>({ 1 }));
+      if (this->reduction_func_ == "Sum")
+        error_tensor.chip(metric_index, 0).chip(time_step, 0).device(device) += perce_diff.sum();
+      else if (this->reduction_func_ == "Mean")
+        error_tensor.chip(metric_index, 0).chip(time_step, 0).device(device) += (perce_diff / perce_diff.constant(TensorT(batch_size))).sum();
+      else if (this->reduction_func_ == "Var") {
+        auto mean = (perce_diff / perce_diff.constant(TensorT(batch_size))).sum(Eigen::array<int, 1>({ 0 })).broadcast(Eigen::array<int, 1>({ batch_size }));
+        auto var = ((mean - perce_diff.chip(0, 1)).pow(TensorT(2)) / mean.constant(TensorT(batch_size) - 1)).sum();
+        error_tensor.chip(metric_index, 0).chip(time_step, 0).device(device) += var;
+      }
+    };
+  };
 }
 #endif //SMARTPEAK_METRICFUNCTIONTENSOR_H

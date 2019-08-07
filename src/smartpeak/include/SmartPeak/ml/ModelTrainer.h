@@ -1615,7 +1615,7 @@ private:
 		if (n_epochs % 10 == 0) {
 			if (model_logger.getLogExpectedPredictedEpoch())
 				model_interpreter.getModelResults(model, true, false, false);
-			model_logger.writeLogs(model, n_epochs, { "Error" }, {}, { model_error }, {}, output_nodes, expected_values);
+			model_logger.writeLogs(model, n_epochs, { "Error" }, {}, { model_error }, {}, output_nodes, expected_values, output_nodes, {});
 		}
 	}
   template<typename TensorT, typename InterpreterT>
@@ -1643,7 +1643,7 @@ private:
         log_test_values.push_back(model_metrics_test(metric_iter));
         ++metric_iter;
       }
-      model_logger.writeLogs(model, n_epochs, log_train_headers, log_test_headers, log_train_values, log_test_values, output_nodes, expected_values);
+      model_logger.writeLogs(model, n_epochs, log_train_headers, log_test_headers, log_train_values, log_test_values, output_nodes, expected_values, output_nodes, {});
     }
   }
 	template<typename TensorT, typename InterpreterT>
@@ -1658,7 +1658,7 @@ private:
 		if (n_epochs % 10 == 0) {
 			if (model_logger.getLogExpectedPredictedEpoch())
 				model_interpreter.getModelResults(model, true, false, false);
-			model_logger.writeLogs(model, n_epochs, {}, { "Error" }, {}, { model_error }, output_nodes, expected_values);
+			model_logger.writeLogs(model, n_epochs, {}, { "Error" }, {}, { model_error }, output_nodes, expected_values, output_nodes, {});
 		}
 	}
   template<typename TensorT, typename InterpreterT>
@@ -1686,7 +1686,7 @@ private:
         log_test_values.push_back(model_metrics_test(metric_iter));
         ++metric_iter;
       }
-      model_logger.writeLogs(model, n_epochs, log_train_headers, log_test_headers, log_train_values, log_test_values, output_nodes, expected_values);
+      model_logger.writeLogs(model, n_epochs, log_train_headers, log_test_headers, log_train_values, log_test_values, output_nodes, expected_values, output_nodes, {});
     }
   }
 	template<typename TensorT, typename InterpreterT>
@@ -1698,7 +1698,7 @@ private:
 		}
 		if (n_epochs % 1 == 0) {
 			model_interpreter.getModelResults(model, true, true, false);
-			model_logger.writeLogs(model, n_epochs, {}, {}, {}, {}, output_nodes, Eigen::Tensor<TensorT, 3>(), output_nodes, {}, {});
+			model_logger.writeLogs(model, n_epochs, {}, {}, {}, {}, output_nodes, Eigen::Tensor<TensorT, 3>(), output_nodes, {});
 		}
 	}
   template<typename TensorT, typename InterpreterT>

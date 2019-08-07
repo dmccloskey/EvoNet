@@ -385,7 +385,7 @@ public:
       auto predicted_chip = predicted_tensor.chip(time_step, 1);
       auto diff = expected_tensor - predicted_chip;
       auto min_offset = diff.chip(0, 2) - diff.minimum(Eigen::array<Eigen::Index, 1>({ 1 })).broadcast(Eigen::array<Eigen::Index, 2>({ 1, layer_size })) + diff.chip(0, 2).constant(TensorT(1));
-      error_tensor.chip(time_step, 1).device(device) -= ((1 / (min_offset - expected_tensor.chip(0, 2).constant(this->eps_)) / expected_tensor.chip(0, 2).constant(TensorT(layer_size)))
+      error_tensor.chip(time_step, 1).device(device) -= ((expected_tensor.chip(0, 2).constant(TensorT(1)) / (min_offset - expected_tensor.chip(0, 2).constant(this->eps_)) / expected_tensor.chip(0, 2).constant(TensorT(layer_size)))
         *error_tensor.chip(time_step, 1).constant(this->scale_)).clip(TensorT(-1e9), TensorT(1e9));
     };
   };
