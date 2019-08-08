@@ -320,6 +320,28 @@ namespace SmartPeak
 		return gaussian_dist;
 	};
 
+  /*
+  @brief 1D Gaussian sampler
+
+  @param[in] batch_size
+  @param[in] memory_size
+  @param[in] encoding_size
+  @param[in] n_epochs
+
+  @returns a Tensor of Gaussian samples
+  */
+  template<typename Ta>
+  Eigen::Tensor<Ta, 4> GaussianSampler(const int& batch_size, const int& memory_size, const int& encoding_size, const int& n_epochs) {
+    std::random_device rd{};
+    std::mt19937 gen{ rd() };
+    std::normal_distribution<> dist{ 0.0f, 1.0f };
+    Eigen::Tensor<Ta, 4> gaussian_dist(batch_size, memory_size, encoding_size, n_epochs);
+    gaussian_dist = gaussian_dist.unaryExpr([&gen, &dist](const Ta& elem) {
+      return Ta(dist(gen));
+    });
+    return gaussian_dist;
+  };
+
 	/**
 	@brief Replaces NaN and Inf with 0
 	*/

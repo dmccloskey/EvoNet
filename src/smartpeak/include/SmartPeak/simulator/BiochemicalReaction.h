@@ -18,7 +18,6 @@
 
 namespace SmartPeak
 {
-
   // Data structures
   struct PWStats {
     std::string sample_name_1;

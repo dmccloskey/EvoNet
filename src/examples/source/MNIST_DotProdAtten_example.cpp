@@ -256,7 +256,7 @@ void main_MNIST(const bool& make_model, const bool& train_model) {
   PopulationLogger<float> population_logger(true, true);
 
   // define the model logger
-  ModelLogger<float> model_logger(true, true, false, false, false, false, false, false);
+  ModelLogger<float> model_logger(true, true, false, false, false, false, false);
   //ModelLogger<float> model_logger(true, true, true, true, true, false, true, true);
 
   // define the data simulator

@@ -231,7 +231,6 @@ public:
 				for model forward evaluations
 
 			@param[in, out] model The model to train
-      @param[in] model_resources The hardware available for training the model
 			@param[in] input Input data tensor of dimensions: batch_size, memory_size, input_nodes, n_epochs
 			@param[in] time_steps Time steps of the forward passes of dimensions: batch_size, memory_size, n_epochs
 			@param[in] input_nodes Input node names
@@ -244,6 +243,22 @@ public:
 			const std::vector<std::string>& input_nodes,
 			ModelLogger<TensorT>& model_logger,
 			InterpreterT& model_interpreter);
+
+    /**
+      @brief Entry point for users to code their script
+        for model forward evaluations
+
+      @param[in, out] model The model to train
+      @param[in] data_simulator The training, validation, and test data generator
+      @param[in] input_nodes Input node names
+
+      @returns Tensor of dims batch_size, memory_size, output_nodes, n_epochs (similar to input)
+    */
+    virtual Eigen::Tensor<TensorT, 4> evaluateModel(Model<TensorT>& model,
+      DataSimulator<TensorT> &data_simulator,
+      const std::vector<std::string>& input_nodes,
+      ModelLogger<TensorT>& model_logger,
+      InterpreterT& model_interpreter);
  
     /**
       @brief Entry point for users to code their script
@@ -1593,7 +1608,99 @@ private:
     }
 		return model_output;
 	}
-	template<typename TensorT, typename InterpreterT>
+  template<typename TensorT, typename InterpreterT>
+  inline Eigen::Tensor<TensorT, 4> ModelTrainer<TensorT, InterpreterT>::evaluateModel(Model<TensorT>& model, DataSimulator<TensorT>& data_simulator, const std::vector<std::string>& input_nodes, ModelLogger<TensorT>& model_logger, InterpreterT & model_interpreter)
+  {
+    std::vector<std::string> output_nodes;
+    for (const std::vector<std::string>& output_nodes_vec : this->loss_output_nodes_)
+      for (const std::string& output_node : output_nodes_vec)
+        output_nodes.push_back(output_node);
+    Eigen::Tensor<TensorT, 4> model_output(this->getBatchSize(), this->getMemorySize(), (int)output_nodes.size(), this->getNEpochsEvaluation()); // for each epoch, for each output node, batch_size x memory_size
+
+    // Check inputs
+    if (!model.checkNodeNames(input_nodes))
+    {
+      return model_output;
+    }
+    if (!model.checkNodeNames(output_nodes))
+    {
+      return model_output;
+    }
+
+    // Initialize the model
+    if (this->getFindCycles())
+      model.findCycles();
+
+    // compile the graph into a set of operations and allocate all tensors
+    if (this->getInterpretModel()) {
+      if (this->getVerbosityLevel() >= 2)
+        std::cout << "Interpreting the model..." << std::endl;
+      model_interpreter.checkMemory(model, this->getBatchSize(), this->getMemorySize());
+      model_interpreter.getForwardPropogationOperations(model, this->getBatchSize(), this->getMemorySize(), true, this->getFastInterpreter(), this->getFindCycles(), this->getPreserveOoO());
+    }
+
+    for (int iter = 0; iter < this->getNEpochsEvaluation(); ++iter) // use n_epochs here
+    {
+      // Generate the input and output data for evaluation
+      if (this->getVerbosityLevel() >= 2)
+        std::cout << "Generating the input/output data for evaluation..." << std::endl;
+      Eigen::Tensor<TensorT, 3> input_data(this->getBatchSize(), this->getMemorySize(), (int)input_nodes.size());
+      Eigen::Tensor<TensorT, 2> time_steps(this->getBatchSize(), this->getMemorySize());
+      data_simulator.simulateEvaluationData(input_data, time_steps);
+
+      // assign the input data
+      model_interpreter.initBiases(model); // create the bias	
+      model_interpreter.mapValuesToLayers(model, input_data, input_nodes, "output"); // Needed for OoO/IG with DAG and DCG
+      model_interpreter.mapValuesToLayers(model, input_data, input_nodes, "input"); // Needed for IG with DAG and DCG
+
+      // forward propogate
+      if (this->getVerbosityLevel() >= 2)
+        std::cout << "Foward Propogation..." << std::endl;
+      model_interpreter.FPTT(this->getMemorySize());
+
+      // extract out the model output
+      model_interpreter.getModelResults(model, true, false, false);
+      std::vector<Eigen::Tensor<TensorT, 2>> output;
+      int node_iter = 0;
+      for (const std::vector<std::string>& output_nodes_vec : this->loss_output_nodes_) {
+        for (const std::string& output_node : output_nodes_vec) {
+          for (int batch_iter = 0; batch_iter < this->getBatchSize(); ++batch_iter) {
+            for (int memory_iter = 0; memory_iter < this->getMemorySize(); ++memory_iter) {
+              model_output(batch_iter, memory_iter, node_iter, iter) = model.getNodesMap().at(output_node)->getOutput()(batch_iter, memory_iter);
+            }
+          }
+          ++node_iter;
+        }
+      }
+
+      // log epoch
+      if (this->getLogEvaluation()) {
+        if (this->getVerbosityLevel() >= 2)
+          std::cout << "Logging..." << std::endl;
+        this->evaluationModelLogger(iter, model, model_interpreter, model_logger, output_nodes);
+      }
+
+      // reinitialize the model
+      if (iter != this->getNEpochsEvaluation() - 1) {
+        model_interpreter.reInitNodes();
+      }
+    }
+    // copy out results
+    model_interpreter.getModelResults(model, true, true, false);
+    if (this->getResetInterpreter()) {
+      model_interpreter.clear_cache();
+    }
+    else {
+      model_interpreter.reInitNodes();
+    }
+    if (this->getResetModel()) {
+      model.initNodeTensorIndices();
+      model.initWeightTensorIndices();
+    }
+    return model_output;
+  }
+
+  template<typename TensorT, typename InterpreterT>
 	inline Model<TensorT> ModelTrainer<TensorT, InterpreterT>::makeModel()
 	{
 		return Model<TensorT>();  // USER:  create your own overload method

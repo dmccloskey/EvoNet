@@ -879,9 +879,17 @@ public:
     Eigen::Tensor<TensorT, 4> normalization_output = model_trainer.evaluateModel(
       this->model_normalization_, condition_1_input, time_steps_1_input, input_nodes, model_logger, this->model_interpreter_normalization_);
 
+    //// project the reconstruction to between 0 and 1
+    //// TODO: need to make a new network that is just for projecting the data to 0 and 1
+    ////       in case the normalization model is not ON Proj!
+    //// NOTE: this does not appear to be needed
+    //Eigen::Tensor<TensorT, 4> normalization_reconstruction = model_trainer.evaluateModel(
+    //  this->model_normalization_, reconstructed_output, time_steps_1_input, input_nodes, model_logger, this->model_interpreter_normalization_);
+
     // score the decoded data using the classification model
     Eigen::Tensor<TensorT, 3> expected = normalization_output.chip(0, 1);
     Eigen::Tensor<TensorT, 2> predicted = reconstructed_output.chip(0, 3).chip(0, 1);
+    //Eigen::Tensor<TensorT, 2> predicted = normalization_reconstruction.chip(0, 3).chip(0, 1);
     Eigen::Tensor<TensorT, 2> score_mean(1, 1); score_mean.setZero();
     Eigen::Tensor<TensorT, 2> score_var(1, 1); score_var.setZero();
     Eigen::DefaultDevice device;
@@ -1448,11 +1456,12 @@ int main(int argc, char** argv)
   ModelResources model_resources = { ModelDevice(0, 1) };
   ModelInterpreterDefaultDevice<float> model_interpreter(model_resources);
   ModelTrainerExt<float> model_trainer;
-  model_trainer.setBatchSize(512);
+  model_trainer.setBatchSize(1);
+  //model_trainer.setBatchSize(512);
   model_trainer.setMemorySize(1);
   model_trainer.setNEpochsEvaluation(1);
   model_trainer.setVerbosityLevel(1);
-  model_trainer.setLogging(false, false, false);
+  model_trainer.setLogging(false, false, true);
   model_trainer.setFindCycles(false);
   model_trainer.setFastInterpreter(true);
   model_trainer.setPreserveOoO(true);
@@ -1476,9 +1485,9 @@ int main(int argc, char** argv)
   //main_KALE(model_interpreter, model_trainer, model_logger, latentArithmetic, PercentDifferenceTensorOp<float, Eigen::DefaultDevice>(), false, true, false, false);
   //main_KALE(model_interpreter, model_trainer, model_logger, latentArithmetic, EuclideanDistTensorOp<float, Eigen::DefaultDevice>(), false, true, false, false);
   //main_KALE(model_interpreter, model_trainer, model_logger, latentArithmetic, PearsonRTensorOp<float, Eigen::DefaultDevice>(), false, true, false, false);
-  //main_KALE(model_interpreter, model_trainer, model_logger, latentArithmetic, ManhattanDistTensorOp<float, Eigen::DefaultDevice>(), false, true, false, false);
+  main_KALE(model_interpreter, model_trainer, model_logger, latentArithmetic, ManhattanDistTensorOp<float, Eigen::DefaultDevice>(), false, true, false, false);
   //main_KALE(model_interpreter, model_trainer, model_logger, latentArithmetic, LogarithmicDistTensorOp<float, Eigen::DefaultDevice>(), false, true, false, false);
-  main_KALE(model_interpreter, model_trainer, model_logger, latentArithmetic, JeffreysAndMatusitaDistTensorOp<float, Eigen::DefaultDevice>(), false, true, false, false);
+  //main_KALE(model_interpreter, model_trainer, model_logger, latentArithmetic, JeffreysAndMatusitaDistTensorOp<float, Eigen::DefaultDevice>(), false, true, false, false);
   //main_IndustrialStrains(model_interpreter, model_trainer, model_logger, latentArithmetic, true, false);
   //main_PLT(model_interpreter, model_trainer, model_logger, latentArithmetic, false, true, true, true);
 

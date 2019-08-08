@@ -94,7 +94,18 @@ namespace SmartPeak
 		@param[in, out] output Output Tensor for the model
 		@param[in, out] time_steps Time step tensor for the model
 		*/
-    virtual void simulateEvaluationData(Eigen::Tensor<TensorT, 4>& input_data, Eigen::Tensor<TensorT, 3>& time_steps) {} ;
+    virtual void simulateEvaluationData(Eigen::Tensor<TensorT, 4>& input_data, Eigen::Tensor<TensorT, 3>& time_steps) {};
+
+    /**
+    @brief Entry point to define the simulation data for evaluation
+
+      Overload creates the input and output data for the entire epoch
+
+    @param[in, out] input Input Tensor for the model
+    @param[in, out] output Output Tensor for the model
+    @param[in, out] time_steps Time step tensor for the model
+    */
+    virtual void simulateEvaluationData(Eigen::Tensor<TensorT, 3>& input_data, Eigen::Tensor<TensorT, 2>& time_steps) {};
 	};
 }
 

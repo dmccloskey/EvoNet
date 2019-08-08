@@ -661,7 +661,7 @@ void main_reconstruction(const std::string& biochem_rxns_filename,
   model_trainer.setMetricNames({ "MAE" });
 
   // define the model logger
-  ModelLogger<float> model_logger(true, true, false, false, false, false, false, false);
+  ModelLogger<float> model_logger(true, true, false, false, false, false, false);
 
   // initialize the model replicator
   ModelReplicatorExt<float> model_replicator;

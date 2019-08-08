@@ -1237,7 +1237,7 @@ void main_batchCorrectionAE(const std::string& biochem_rxns_filename,
   model_trainer.setMetricNames({ "MAE" });
 
   // define the model logger
-  ModelLogger<float> model_logger(true, true, false, false, false, false, false, false);
+  ModelLogger<float> model_logger(true, true, false, false, false, false, false);
 
   // initialize the model replicator
   ModelReplicatorExt<float> model_replicator;
@@ -1363,7 +1363,7 @@ void main_batchCorrectionClassification(const std::string& biochem_rxns_filename
   model_trainer.setMetricNames({ "AccuracyMCMicro", "PrecisionMCMicro" });
 
   // define the model logger
-  ModelLogger<float> model_logger(true, true, false, false, false, false, false, false);
+  ModelLogger<float> model_logger(true, true, false, false, false, false, false);
 
   // define the models
   Model<float> model_batch_correction_classifier, model_classifier;
