@@ -625,8 +625,8 @@ public:
     model_decoder_.clear();
 
     // define the encoder and decoders
-    model_trainer.makeModelFCVAE_Encoder(model_encoder_, n_input_nodes_, encoding_size_, true, false, false, false,
-      n_en_hidden_0, n_en_hidden_1, n_en_hidden_2); // normalization type 1
+    model_trainer.makeModelFCVAE_Encoder(model_encoder_, n_input_nodes_, encoding_size_, true, true, false, false,
+      n_en_hidden_0, n_en_hidden_1, n_en_hidden_2); // normalization type 2
     model_trainer.makeModelFCVAE_Decoder(model_decoder_, n_input_nodes_, encoding_size_, false,
       n_de_hidden_0, n_de_hidden_1, n_de_hidden_2);
 
@@ -701,7 +701,7 @@ public:
     model_normalization_.clear();
 
     // define the model
-    model_trainer.makeModelNormalization(model_normalization_, n_input_nodes_, true, false, false); // Normalization type 1
+    model_trainer.makeModelNormalization(model_normalization_, n_input_nodes_, true, true, false); // Normalization type 2
   };
 
   /*
@@ -1456,12 +1456,11 @@ int main(int argc, char** argv)
   ModelResources model_resources = { ModelDevice(0, 1) };
   ModelInterpreterDefaultDevice<float> model_interpreter(model_resources);
   ModelTrainerExt<float> model_trainer;
-  model_trainer.setBatchSize(1);
-  //model_trainer.setBatchSize(512);
+  model_trainer.setBatchSize(512);
   model_trainer.setMemorySize(1);
   model_trainer.setNEpochsEvaluation(1);
   model_trainer.setVerbosityLevel(1);
-  model_trainer.setLogging(false, false, true);
+  model_trainer.setLogging(false, false, false);
   model_trainer.setFindCycles(false);
   model_trainer.setFastInterpreter(true);
   model_trainer.setPreserveOoO(true);
@@ -1485,7 +1484,7 @@ int main(int argc, char** argv)
   //main_KALE(model_interpreter, model_trainer, model_logger, latentArithmetic, PercentDifferenceTensorOp<float, Eigen::DefaultDevice>(), false, true, false, false);
   //main_KALE(model_interpreter, model_trainer, model_logger, latentArithmetic, EuclideanDistTensorOp<float, Eigen::DefaultDevice>(), false, true, false, false);
   //main_KALE(model_interpreter, model_trainer, model_logger, latentArithmetic, PearsonRTensorOp<float, Eigen::DefaultDevice>(), false, true, false, false);
-  main_KALE(model_interpreter, model_trainer, model_logger, latentArithmetic, ManhattanDistTensorOp<float, Eigen::DefaultDevice>(), false, true, false, false);
+  main_KALE(model_interpreter, model_trainer, model_logger, latentArithmetic, ManhattanDistTensorOp<float, Eigen::DefaultDevice>(), true, false, false, false);
   //main_KALE(model_interpreter, model_trainer, model_logger, latentArithmetic, LogarithmicDistTensorOp<float, Eigen::DefaultDevice>(), false, true, false, false);
   //main_KALE(model_interpreter, model_trainer, model_logger, latentArithmetic, JeffreysAndMatusitaDistTensorOp<float, Eigen::DefaultDevice>(), false, true, false, false);
   //main_IndustrialStrains(model_interpreter, model_trainer, model_logger, latentArithmetic, true, false);
