@@ -251,9 +251,6 @@ public:
     assert(n_loss_output_nodes == input_nodes + this->n_encodings_ * 2);
     assert(n_metric_output_nodes == input_nodes);
 
-    // Gaussian Sampler
-    Eigen::Tensor<TensorT, 4> gaussian_samples = GaussianSampler<TensorT>(batch_size, memory_size, this->n_encodings_, n_epochs);
-
     // Dummy data for the KL divergence losses
     Eigen::Tensor<TensorT, 4> KL_losses(batch_size, memory_size, this->n_encodings_, n_epochs);
     KL_losses.setZero();
@@ -268,7 +265,7 @@ public:
     this->input_data_validation_.slice(Eigen::array<Eigen::Index, 4>({ 0, 0, 0, 0 }),
       Eigen::array<Eigen::Index, 4>({ batch_size, memory_size, input_nodes, n_epochs })) = input_data;
     this->input_data_validation_.slice(Eigen::array<Eigen::Index, 4>({ 0, 0, input_nodes, 0 }),
-      Eigen::array<Eigen::Index, 4>({ batch_size, memory_size, this->n_encodings_, n_epochs })) = gaussian_samples;
+      Eigen::array<Eigen::Index, 4>({ batch_size, memory_size, this->n_encodings_, n_epochs })) = KL_losses;
 
     // assign the loss tensors
     this->loss_output_data_validation_.slice(Eigen::array<Eigen::Index, 4>({ 0, 0, 0, 0 }),
