@@ -1469,7 +1469,7 @@ int main(int argc, char** argv)
   ModelLogger<float> model_logger(false, false, false, false, false, true, false);
 
   // Read in the metabolomics data and models
-  LatentArithmetic<float> latentArithmetic(16, false, true);
+  LatentArithmetic<float> latentArithmetic(32, false, true);
   latentArithmetic.setMetabolomicsData(biochem_rxns_filename, metabo_data_filename_train, meta_data_filename_train,
     metabo_data_filename_test, meta_data_filename_test);
   latentArithmetic.setEncDecModels(model_trainer, model_encoder_weights_filename, model_decoder_weights_filename,
@@ -1484,7 +1484,7 @@ int main(int argc, char** argv)
   //main_KALE(model_interpreter, model_trainer, model_logger, latentArithmetic, PercentDifferenceTensorOp<float, Eigen::DefaultDevice>(), false, true, false, false);
   //main_KALE(model_interpreter, model_trainer, model_logger, latentArithmetic, EuclideanDistTensorOp<float, Eigen::DefaultDevice>(), false, true, false, false);
   //main_KALE(model_interpreter, model_trainer, model_logger, latentArithmetic, PearsonRTensorOp<float, Eigen::DefaultDevice>(), false, true, false, false);
-  main_KALE(model_interpreter, model_trainer, model_logger, latentArithmetic, ManhattanDistTensorOp<float, Eigen::DefaultDevice>(), true, false, false, false);
+  main_KALE(model_interpreter, model_trainer, model_logger, latentArithmetic, ManhattanDistTensorOp<float, Eigen::DefaultDevice>(), false, true, false, false);
   //main_KALE(model_interpreter, model_trainer, model_logger, latentArithmetic, LogarithmicDistTensorOp<float, Eigen::DefaultDevice>(), false, true, false, false);
   //main_KALE(model_interpreter, model_trainer, model_logger, latentArithmetic, JeffreysAndMatusitaDistTensorOp<float, Eigen::DefaultDevice>(), false, true, false, false);
   //main_IndustrialStrains(model_interpreter, model_trainer, model_logger, latentArithmetic, true, false);

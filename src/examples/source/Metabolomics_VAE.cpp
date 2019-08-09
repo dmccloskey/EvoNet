@@ -1219,28 +1219,16 @@ void main_reconstruction(const std::string& biochem_rxns_filename,
     }
   }
 
-  // define the model trainers and resources for the trainers
+  // Define resources for the model interpreters
   std::vector<ModelInterpreterDefaultDevice<float>> model_interpreters;
   for (size_t i = 0; i < n_threads; ++i) {
     ModelResources model_resources = { ModelDevice(0, 1) };
     ModelInterpreterDefaultDevice<float> model_interpreter(model_resources);
     model_interpreters.push_back(model_interpreter);
   }
+
+  // define the model trainer
   ModelTrainerExt<float> model_trainer;
-  model_trainer.setBatchSize(64);
-  model_trainer.setMemorySize(1);
-  model_trainer.setNEpochsTraining(10000);
-  model_trainer.setNEpochsEvaluation(10000);
-  model_trainer.setVerbosityLevel(1);
-  //model_trainer.setBatchSize(1);
-  //model_trainer.setMemorySize(1);
-  //model_trainer.setNEpochsTraining(1);
-  //model_trainer.setNEpochsEvaluation(1);
-  //model_trainer.setVerbosityLevel(2);
-  model_trainer.setLogging(true, false, false);
-  model_trainer.setFindCycles(false);
-  model_trainer.setFastInterpreter(true);
-  model_trainer.setPreserveOoO(true);
 
   // define the model logger
   ModelLogger<float> model_logger(true, true, false, false, false, false, false);
@@ -1248,35 +1236,64 @@ void main_reconstruction(const std::string& biochem_rxns_filename,
   // initialize the model replicator
   ModelReplicatorExt<float> model_replicator;
 
+  // Generate the training/validation data caches 
+  if (make_data_caches) {
+    std::cout << "Making the data caches..." << std::endl;
+    // Make the normalization model
+    Model<float> model_normalization;
+    model_trainer.makeModelNormalization(model_normalization, n_input_nodes, true, false, false); // normalization type 1
+
+    // Set the model trainer parameters for normalizing the data
+    model_trainer.setBatchSize(64);
+    model_trainer.setMemorySize(1);
+    model_trainer.setNEpochsTraining(5000);
+    model_trainer.setNEpochsEvaluation(5000);
+    model_trainer.setVerbosityLevel(1);
+    model_trainer.setLogging(true, false, false);
+    model_trainer.setFindCycles(false);
+    model_trainer.setFastInterpreter(true);
+    model_trainer.setPreserveOoO(true);
+
+    // Apply the normalization model and make the caches
+    model_trainer.setLossOutputNodes({ output_nodes_normalization });
+    const int n_loss_output_nodes = output_nodes.size() + encoding_nodes_mu.size() + encoding_nodes_logvar.size();
+    const int n_metric_output_nodes = output_nodes.size();
+    std::cout << "Making the data cache for training..." << std::endl;
+    metabolomics_data.use_train_for_eval_ = true;
+    Eigen::Tensor<float, 4> input_data_training = model_trainer.evaluateModel(model_normalization, metabolomics_data, met_input_nodes, model_logger, model_interpreters.front());
+    metabolomics_data.makeTrainingDataCache(input_data_training, model_trainer.getNEpochsTraining(), model_trainer.getBatchSize(), model_trainer.getMemorySize(),
+      input_nodes.size(), n_loss_output_nodes, n_metric_output_nodes);
+    std::cout << "Making the data cache for validation..." << std::endl;
+    metabolomics_data.use_train_for_eval_ = false;
+    Eigen::Tensor<float, 4> input_data_validation = model_trainer.evaluateModel(model_normalization, metabolomics_data, met_input_nodes, model_logger, model_interpreters.front());
+    metabolomics_data.makeValidationDataCache(input_data_validation, model_trainer.getNEpochsTraining(), model_trainer.getBatchSize(), model_trainer.getMemorySize(),
+      input_nodes.size(), n_loss_output_nodes, n_metric_output_nodes);
+    metabolomics_data.use_cache_ = true;
+  }
+
   // make the models
-  Model<float> model_FCVAE, model_normalization;
+  Model<float> model_FCVAE;
   if (make_model) {
+    std::cout << "Making the model..." << std::endl;
     //model_trainer.makeModelFCVAE_1(model_FCVAE, n_input_nodes, n_output_nodes, encoding_size, true, false, false, false,
     //  64, 64, 0, 64, 64, 0); // normalization type 1
     model_trainer.makeModelFCVAE_2(model_FCVAE, n_input_nodes, n_output_nodes, encoding_size, true, false, false, false,
       64, 64, 0, 64, 64, 0); // normalization type 1
-    model_trainer.makeModelNormalization(model_normalization, n_input_nodes, true, false, false); // normalization type 1
   }
   else {
     // TODO: load in the trained model
   }
 
-  if (make_data_caches) {
-    // Generate the training/validation data caches
-    model_trainer.setLossOutputNodes({ output_nodes_normalization });
-    const int n_loss_output_nodes = output_nodes.size() + encoding_nodes_mu.size() + encoding_nodes_logvar.size();
-    const int n_metric_output_nodes = output_nodes.size();
-    metabolomics_data.use_train_for_eval_ = true;
-    Eigen::Tensor<float, 4> input_data_training = model_trainer.evaluateModel(model_normalization, metabolomics_data, met_input_nodes, model_logger, model_interpreters.front());
-    metabolomics_data.makeTrainingDataCache(input_data_training, model_trainer.getNEpochsTraining(), model_trainer.getBatchSize(), model_trainer.getMemorySize(),
-      input_nodes.size(), n_loss_output_nodes, n_metric_output_nodes);
-    metabolomics_data.use_train_for_eval_ = false;
-    Eigen::Tensor<float, 4> input_data_validation = model_trainer.evaluateModel(model_normalization, metabolomics_data, met_input_nodes, model_logger, model_interpreters.front());
-    metabolomics_data.makeValidationDataCache(input_data_validation, model_trainer.getNEpochsTraining(), model_trainer.getBatchSize(), model_trainer.getMemorySize(),
-      input_nodes.size(), n_loss_output_nodes, n_metric_output_nodes);
-  }
-
-  // Train the model
+  // Set the model trainer parameters for training
+  model_trainer.setBatchSize(64);
+  model_trainer.setMemorySize(1);
+  model_trainer.setNEpochsTraining(5000);
+  model_trainer.setNEpochsEvaluation(5000);
+  model_trainer.setVerbosityLevel(1);
+  model_trainer.setLogging(true, false, false);
+  model_trainer.setFindCycles(false);
+  model_trainer.setFastInterpreter(true);
+  model_trainer.setPreserveOoO(true);
   model_trainer.setLossFunctions({
     std::shared_ptr<LossFunctionOp<float>>(new MAPELossOp<float>(1e-6, 1.0)),
     std::shared_ptr<LossFunctionOp<float>>(new KLDivergenceMuLossOp<float>(1e-6, 1.0)),
@@ -1289,6 +1306,9 @@ void main_reconstruction(const std::string& biochem_rxns_filename,
   model_trainer.setMetricFunctions({ std::shared_ptr<MetricFunctionOp<float>>(new MAEOp<float>()) });
   model_trainer.setMetricOutputNodes({ output_nodes });
   model_trainer.setMetricNames({ "MAE" });
+
+  // Train the model
+  std::cout << "Training the model..." << std::endl;
   std::pair<std::vector<float>, std::vector<float>> model_errors = model_trainer.trainModel(model_FCVAE, metabolomics_data,
     input_nodes, model_logger, model_interpreters.front());
 }
