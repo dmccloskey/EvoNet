@@ -235,10 +235,6 @@ public:
     // assign the metric tensors
     this->metric_output_data_training_.slice(Eigen::array<Eigen::Index, 4>({ 0, 0, 0, 0 }),
       Eigen::array<Eigen::Index, 4>({ batch_size, memory_size, input_nodes, n_epochs })) = input_data;
-
-    std::cout << "input_data\n" << this->input_data_training_ << std::endl;
-    std::cout << "loss_output_data\n" << this->loss_output_data_training_ << std::endl;
-    std::cout << "metric_output_data\n" << this->metric_output_data_training_ << std::endl;
   }
 
   void makeValidationDataCache(const Eigen::Tensor<TensorT, 4>& input_data,
@@ -285,10 +281,6 @@ public:
     // assign the metric tensors
     this->metric_output_data_validation_.slice(Eigen::array<Eigen::Index, 4>({ 0, 0, 0, 0 }),
       Eigen::array<Eigen::Index, 4>({ batch_size, memory_size, input_nodes, n_epochs })) = input_data;
-
-    std::cout << "input_data\n" << this->input_data_validation_ << std::endl;
-    std::cout << "loss_output_data\n" << this->loss_output_data_validation_ << std::endl;
-    std::cout << "metric_output_data\n" << this->metric_output_data_validation_ << std::endl;
   }
 
 protected:
