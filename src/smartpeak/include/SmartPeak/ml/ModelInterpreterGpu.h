@@ -569,11 +569,12 @@ namespace SmartPeak
 		}
 
 		// sync the model error
-		if (model_error)
-			if (!this->model_error_->getErrorStatus().first)
-				this->model_error_->syncHAndDError(device);
-    if (!this->model_error_->getMetricStatus().first)
-      this->model_error_->syncHAndDMetric(device);
+    if (model_error) {
+      if (!this->model_error_->getErrorStatus().first)
+        this->model_error_->syncHAndDError(device);
+      if (!this->model_error_->getMetricStatus().first)
+        this->model_error_->syncHAndDMetric(device);
+    }
 
 		// sync the output node values
 		if (output_nodes) {
