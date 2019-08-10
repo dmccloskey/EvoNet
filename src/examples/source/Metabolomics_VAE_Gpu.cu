@@ -39,9 +39,14 @@ public:
     else
       n_input_pixels = this->model_validation_.reaction_ids_.size();
 
-    assert(n_loss_output_nodes == n_input_pixels + 2 * n_encodings_);
-    assert(n_metric_output_nodes % n_input_pixels == 0);
-    assert(n_input_nodes == n_input_pixels + n_encodings_);
+    if (eval) {
+      assert(n_input_nodes == n_input_pixels);
+    }
+    else {
+      assert(n_loss_output_nodes == 2 * n_input_pixels + 2 * n_encodings_);
+      assert(n_metric_output_nodes % n_input_pixels == 0);
+      assert(n_input_nodes == n_input_pixels + n_encodings_);
+    }
 
     std::random_device rd{};
     std::mt19937 gen{ rd() };
@@ -69,17 +74,20 @@ public:
                 this->model_validation_.metabolomicsData_.at(sample_group_name),
                 this->model_validation_.biochemicalReactions_.at(this->model_validation_.reaction_ids_.at(nodes_iter)));
             input_data(batch_iter, memory_iter, nodes_iter) = value;
-            loss_output_data(batch_iter, memory_iter, nodes_iter) = 0;
-            metric_output_data(batch_iter, memory_iter, nodes_iter) = 0;
+            if (!eval) {
+              loss_output_data(batch_iter, memory_iter, nodes_iter) = 0;
+              loss_output_data(batch_iter, memory_iter, nodes_iter + n_input_pixels) = 0;
+              metric_output_data(batch_iter, memory_iter, nodes_iter) = 0;
+            }
           }
-          if (nodes_iter < n_encodings_) {
+          if (nodes_iter < n_encodings_ && !eval) {
             TensorT random_value = 0;
             if (train) {
               random_value = d(gen);
             }
             input_data(batch_iter, memory_iter, nodes_iter + n_input_pixels) = random_value; // sample from a normal distribution
-            loss_output_data(batch_iter, memory_iter, nodes_iter + n_input_pixels) = 0; // Dummy data for KL divergence mu
-            loss_output_data(batch_iter, memory_iter, nodes_iter + n_input_pixels + n_encodings_) = 0; // Dummy data for KL divergence logvar
+            loss_output_data(batch_iter, memory_iter, nodes_iter + 2 * n_input_pixels) = 0; // Dummy data for KL divergence mu
+            loss_output_data(batch_iter, memory_iter, nodes_iter + 2 * n_input_pixels + n_encodings_) = 0; // Dummy data for KL divergence logvar
           }
         }
       }
@@ -104,7 +112,7 @@ public:
       assert(n_input_nodes == n_input_pixels);
     }
     else {
-      assert(n_loss_output_nodes == n_input_pixels + 2 * n_encodings_);
+      assert(n_loss_output_nodes == 2 * n_input_pixels + 2 * n_encodings_);
       assert(n_metric_output_nodes % n_input_pixels == 0);
       assert(n_input_nodes == n_input_pixels + n_encodings_);
     }
@@ -137,6 +145,7 @@ public:
             input_data(batch_iter, memory_iter, nodes_iter) = value;
             if (!eval) {
               loss_output_data(batch_iter, memory_iter, nodes_iter) = 0;
+              loss_output_data(batch_iter, memory_iter, nodes_iter + n_input_pixels) = 0;
               metric_output_data(batch_iter, memory_iter, nodes_iter) = 0;
             }
           }
@@ -146,8 +155,8 @@ public:
               random_value = d(gen);
             }
             input_data(batch_iter, memory_iter, nodes_iter + n_input_pixels) = random_value; // sample from a normal distribution
-            loss_output_data(batch_iter, memory_iter, nodes_iter + n_input_pixels) = 0; // Dummy data for KL divergence mu
-            loss_output_data(batch_iter, memory_iter, nodes_iter + n_input_pixels + n_encodings_) = 0; // Dummy data for KL divergence logvar
+            loss_output_data(batch_iter, memory_iter, nodes_iter + 2 * n_input_pixels) = 0; // Dummy data for KL divergence mu
+            loss_output_data(batch_iter, memory_iter, nodes_iter + 2 * n_input_pixels + n_encodings_) = 0; // Dummy data for KL divergence logvar
           }
         }
       }
@@ -202,7 +211,7 @@ public:
     assert(input_batch_size == batch_size);
     assert(input_memory_size == memory_size);
     assert(n_input_nodes == input_nodes + this->n_encodings_);
-    assert(n_loss_output_nodes == input_nodes + this->n_encodings_ * 2);
+    assert(n_loss_output_nodes == 2 * input_nodes + 2 * this->n_encodings_);
     assert(n_metric_output_nodes == input_nodes);
 
     // Gaussian Sampler
@@ -228,8 +237,10 @@ public:
     this->loss_output_data_training_.slice(Eigen::array<Eigen::Index, 4>({ 0, 0, 0, 0 }),
       Eigen::array<Eigen::Index, 4>({ batch_size, memory_size, input_nodes, n_epochs })) = input_data;
     this->loss_output_data_training_.slice(Eigen::array<Eigen::Index, 4>({ 0, 0, input_nodes, 0 }),
+      Eigen::array<Eigen::Index, 4>({ batch_size, memory_size, input_nodes, n_epochs })) = input_data;
+    this->loss_output_data_training_.slice(Eigen::array<Eigen::Index, 4>({ 0, 0, 2 * input_nodes, 0 }),
       Eigen::array<Eigen::Index, 4>({ batch_size, memory_size, this->n_encodings_, n_epochs })) = KL_losses;
-    this->loss_output_data_training_.slice(Eigen::array<Eigen::Index, 4>({ 0, 0, input_nodes + this->n_encodings_, 0 }),
+    this->loss_output_data_training_.slice(Eigen::array<Eigen::Index, 4>({ 0, 0, 2 * input_nodes + this->n_encodings_, 0 }),
       Eigen::array<Eigen::Index, 4>({ batch_size, memory_size, this->n_encodings_, n_epochs })) = KL_losses;
 
     // assign the metric tensors
@@ -248,7 +259,7 @@ public:
     assert(input_batch_size == batch_size);
     assert(input_memory_size == memory_size);
     assert(n_input_nodes == input_nodes + this->n_encodings_);
-    assert(n_loss_output_nodes == input_nodes + this->n_encodings_ * 2);
+    assert(n_loss_output_nodes == 2 * input_nodes + 2 * this->n_encodings_);
     assert(n_metric_output_nodes == input_nodes);
 
     // Dummy data for the KL divergence losses
@@ -271,8 +282,10 @@ public:
     this->loss_output_data_validation_.slice(Eigen::array<Eigen::Index, 4>({ 0, 0, 0, 0 }),
       Eigen::array<Eigen::Index, 4>({ batch_size, memory_size, input_nodes, n_epochs })) = input_data;
     this->loss_output_data_validation_.slice(Eigen::array<Eigen::Index, 4>({ 0, 0, input_nodes, 0 }),
+      Eigen::array<Eigen::Index, 4>({ batch_size, memory_size, input_nodes, n_epochs })) = input_data;
+    this->loss_output_data_validation_.slice(Eigen::array<Eigen::Index, 4>({ 0, 0, 2 * input_nodes, 0 }),
       Eigen::array<Eigen::Index, 4>({ batch_size, memory_size, this->n_encodings_, n_epochs })) = KL_losses;
-    this->loss_output_data_validation_.slice(Eigen::array<Eigen::Index, 4>({ 0, 0, input_nodes + this->n_encodings_, 0 }),
+    this->loss_output_data_validation_.slice(Eigen::array<Eigen::Index, 4>({ 0, 0, 2 * input_nodes + this->n_encodings_, 0 }),
       Eigen::array<Eigen::Index, 4>({ batch_size, memory_size, this->n_encodings_, n_epochs })) = KL_losses;
 
     // assign the metric tensors
@@ -355,7 +368,7 @@ public:
         std::shared_ptr<IntegrationErrorOp<TensorT>>(new SumErrorOp<TensorT>()),
         std::shared_ptr<IntegrationWeightGradOp<TensorT>>(new SumWeightGradOp<TensorT>()),
         std::shared_ptr<WeightInitOp<TensorT>>(new RandWeightInitOp<TensorT>((int)(node_names.size() + n_en_hidden_0) / 2, 1)),
-        std::shared_ptr<SolverOp<TensorT>>(new AdamOp<TensorT>(1e-4, 0.9, 0.999, 1e-8, 1e3)), 0.0f, 0.0f, false, true);
+        std::shared_ptr<SolverOp<TensorT>>(new AdamOp<TensorT>(1e-4, 0.9, 0.999, 1e-8, 50)), 0.0f, 0.0f, false, true);
       if (add_norm) {
         node_names = model_builder.addNormalization(model, "EN0-Norm", "EN0-Norm", node_names, true);
         node_names = model_builder.addSinglyConnected(model, "EN0-Norm-gain", "EN0-Norm-gain", node_names, node_names.size(),
@@ -365,7 +378,7 @@ public:
           std::shared_ptr<IntegrationErrorOp<TensorT>>(new SumErrorOp<TensorT>()),
           std::shared_ptr<IntegrationWeightGradOp<TensorT>>(new SumWeightGradOp<TensorT>()),
           std::shared_ptr<WeightInitOp<TensorT>>(new ConstWeightInitOp<TensorT>(1)),
-          std::shared_ptr<SolverOp<TensorT>>(new AdamOp<TensorT>(1e-4, 0.9, 0.999, 1e-8, 1e3)),
+          std::shared_ptr<SolverOp<TensorT>>(new AdamOp<TensorT>(1e-4, 0.9, 0.999, 1e-8, 50)),
           0.0, 0.0, true, true);
       }
     }
@@ -379,7 +392,7 @@ public:
         std::shared_ptr<IntegrationErrorOp<TensorT>>(new SumErrorOp<TensorT>()),
         std::shared_ptr<IntegrationWeightGradOp<TensorT>>(new SumWeightGradOp<TensorT>()),
         std::shared_ptr<WeightInitOp<TensorT>>(new RandWeightInitOp<TensorT>((int)(node_names.size() + n_en_hidden_1) / 2, 1)),
-        std::shared_ptr<SolverOp<TensorT>>(new AdamOp<TensorT>(1e-4, 0.9, 0.999, 1e-8, 1e3)), 0.0f, 0.0f, false, true);
+        std::shared_ptr<SolverOp<TensorT>>(new AdamOp<TensorT>(1e-4, 0.9, 0.999, 1e-8, 50)), 0.0f, 0.0f, false, true);
       if (add_norm) {
         node_names = model_builder.addNormalization(model, "EN1-Norm", "EN1-Norm", node_names, true);
         node_names = model_builder.addSinglyConnected(model, "EN1-Norm-gain", "EN1-Norm-gain", node_names, node_names.size(),
@@ -389,7 +402,7 @@ public:
           std::shared_ptr<IntegrationErrorOp<TensorT>>(new SumErrorOp<TensorT>()),
           std::shared_ptr<IntegrationWeightGradOp<TensorT>>(new SumWeightGradOp<TensorT>()),
           std::shared_ptr<WeightInitOp<TensorT>>(new ConstWeightInitOp<TensorT>(1)),
-          std::shared_ptr<SolverOp<TensorT>>(new AdamOp<TensorT>(1e-4, 0.9, 0.999, 1e-8, 1e3)),
+          std::shared_ptr<SolverOp<TensorT>>(new AdamOp<TensorT>(1e-4, 0.9, 0.999, 1e-8, 50)),
           0.0, 0.0, true, true);
       }
     }
@@ -403,7 +416,7 @@ public:
         std::shared_ptr<IntegrationErrorOp<TensorT>>(new SumErrorOp<TensorT>()),
         std::shared_ptr<IntegrationWeightGradOp<TensorT>>(new SumWeightGradOp<TensorT>()),
         std::shared_ptr<WeightInitOp<TensorT>>(new RandWeightInitOp<TensorT>((int)(node_names.size() + n_en_hidden_2) / 2, 1)),
-        std::shared_ptr<SolverOp<TensorT>>(new AdamOp<TensorT>(1e-4, 0.9, 0.999, 1e-8, 1e3)), 0.0f, 0.0f, false, true);
+        std::shared_ptr<SolverOp<TensorT>>(new AdamOp<TensorT>(1e-4, 0.9, 0.999, 1e-8, 50)), 0.0f, 0.0f, false, true);
       if (add_norm) {
         node_names = model_builder.addNormalization(model, "EN2-Norm", "EN2-Norm", node_names, true);
         node_names = model_builder.addSinglyConnected(model, "EN2-Norm-gain", "EN2-Norm-gain", node_names, node_names.size(),
@@ -413,7 +426,7 @@ public:
           std::shared_ptr<IntegrationErrorOp<TensorT>>(new SumErrorOp<TensorT>()),
           std::shared_ptr<IntegrationWeightGradOp<TensorT>>(new SumWeightGradOp<TensorT>()),
           std::shared_ptr<WeightInitOp<TensorT>>(new ConstWeightInitOp<TensorT>(1)),
-          std::shared_ptr<SolverOp<TensorT>>(new AdamOp<TensorT>(1e-4, 0.9, 0.999, 1e-8, 1e3)),
+          std::shared_ptr<SolverOp<TensorT>>(new AdamOp<TensorT>(1e-4, 0.9, 0.999, 1e-8, 50)),
           0.0, 0.0, true, true);
       }
     }
@@ -426,7 +439,7 @@ public:
       std::shared_ptr<IntegrationErrorOp<TensorT>>(new SumErrorOp<TensorT>()),
       std::shared_ptr<IntegrationWeightGradOp<TensorT>>(new SumWeightGradOp<TensorT>()),
       std::shared_ptr<WeightInitOp<TensorT>>(new RandWeightInitOp<TensorT>((int)(node_names.size() + n_encodings) / 2, 1)),
-      std::shared_ptr<SolverOp<TensorT>>(new AdamOp<TensorT>(1e-4, 0.9, 0.999, 1e-8, 1e3)), 0.0f, 0.0f, false, true);
+      std::shared_ptr<SolverOp<TensorT>>(new AdamOp<TensorT>(1e-4, 0.9, 0.999, 1e-8, 50)), 0.0f, 0.0f, false, true);
     std::vector<std::string> node_names_logvar = model_builder.addFullyConnected(model, "LogVar", "LogVar", node_names, n_encodings,
       std::shared_ptr<ActivationOp<TensorT>>(new LinearOp<TensorT>()),
       std::shared_ptr<ActivationOp<TensorT>>(new LinearGradOp<TensorT>()),
@@ -434,7 +447,7 @@ public:
       std::shared_ptr<IntegrationErrorOp<TensorT>>(new SumErrorOp<TensorT>()),
       std::shared_ptr<IntegrationWeightGradOp<TensorT>>(new SumWeightGradOp<TensorT>()),
       std::shared_ptr<WeightInitOp<TensorT>>(new RandWeightInitOp<TensorT>((int)(node_names.size() + n_encodings) / 2, 1)),
-      std::shared_ptr<SolverOp<TensorT>>(new AdamOp<TensorT>(1e-4, 0.9, 0.999, 1e-8, 1e3)), 0.0f, 0.0f, false, true);
+      std::shared_ptr<SolverOp<TensorT>>(new AdamOp<TensorT>(1e-4, 0.9, 0.999, 1e-8, 50)), 0.0f, 0.0f, false, true);
 
     // Specify the output node types manually
     for (const std::string& node_name : node_names_mu)
@@ -456,7 +469,7 @@ public:
         std::shared_ptr<IntegrationErrorOp<TensorT>>(new SumErrorOp<TensorT>()),
         std::shared_ptr<IntegrationWeightGradOp<TensorT>>(new SumWeightGradOp<TensorT>()),
         std::shared_ptr<WeightInitOp<TensorT>>(new RandWeightInitOp<TensorT>((int)(node_names.size() + n_de_hidden_0) / 2, 1)),
-        std::shared_ptr<SolverOp<TensorT>>(new AdamOp<TensorT>(1e-4, 0.9, 0.999, 1e-8, 1e3)), 0.0f, 0.0f, false, true);
+        std::shared_ptr<SolverOp<TensorT>>(new AdamOp<TensorT>(1e-4, 0.9, 0.999, 1e-8, 50)), 0.0f, 0.0f, false, true);
       if (add_norm) {
         node_names = model_builder.addNormalization(model, "DE0-Norm", "DE0-Norm", node_names, true);
         node_names = model_builder.addSinglyConnected(model, "DE0-Norm-gain", "DE0-Norm-gain", node_names, node_names.size(),
@@ -466,7 +479,7 @@ public:
           std::shared_ptr<IntegrationErrorOp<TensorT>>(new SumErrorOp<TensorT>()),
           std::shared_ptr<IntegrationWeightGradOp<TensorT>>(new SumWeightGradOp<TensorT>()),
           std::shared_ptr<WeightInitOp<TensorT>>(new ConstWeightInitOp<TensorT>(1)),
-          std::shared_ptr<SolverOp<TensorT>>(new AdamOp<TensorT>(1e-4, 0.9, 0.999, 1e-8, 1e3)),
+          std::shared_ptr<SolverOp<TensorT>>(new AdamOp<TensorT>(1e-4, 0.9, 0.999, 1e-8, 50)),
           0.0, 0.0, true, true);
       }
     }
@@ -480,7 +493,7 @@ public:
         std::shared_ptr<IntegrationErrorOp<TensorT>>(new SumErrorOp<TensorT>()),
         std::shared_ptr<IntegrationWeightGradOp<TensorT>>(new SumWeightGradOp<TensorT>()),
         std::shared_ptr<WeightInitOp<TensorT>>(new RandWeightInitOp<TensorT>((int)(node_names.size() + n_de_hidden_1) / 2, 1)),
-        std::shared_ptr<SolverOp<TensorT>>(new AdamOp<TensorT>(1e-4, 0.9, 0.999, 1e-8, 1e3)), 0.0f, 0.0f, false, true);
+        std::shared_ptr<SolverOp<TensorT>>(new AdamOp<TensorT>(1e-4, 0.9, 0.999, 1e-8, 50)), 0.0f, 0.0f, false, true);
       if (add_norm) {
         node_names = model_builder.addNormalization(model, "DE1-Norm", "DE1-Norm", node_names, true);
         node_names = model_builder.addSinglyConnected(model, "DE1-Norm-gain", "DE1-Norm-gain", node_names, node_names.size(),
@@ -490,7 +503,7 @@ public:
           std::shared_ptr<IntegrationErrorOp<TensorT>>(new SumErrorOp<TensorT>()),
           std::shared_ptr<IntegrationWeightGradOp<TensorT>>(new SumWeightGradOp<TensorT>()),
           std::shared_ptr<WeightInitOp<TensorT>>(new ConstWeightInitOp<TensorT>(1)),
-          std::shared_ptr<SolverOp<TensorT>>(new AdamOp<TensorT>(1e-4, 0.9, 0.999, 1e-8, 1e3)),
+          std::shared_ptr<SolverOp<TensorT>>(new AdamOp<TensorT>(1e-4, 0.9, 0.999, 1e-8, 50)),
           0.0, 0.0, true, true);
       }
     }
@@ -504,7 +517,7 @@ public:
         std::shared_ptr<IntegrationErrorOp<TensorT>>(new SumErrorOp<TensorT>()),
         std::shared_ptr<IntegrationWeightGradOp<TensorT>>(new SumWeightGradOp<TensorT>()),
         std::shared_ptr<WeightInitOp<TensorT>>(new RandWeightInitOp<TensorT>((int)(node_names.size() + n_de_hidden_2) / 2, 1)),
-        std::shared_ptr<SolverOp<TensorT>>(new AdamOp<TensorT>(1e-4, 0.9, 0.999, 1e-8, 1e3)), 0.0f, 0.0f, false, true);
+        std::shared_ptr<SolverOp<TensorT>>(new AdamOp<TensorT>(1e-4, 0.9, 0.999, 1e-8, 50)), 0.0f, 0.0f, false, true);
       if (add_norm) {
         node_names = model_builder.addNormalization(model, "DE2-Norm", "DE2-Norm", node_names, true);
         node_names = model_builder.addSinglyConnected(model, "DE2-Norm-gain", "DE2-Norm-gain", node_names, node_names.size(),
@@ -514,7 +527,7 @@ public:
           std::shared_ptr<IntegrationErrorOp<TensorT>>(new SumErrorOp<TensorT>()),
           std::shared_ptr<IntegrationWeightGradOp<TensorT>>(new SumWeightGradOp<TensorT>()),
           std::shared_ptr<WeightInitOp<TensorT>>(new ConstWeightInitOp<TensorT>(1)),
-          std::shared_ptr<SolverOp<TensorT>>(new AdamOp<TensorT>(1e-4, 0.9, 0.999, 1e-8, 1e3)),
+          std::shared_ptr<SolverOp<TensorT>>(new AdamOp<TensorT>(1e-4, 0.9, 0.999, 1e-8, 50)),
           0.0, 0.0, true, true);
       }
     }
@@ -527,7 +540,7 @@ public:
       std::shared_ptr<IntegrationErrorOp<TensorT>>(new SumErrorOp<TensorT>()),
       std::shared_ptr<IntegrationWeightGradOp<TensorT>>(new SumWeightGradOp<TensorT>()),
       std::shared_ptr<WeightInitOp<TensorT>>(new RandWeightInitOp<TensorT>((int)(node_names.size() + n_outputs) / 2, 1)),
-      std::shared_ptr<SolverOp<TensorT>>(new AdamOp<TensorT>(1e-4, 0.9, 0.999, 1e-8, 1e3)), 0.0f, 0.0f, false, true);
+      std::shared_ptr<SolverOp<TensorT>>(new AdamOp<TensorT>(1e-4, 0.9, 0.999, 1e-8, 50)), 0.0f, 0.0f, false, true);
 
     // Add the final output layer
     std::vector<std::string> node_names_output;
@@ -579,7 +592,7 @@ public:
         std::shared_ptr<IntegrationErrorOp<TensorT>>(new SumErrorOp<TensorT>()),
         std::shared_ptr<IntegrationWeightGradOp<TensorT>>(new SumWeightGradOp<TensorT>()),
         std::shared_ptr<WeightInitOp<TensorT>>(new RandWeightInitOp<TensorT>((int)(node_names.size() + n_en_hidden_0) / 2, 1)),
-        std::shared_ptr<SolverOp<TensorT>>(new AdamOp<TensorT>(1e-4, 0.9, 0.999, 1e-8, 1e3)), 0.0f, 0.0f, false, true);
+        std::shared_ptr<SolverOp<TensorT>>(new AdamOp<TensorT>(1e-4, 0.9, 0.999, 1e-8, 50)), 0.0f, 0.0f, false, true);
       if (add_norm) {
         node_names = model_builder.addNormalization(model, "EN0-Norm", "EN0-Norm", node_names, true);
         node_names = model_builder.addSinglyConnected(model, "EN0-Norm-gain", "EN0-Norm-gain", node_names, node_names.size(),
@@ -589,7 +602,7 @@ public:
           std::shared_ptr<IntegrationErrorOp<TensorT>>(new SumErrorOp<TensorT>()),
           std::shared_ptr<IntegrationWeightGradOp<TensorT>>(new SumWeightGradOp<TensorT>()),
           std::shared_ptr<WeightInitOp<TensorT>>(new ConstWeightInitOp<TensorT>(1)),
-          std::shared_ptr<SolverOp<TensorT>>(new AdamOp<TensorT>(1e-4, 0.9, 0.999, 1e-8, 1e3)),
+          std::shared_ptr<SolverOp<TensorT>>(new AdamOp<TensorT>(1e-4, 0.9, 0.999, 1e-8, 50)),
           0.0, 0.0, true, true);
       }
     }
@@ -603,7 +616,7 @@ public:
         std::shared_ptr<IntegrationErrorOp<TensorT>>(new SumErrorOp<TensorT>()),
         std::shared_ptr<IntegrationWeightGradOp<TensorT>>(new SumWeightGradOp<TensorT>()),
         std::shared_ptr<WeightInitOp<TensorT>>(new RandWeightInitOp<TensorT>((int)(node_names.size() + n_en_hidden_1) / 2, 1)),
-        std::shared_ptr<SolverOp<TensorT>>(new AdamOp<TensorT>(1e-4, 0.9, 0.999, 1e-8, 1e3)), 0.0f, 0.0f, false, true);
+        std::shared_ptr<SolverOp<TensorT>>(new AdamOp<TensorT>(1e-4, 0.9, 0.999, 1e-8, 50)), 0.0f, 0.0f, false, true);
       if (add_norm) {
         node_names = model_builder.addNormalization(model, "EN1-Norm", "EN1-Norm", node_names, true);
         node_names = model_builder.addSinglyConnected(model, "EN1-Norm-gain", "EN1-Norm-gain", node_names, node_names.size(),
@@ -613,7 +626,7 @@ public:
           std::shared_ptr<IntegrationErrorOp<TensorT>>(new SumErrorOp<TensorT>()),
           std::shared_ptr<IntegrationWeightGradOp<TensorT>>(new SumWeightGradOp<TensorT>()),
           std::shared_ptr<WeightInitOp<TensorT>>(new ConstWeightInitOp<TensorT>(1)),
-          std::shared_ptr<SolverOp<TensorT>>(new AdamOp<TensorT>(1e-4, 0.9, 0.999, 1e-8, 1e3)),
+          std::shared_ptr<SolverOp<TensorT>>(new AdamOp<TensorT>(1e-4, 0.9, 0.999, 1e-8, 50)),
           0.0, 0.0, true, true);
       }
     }
@@ -627,7 +640,7 @@ public:
         std::shared_ptr<IntegrationErrorOp<TensorT>>(new SumErrorOp<TensorT>()),
         std::shared_ptr<IntegrationWeightGradOp<TensorT>>(new SumWeightGradOp<TensorT>()),
         std::shared_ptr<WeightInitOp<TensorT>>(new RandWeightInitOp<TensorT>((int)(node_names.size() + n_en_hidden_2) / 2, 1)),
-        std::shared_ptr<SolverOp<TensorT>>(new AdamOp<TensorT>(1e-4, 0.9, 0.999, 1e-8, 1e3)), 0.0f, 0.0f, false, true);
+        std::shared_ptr<SolverOp<TensorT>>(new AdamOp<TensorT>(1e-4, 0.9, 0.999, 1e-8, 50)), 0.0f, 0.0f, false, true);
       if (add_norm) {
         node_names = model_builder.addNormalization(model, "EN2-Norm", "EN2-Norm", node_names, true);
         node_names = model_builder.addSinglyConnected(model, "EN2-Norm-gain", "EN2-Norm-gain", node_names, node_names.size(),
@@ -637,7 +650,7 @@ public:
           std::shared_ptr<IntegrationErrorOp<TensorT>>(new SumErrorOp<TensorT>()),
           std::shared_ptr<IntegrationWeightGradOp<TensorT>>(new SumWeightGradOp<TensorT>()),
           std::shared_ptr<WeightInitOp<TensorT>>(new ConstWeightInitOp<TensorT>(1)),
-          std::shared_ptr<SolverOp<TensorT>>(new AdamOp<TensorT>(1e-4, 0.9, 0.999, 1e-8, 1e3)),
+          std::shared_ptr<SolverOp<TensorT>>(new AdamOp<TensorT>(1e-4, 0.9, 0.999, 1e-8, 50)),
           0.0, 0.0, true, true);
       }
     }
@@ -650,7 +663,7 @@ public:
       std::shared_ptr<IntegrationErrorOp<TensorT>>(new SumErrorOp<TensorT>()),
       std::shared_ptr<IntegrationWeightGradOp<TensorT>>(new SumWeightGradOp<TensorT>()),
       std::shared_ptr<WeightInitOp<TensorT>>(new RandWeightInitOp<TensorT>((int)(node_names.size() + n_encodings) / 2, 1)),
-      std::shared_ptr<SolverOp<TensorT>>(new AdamOp<TensorT>(1e-4, 0.9, 0.999, 1e-8, 1e3)), 0.0f, 0.0f, false, true);
+      std::shared_ptr<SolverOp<TensorT>>(new AdamOp<TensorT>(1e-4, 0.9, 0.999, 1e-8, 50)), 0.0f, 0.0f, false, true);
     std::vector<std::string> node_names_logvar = model_builder.addFullyConnected(model, "LogVar", "LogVar", node_names, n_encodings,
       std::shared_ptr<ActivationOp<TensorT>>(new LinearOp<TensorT>()),
       std::shared_ptr<ActivationOp<TensorT>>(new LinearGradOp<TensorT>()),
@@ -658,7 +671,7 @@ public:
       std::shared_ptr<IntegrationErrorOp<TensorT>>(new SumErrorOp<TensorT>()),
       std::shared_ptr<IntegrationWeightGradOp<TensorT>>(new SumWeightGradOp<TensorT>()),
       std::shared_ptr<WeightInitOp<TensorT>>(new RandWeightInitOp<TensorT>((int)(node_names.size() + n_encodings) / 2, 1)),
-      std::shared_ptr<SolverOp<TensorT>>(new AdamOp<TensorT>(1e-4, 0.9, 0.999, 1e-8, 1e3)), 0.0f, 0.0f, false, true);
+      std::shared_ptr<SolverOp<TensorT>>(new AdamOp<TensorT>(1e-4, 0.9, 0.999, 1e-8, 50)), 0.0f, 0.0f, false, true);
 
     // Specify the output node types manually
     for (const std::string& node_name : node_names_mu)
@@ -680,7 +693,7 @@ public:
         std::shared_ptr<IntegrationErrorOp<TensorT>>(new SumErrorOp<TensorT>()),
         std::shared_ptr<IntegrationWeightGradOp<TensorT>>(new SumWeightGradOp<TensorT>()),
         std::shared_ptr<WeightInitOp<TensorT>>(new RandWeightInitOp<TensorT>((int)(node_names.size() + n_de_hidden_0) / 2, 1)),
-        std::shared_ptr<SolverOp<TensorT>>(new AdamOp<TensorT>(1e-4, 0.9, 0.999, 1e-8, 1e3)), 0.0f, 0.0f, false, true);
+        std::shared_ptr<SolverOp<TensorT>>(new AdamOp<TensorT>(1e-4, 0.9, 0.999, 1e-8, 50)), 0.0f, 0.0f, false, true);
       if (add_norm) {
         node_names = model_builder.addNormalization(model, "DE0-Norm", "DE0-Norm", node_names, true);
         node_names = model_builder.addSinglyConnected(model, "DE0-Norm-gain", "DE0-Norm-gain", node_names, node_names.size(),
@@ -690,7 +703,7 @@ public:
           std::shared_ptr<IntegrationErrorOp<TensorT>>(new SumErrorOp<TensorT>()),
           std::shared_ptr<IntegrationWeightGradOp<TensorT>>(new SumWeightGradOp<TensorT>()),
           std::shared_ptr<WeightInitOp<TensorT>>(new ConstWeightInitOp<TensorT>(1)),
-          std::shared_ptr<SolverOp<TensorT>>(new AdamOp<TensorT>(1e-4, 0.9, 0.999, 1e-8, 1e3)),
+          std::shared_ptr<SolverOp<TensorT>>(new AdamOp<TensorT>(1e-4, 0.9, 0.999, 1e-8, 50)),
           0.0, 0.0, true, true);
       }
     }
@@ -704,7 +717,7 @@ public:
         std::shared_ptr<IntegrationErrorOp<TensorT>>(new SumErrorOp<TensorT>()),
         std::shared_ptr<IntegrationWeightGradOp<TensorT>>(new SumWeightGradOp<TensorT>()),
         std::shared_ptr<WeightInitOp<TensorT>>(new RandWeightInitOp<TensorT>((int)(node_names.size() + n_de_hidden_1) / 2, 1)),
-        std::shared_ptr<SolverOp<TensorT>>(new AdamOp<TensorT>(1e-4, 0.9, 0.999, 1e-8, 1e3)), 0.0f, 0.0f, false, true);
+        std::shared_ptr<SolverOp<TensorT>>(new AdamOp<TensorT>(1e-4, 0.9, 0.999, 1e-8, 50)), 0.0f, 0.0f, false, true);
       if (add_norm) {
         node_names = model_builder.addNormalization(model, "DE1-Norm", "DE1-Norm", node_names, true);
         node_names = model_builder.addSinglyConnected(model, "DE1-Norm-gain", "DE1-Norm-gain", node_names, node_names.size(),
@@ -714,7 +727,7 @@ public:
           std::shared_ptr<IntegrationErrorOp<TensorT>>(new SumErrorOp<TensorT>()),
           std::shared_ptr<IntegrationWeightGradOp<TensorT>>(new SumWeightGradOp<TensorT>()),
           std::shared_ptr<WeightInitOp<TensorT>>(new ConstWeightInitOp<TensorT>(1)),
-          std::shared_ptr<SolverOp<TensorT>>(new AdamOp<TensorT>(1e-4, 0.9, 0.999, 1e-8, 1e3)),
+          std::shared_ptr<SolverOp<TensorT>>(new AdamOp<TensorT>(1e-4, 0.9, 0.999, 1e-8, 50)),
           0.0, 0.0, true, true);
       }
     }
@@ -728,7 +741,7 @@ public:
         std::shared_ptr<IntegrationErrorOp<TensorT>>(new SumErrorOp<TensorT>()),
         std::shared_ptr<IntegrationWeightGradOp<TensorT>>(new SumWeightGradOp<TensorT>()),
         std::shared_ptr<WeightInitOp<TensorT>>(new RandWeightInitOp<TensorT>((int)(node_names.size() + n_de_hidden_2) / 2, 1)),
-        std::shared_ptr<SolverOp<TensorT>>(new AdamOp<TensorT>(1e-4, 0.9, 0.999, 1e-8, 1e3)), 0.0f, 0.0f, false, true);
+        std::shared_ptr<SolverOp<TensorT>>(new AdamOp<TensorT>(1e-4, 0.9, 0.999, 1e-8, 50)), 0.0f, 0.0f, false, true);
       if (add_norm) {
         node_names = model_builder.addNormalization(model, "DE2-Norm", "DE2-Norm", node_names, true);
         node_names = model_builder.addSinglyConnected(model, "DE2-Norm-gain", "DE2-Norm-gain", node_names, node_names.size(),
@@ -738,7 +751,7 @@ public:
           std::shared_ptr<IntegrationErrorOp<TensorT>>(new SumErrorOp<TensorT>()),
           std::shared_ptr<IntegrationWeightGradOp<TensorT>>(new SumWeightGradOp<TensorT>()),
           std::shared_ptr<WeightInitOp<TensorT>>(new ConstWeightInitOp<TensorT>(1)),
-          std::shared_ptr<SolverOp<TensorT>>(new AdamOp<TensorT>(1e-4, 0.9, 0.999, 1e-8, 1e3)),
+          std::shared_ptr<SolverOp<TensorT>>(new AdamOp<TensorT>(1e-4, 0.9, 0.999, 1e-8, 50)),
           0.0, 0.0, true, true);
       }
     }
@@ -752,7 +765,7 @@ public:
       std::shared_ptr<IntegrationErrorOp<TensorT>>(new SumErrorOp<TensorT>()),
       std::shared_ptr<IntegrationWeightGradOp<TensorT>>(new SumWeightGradOp<TensorT>()),
       std::shared_ptr<WeightInitOp<TensorT>>(new RandWeightInitOp<TensorT>((int)(node_names.size() + n_outputs) / 2, 1)),
-      std::shared_ptr<SolverOp<TensorT>>(new AdamOp<TensorT>(1e-4, 0.9, 0.999, 1e-8, 1e3)), 0.0f, 0.0f, false, true);
+      std::shared_ptr<SolverOp<TensorT>>(new AdamOp<TensorT>(1e-4, 0.9, 0.999, 1e-8, 50)), 0.0f, 0.0f, false, true);
 
     // Specify the output node types manually
     for (const std::string& node_name : node_names_output)
@@ -948,6 +961,7 @@ void main_reconstruction(const std::string& biochem_rxns_filename,
   else n_input_nodes = reaction_model.component_group_names_.size();
   const int n_output_nodes = n_input_nodes;
   const int encoding_size = 16;
+  const int n_epochs = 6400;
   metabolomics_data.n_encodings_ = encoding_size;
   std::vector<std::string> input_nodes;
   std::vector<std::string> output_nodes;
@@ -1034,8 +1048,7 @@ void main_reconstruction(const std::string& biochem_rxns_filename,
     // Set the model trainer parameters for normalizing the data
     model_trainer.setBatchSize(64);
     model_trainer.setMemorySize(1);
-    model_trainer.setNEpochsTraining(5000);
-    model_trainer.setNEpochsEvaluation(5000);
+    model_trainer.setNEpochsEvaluation(n_epochs);
     model_trainer.setVerbosityLevel(1);
     model_trainer.setLogging(true, false, false);
     model_trainer.setFindCycles(false);
@@ -1044,17 +1057,17 @@ void main_reconstruction(const std::string& biochem_rxns_filename,
 
     // Apply the normalization model and make the caches
     model_trainer.setLossOutputNodes({ output_nodes_normalization });
-    const int n_loss_output_nodes = output_nodes.size() + encoding_nodes_mu.size() + encoding_nodes_logvar.size();
+    const int n_loss_output_nodes = 2 * output_nodes.size() + encoding_nodes_mu.size() + encoding_nodes_logvar.size();
     const int n_metric_output_nodes = output_nodes.size();
     std::cout << "Making the data cache for training..." << std::endl;
     metabolomics_data.use_train_for_eval_ = true;
     Eigen::Tensor<float, 4> input_data_training = model_trainer.evaluateModel(model_normalization, metabolomics_data, met_input_nodes, model_logger, model_interpreters.front());
-    metabolomics_data.makeTrainingDataCache(input_data_training, model_trainer.getNEpochsTraining(), model_trainer.getBatchSize(), model_trainer.getMemorySize(),
+    metabolomics_data.makeTrainingDataCache(input_data_training, model_trainer.getNEpochsEvaluation(), model_trainer.getBatchSize(), model_trainer.getMemorySize(),
       input_nodes.size(), n_loss_output_nodes, n_metric_output_nodes);
     std::cout << "Making the data cache for validation..." << std::endl;
     metabolomics_data.use_train_for_eval_ = false;
     Eigen::Tensor<float, 4> input_data_validation = model_trainer.evaluateModel(model_normalization, metabolomics_data, met_input_nodes, model_logger, model_interpreters.front());
-    metabolomics_data.makeValidationDataCache(input_data_validation, model_trainer.getNEpochsTraining(), model_trainer.getBatchSize(), model_trainer.getMemorySize(),
+    metabolomics_data.makeValidationDataCache(input_data_validation, model_trainer.getNEpochsEvaluation(), model_trainer.getBatchSize(), model_trainer.getMemorySize(),
       input_nodes.size(), n_loss_output_nodes, n_metric_output_nodes);
     metabolomics_data.use_cache_ = true;
   }
@@ -1075,22 +1088,23 @@ void main_reconstruction(const std::string& biochem_rxns_filename,
   // Set the model trainer parameters for training
   model_trainer.setBatchSize(64);
   model_trainer.setMemorySize(1);
-  model_trainer.setNEpochsTraining(5000);
-  model_trainer.setNEpochsEvaluation(5000);
+  model_trainer.setNEpochsTraining(n_epochs);
   model_trainer.setVerbosityLevel(1);
   model_trainer.setLogging(true, false, false);
   model_trainer.setFindCycles(false);
   model_trainer.setFastInterpreter(true);
   model_trainer.setPreserveOoO(true);
   model_trainer.setLossFunctions({
-    std::shared_ptr<LossFunctionOp<float>>(new MAPELossOp<float>(1e-6, 1.0)),
+    std::shared_ptr<LossFunctionOp<float>>(new MAELossOp<float>(1e-6, 1.0)),
+    std::shared_ptr<LossFunctionOp<float>>(new MAPELossOp<float>(1e-6, 0.1)),
     std::shared_ptr<LossFunctionOp<float>>(new KLDivergenceMuLossOp<float>(1e-6, 1.0)),
     std::shared_ptr<LossFunctionOp<float>>(new KLDivergenceLogVarOp<float>(1e-6, 1.0)) });
   model_trainer.setLossFunctionGrads({
-    std::shared_ptr<LossFunctionGradOp<float>>(new MAPELossGradOp<float>(1e-6, 1.0)),
+    std::shared_ptr<LossFunctionGradOp<float>>(new MAELossGradOp<float>(1e-6, 1.0)),
+    std::shared_ptr<LossFunctionGradOp<float>>(new MAPELossGradOp<float>(1e-6, 0.1)),
     std::shared_ptr<LossFunctionGradOp<float>>(new KLDivergenceMuLossGradOp<float>(1e-6, 1.0)),
     std::shared_ptr<LossFunctionGradOp<float>>(new KLDivergenceLogVarGradOp<float>(1e-6, 1.0)) });
-  model_trainer.setLossOutputNodes({ output_nodes, encoding_nodes_mu, encoding_nodes_logvar });
+  model_trainer.setLossOutputNodes({ output_nodes, output_nodes, encoding_nodes_mu, encoding_nodes_logvar });
   model_trainer.setMetricFunctions({ std::shared_ptr<MetricFunctionOp<float>>(new MAEOp<float>()) });
   model_trainer.setMetricOutputNodes({ output_nodes });
   model_trainer.setMetricNames({ "MAE" });

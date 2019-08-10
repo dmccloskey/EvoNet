@@ -302,21 +302,32 @@ public:
       }
     }
 
-    // Add the final output layer
-    node_names = model_builder.addFullyConnected(model, "DE-Output", "DE-Output", node_names, n_outputs,
-      std::shared_ptr<ActivationOp<TensorT>>(new LeakyReLUOp<TensorT>()),
-      std::shared_ptr<ActivationOp<TensorT>>(new LeakyReLUGradOp<TensorT>()),
-      std::shared_ptr<IntegrationOp<TensorT>>(new SumOp<TensorT>()),
-      std::shared_ptr<IntegrationErrorOp<TensorT>>(new SumErrorOp<TensorT>()),
-      std::shared_ptr<IntegrationWeightGradOp<TensorT>>(new SumWeightGradOp<TensorT>()),
-      std::shared_ptr<WeightInitOp<TensorT>>(new RandWeightInitOp<TensorT>((int)(node_names.size() + n_outputs) / 2, 1)),
-      std::shared_ptr<SolverOp<TensorT>>(new AdamOp<TensorT>(1e-3, 0.9, 0.999, 1e-8, 10)), 0.0f, 0.0f, false, true);
+    //// Add the final output layer
+    //node_names = model_builder.addFullyConnected(model, "DE-Output", "DE-Output", node_names, n_outputs,
+    //  std::shared_ptr<ActivationOp<TensorT>>(new LeakyReLUOp<TensorT>()),
+    //  std::shared_ptr<ActivationOp<TensorT>>(new LeakyReLUGradOp<TensorT>()),
+    //  std::shared_ptr<IntegrationOp<TensorT>>(new SumOp<TensorT>()),
+    //  std::shared_ptr<IntegrationErrorOp<TensorT>>(new SumErrorOp<TensorT>()),
+    //  std::shared_ptr<IntegrationWeightGradOp<TensorT>>(new SumWeightGradOp<TensorT>()),
+    //  std::shared_ptr<WeightInitOp<TensorT>>(new RandWeightInitOp<TensorT>((int)(node_names.size() + n_outputs) / 2, 1)),
+    //  std::shared_ptr<SolverOp<TensorT>>(new AdamOp<TensorT>(1e-3, 0.9, 0.999, 1e-8, 10)), 0.0f, 0.0f, false, true);
+
+    //// Add the final output layer
+    //std::vector<std::string> node_names_output;
+    //node_names_output = model_builder.addSinglyConnected(model, "Output", "Output", node_names, n_outputs,
+    //  std::shared_ptr<ActivationOp<TensorT>>(new LinearOp<TensorT>()),
+    //  std::shared_ptr<ActivationOp<TensorT>>(new LinearGradOp<TensorT>()),
+    //  std::shared_ptr<IntegrationOp<TensorT>>(new SumOp<TensorT>()),
+    //  std::shared_ptr<IntegrationErrorOp<TensorT>>(new SumErrorOp<TensorT>()),
+    //  std::shared_ptr<IntegrationWeightGradOp<TensorT>>(new SumWeightGradOp<TensorT>()),
+    //  std::shared_ptr<WeightInitOp<TensorT>>(new ConstWeightInitOp<TensorT>(1)),
+    //  std::shared_ptr<SolverOp<TensorT>>(new DummySolverOp<TensorT>()), 0.0f, 0.0f, false, true);
 
     // Add the final output layer
     std::vector<std::string> node_names_output;
-    node_names_output = model_builder.addSinglyConnected(model, "Output", "Output", node_names, n_outputs,
-      std::shared_ptr<ActivationOp<TensorT>>(new LinearOp<TensorT>()),
-      std::shared_ptr<ActivationOp<TensorT>>(new LinearGradOp<TensorT>()),
+    node_names_output = model_builder.addFullyConnected(model, "Output", "Output", node_names, n_outputs,
+      std::shared_ptr<ActivationOp<TensorT>>(new LeakyReLUOp<TensorT>()),
+      std::shared_ptr<ActivationOp<TensorT>>(new LeakyReLUGradOp<TensorT>()),
       std::shared_ptr<IntegrationOp<TensorT>>(new SumOp<TensorT>()),
       std::shared_ptr<IntegrationErrorOp<TensorT>>(new SumErrorOp<TensorT>()),
       std::shared_ptr<IntegrationWeightGradOp<TensorT>>(new SumWeightGradOp<TensorT>()),
@@ -625,8 +636,8 @@ public:
     model_decoder_.clear();
 
     // define the encoder and decoders
-    model_trainer.makeModelFCVAE_Encoder(model_encoder_, n_input_nodes_, encoding_size_, true, true, false, false,
-      n_en_hidden_0, n_en_hidden_1, n_en_hidden_2); // normalization type 2
+    model_trainer.makeModelFCVAE_Encoder(model_encoder_, n_input_nodes_, encoding_size_, true, false, false, false,
+      n_en_hidden_0, n_en_hidden_1, n_en_hidden_2); // normalization type 1
     model_trainer.makeModelFCVAE_Decoder(model_decoder_, n_input_nodes_, encoding_size_, false,
       n_de_hidden_0, n_de_hidden_1, n_de_hidden_2);
 
@@ -701,7 +712,7 @@ public:
     model_normalization_.clear();
 
     // define the model
-    model_trainer.makeModelNormalization(model_normalization_, n_input_nodes_, true, true, false); // Normalization type 2
+    model_trainer.makeModelNormalization(model_normalization_, n_input_nodes_, true, false, false); // Normalization type 1
   };
 
   /*
@@ -1456,11 +1467,11 @@ int main(int argc, char** argv)
   ModelResources model_resources = { ModelDevice(0, 1) };
   ModelInterpreterDefaultDevice<float> model_interpreter(model_resources);
   ModelTrainerExt<float> model_trainer;
-  model_trainer.setBatchSize(512);
+  model_trainer.setBatchSize(1);
   model_trainer.setMemorySize(1);
   model_trainer.setNEpochsEvaluation(1);
   model_trainer.setVerbosityLevel(1);
-  model_trainer.setLogging(false, false, false);
+  model_trainer.setLogging(false, false, true);
   model_trainer.setFindCycles(false);
   model_trainer.setFastInterpreter(true);
   model_trainer.setPreserveOoO(true);
@@ -1469,7 +1480,7 @@ int main(int argc, char** argv)
   ModelLogger<float> model_logger(false, false, false, false, false, true, false);
 
   // Read in the metabolomics data and models
-  LatentArithmetic<float> latentArithmetic(32, false, true);
+  LatentArithmetic<float> latentArithmetic(16, false, true);
   latentArithmetic.setMetabolomicsData(biochem_rxns_filename, metabo_data_filename_train, meta_data_filename_train,
     metabo_data_filename_test, meta_data_filename_test);
   latentArithmetic.setEncDecModels(model_trainer, model_encoder_weights_filename, model_decoder_weights_filename,
@@ -1484,9 +1495,9 @@ int main(int argc, char** argv)
   //main_KALE(model_interpreter, model_trainer, model_logger, latentArithmetic, PercentDifferenceTensorOp<float, Eigen::DefaultDevice>(), false, true, false, false);
   //main_KALE(model_interpreter, model_trainer, model_logger, latentArithmetic, EuclideanDistTensorOp<float, Eigen::DefaultDevice>(), false, true, false, false);
   //main_KALE(model_interpreter, model_trainer, model_logger, latentArithmetic, PearsonRTensorOp<float, Eigen::DefaultDevice>(), false, true, false, false);
-  main_KALE(model_interpreter, model_trainer, model_logger, latentArithmetic, ManhattanDistTensorOp<float, Eigen::DefaultDevice>(), false, true, false, false);
+  //main_KALE(model_interpreter, model_trainer, model_logger, latentArithmetic, ManhattanDistTensorOp<float, Eigen::DefaultDevice>(), false, true, false, false);
   //main_KALE(model_interpreter, model_trainer, model_logger, latentArithmetic, LogarithmicDistTensorOp<float, Eigen::DefaultDevice>(), false, true, false, false);
-  //main_KALE(model_interpreter, model_trainer, model_logger, latentArithmetic, JeffreysAndMatusitaDistTensorOp<float, Eigen::DefaultDevice>(), false, true, false, false);
+  main_KALE(model_interpreter, model_trainer, model_logger, latentArithmetic, JeffreysAndMatusitaDistTensorOp<float, Eigen::DefaultDevice>(), false, true, false, false);
   //main_IndustrialStrains(model_interpreter, model_trainer, model_logger, latentArithmetic, true, false);
   //main_PLT(model_interpreter, model_trainer, model_logger, latentArithmetic, false, true, true, true);
 
