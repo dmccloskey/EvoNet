@@ -142,7 +142,18 @@ public:
               value = this->model_validation_.getRandomConcentration(
                 this->model_validation_.metabolomicsData_.at(sample_group_name),
                 this->model_validation_.component_group_names_.at(nodes_iter));
-            input_data(batch_iter, memory_iter, nodes_iter) = value;
+            TensorT ref;
+            if (train)
+              ref = this->model_training_.getRandomConcentration(
+                this->model_training_.metabolomicsData_.at("Evo04"),
+                this->model_training_.component_group_names_.at(nodes_iter));
+            else
+              ref = this->model_training_.getRandomConcentration(
+                this->model_training_.metabolomicsData_.at("Evo04"),
+                this->model_training_.component_group_names_.at(nodes_iter));
+            if (ref == 0 || value == 0) input_data(batch_iter, memory_iter, nodes_iter) = 0;
+            else input_data(batch_iter, memory_iter, nodes_iter) = log(value/ref);
+            //input_data(batch_iter, memory_iter, nodes_iter) = value;
             if (!eval) {
               loss_output_data(batch_iter, memory_iter, nodes_iter) = 0;
               loss_output_data(batch_iter, memory_iter, nodes_iter + n_input_pixels) = 0;
@@ -231,7 +242,7 @@ public:
     this->input_data_training_.slice(Eigen::array<Eigen::Index, 4>({ 0, 0, 0, 0 }),
       Eigen::array<Eigen::Index, 4>({ batch_size, memory_size, input_nodes, n_epochs })) = input_data;
     this->input_data_training_.slice(Eigen::array<Eigen::Index, 4>({ 0, 0, input_nodes, 0 }),
-      Eigen::array<Eigen::Index, 4>({ batch_size, memory_size, this->n_encodings_, n_epochs })) = gaussian_samples;
+      Eigen::array<Eigen::Index, 4>({ batch_size, memory_size, this->n_encodings_, n_epochs })) = KL_losses;// FIXME gaussian_samples;
 
     // assign the loss tensors
     this->loss_output_data_training_.slice(Eigen::array<Eigen::Index, 4>({ 0, 0, 0, 0 }),
@@ -246,6 +257,11 @@ public:
     // assign the metric tensors
     this->metric_output_data_training_.slice(Eigen::array<Eigen::Index, 4>({ 0, 0, 0, 0 }),
       Eigen::array<Eigen::Index, 4>({ batch_size, memory_size, input_nodes, n_epochs })) = input_data;
+
+    /// DEBUG: batch_size = 1 and n_epochs = 1
+    //std::cout << "input_data_training_\n" << this->input_data_training_ << std::endl;
+    //std::cout << "loss_output_data_training_\n" << this->loss_output_data_training_ << std::endl;
+    //std::cout << "metric_output_data_training_\n" << this->metric_output_data_training_ << std::endl;
   }
 
   void makeValidationDataCache(const Eigen::Tensor<TensorT, 4>& input_data,
@@ -820,7 +836,7 @@ public:
         std::shared_ptr<SolverOp<TensorT>>(new DummySolverOp<TensorT>()), 0.0, 0.0, false, true);
     }
     if (linear_scale_input) {
-      node_names = model_builder.addLinearScale(model, "LinearScaleInput", "LinearScaleInput", node_names, 0, 1, true);
+      node_names = model_builder.addLinearScale(model, "LinearScaleInput", "LinearScaleInput", node_names, -1, 1, true);
     }
     if (standardize_input) {
       node_names = model_builder.addNormalization(model, "StandardizeInput", "StandardizeInput", node_names, true);
@@ -961,7 +977,6 @@ void main_reconstruction(const std::string& biochem_rxns_filename,
   else n_input_nodes = reaction_model.component_group_names_.size();
   const int n_output_nodes = n_input_nodes;
   const int encoding_size = 16;
-  const int n_epochs = 6400;
   metabolomics_data.n_encodings_ = encoding_size;
   std::vector<std::string> input_nodes;
   std::vector<std::string> output_nodes;
@@ -1048,7 +1063,7 @@ void main_reconstruction(const std::string& biochem_rxns_filename,
     // Set the model trainer parameters for normalizing the data
     model_trainer.setBatchSize(64);
     model_trainer.setMemorySize(1);
-    model_trainer.setNEpochsEvaluation(n_epochs);
+    model_trainer.setNEpochsEvaluation(64);
     model_trainer.setVerbosityLevel(1);
     model_trainer.setLogging(true, false, false);
     model_trainer.setFindCycles(false);
@@ -1088,7 +1103,7 @@ void main_reconstruction(const std::string& biochem_rxns_filename,
   // Set the model trainer parameters for training
   model_trainer.setBatchSize(64);
   model_trainer.setMemorySize(1);
-  model_trainer.setNEpochsTraining(n_epochs);
+  model_trainer.setNEpochsTraining(64);
   model_trainer.setVerbosityLevel(1);
   model_trainer.setLogging(true, false, false);
   model_trainer.setFindCycles(false);
@@ -1096,14 +1111,14 @@ void main_reconstruction(const std::string& biochem_rxns_filename,
   model_trainer.setPreserveOoO(true);
   model_trainer.setLossFunctions({
     std::shared_ptr<LossFunctionOp<float>>(new MAELossOp<float>(1e-6, 1.0)),
-    std::shared_ptr<LossFunctionOp<float>>(new MAPELossOp<float>(1e-6, 0.1)),
-    std::shared_ptr<LossFunctionOp<float>>(new KLDivergenceMuLossOp<float>(1e-6, 1.0)),
-    std::shared_ptr<LossFunctionOp<float>>(new KLDivergenceLogVarOp<float>(1e-6, 1.0)) });
+    std::shared_ptr<LossFunctionOp<float>>(new MAPELossOp<float>(1e-6, 0.0)),
+    std::shared_ptr<LossFunctionOp<float>>(new KLDivergenceMuLossOp<float>(1e-6, 0.0)), //FIXME
+    std::shared_ptr<LossFunctionOp<float>>(new KLDivergenceLogVarOp<float>(1e-6, 0.0)) });
   model_trainer.setLossFunctionGrads({
     std::shared_ptr<LossFunctionGradOp<float>>(new MAELossGradOp<float>(1e-6, 1.0)),
-    std::shared_ptr<LossFunctionGradOp<float>>(new MAPELossGradOp<float>(1e-6, 0.1)),
-    std::shared_ptr<LossFunctionGradOp<float>>(new KLDivergenceMuLossGradOp<float>(1e-6, 1.0)),
-    std::shared_ptr<LossFunctionGradOp<float>>(new KLDivergenceLogVarGradOp<float>(1e-6, 1.0)) });
+    std::shared_ptr<LossFunctionGradOp<float>>(new MAPELossGradOp<float>(1e-6, 0.0)),
+    std::shared_ptr<LossFunctionGradOp<float>>(new KLDivergenceMuLossGradOp<float>(1e-6, 0.0)),
+    std::shared_ptr<LossFunctionGradOp<float>>(new KLDivergenceLogVarGradOp<float>(1e-6, 0.0)) });
   model_trainer.setLossOutputNodes({ output_nodes, output_nodes, encoding_nodes_mu, encoding_nodes_logvar });
   model_trainer.setMetricFunctions({ std::shared_ptr<MetricFunctionOp<float>>(new MAEOp<float>()) });
   model_trainer.setMetricOutputNodes({ output_nodes });

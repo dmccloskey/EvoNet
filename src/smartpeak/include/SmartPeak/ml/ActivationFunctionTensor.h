@@ -60,7 +60,7 @@ namespace SmartPeak
 			Eigen::TensorMap<Eigen::Tensor<TensorT, 3>> x(x_I, batch_size, memory_size, layer_size);
 			Eigen::TensorMap<Eigen::Tensor<TensorT, 3>> out(x_O, batch_size, memory_size, layer_size);
 			//out.chip(time_step, 1).device(device) = x.chip(time_step, 1).unaryExpr(ReLUOp<TensorT>());
-			auto result = (x.chip(time_step, 1) > x.chip(time_step, 1).constant((TensorT)0)).select(x.chip(time_step, 1), x.chip(time_step, 1).constant((TensorT)0));
+			auto result = (x.chip(time_step, 1) > x.chip(time_step, 1).constant(TensorT(0))).select(x.chip(time_step, 1), x.chip(time_step, 1).constant(TensorT(0)));
 			out.chip(time_step, 1).device(device) = result.clip(this->getMin(), this->getMax());
       //std::cout << "[ReLUTensorOp] Time step " << time_step << " : " << out.chip(time_step, 1) << std::endl;  // DEBUGGING...
 		};
@@ -90,7 +90,7 @@ namespace SmartPeak
 			Eigen::TensorMap<Eigen::Tensor<TensorT, 3>> x(x_I, batch_size, memory_size, layer_size);
 			Eigen::TensorMap<Eigen::Tensor<TensorT, 3>> out(x_O, batch_size, memory_size, layer_size);
 			//out.chip(time_step, 1).device(device) = x.chip(time_step, 1).unaryExpr(ReLUGradOp<TensorT>());
-			auto result = (x.chip(time_step, 1) > x.chip(time_step, 1).constant((TensorT)0)).select(x.chip(time_step, 1).constant((TensorT)1), x.chip(time_step, 1).constant((TensorT)0));
+			auto result = (x.chip(time_step, 1) > x.chip(time_step, 1).constant(TensorT(0))).select(x.chip(time_step, 1).constant(TensorT(1)), x.chip(time_step, 1).constant(TensorT(0)));
 			out.chip(time_step, 1).device(device) = result.clip(this->getMin(), this->getMax());
 		};
     std::string getName() const{return "ReLUGradTensorOp";};
@@ -122,9 +122,9 @@ namespace SmartPeak
 			Eigen::TensorMap<Eigen::Tensor<TensorT, 3>> x(x_I, batch_size, memory_size, layer_size);
 			Eigen::TensorMap<Eigen::Tensor<TensorT, 3>> out(x_O, batch_size, memory_size, layer_size);
 			//out.chip(time_step, 1).device(device) = x.chip(time_step, 1).unaryExpr(ELUOp<TensorT>(alpha_));
-			auto result = (x.chip(time_step, 1) > x.chip(time_step, 1).constant((TensorT)0)).select(
+			auto result = (x.chip(time_step, 1) > x.chip(time_step, 1).constant(TensorT(0))).select(
 				x.chip(time_step, 1), 
-				x.chip(time_step, 1).constant(alpha_) * (x.chip(time_step, 1).exp() - x.chip(time_step, 1).constant((TensorT)1)));
+				x.chip(time_step, 1).constant(alpha_) * (x.chip(time_step, 1).exp() - x.chip(time_step, 1).constant(TensorT(1))));
 			out.chip(time_step, 1).device(device) = result.clip(this->getMin(), this->getMax());
 		};
     void setAlpha(const TensorT& alpha) { alpha_ = alpha; };
@@ -159,9 +159,9 @@ namespace SmartPeak
 			Eigen::TensorMap<Eigen::Tensor<TensorT, 3>> x(x_I, batch_size, memory_size, layer_size);
 			Eigen::TensorMap<Eigen::Tensor<TensorT, 3>> out(x_O, batch_size, memory_size, layer_size);
 			//out.chip(time_step, 1).device(device) = x.chip(time_step, 1).unaryExpr(ELUGradOp<TensorT>(alpha_));
-			auto result = (x.chip(time_step, 1) > x.chip(time_step, 1).constant((TensorT)0)).select(
-				x.chip(time_step, 1).constant((TensorT)1),
-				(x.chip(time_step, 1) > x.chip(time_step, 1).constant((TensorT)0)).select(x.chip(time_step, 1), x.chip(time_step, 1).constant(alpha_) * (x.chip(time_step, 1).exp() - x.chip(time_step, 1).constant((TensorT)1))) + x.chip(time_step, 1).constant(alpha_));
+			auto result = (x.chip(time_step, 1) > x.chip(time_step, 1).constant(TensorT(0))).select(
+				x.chip(time_step, 1).constant(TensorT(1)),
+				(x.chip(time_step, 1) > x.chip(time_step, 1).constant(TensorT(0))).select(x.chip(time_step, 1), x.chip(time_step, 1).constant(alpha_) * (x.chip(time_step, 1).exp() - x.chip(time_step, 1).constant(TensorT(1)))) + x.chip(time_step, 1).constant(alpha_));
 			out.chip(time_step, 1).device(device) = result.clip(this->getMin(), this->getMax());
 		};
     void setAlpha(const TensorT& alpha) { alpha_ = alpha; };
@@ -188,7 +188,7 @@ namespace SmartPeak
 			Eigen::TensorMap<Eigen::Tensor<TensorT, 3>> x(x_I, batch_size, memory_size, layer_size);
 			Eigen::TensorMap<Eigen::Tensor<TensorT, 3>> out(x_O, batch_size, memory_size, layer_size);
 			//out.chip(time_step, 1).device(device) = x.chip(time_step, 1).unaryExpr(SigmoidOp<TensorT>());
-			//out.chip(time_step, 1).device(device) = x.chip(time_step, 1).constant((TensorT)1)/(x.chip(time_step, 1).constant((TensorT)1) + (-x.chip(time_step, 1).exp()));
+			//out.chip(time_step, 1).device(device) = x.chip(time_step, 1).constant(TensorT(1))/(x.chip(time_step, 1).constant(TensorT(1)) + (-x.chip(time_step, 1).exp()));
 			auto result = x.chip(time_step, 1).sigmoid();
 			out.chip(time_step, 1).device(device) = result.clip(this->getMin(), this->getMax());
 		};
@@ -213,7 +213,7 @@ namespace SmartPeak
 			Eigen::TensorMap<Eigen::Tensor<TensorT, 3>> x(x_I, batch_size, memory_size, layer_size);
 			Eigen::TensorMap<Eigen::Tensor<TensorT, 3>> out(x_O, batch_size, memory_size, layer_size);
 			//out.chip(time_step, 1).device(device) = x.chip(time_step, 1).unaryExpr(SigmoidGradOp<TensorT>());
-			auto result = x.chip(time_step, 1).sigmoid() * (x.chip(time_step, 1).constant((TensorT)1) - x.chip(time_step, 1).sigmoid());
+			auto result = x.chip(time_step, 1).sigmoid() * (x.chip(time_step, 1).constant(TensorT(1)) - x.chip(time_step, 1).sigmoid());
 			out.chip(time_step, 1).device(device) = result.clip(this->getMin(), this->getMax());
 		};
     std::string getName() const{return "SigmoidGradTensorOp";};
@@ -261,7 +261,7 @@ namespace SmartPeak
 			Eigen::TensorMap<Eigen::Tensor<TensorT, 3>> x(x_I, batch_size, memory_size, layer_size);
 			Eigen::TensorMap<Eigen::Tensor<TensorT, 3>> out(x_O, batch_size, memory_size, layer_size);
 			//out.chip(time_step, 1).device(device) = x.chip(time_step, 1).unaryExpr(TanHGradOp<TensorT>());
-			auto result = x.chip(time_step, 1).constant((TensorT)1) - (x.chip(time_step, 1).tanh()).pow((TensorT)2);
+			auto result = x.chip(time_step, 1).constant(TensorT(1)) - (x.chip(time_step, 1).tanh()).pow((TensorT)2);
 			out.chip(time_step, 1).device(device) = result.clip(this->getMin(), this->getMax());
 		};
     std::string getName() const{return "TanHGradTensorOp";};
@@ -355,7 +355,7 @@ namespace SmartPeak
 			Eigen::TensorMap<Eigen::Tensor<TensorT, 3>> x(x_I, batch_size, memory_size, layer_size);
 			Eigen::TensorMap<Eigen::Tensor<TensorT, 3>> out(x_O, batch_size, memory_size, layer_size);
 			//out.chip(time_step, 1).device(device) = x.chip(time_step, 1).unaryExpr(LinearGradOp<TensorT>());
-			out.chip(time_step, 1).device(device) = x.chip(time_step, 1).constant((TensorT)1);
+			out.chip(time_step, 1).device(device) = x.chip(time_step, 1).constant(TensorT(1));
 		};
 		std::string getName() const { return "LinearGradTensorOp"; };
 	//private:
@@ -378,8 +378,8 @@ namespace SmartPeak
 			Eigen::TensorMap<Eigen::Tensor<TensorT, 3>> x(x_I, batch_size, memory_size, layer_size);
 			Eigen::TensorMap<Eigen::Tensor<TensorT, 3>> out(x_O, batch_size, memory_size, layer_size);
 			//out.chip(time_step, 1).device(device) = x.chip(time_step, 1).unaryExpr(InverseOp<TensorT>());
-			auto result = (x.chip(time_step, 1) != x.chip(time_step, 1).constant((TensorT)0)).select(
-				x.chip(time_step, 1).constant((TensorT)1)/ x.chip(time_step, 1), x.chip(time_step, 1).constant((TensorT)0));
+			auto result = (x.chip(time_step, 1) != x.chip(time_step, 1).constant(TensorT(0))).select(
+				x.chip(time_step, 1).constant(TensorT(1))/ x.chip(time_step, 1), x.chip(time_step, 1).constant(TensorT(0)));
 			out.chip(time_step, 1).device(device) = result.clip(this->getMin(), this->getMax());
 		};
 		std::string getName() const { return "InverseTensorOp"; };
@@ -403,8 +403,8 @@ namespace SmartPeak
 			Eigen::TensorMap<Eigen::Tensor<TensorT, 3>> x(x_I, batch_size, memory_size, layer_size);
 			Eigen::TensorMap<Eigen::Tensor<TensorT, 3>> out(x_O, batch_size, memory_size, layer_size);
 			//out.chip(time_step, 1).device(device) = x.chip(time_step, 1).unaryExpr(InverseGradOp<TensorT>());
-			auto result = (x.chip(time_step, 1) != x.chip(time_step, 1).constant((TensorT)0)).select(
-				x.chip(time_step, 1).constant((TensorT)-1) / x.chip(time_step, 1).pow((TensorT)2), x.chip(time_step, 1).constant((TensorT)0));
+			auto result = (x.chip(time_step, 1) != x.chip(time_step, 1).constant(TensorT(0))).select(
+				x.chip(time_step, 1).constant((TensorT)-1) / x.chip(time_step, 1).pow((TensorT)2), x.chip(time_step, 1).constant(TensorT(0)));
 			out.chip(time_step, 1).device(device) = result.clip(this->getMin(), this->getMax());
 		};
 		std::string getName() const { return "InverseGradTensorOp"; };
@@ -500,7 +500,7 @@ namespace SmartPeak
 			Eigen::TensorMap<Eigen::Tensor<TensorT, 3>> x(x_I, batch_size, memory_size, layer_size);
 			Eigen::TensorMap<Eigen::Tensor<TensorT, 3>> out(x_O, batch_size, memory_size, layer_size);
 			//out.chip(time_step, 1).device(device) = x.chip(time_step, 1).unaryExpr(LogGradOp<TensorT>());
-			auto result = x.chip(time_step, 1).constant((TensorT)1) / x.chip(time_step, 1);
+			auto result = x.chip(time_step, 1).constant(TensorT(1)) / x.chip(time_step, 1);
 			out.chip(time_step, 1).device(device) = result.clip(this->getMin(), this->getMax());
 		};
 		std::string getName() const { return "LogGradTensorOp"; };
@@ -555,7 +555,7 @@ namespace SmartPeak
 			Eigen::TensorMap<Eigen::Tensor<TensorT, 3>> x(x_I, batch_size, memory_size, layer_size);
 			Eigen::TensorMap<Eigen::Tensor<TensorT, 3>> out(x_O, batch_size, memory_size, layer_size);
 			//out.chip(time_step, 1).device(device) = x.chip(time_step, 1).unaryExpr(PowGradOp<TensorT>(base_));
-			auto result = x.chip(time_step, 1).constant(base_) * x.chip(time_step, 1).pow(base_ - (TensorT)1);
+			auto result = x.chip(time_step, 1).constant(base_) * x.chip(time_step, 1).pow(base_ - TensorT(1));
 			out.chip(time_step, 1).device(device) = result.clip(this->getMin(), this->getMax());
 		};
 		std::string getName() const { return "PowGradTensorOp"; };
@@ -585,7 +585,7 @@ namespace SmartPeak
 			Eigen::TensorMap<Eigen::Tensor<TensorT, 3>> x(x_I, batch_size, memory_size, layer_size);
 			Eigen::TensorMap<Eigen::Tensor<TensorT, 3>> out(x_O, batch_size, memory_size, layer_size);
 			//out.chip(time_step, 1).device(device) = x.chip(time_step, 1).unaryExpr(LeakyReLUOp<TensorT>(alpha_));
-			auto result = (x.chip(time_step, 1) >= x.chip(time_step, 1).constant((TensorT)0)).select(
+			auto result = (x.chip(time_step, 1) >= x.chip(time_step, 1).constant(TensorT(0))).select(
 				x.chip(time_step, 1), x.chip(time_step, 1) * x.chip(time_step, 1).constant(alpha_));
 			out.chip(time_step, 1).device(device) = result.clip(this->getMin(), this->getMax());
 		};
@@ -616,8 +616,8 @@ namespace SmartPeak
 			Eigen::TensorMap<Eigen::Tensor<TensorT, 3>> x(x_I, batch_size, memory_size, layer_size);
 			Eigen::TensorMap<Eigen::Tensor<TensorT, 3>> out(x_O, batch_size, memory_size, layer_size);
 			//out.chip(time_step, 1).device(device) = x.chip(time_step, 1).unaryExpr(LeakyReLUGradOp<TensorT>(alpha_));
-			auto result = (x.chip(time_step, 1) >= x.chip(time_step, 1).constant((TensorT)0)).select(
-				x.chip(time_step, 1).constant((TensorT)1), x.chip(time_step, 1).constant(alpha_));
+			auto result = (x.chip(time_step, 1) >= x.chip(time_step, 1).constant(TensorT(0))).select(
+				x.chip(time_step, 1).constant(TensorT(1)), x.chip(time_step, 1).constant(alpha_));
 			out.chip(time_step, 1).device(device) = result.clip(this->getMin(), this->getMax());
 		};
 		void setAlpha(const TensorT& alpha) { alpha_ = alpha; };
