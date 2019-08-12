@@ -1278,7 +1278,7 @@ BOOST_AUTO_TEST_CASE(getModelResults)
 	model_interpreter.TBPTT(4);
 	model_interpreter.updateWeights();
 
-	model_interpreter.getModelResults(model_getModelResults, true, true, true);
+	model_interpreter.getModelResults(model_getModelResults, true, true, true, true);
 
 	// test values of output nodes
 	Eigen::Tensor<float, 3> output(batch_size, memory_size, (int)output_nodes.size()); // dim2: # of model nodes
@@ -1337,6 +1337,28 @@ BOOST_AUTO_TEST_CASE(getModelResults)
 	for (int i = 0; i < weight_ids.size(); ++i) {
 		BOOST_CHECK_CLOSE(model_getModelResults.getWeightsMap().at(weight_ids[i])->getWeight(), weights(i), 1e-3);
 	}
+
+  // test values of input nodes
+  std::vector<std::string> input_nodes = { "0" };
+  Eigen::Tensor<float, 3> input_test(batch_size, memory_size, (int)input_nodes.size()); // dim2: # of model nodes
+  input_test.setValues({
+    {{8}, {7}, {6}, {5}, {4}, {3}, {2}, {1}},
+    {{9}, {8}, {7}, {6}, {5}, {4}, {3}, {2}},
+    {{10}, {9}, {8}, {7}, {6}, {5}, {4}, {3}},
+    {{11}, {10}, {9}, {8}, {7}, {6}, {5}, {4}},
+    {{12}, {11}, {10}, {9}, {8}, {7}, {6}, {5}} }
+  );
+
+  for (int j = 0; j < batch_size; ++j) {
+    for (int k = 0; k < memory_size; ++k) {
+      for (int i = 0; i < input_nodes.size(); ++i) {
+        const std::string node_name = input_nodes[i];
+        //std::cout << "Node: " << node_name << "; Batch: " << j << "; Memory: " << k << std::endl;
+        //std::cout << "Calc Input: " << model_getModelResults.getNodesMap().at(node_name)->getInput()(j, k) << ", Expected Input: " << input_test(j, k, i) << std::endl;
+        BOOST_CHECK_CLOSE(model_getModelResults.getNodesMap().at(node_name)->getInput()(j, k), input(j, k, i), 1e-3);
+      }
+    }
+  }
 }
 
 Model<float> makeModelToy3()

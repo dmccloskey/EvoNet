@@ -38,7 +38,7 @@ namespace SmartPeak
 		void executeWeightErrorOperations() override;
 		void executeWeightUpdateOperations() override;
 		void allocateModelErrorTensor(const int& batch_size, const int& memory_size, const int& n_metrics) override;
-	  void getModelResults(Model<TensorT>& model, const bool& output_nodes, const bool& weights, const bool& model_error) override;
+	  void getModelResults(Model<TensorT>& model, const bool& output_nodes, const bool& weights, const bool& model_error, const bool& input_nodes) override;
 		void checkMemory(const Model<TensorT>& model, const int& batch_size, const int& memory_size) override;
 		void updateSolverParams(const int& param_index, const TensorT& param_factor) override;
 	private:
@@ -390,7 +390,7 @@ namespace SmartPeak
 	}
 
 	template<typename TensorT>
-	inline void ModelInterpreterDefaultDevice<TensorT>::getModelResults(Model<TensorT>& model, const bool& output_nodes, const bool& weights, const bool& model_error)
+	inline void ModelInterpreterDefaultDevice<TensorT>::getModelResults(Model<TensorT>& model, const bool& output_nodes, const bool& weights, const bool& model_error, const bool& input_nodes)
 	{
 		// copy out the weight values
 		if (weights) {
@@ -425,6 +425,15 @@ namespace SmartPeak
         model.getNodesMap().at(output_node->getName())->setOutput(this->getLayerTensor(tensor_index)->getOutput().chip(layer_index, 2));
 			}
 		}
+
+    // copy out the output node values
+    if (input_nodes) {
+      for (auto& input_node : model.getInputNodes()) {
+        const int tensor_index = model.getNodesMap().at(input_node->getName())->getTensorIndex().first;
+        const int layer_index = model.getNodesMap().at(input_node->getName())->getTensorIndex().second;
+        model.getNodesMap().at(input_node->getName())->setInput(this->getLayerTensor(tensor_index)->getInput().chip(layer_index, 2));
+      }
+    }
 	}
 
 	template<typename TensorT>

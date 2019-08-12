@@ -42,7 +42,7 @@ namespace SmartPeak
 		void executeWeightErrorOperations() override;
 		void executeWeightUpdateOperations() override;
 		void allocateModelErrorTensor(const int& batch_size, const int& memory_size, const int& n_metrics) override;
-		void getModelResults(Model<TensorT>& model, const bool& output_nodes, const bool& weights, const bool& model_error) override;
+		void getModelResults(Model<TensorT>& model, const bool& output_nodes, const bool& weights, const bool& model_error, const bool& input_nodes) override;
 		void checkMemory(const Model<TensorT>& model, const int& batch_size, const int& memory_size) override;
 		void updateSolverParams(const int& param_index, const TensorT& param_factor) override;
 	private:
@@ -549,7 +549,7 @@ namespace SmartPeak
 	}
 
 	template<typename TensorT>
-	inline void ModelInterpreterGpu<TensorT>::getModelResults(Model<TensorT>& model, const bool& output_nodes, const bool& weights, const bool& model_error)
+	inline void ModelInterpreterGpu<TensorT>::getModelResults(Model<TensorT>& model, const bool& output_nodes, const bool& weights, const bool& model_error, const bool& input_nodes)
 	{
 		// Synchronize all data with the host
 		cudaStream_t stream; // The stream will be destroyed by GpuStreamDevice once the function goes out of scope!
@@ -588,6 +588,18 @@ namespace SmartPeak
 			}
 		}
 
+    // sync the input node values
+    if (input_nodes) {
+      for (auto& input_node : model.getInputNodes()) {
+        // NOTE: there is a strange bug where the tensor indices of the input nodes pointer are not updated
+        //const int tensor_index = input_node->getTensorIndex().first;
+        //const int layer_index = input_node->getTensorIndex().second;
+        const int tensor_index = model.getNodesMap().at(input_node->getName())->getTensorIndex().first;
+        if (!this->getLayerTensor(tensor_index)->getInputStatus().first)
+          this->getLayerTensor(tensor_index)->syncHAndDInput(device);
+      }
+    }
+
 		assert(cudaStreamSynchronize(stream) == cudaSuccess);
 		assert(cudaStreamDestroy(stream) == cudaSuccess);
 
@@ -620,6 +632,15 @@ namespace SmartPeak
 				output_node->setOutput(this->getLayerTensor(tensor_index)->getOutput().chip(layer_index, 2));
 			}
 		}
+
+    // copy out the input node values
+    if (input_nodes) {
+      for (auto& input_node : model.getInputNodes()) {
+        const int tensor_index = model.getNodesMap().at(input_node->getName())->getTensorIndex().first;
+        const int layer_index = model.getNodesMap().at(input_node->getName())->getTensorIndex().second;
+        input_node->setInput(this->getLayerTensor(tensor_index)->getInput().chip(layer_index, 2));
+      }
+    }
 	}
 
 	template<typename TensorT>

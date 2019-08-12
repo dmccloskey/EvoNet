@@ -560,7 +560,7 @@ namespace SmartPeak
 
 		@param[in, out] model The network model
 		*/
-		virtual void getModelResults(Model<TensorT>& model, const bool& output_nodes, const bool& weights, const bool& model_error) = 0;
+		virtual void getModelResults(Model<TensorT>& model, const bool& output_nodes, const bool& weights, const bool& model_error, const bool& input_nodes) = 0;
 
 		/**
 		@brief Update the weight solver params

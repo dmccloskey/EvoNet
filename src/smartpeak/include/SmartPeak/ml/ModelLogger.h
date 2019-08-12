@@ -29,7 +29,8 @@ public:
       const bool& log_weights_epoch = false,
       const bool& log_node_errors_epoch = false,
       const bool& log_node_outputs_epoch = false,
-      const bool& log_node_derivatives_epoch = false);
+      const bool& log_node_derivatives_epoch = false,
+      const bool& log_node_inputs_epoch = false);
     ~ModelLogger() = default; ///< Default destructor
 
 		void setLogTimeEpoch(const bool& log_time_epoch) { log_time_epoch_ = log_time_epoch; }
@@ -43,6 +44,7 @@ public:
 		bool getLogNodeErrorsEpoch() { return log_node_errors_epoch_; }
 		bool getLogNodeOutputsEpoch() { return log_node_outputs_epoch_; }
 		bool getLogNodeDerivativesEpoch() { return log_node_derivatives_epoch_; }
+    bool getLogNodeInputsEpoch() { return log_node_inputs_epoch_; }
 
 		CSVWriter getLogTimeEpochCSVWriter() { return log_time_epoch_csvwriter_; }
 		CSVWriter getLogTrainValMetricEpochCSVWriter() { return log_train_val_metric_epoch_csvwriter_; }
@@ -51,6 +53,7 @@ public:
 		CSVWriter getLogNodeErrorsEpochCSVWriter() { return log_node_errors_epoch_csvwriter_; }
 		CSVWriter getLogNodeOutputsEpochCSVWriter() { return log_node_outputs_epoch_csvwriter_; }
 		CSVWriter getLogNodeDerivativesEpochCSVWriter() { return log_node_derivatives_epoch_csvwriter_; }
+    CSVWriter getLogNodeInputsEpochCSVWriter() { return log_node_inputs_epoch_csvwriter_; }
 
 		/**
 		@brief Initialize the log files
@@ -69,8 +72,11 @@ public:
 		@returns True for a successfull write operation
 		*/
 		bool writeLogs(Model<TensorT> & model, const int& n_epochs, const std::vector<std::string>& training_metric_names, const std::vector<std::string>& validation_metric_names,
-			const std::vector<TensorT>& training_metrics, const std::vector<TensorT>& validation_metrics, const std::vector<std::string>& output_node_names, const Eigen::Tensor<TensorT, 3>& expected_values,
-			const std::vector<std::string>& node_names, const std::vector<std::string>& weight_names);
+			const std::vector<TensorT>& training_metrics, const std::vector<TensorT>& validation_metrics, 
+      const std::vector<std::string>& output_node_names, const Eigen::Tensor<TensorT, 3>& expected_values,
+      const std::vector<std::string>& node_error_names, const std::vector<std::string>& node_output_names,
+      const std::vector<std::string>& node_derivative_names, const std::vector<std::string>& node_input_names, 
+      const std::vector<std::string>& weight_names);
 
 		/**
 		@brief Log epoch iteration number vs. time
@@ -146,6 +152,16 @@ public:
 		*/
 		bool logNodeDerivativesPerEpoch(Model<TensorT>& model, const int& n_epoch, const std::vector<std::string>& node_names);
 
+    /**
+    @brief Model<TensorT> node inputs for each time step per epoch
+
+    @param[in] model
+    @param[in] n_epoch
+
+    @returns True for a successfull write operation
+    */
+    bool logNodeInputsPerEpoch(Model<TensorT>& model, const int& n_epoch, const std::vector<std::string>& node_names);
+
 	private:
 		bool log_time_epoch_ = false; ///< log ...
 		CSVWriter log_time_epoch_csvwriter_;
@@ -161,14 +177,18 @@ public:
 		CSVWriter log_node_outputs_epoch_csvwriter_;
 		bool log_node_derivatives_epoch_ = false;
 		CSVWriter log_node_derivatives_epoch_csvwriter_;
+    bool log_node_inputs_epoch_ = false;
+    CSVWriter log_node_inputs_epoch_csvwriter_;
 
   };
 	template<typename TensorT>
 	ModelLogger<TensorT>::ModelLogger(const bool& log_time_epoch, const bool& log_train_val_metric_epoch, const bool& log_expected_predicted_epoch, 
-    const bool& log_weights_epoch, const bool& log_node_errors_epoch, const bool& log_node_outputs_epoch, const bool& log_node_derivatives_epoch) :
+    const bool& log_weights_epoch, const bool& log_node_errors_epoch, const bool& log_node_outputs_epoch, const bool& log_node_derivatives_epoch,
+    const bool& log_node_inputs_epoch = false) :
 		log_time_epoch_(log_time_epoch), log_train_val_metric_epoch_(log_train_val_metric_epoch), log_expected_predicted_epoch_(log_expected_predicted_epoch),
 		log_weights_epoch_(log_weights_epoch), log_node_errors_epoch_(log_node_errors_epoch), log_node_outputs_epoch_(log_node_outputs_epoch),
-		log_node_derivatives_epoch_(log_node_derivatives_epoch)
+		log_node_derivatives_epoch_(log_node_derivatives_epoch),
+    log_node_inputs_epoch_(log_node_inputs_epoch)
 	{
 	}
 
@@ -210,12 +230,19 @@ public:
 			CSVWriter csvwriter(filename);
 			log_node_derivatives_epoch_csvwriter_ = csvwriter;
 		}
+    if (log_node_inputs_epoch_) {
+      std::string filename = model.getName() + "_NodeInputsPerEpoch.csv";
+      CSVWriter csvwriter(filename);
+      log_node_inputs_epoch_csvwriter_ = csvwriter;
+    }
 		return true;
 	}
 
 	template<typename TensorT>
 	bool ModelLogger<TensorT>::writeLogs(Model<TensorT>& model, const int & n_epochs, const std::vector<std::string>& training_metric_names, const std::vector<std::string>& validation_metric_names, const std::vector<TensorT>& training_metrics, const std::vector<TensorT>& validation_metrics, const std::vector<std::string>& output_node_names, const Eigen::Tensor<TensorT, 3>& expected_values,
-		const std::vector<std::string>& node_names, const std::vector<std::string>& weight_names)
+    const std::vector<std::string>& node_error_names, const std::vector<std::string>& node_output_names,
+    const std::vector<std::string>& node_derivative_names, const std::vector<std::string>& node_input_names, 
+    const std::vector<std::string>& weight_names)
 	{
 		if (log_time_epoch_) {
 			logTimePerEpoch(model, n_epochs);
@@ -230,14 +257,17 @@ public:
 			logWeightsPerEpoch(model, n_epochs, weight_names);
 		}
 		if (log_node_errors_epoch_) {
-			logNodeErrorsPerEpoch(model, n_epochs, node_names);
+			logNodeErrorsPerEpoch(model, n_epochs, node_error_names);
 		}
 		if (log_node_outputs_epoch_) {
-			logNodeOutputsPerEpoch(model, n_epochs, node_names);
+			logNodeOutputsPerEpoch(model, n_epochs, node_output_names);
 		}
 		if (log_node_derivatives_epoch_) {
-			logNodeDerivativesPerEpoch(model, n_epochs, node_names);
+			logNodeDerivativesPerEpoch(model, n_epochs, node_derivative_names);
 		}
+    if (log_node_inputs_epoch_) {
+      logNodeInputsPerEpoch(model, n_epochs, node_input_names);
+    }
 		return true;
 	}
 
@@ -444,7 +474,6 @@ public:
 	template<typename TensorT>
 	bool ModelLogger<TensorT>::logNodeDerivativesPerEpoch(Model<TensorT>& model, const int & n_epoch, const std::vector<std::string>& node_names)
 	{
-
 		std::pair<int, int> bmsizes = model.getBatchAndMemorySizes();
 		int batch_size = bmsizes.first;
 		int memory_size = bmsizes.second;
@@ -478,6 +507,42 @@ public:
 		log_node_derivatives_epoch_csvwriter_.writeDataInRow(line.begin(), line.end());
 		return true;
 	}
+  template<typename TensorT>
+  inline bool ModelLogger<TensorT>::logNodeInputsPerEpoch(Model<TensorT>& model, const int & n_epoch, const std::vector<std::string>& node_names)
+  {
+    std::pair<int, int> bmsizes = model.getBatchAndMemorySizes();
+    int batch_size = bmsizes.first;
+    int memory_size = bmsizes.second;
+
+    // writer header
+    if (log_node_inputs_epoch_csvwriter_.getLineCount() == 0) {
+      std::vector<std::string> headers = { "Epoch" };
+      for (const std::string& node_name : node_names) {
+        for (size_t batch_iter = 0; batch_iter < batch_size; ++batch_iter) {
+          for (size_t memory_iter = 0; memory_iter < memory_size; ++memory_iter) {
+            std::string node_derivative = node_name + "_Input_Batch-" + std::to_string(batch_iter) + "_Memory-" + std::to_string(memory_iter);
+            headers.push_back(node_derivative);
+          }
+        }
+      }
+      log_node_inputs_epoch_csvwriter_.writeDataInRow(headers.begin(), headers.end());
+    }
+
+    // write next entry
+    if (model.nodes_.at(node_names.front())->getInput().size() < batch_size * memory_size)
+      return false;
+    std::vector<std::string> line = { std::to_string(n_epoch) };
+    int node_cnt = 0;
+    for (const std::string& node_name : node_names) {
+      for (size_t batch_iter = 0; batch_iter < batch_size; ++batch_iter) {
+        for (size_t memory_iter = 0; memory_iter < memory_size; ++memory_iter) {
+          line.push_back(std::to_string(model.nodes_.at(node_name)->getInput()(batch_iter, memory_iter)));
+        }
+      }
+    }
+    log_node_inputs_epoch_csvwriter_.writeDataInRow(line.begin(), line.end());
+    return true;
+  }
 }
 
 #endif //SMARTPEAK_MODELLOGGER_H
