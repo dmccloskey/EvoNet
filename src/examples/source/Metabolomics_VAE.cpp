@@ -195,11 +195,11 @@ template<typename TensorT>
 class MetDataSimReconstruction : public MetDataSim<TensorT>
 {
 public:
-  void simulateEvaluationData(Eigen::Tensor<TensorT, 3>& input_data, Eigen::Tensor<TensorT, 2>& time_steps) {
+  void simulateEvaluationData(Eigen::Tensor<TensorT, 3>& input_data, Eigen::Tensor<TensorT, 2>& time_steps) override {
     if (this->simulate_MARs_) this->simulateDataReconMARs_(input_data, Eigen::Tensor<TensorT, 3>(), Eigen::Tensor<TensorT, 3>(), time_steps, this->use_train_for_eval_, true);
     else this->simulateDataReconSampleConcs_(input_data, Eigen::Tensor<TensorT, 3>(), Eigen::Tensor<TensorT, 3>(), time_steps, this->use_train_for_eval_, true);
   }
-  void simulateTrainingData(Eigen::Tensor<TensorT, 3>& input_data, Eigen::Tensor<TensorT, 3>& loss_output_data, Eigen::Tensor<TensorT, 3>& metric_output_data, Eigen::Tensor<TensorT, 2>& time_steps) {
+  void simulateTrainingData(Eigen::Tensor<TensorT, 3>& input_data, Eigen::Tensor<TensorT, 3>& loss_output_data, Eigen::Tensor<TensorT, 3>& metric_output_data, Eigen::Tensor<TensorT, 2>& time_steps) override {
     if (this->use_cache_) {
       this->getTrainingDataFromCache_(input_data, loss_output_data, metric_output_data, time_steps);
     }
@@ -208,7 +208,7 @@ public:
       else this->simulateDataReconSampleConcs_(input_data, loss_output_data, metric_output_data, time_steps, true, false);
     }
   }
-  void simulateValidationData(Eigen::Tensor<TensorT, 3>& input_data, Eigen::Tensor<TensorT, 3>& loss_output_data, Eigen::Tensor<TensorT, 3>& metric_output_data, Eigen::Tensor<TensorT, 2>& time_steps) {
+  void simulateValidationData(Eigen::Tensor<TensorT, 3>& input_data, Eigen::Tensor<TensorT, 3>& loss_output_data, Eigen::Tensor<TensorT, 3>& metric_output_data, Eigen::Tensor<TensorT, 2>& time_steps) override{
     if (this->use_cache_) {
       this->getValidationDataFromCache_(input_data, loss_output_data, metric_output_data, time_steps);
     }
@@ -909,7 +909,7 @@ public:
     }
 
     // Per n epoch logging
-    if (n_epochs % 1 == 0) {  // FIXME
+    if (n_epochs % 1000 == 0) { 
       model_logger.setLogExpectedPredictedEpoch(true);
       model_logger.setLogNodeInputsEpoch(true);
       model_interpreter.getModelResults(model, true, false, false, true);

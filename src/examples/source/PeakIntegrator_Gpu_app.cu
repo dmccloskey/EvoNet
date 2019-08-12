@@ -254,7 +254,7 @@ public:
     const int& n_epochs,
     Model<TensorT>& model,
     ModelInterpreterGpu<TensorT>& model_interpreter,
-    const std::vector<float>& model_errors) {
+    const std::vector<float>& model_errors) override {
     //if (n_epochs % 1000 == 0 && n_epochs > 5000) {
     //  // anneal the learning rate by half on each plateau
     //  TensorT lr_new = this->reduceLROnPlateau(model_errors, 0.5, 1000, 100, 0.1);
@@ -274,58 +274,27 @@ public:
     }
   }
   void trainingModelLogger(const int & n_epochs, Model<TensorT>& model, ModelInterpreterGpu<TensorT>& model_interpreter, ModelLogger<TensorT>& model_logger,
-    const Eigen::Tensor<TensorT, 3>& expected_values,
-    const std::vector<std::string>& output_nodes,
-    const TensorT& model_error)
-  {
-    model_logger.setLogTimeEpoch(true);
-    model_logger.setLogTrainValMetricEpoch(true);
-    model_logger.setLogExpectedPredictedEpoch(false);
-    if (n_epochs == 0) {
-      model_logger.initLogs(model);
-    }
-    if (n_epochs % 10 == 0) {
-      if (model_logger.getLogExpectedPredictedEpoch())
-        model_interpreter.getModelResults(model, true, false, false);
-      model_logger.writeLogs(model, n_epochs, { "Error" }, {}, { model_error }, {}, output_nodes, expected_values);
-    }
-  }
-  void validationModelLogger(const int & n_epochs, Model<TensorT>& model, ModelInterpreterGpu<TensorT>& model_interpreter, ModelLogger<TensorT>& model_logger,
-    const Eigen::Tensor<TensorT, 3>& expected_values,
-    const std::vector<std::string>& output_nodes,
-    const TensorT& model_error)
-  {
-    model_logger.setLogTimeEpoch(false);
-    model_logger.setLogTrainValMetricEpoch(false);
-    model_logger.setLogExpectedPredictedEpoch(true);
-    if (n_epochs == 0) {
-      model_logger.initLogs(model);
-    }
-    if (n_epochs % 1 == 0) {
-      if (model_logger.getLogExpectedPredictedEpoch())
-        model_interpreter.getModelResults(model, true, false, false);
-      model_logger.writeLogs(model, n_epochs, {}, { "Error" }, {}, { model_error }, output_nodes, expected_values);
-    }
-  }
-  void trainingModelLogger(const int & n_epochs, Model<TensorT>& model, ModelInterpreterGpu<TensorT>& model_interpreter, ModelLogger<TensorT>& model_logger,
-    const Eigen::Tensor<TensorT, 3>& expected_values, const std::vector<std::string>& output_nodes, const TensorT & model_error_train, const TensorT & model_error_test,
-    const Eigen::Tensor<TensorT, 1> & model_metrics_train, const Eigen::Tensor<TensorT, 1> & model_metrics_test)
+    const Eigen::Tensor<TensorT, 3>& expected_values, const std::vector<std::string>& output_nodes, const std::vector<std::string>& output_nodes, const TensorT & model_error_train, const TensorT & model_error_test,
+    const Eigen::Tensor<TensorT, 1> & model_metrics_train, const Eigen::Tensor<TensorT, 1> & model_metrics_test) override
   {
     // Set the defaults
     model_logger.setLogTimeEpoch(true);
     model_logger.setLogTrainValMetricEpoch(true);
     model_logger.setLogExpectedPredictedEpoch(false);
+    model_logger.setLogNodeInputsEpoch(false);
 
     // initialize all logs
     if (n_epochs == 0) {
       model_logger.setLogExpectedPredictedEpoch(true);
+      model_logger.setLogNodeInputsEpoch(true);
       model_logger.initLogs(model);
     }
 
     // Per n epoch logging
-    if (n_epochs % 1000 == 0) {
+    if (n_epochs % 1  == 0) {//FIXME
       model_logger.setLogExpectedPredictedEpoch(true);
-      model_interpreter.getModelResults(model, true, false, false);
+      model_logger.setLogNodeInputsEpoch(true);
+      model_interpreter.getModelResults(model, true, false, false, true);
     }
 
     // Create the metric headers and data arrays

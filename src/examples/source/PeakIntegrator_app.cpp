@@ -254,7 +254,7 @@ public:
     const int& n_epochs,
     Model<TensorT>& model,
     ModelInterpreterDefaultDevice<TensorT>& model_interpreter,
-    const std::vector<float>& model_errors) {
+    const std::vector<float>& model_errors) override {
     //if (n_epochs % 1000 == 0 && n_epochs > 5000) {
     //  // anneal the learning rate by half on each plateau
     //  TensorT lr_new = this->reduceLROnPlateau(model_errors, 0.5, 1000, 100, 0.1);
@@ -265,7 +265,8 @@ public:
     //}
     // Check point the model every 1000 epochs
     if (n_epochs % 1000 == 0 && n_epochs != 0) {
-      model_interpreter.getModelResults(model, false, true, false);
+      model_interpreter.getModelResults(model, false, true, false, false);
+      // save the model and interpreter in binary format
       ModelFile<TensorT> data;
       data.storeModelBinary(model.getName() + "_" + std::to_string(n_epochs) + "_model.binary", model);
       ModelInterpreterFileDefaultDevice<TensorT> interpreter_data;
@@ -273,58 +274,27 @@ public:
     }
   }
   void trainingModelLogger(const int & n_epochs, Model<TensorT>& model, ModelInterpreterDefaultDevice<TensorT>& model_interpreter, ModelLogger<TensorT>& model_logger,
-    const Eigen::Tensor<TensorT, 3>& expected_values,
-    const std::vector<std::string>& output_nodes,
-    const TensorT& model_error)
-  {
-    model_logger.setLogTimeEpoch(true);
-    model_logger.setLogTrainValMetricEpoch(true);
-    model_logger.setLogExpectedPredictedEpoch(false);
-    if (n_epochs == 0) {
-      model_logger.initLogs(model);
-    }
-    if (n_epochs % 10 == 0) {
-      if (model_logger.getLogExpectedPredictedEpoch())
-        model_interpreter.getModelResults(model, true, false, false);
-      model_logger.writeLogs(model, n_epochs, { "Error" }, {}, { model_error }, {}, output_nodes, expected_values);
-    }
-  }
-  void validationModelLogger(const int & n_epochs, Model<TensorT>& model, ModelInterpreterDefaultDevice<TensorT>& model_interpreter, ModelLogger<TensorT>& model_logger,
-    const Eigen::Tensor<TensorT, 3>& expected_values,
-    const std::vector<std::string>& output_nodes,
-    const TensorT& model_error)
-  {
-    model_logger.setLogTimeEpoch(false);
-    model_logger.setLogTrainValMetricEpoch(false);
-    model_logger.setLogExpectedPredictedEpoch(true);
-    if (n_epochs == 0) {
-      model_logger.initLogs(model);
-    }
-    if (n_epochs % 1 == 0) {
-      if (model_logger.getLogExpectedPredictedEpoch())
-        model_interpreter.getModelResults(model, true, false, false);
-      model_logger.writeLogs(model, n_epochs, {}, { "Error" }, {}, { model_error }, output_nodes, expected_values);
-    }
-  }
-  void trainingModelLogger(const int & n_epochs, Model<TensorT>& model, ModelInterpreterDefaultDevice<TensorT>& model_interpreter, ModelLogger<TensorT>& model_logger,
-    const Eigen::Tensor<TensorT, 3>& expected_values, const std::vector<std::string>& output_nodes, const TensorT & model_error_train, const TensorT & model_error_test,
-    const Eigen::Tensor<TensorT, 1> & model_metrics_train, const Eigen::Tensor<TensorT, 1> & model_metrics_test)
+    const Eigen::Tensor<TensorT, 3>& expected_values, const std::vector<std::string>& output_nodes, const std::vector<std::string>& input_nodes, const TensorT & model_error_train, const TensorT & model_error_test,
+    const Eigen::Tensor<TensorT, 1> & model_metrics_train, const Eigen::Tensor<TensorT, 1> & model_metrics_test) override
   {
     // Set the defaults
     model_logger.setLogTimeEpoch(true);
     model_logger.setLogTrainValMetricEpoch(true);
     model_logger.setLogExpectedPredictedEpoch(false);
+    model_logger.setLogNodeInputsEpoch(false);
 
     // initialize all logs
     if (n_epochs == 0) {
       model_logger.setLogExpectedPredictedEpoch(true);
+      model_logger.setLogNodeInputsEpoch(true);
       model_logger.initLogs(model);
     }
 
     // Per n epoch logging
-    if (n_epochs % 1000 == 0) {
+    if (n_epochs % 1 == 0) {//FIXME
       model_logger.setLogExpectedPredictedEpoch(true);
-      model_interpreter.getModelResults(model, true, false, false);
+      model_logger.setLogNodeInputsEpoch(true);
+      model_interpreter.getModelResults(model, true, false, false, true);
     }
 
     // Create the metric headers and data arrays
@@ -340,7 +310,7 @@ public:
       log_test_values.push_back(model_metrics_test(metric_iter));
       ++metric_iter;
     }
-    model_logger.writeLogs(model, n_epochs, log_train_headers, log_test_headers, log_train_values, log_test_values, output_nodes, expected_values);
+    model_logger.writeLogs(model, n_epochs, log_train_headers, log_test_headers, log_train_values, log_test_values, output_nodes, expected_values, {}, output_nodes, {}, input_nodes, {});
   }
 };
 
@@ -348,8 +318,8 @@ template<typename TensorT>
 class DataSimulatorExt : public ChromatogramSimulator<TensorT>
 {
 public:
-  void simulateEvaluationData(Eigen::Tensor<TensorT, 4>& input_data, Eigen::Tensor<TensorT, 3>& time_steps) {};
-  void simulateTrainingData(Eigen::Tensor<TensorT, 4>& input_data, Eigen::Tensor<TensorT, 4>& loss_output_data, Eigen::Tensor<TensorT, 3>& time_steps)
+  void simulateEvaluationData(Eigen::Tensor<TensorT, 4>& input_data, Eigen::Tensor<TensorT, 3>& time_steps) override {};
+  void simulateTrainingData(Eigen::Tensor<TensorT, 4>& input_data, Eigen::Tensor<TensorT, 4>& loss_output_data, Eigen::Tensor<TensorT, 3>& time_steps) override
   {
     // infer data dimensions based on the input tensors
     const int batch_size = input_data.dimension(0);
@@ -389,7 +359,7 @@ public:
 
     time_steps.setConstant(1.0f);
   }
-  void simulateValidationData(Eigen::Tensor<TensorT, 4>& input_data, Eigen::Tensor<TensorT, 4>& loss_output_data, Eigen::Tensor<TensorT, 3>& time_steps)
+  void simulateValidationData(Eigen::Tensor<TensorT, 4>& input_data, Eigen::Tensor<TensorT, 4>& loss_output_data, Eigen::Tensor<TensorT, 3>& time_steps) override
   {
     // infer data dimensions based on the input tensors
     const int batch_size = input_data.dimension(0);
@@ -427,7 +397,7 @@ public:
     }
     time_steps.setConstant(1.0f);
   }
-  void simulateTrainingData(Eigen::Tensor<TensorT, 3>& input_data, Eigen::Tensor<TensorT, 3>& loss_output_data, Eigen::Tensor<TensorT, 3>& metric_output_data, Eigen::Tensor<TensorT, 2>& time_steps)
+  void simulateTrainingData(Eigen::Tensor<TensorT, 3>& input_data, Eigen::Tensor<TensorT, 3>& loss_output_data, Eigen::Tensor<TensorT, 3>& metric_output_data, Eigen::Tensor<TensorT, 2>& time_steps) override
   {
     // infer data dimensions based on the input tensors
     const int batch_size = input_data.dimension(0);
@@ -480,7 +450,7 @@ public:
 
     time_steps.setConstant(1.0f);
   }
-  void simulateValidationData(Eigen::Tensor<TensorT, 3>& input_data, Eigen::Tensor<TensorT, 3>& loss_output_data, Eigen::Tensor<TensorT, 3>& metric_output_data, Eigen::Tensor<TensorT, 2>& time_steps)
+  void simulateValidationData(Eigen::Tensor<TensorT, 3>& input_data, Eigen::Tensor<TensorT, 3>& loss_output_data, Eigen::Tensor<TensorT, 3>& metric_output_data, Eigen::Tensor<TensorT, 2>& time_steps) override
   {
     simulateTrainingData(input_data, loss_output_data, metric_output_data, time_steps);
   }
@@ -529,7 +499,7 @@ void main_DenoisingAE(const bool& make_model, const bool& train_model) {
   // define the data simulator
   const std::size_t input_size = 512;
   const std::size_t encoding_size = 16;
-  const std::size_t n_hidden = 64;
+  const std::size_t n_hidden = 128;
   DataSimulatorExt<float> data_simulator;
 
   // Hard
@@ -545,32 +515,32 @@ void main_DenoisingAE(const bool& make_model, const bool& train_model) {
   //data_simulator.emg_mu_offset_ = std::make_pair(-10, 10);
   //data_simulator.emg_sigma_ = std::make_pair(10, 30);
 
-  //// Easy
-  //data_simulator.step_size_mu_ = std::make_pair(1, 1);
-  //data_simulator.step_size_sigma_ = std::make_pair(0, 0);
-  //data_simulator.chrom_window_size_ = std::make_pair(input_size, input_size);
-  //data_simulator.noise_mu_ = std::make_pair(0, 0);
-  //data_simulator.noise_sigma_ = std::make_pair(0, 0.2);
-  //data_simulator.baseline_height_ = std::make_pair(0, 0);
-  //data_simulator.n_peaks_ = std::make_pair(1, 5);
-  //data_simulator.emg_h_ = std::make_pair(0.1, 1.0);
-  //data_simulator.emg_tau_ = std::make_pair(0, 0);
-  //data_simulator.emg_mu_offset_ = std::make_pair(0, 0);
-  //data_simulator.emg_sigma_ = std::make_pair(10, 30);
-
-  // Test
+  // Easy (Some issues with the peak start/stop not touching the baseline)
   data_simulator.step_size_mu_ = std::make_pair(1, 1);
   data_simulator.step_size_sigma_ = std::make_pair(0, 0);
   data_simulator.chrom_window_size_ = std::make_pair(input_size, input_size);
   data_simulator.noise_mu_ = std::make_pair(0, 0);
-  //data_simulator.noise_sigma_ = std::make_pair(0, 0.2);
-  data_simulator.noise_sigma_ = std::make_pair(0, 0);
+  data_simulator.noise_sigma_ = std::make_pair(0, 0.2);
   data_simulator.baseline_height_ = std::make_pair(0, 0);
-  data_simulator.n_peaks_ = std::make_pair(1, 2);
-  data_simulator.emg_h_ = std::make_pair(1, 1);
+  data_simulator.n_peaks_ = std::make_pair(1, 5);
+  data_simulator.emg_h_ = std::make_pair(0.1, 1.0);
   data_simulator.emg_tau_ = std::make_pair(0, 0);
   data_simulator.emg_mu_offset_ = std::make_pair(0, 0);
-  data_simulator.emg_sigma_ = std::make_pair(10, 10);
+  data_simulator.emg_sigma_ = std::make_pair(10, 30);
+
+  //// Test
+  //data_simulator.step_size_mu_ = std::make_pair(1, 1);
+  //data_simulator.step_size_sigma_ = std::make_pair(0, 0);
+  //data_simulator.chrom_window_size_ = std::make_pair(input_size, input_size);
+  //data_simulator.noise_mu_ = std::make_pair(0, 0);
+  ////data_simulator.noise_sigma_ = std::make_pair(0, 0.2);
+  //data_simulator.noise_sigma_ = std::make_pair(0, 0);
+  //data_simulator.baseline_height_ = std::make_pair(0, 0);
+  //data_simulator.n_peaks_ = std::make_pair(1, 2);
+  //data_simulator.emg_h_ = std::make_pair(1, 1);
+  //data_simulator.emg_tau_ = std::make_pair(0, 0);
+  //data_simulator.emg_mu_offset_ = std::make_pair(0, 0);
+  //data_simulator.emg_sigma_ = std::make_pair(10, 10);
 
   // Make the input nodes
   std::vector<std::string> input_nodes;
@@ -619,7 +589,7 @@ void main_DenoisingAE(const bool& make_model, const bool& train_model) {
     model_interpreters.push_back(model_interpreter);
   }
   ModelTrainerExt<float> model_trainer;
-  model_trainer.setBatchSize(16);
+  model_trainer.setBatchSize(1);
   model_trainer.setNEpochsTraining(100001);
   model_trainer.setNEpochsValidation(25);
   model_trainer.setNEpochsEvaluation(25);
@@ -629,18 +599,18 @@ void main_DenoisingAE(const bool& make_model, const bool& train_model) {
   model_trainer.setFindCycles(false);
   model_trainer.setFastInterpreter(true);
   model_trainer.setPreserveOoO(true);
-  model_trainer.setLossFunctions({ std::shared_ptr<LossFunctionOp<float>>(new MSELossOp<float>()),
-    std::shared_ptr<LossFunctionOp<float>>(new BCELossOp<float>()),
-    std::shared_ptr<LossFunctionOp<float>>(new BCELossOp<float>()) });
-  model_trainer.setLossFunctionGrads({ std::shared_ptr<LossFunctionGradOp<float>>(new MSELossGradOp<float>()),
-    std::shared_ptr<LossFunctionGradOp<float>>(new BCELossGradOp<float>()),
-    std::shared_ptr<LossFunctionGradOp<float>>(new BCELossGradOp<float>()) });
+  model_trainer.setLossFunctions({ std::shared_ptr<LossFunctionOp<float>>(new MSELossOp<float>(1e-6, 1.0)),
+    std::shared_ptr<LossFunctionOp<float>>(new MSELossOp<float>(1e-6, 0.0)),
+    std::shared_ptr<LossFunctionOp<float>>(new MSELossOp<float>(1e-6, 0.0)) });
+  model_trainer.setLossFunctionGrads({ std::shared_ptr<LossFunctionGradOp<float>>(new MSELossGradOp<float>(1e-6, 1.0)),
+    std::shared_ptr<LossFunctionGradOp<float>>(new MSELossGradOp<float>(1e-6, 0.0)),
+    std::shared_ptr<LossFunctionGradOp<float>>(new MSELossGradOp<float>(1e-6, 0.0)) });
   model_trainer.setLossOutputNodes({ output_nodes_intensity, output_nodes_isPeakApex, output_nodes_isPeak });
   model_trainer.setMetricFunctions({ std::shared_ptr<MetricFunctionOp<float>>(new MAEOp<float>()),
-    std::shared_ptr<MetricFunctionOp<float>>(new MAEOp<float>()),
-    std::shared_ptr<MetricFunctionOp<float>>(new MAEOp<float>()) });
+    std::shared_ptr<MetricFunctionOp<float>>(new PrecisionBCOp<float>()),
+    std::shared_ptr<MetricFunctionOp<float>>(new PrecisionBCOp<float>()) });
   model_trainer.setMetricOutputNodes({ output_nodes_intensity, output_nodes_isPeakApex, output_nodes_isPeak });
-  model_trainer.setMetricNames({ "Reconstruction-MAE", "IsPeakApex-MAE", "IsPeak-MAE" });
+  model_trainer.setMetricNames({ "Reconstruction-MAE", "IsPeakApex-PrecisionBC", "IsPeak-PrecisionBC" });
 
   // define the model replicator for growth mode
   ModelReplicatorExt<float> model_replicator;
