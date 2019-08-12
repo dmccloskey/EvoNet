@@ -158,7 +158,7 @@ public:
             if (ref == 0 || value == 0) input_data(batch_iter, memory_iter, nodes_iter) = 0;
             // Log10 is used with the assumption that the larges fold change will be on an order of ~10
             // thus, all values will be between -1 and 1
-            else input_data(batch_iter, memory_iter, nodes_iter) = std::log10(value / ref);
+            else input_data(batch_iter, memory_iter, nodes_iter) = minFunc(maxFunc(std::log(value / ref)/std::log(20), -1), 1);
           }
 
           // Assign the loss and metric values
@@ -909,7 +909,7 @@ public:
     }
 
     // Per n epoch logging
-    if (n_epochs % 1000 == 0) { 
+    if (n_epochs % 1 == 0) { // FIXME
       model_logger.setLogExpectedPredictedEpoch(true);
       model_logger.setLogNodeInputsEpoch(true);
       model_interpreter.getModelResults(model, true, false, false, true);
@@ -1097,7 +1097,7 @@ void main_reconstruction(const std::string& biochem_rxns_filename,
     model_trainer.makeModelNormalization(model_normalization, n_input_nodes, true, false, false); // normalization type 1
 
     // Set the model trainer parameters for normalizing the data
-    model_trainer.setBatchSize(8);
+    model_trainer.setBatchSize(64);
     model_trainer.setMemorySize(1);
     model_trainer.setNEpochsEvaluation(8);
     model_trainer.setVerbosityLevel(1);
@@ -1140,7 +1140,7 @@ void main_reconstruction(const std::string& biochem_rxns_filename,
   }
 
   // Set the model trainer parameters for training
-  model_trainer.setBatchSize(8);
+  model_trainer.setBatchSize(64);
   model_trainer.setMemorySize(1);
   model_trainer.setNEpochsTraining(8);
   model_trainer.setVerbosityLevel(1);
@@ -1218,8 +1218,8 @@ int main(int argc, char** argv)
     true,   // make_model
     false,  // use_mars
     true,   // sample_concs
-    true,  // make_data_caches 
-    false    // use_fold_change
+    false,  // make_data_caches 
+    true    // use_fold_change
   );
 
   return 0;

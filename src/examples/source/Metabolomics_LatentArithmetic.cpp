@@ -87,6 +87,23 @@ public:
                 this->model_validation_.metabolomicsData_.at(sample_group_name_),
                 this->model_validation_.component_group_names_.at(nodes_iter));
             input_data(batch_iter, memory_iter, nodes_iter, epoch_iter) = value;
+
+            // Determine the fold change (if enabled) and update the input
+            if (this->use_fold_change_) {
+              TensorT ref;
+              if (train)
+                ref = this->model_training_.getRandomConcentration(
+                  this->model_training_.metabolomicsData_.at(this->ref_fold_change_),
+                  this->model_training_.component_group_names_.at(nodes_iter));
+              else
+                ref = this->model_training_.getRandomConcentration(
+                  this->model_training_.metabolomicsData_.at(this->ref_fold_change_),
+                  this->model_training_.component_group_names_.at(nodes_iter));
+              if (ref == 0 || value == 0) input_data(batch_iter, memory_iter, nodes_iter, epoch_iter) = 0;
+              // Log10 is used with the assumption that the larges fold change will be on an order of ~10
+              // thus, all values will be between -1 and 1
+              else input_data(batch_iter, memory_iter, nodes_iter, epoch_iter) = minFunc(maxFunc(std::log(value / ref) / std::log(10), -1), 1);
+            }
           }
         }
       }
@@ -104,6 +121,8 @@ public:
   bool simulate_MARs_ = true;
   bool use_train_ = true;
   std::string sample_group_name_;
+  bool use_fold_change_ = false;
+  std::string ref_fold_change_ = "";
 };
 
 template<typename TensorT>
@@ -220,7 +239,7 @@ public:
   @brief Fully connected variational reconstruction model
   */
   void makeModelFCVAE_Decoder(Model<TensorT>& model, const int& n_outputs, const int& n_encodings, const bool& add_norm = false,
-    const int& n_de_hidden_0 = 64, const int& n_de_hidden_1 = 64, const int& n_de_hidden_2 = 0) {
+    const int& n_de_hidden_0 = 64, const int& n_de_hidden_1 = 64, const int& n_de_hidden_2 = 0, const bool& is_fold_change = false) {
     model.setId(0);
     model.setName("VAE-Decoder");
     ModelBuilder<TensorT> model_builder;
@@ -302,37 +321,47 @@ public:
       }
     }
 
-    //// Add the final output layer
-    //node_names = model_builder.addFullyConnected(model, "DE-Output", "DE-Output", node_names, n_outputs,
-    //  std::shared_ptr<ActivationOp<TensorT>>(new LeakyReLUOp<TensorT>()),
-    //  std::shared_ptr<ActivationOp<TensorT>>(new LeakyReLUGradOp<TensorT>()),
-    //  std::shared_ptr<IntegrationOp<TensorT>>(new SumOp<TensorT>()),
-    //  std::shared_ptr<IntegrationErrorOp<TensorT>>(new SumErrorOp<TensorT>()),
-    //  std::shared_ptr<IntegrationWeightGradOp<TensorT>>(new SumWeightGradOp<TensorT>()),
-    //  std::shared_ptr<WeightInitOp<TensorT>>(new RandWeightInitOp<TensorT>((int)(node_names.size() + n_outputs) / 2, 1)),
-    //  std::shared_ptr<SolverOp<TensorT>>(new AdamOp<TensorT>(1e-3, 0.9, 0.999, 1e-8, 10)), 0.0f, 0.0f, false, true);
-
-    //// Add the final output layer
-    //std::vector<std::string> node_names_output;
-    //node_names_output = model_builder.addSinglyConnected(model, "Output", "Output", node_names, n_outputs,
-    //  std::shared_ptr<ActivationOp<TensorT>>(new LinearOp<TensorT>()),
-    //  std::shared_ptr<ActivationOp<TensorT>>(new LinearGradOp<TensorT>()),
-    //  std::shared_ptr<IntegrationOp<TensorT>>(new SumOp<TensorT>()),
-    //  std::shared_ptr<IntegrationErrorOp<TensorT>>(new SumErrorOp<TensorT>()),
-    //  std::shared_ptr<IntegrationWeightGradOp<TensorT>>(new SumWeightGradOp<TensorT>()),
-    //  std::shared_ptr<WeightInitOp<TensorT>>(new ConstWeightInitOp<TensorT>(1)),
-    //  std::shared_ptr<SolverOp<TensorT>>(new DummySolverOp<TensorT>()), 0.0f, 0.0f, false, true);
+    // Add the final output layer
+    if (is_fold_change)
+      node_names = model_builder.addFullyConnected(model, "DE-Output", "DE-Output", node_names, n_outputs,
+        std::shared_ptr<ActivationOp<TensorT>>(new LinearOp<TensorT>()),
+        std::shared_ptr<ActivationOp<TensorT>>(new LinearGradOp<TensorT>()),
+        std::shared_ptr<IntegrationOp<TensorT>>(new SumOp<TensorT>()),
+        std::shared_ptr<IntegrationErrorOp<TensorT>>(new SumErrorOp<TensorT>()),
+        std::shared_ptr<IntegrationWeightGradOp<TensorT>>(new SumWeightGradOp<TensorT>()),
+        std::shared_ptr<WeightInitOp<TensorT>>(new RandWeightInitOp<TensorT>((int)(node_names.size() + n_outputs) / 2, 1)),
+        std::shared_ptr<SolverOp<TensorT>>(new AdamOp<TensorT>(5e-4, 0.9, 0.999, 1e-8, 1e2)), 0.0f, 0.0f, false, true);
+    else
+      node_names = model_builder.addFullyConnected(model, "DE-Output", "DE-Output", node_names, n_outputs,
+        std::shared_ptr<ActivationOp<TensorT>>(new LeakyReLUOp<TensorT>()),
+        std::shared_ptr<ActivationOp<TensorT>>(new LeakyReLUGradOp<TensorT>()),
+        std::shared_ptr<IntegrationOp<TensorT>>(new SumOp<TensorT>()),
+        std::shared_ptr<IntegrationErrorOp<TensorT>>(new SumErrorOp<TensorT>()),
+        std::shared_ptr<IntegrationWeightGradOp<TensorT>>(new SumWeightGradOp<TensorT>()),
+        std::shared_ptr<WeightInitOp<TensorT>>(new RandWeightInitOp<TensorT>((int)(node_names.size() + n_outputs) / 2, 1)),
+        std::shared_ptr<SolverOp<TensorT>>(new AdamOp<TensorT>(5e-4, 0.9, 0.999, 1e-8, 1e2)), 0.0f, 0.0f, false, true);
 
     // Add the final output layer
     std::vector<std::string> node_names_output;
-    node_names_output = model_builder.addFullyConnected(model, "Output", "Output", node_names, n_outputs,
-      std::shared_ptr<ActivationOp<TensorT>>(new LeakyReLUOp<TensorT>()),
-      std::shared_ptr<ActivationOp<TensorT>>(new LeakyReLUGradOp<TensorT>()),
+    node_names_output = model_builder.addSinglyConnected(model, "Output", "Output", node_names, n_outputs,
+      std::shared_ptr<ActivationOp<TensorT>>(new LinearOp<TensorT>()),
+      std::shared_ptr<ActivationOp<TensorT>>(new LinearGradOp<TensorT>()),
       std::shared_ptr<IntegrationOp<TensorT>>(new SumOp<TensorT>()),
       std::shared_ptr<IntegrationErrorOp<TensorT>>(new SumErrorOp<TensorT>()),
       std::shared_ptr<IntegrationWeightGradOp<TensorT>>(new SumWeightGradOp<TensorT>()),
       std::shared_ptr<WeightInitOp<TensorT>>(new ConstWeightInitOp<TensorT>(1)),
       std::shared_ptr<SolverOp<TensorT>>(new DummySolverOp<TensorT>()), 0.0f, 0.0f, false, true);
+
+    //// Add the final output layer
+    //std::vector<std::string> node_names_output;
+    //node_names_output = model_builder.addFullyConnected(model, "Output", "Output", node_names, n_outputs,
+    //  std::shared_ptr<ActivationOp<TensorT>>(new LeakyReLUOp<TensorT>()),
+    //  std::shared_ptr<ActivationOp<TensorT>>(new LeakyReLUGradOp<TensorT>()),
+    //  std::shared_ptr<IntegrationOp<TensorT>>(new SumOp<TensorT>()),
+    //  std::shared_ptr<IntegrationErrorOp<TensorT>>(new SumErrorOp<TensorT>()),
+    //  std::shared_ptr<IntegrationWeightGradOp<TensorT>>(new SumWeightGradOp<TensorT>()),
+    //  std::shared_ptr<WeightInitOp<TensorT>>(new ConstWeightInitOp<TensorT>(1)),
+    //  std::shared_ptr<SolverOp<TensorT>>(new DummySolverOp<TensorT>()), 0.0f, 0.0f, false, true);
 
     // Specify the output node types manually
     for (const std::string& node_name : node_names_output)
@@ -495,18 +524,17 @@ public:
   }
 
   void evaluationModelLogger(const int & n_epochs, Model<TensorT>& model, ModelInterpreterDefaultDevice<TensorT>& model_interpreter, ModelLogger<TensorT>& model_logger,
-    const std::vector<std::string>& output_nodes)
+    const std::vector<std::string>& output_nodes, const std::vector<std::string>& input_nodes) override
   {
     if (n_epochs == 0) {
       model_logger.initLogs(model);
     }
     if (n_epochs % 1 == 0) {
-      model_interpreter.getModelResults(model, true, false, false);
-      model_logger.writeLogs(model, n_epochs, {}, {}, {}, {}, output_nodes, Eigen::Tensor<TensorT, 3>(), output_nodes, {});
+      model_interpreter.getModelResults(model, true, false, false, true);
+      model_logger.writeLogs(model, n_epochs, {}, {}, {}, {}, output_nodes, Eigen::Tensor<TensorT, 3>(), {}, output_nodes, {}, input_nodes, {});
     }
   }
 };
-
 
 template<typename TensorT>
 class LatentArithmetic {
@@ -576,7 +604,7 @@ public:
   */
   void setMetabolomicsData(const std::string& biochem_rxns_filename,
     const std::string& metabo_data_filename_train, const std::string& meta_data_filename_train,
-    const std::string& metabo_data_filename_test, const std::string& meta_data_filename_test) {
+    const std::string& metabo_data_filename_test, const std::string& meta_data_filename_test, const bool& use_fold_change, const std::string& ref_fold_change) {
     // Training data
     reaction_model_.clear();
     reaction_model_.readBiochemicalReactions(biochem_rxns_filename, true);
@@ -609,6 +637,8 @@ public:
     metabolomics_data_.simulate_MARs_ = simulate_MARs_;
     metabolomics_data_.sample_concs_ = sample_concs_;
     metabolomics_data_.use_train_ = true;
+    metabolomics_data_.use_fold_change_ = use_fold_change;
+    metabolomics_data_.ref_fold_change_ = ref_fold_change;
 
     // Checks for the training and validation data
     assert(metabolomics_data_.model_validation_.reaction_ids_.size() == metabolomics_data_.model_training_.reaction_ids_.size());
@@ -630,16 +660,16 @@ public:
   */
   void setEncDecModels(ModelTrainerExt<TensorT>& model_trainer, const std::string& model_encoder_weights_filename, const std::string& model_decoder_weights_filename,
     const int& n_en_hidden_0 = 64, const int& n_en_hidden_1 = 64, const int& n_en_hidden_2 = 0,
-    const int& n_de_hidden_0 = 64, const int& n_de_hidden_1 = 64, const int& n_de_hidden_2 = 0) {
+    const int& n_de_hidden_0 = 64, const int& n_de_hidden_1 = 64, const int& n_de_hidden_2 = 0, const bool& is_fold_change = false) {
     // initialize the models
     model_encoder_.clear();
     model_decoder_.clear();
 
     // define the encoder and decoders
-    model_trainer.makeModelFCVAE_Encoder(model_encoder_, n_input_nodes_, encoding_size_, true, false, false, false,
-      n_en_hidden_0, n_en_hidden_1, n_en_hidden_2); // normalization type 1
+    model_trainer.makeModelFCVAE_Encoder(model_encoder_, n_input_nodes_, encoding_size_, false, false, false, false,
+      n_en_hidden_0, n_en_hidden_1, n_en_hidden_2); // normalization type 0
     model_trainer.makeModelFCVAE_Decoder(model_decoder_, n_input_nodes_, encoding_size_, false,
-      n_de_hidden_0, n_de_hidden_1, n_de_hidden_2);
+      n_de_hidden_0, n_de_hidden_1, n_de_hidden_2, is_fold_change);
 
     // read in the encoder and decoder weights
     WeightFile<TensorT> data;
@@ -712,7 +742,7 @@ public:
     model_normalization_.clear();
 
     // define the model
-    model_trainer.makeModelNormalization(model_normalization_, n_input_nodes_, true, false, false); // Normalization type 1
+    model_trainer.makeModelNormalization(model_normalization_, n_input_nodes_, false, false, false); // Normalization type 0
   };
 
   /*
@@ -1183,24 +1213,24 @@ void main_KALE(ModelInterpreterDefaultDevice<TensorT>& model_interpreter, ModelT
 
   if (compute_data_similarities) {
     // Reference similarity metrics
-    predicted = { "Evo04Evo01EP", "Evo04Evo02EP", "Evo04gndEvo01EP", "Evo04gndEvo02EP", "Evo04pgiEvo01EP", "Evo04pgiEvo02EP",
-      "Evo04ptsHIcrrEvo01EP", "Evo04ptsHIcrrEvo02EP", "Evo04sdhCBEvo01EP", "Evo04sdhCBEvo02EP", "Evo04tpiAEvo01EP", "Evo04tpiAEvo02EP" };
-    expected = { "Evo04", "Evo04", "Evo04gnd", "Evo04gnd", "Evo04pgi", "Evo04pgi",
-      "Evo04ptsHIcrr", "Evo04ptsHIcrr", "Evo04sdhCB", "Evo04sdhCB", "Evo04tpiA", "Evo04tpiA" };
-    computeDataSimilarity(predicted, expected, latentArithmetic, metric_function, model_trainer, model_logger,
-      true);
+    //predicted = { "Evo04Evo01EP", "Evo04Evo02EP", "Evo04gndEvo01EP", "Evo04gndEvo02EP", "Evo04pgiEvo01EP", "Evo04pgiEvo02EP",
+    //  "Evo04ptsHIcrrEvo01EP", "Evo04ptsHIcrrEvo02EP", "Evo04sdhCBEvo01EP", "Evo04sdhCBEvo02EP", "Evo04tpiAEvo01EP", "Evo04tpiAEvo02EP" };
+    //expected = { "Evo04", "Evo04", "Evo04gnd", "Evo04gnd", "Evo04pgi", "Evo04pgi",
+    //  "Evo04ptsHIcrr", "Evo04ptsHIcrr", "Evo04sdhCB", "Evo04sdhCB", "Evo04tpiA", "Evo04tpiA" };
+    //computeDataSimilarity(predicted, expected, latentArithmetic, metric_function, model_trainer, model_logger,
+    //  true);
 
-    predicted = std::vector<std::string>({ "Evo04gnd", "Evo04pgi", "Evo04ptsHIcrr", "Evo04sdhCB", "Evo04tpiA" });
-    expected = std::vector<std::string>({ "Evo04", "Evo04", "Evo04", "Evo04", "Evo04" });
-    computeDataSimilarity(predicted, expected, latentArithmetic, metric_function, model_trainer, model_logger,
-      true);
+    //predicted = std::vector<std::string>({ "Evo04gnd", "Evo04pgi", "Evo04ptsHIcrr", "Evo04sdhCB", "Evo04tpiA" });
+    //expected = std::vector<std::string>({ "Evo04", "Evo04", "Evo04", "Evo04", "Evo04" });
+    //computeDataSimilarity(predicted, expected, latentArithmetic, metric_function, model_trainer, model_logger,
+    //  true);
 
-    predicted = std::vector<std::string>({ "Evo04Evo01EP", "Evo04Evo02EP", "Evo04gndEvo01EP", "Evo04gndEvo02EP", "Evo04pgiEvo01EP", "Evo04pgiEvo02EP",
-      "Evo04ptsHIcrrEvo01EP", "Evo04ptsHIcrrEvo02EP", "Evo04sdhCBEvo01EP", "Evo04sdhCBEvo02EP", "Evo04tpiAEvo01EP", "Evo04tpiAEvo02EP" });
-    expected = std::vector<std::string>({ "Evo04", "Evo04", "Evo04", "Evo04", "Evo04", "Evo04",
-      "Evo04", "Evo04", "Evo04", "Evo04", "Evo04", "Evo04" });
-    computeDataSimilarity(predicted, expected, latentArithmetic, metric_function, model_trainer, model_logger,
-      true);
+    //predicted = std::vector<std::string>({ "Evo04Evo01EP", "Evo04Evo02EP", "Evo04gndEvo01EP", "Evo04gndEvo02EP", "Evo04pgiEvo01EP", "Evo04pgiEvo02EP",
+    //  "Evo04ptsHIcrrEvo01EP", "Evo04ptsHIcrrEvo02EP", "Evo04sdhCBEvo01EP", "Evo04sdhCBEvo02EP", "Evo04tpiAEvo01EP", "Evo04tpiAEvo02EP" });
+    //expected = std::vector<std::string>({ "Evo04", "Evo04", "Evo04", "Evo04", "Evo04", "Evo04",
+    //  "Evo04", "Evo04", "Evo04", "Evo04", "Evo04", "Evo04" });
+    //computeDataSimilarity(predicted, expected, latentArithmetic, metric_function, model_trainer, model_logger,
+    //  true);
 
     predicted = std::vector<std::string>({ "Evo04", "Evo04Evo01EP", "Evo04Evo02EP", "Evo04gnd", "Evo04gndEvo01EP", "Evo04gndEvo02EP", "Evo04pgi", "Evo04pgiEvo01EP", "Evo04pgiEvo02EP",
       "Evo04ptsHIcrr", "Evo04ptsHIcrrEvo01EP", "Evo04ptsHIcrrEvo02EP", "Evo04sdhCB", "Evo04sdhCBEvo01EP", "Evo04sdhCBEvo02EP", "Evo04tpiA", "Evo04tpiAEvo01EP", "Evo04tpiAEvo02EP" });
@@ -1467,24 +1497,24 @@ int main(int argc, char** argv)
   ModelResources model_resources = { ModelDevice(0, 1) };
   ModelInterpreterDefaultDevice<float> model_interpreter(model_resources);
   ModelTrainerExt<float> model_trainer;
-  model_trainer.setBatchSize(1);
+  model_trainer.setBatchSize(512);
   model_trainer.setMemorySize(1);
   model_trainer.setNEpochsEvaluation(1);
   model_trainer.setVerbosityLevel(1);
-  model_trainer.setLogging(false, false, true);
+  model_trainer.setLogging(false, false, false);
   model_trainer.setFindCycles(false);
   model_trainer.setFastInterpreter(true);
   model_trainer.setPreserveOoO(true);
 
   // Define the model logger
-  ModelLogger<float> model_logger(false, false, false, false, false, true, false);
+  ModelLogger<float> model_logger(false, false, false, false, false, true, false, true);
 
   // Read in the metabolomics data and models
   LatentArithmetic<float> latentArithmetic(16, false, true);
   latentArithmetic.setMetabolomicsData(biochem_rxns_filename, metabo_data_filename_train, meta_data_filename_train,
-    metabo_data_filename_test, meta_data_filename_test);
+    metabo_data_filename_test, meta_data_filename_test, true, "Evo04");
   latentArithmetic.setEncDecModels(model_trainer, model_encoder_weights_filename, model_decoder_weights_filename,
-    64, 64, 0, 64, 64, 0);
+    64, 64, 0, 64, 64, 0, true);
   latentArithmetic.setEncDecModelInterpreters(model_interpreter, model_interpreter);
   //latentArithmetic.setClassifierModel(model_trainer, model_classifier_weights_filename, 64, 0, 0);
   //latentArithmetic.setClassifierModelInterpreter(model_interpreter);
@@ -1495,9 +1525,9 @@ int main(int argc, char** argv)
   //main_KALE(model_interpreter, model_trainer, model_logger, latentArithmetic, PercentDifferenceTensorOp<float, Eigen::DefaultDevice>(), false, true, false, false);
   //main_KALE(model_interpreter, model_trainer, model_logger, latentArithmetic, EuclideanDistTensorOp<float, Eigen::DefaultDevice>(), false, true, false, false);
   //main_KALE(model_interpreter, model_trainer, model_logger, latentArithmetic, PearsonRTensorOp<float, Eigen::DefaultDevice>(), false, true, false, false);
-  //main_KALE(model_interpreter, model_trainer, model_logger, latentArithmetic, ManhattanDistTensorOp<float, Eigen::DefaultDevice>(), false, true, false, false);
+  main_KALE(model_interpreter, model_trainer, model_logger, latentArithmetic, ManhattanDistTensorOp<float, Eigen::DefaultDevice>(), false, true, false, false);
   //main_KALE(model_interpreter, model_trainer, model_logger, latentArithmetic, LogarithmicDistTensorOp<float, Eigen::DefaultDevice>(), false, true, false, false);
-  main_KALE(model_interpreter, model_trainer, model_logger, latentArithmetic, JeffreysAndMatusitaDistTensorOp<float, Eigen::DefaultDevice>(), false, true, false, false);
+  //main_KALE(model_interpreter, model_trainer, model_logger, latentArithmetic, JeffreysAndMatusitaDistTensorOp<float, Eigen::DefaultDevice>(), false, true, false, false);
   //main_IndustrialStrains(model_interpreter, model_trainer, model_logger, latentArithmetic, true, false);
   //main_PLT(model_interpreter, model_trainer, model_logger, latentArithmetic, false, true, true, true);
 
