@@ -524,7 +524,7 @@ void main_DenoisingAE(const bool& make_model, const bool& train_model) {
   PopulationLogger<float> population_logger(true, true);
 
   // define the model logger
-  ModelLogger<float> model_logger(true, true, true, false, false, false, false, false);
+  ModelLogger<float> model_logger(true, true, true, false, false, false, false);
 
   // define the data simulator
   const std::size_t input_size = 512;

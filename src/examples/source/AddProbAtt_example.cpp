@@ -514,7 +514,7 @@ int main(int argc, char** argv)
 	model_trainer.setLossOutputNodes({ output_nodes });
 
 	// define the model logger
-	//ModelLogger<float> model_logger(true, true, true, false, false, false, false, false);
+	//ModelLogger<float> model_logger(true, true, true, false, false, false, false);
 	ModelLogger<float> model_logger(true, true, false, false, false, false, false);
 
 	// define the model replicator for growth mode
