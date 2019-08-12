@@ -1388,6 +1388,7 @@ void test_getModelResults()
 		{{12, 0, 0}, {11, 0, 0}, {10, 0, 0}, {9, 0, 0}, {8, 0, 0}, {7, 0, 0}, {6, 0, 0}, {5, 0, 0}} }
 	);
 	model_interpreter.mapValuesToLayers(model_getModelResults, input, input_ids, "output");
+  model_interpreter.mapValuesToLayers(model_getModelResults, input, input_ids, "input");
 
 	model_interpreter.FPTT(4);
 
@@ -1411,7 +1412,7 @@ void test_getModelResults()
 	model_interpreter.TBPTT(4);
 	model_interpreter.updateWeights();
 
-  model_interpreter.getModelResults(model_getModelResults, true, true, true);
+  model_interpreter.getModelResults(model_getModelResults, true, true, true, true);
 
 	// test values of output nodes
 	Eigen::Tensor<float, 3> output(batch_size, memory_size, (int)output_nodes.size()); // dim2: # of model nodes
@@ -1470,6 +1471,28 @@ void test_getModelResults()
 		//std::cout << "Calc Weight: " << model_getModelResults.getWeightsMap().at(weight_ids[i])->getWeight()<< ", Expected Weight: " << weights(i) << std::endl;
 		assert(assert_close(model_getModelResults.getWeightsMap().at(weight_ids[i])->getWeight(), weights(i)));
 	}
+
+  // test values of input nodes
+  std::vector<std::string> input_nodes = { "0" };
+  Eigen::Tensor<float, 3> input_test(batch_size, memory_size, (int)input_nodes.size()); // dim2: # of model nodes
+  input_test.setValues({
+    {{8}, {7}, {6}, {5}, {4}, {3}, {2}, {1}},
+    {{9}, {8}, {7}, {6}, {5}, {4}, {3}, {2}},
+    {{10}, {9}, {8}, {7}, {6}, {5}, {4}, {3}},
+    {{11}, {10}, {9}, {8}, {7}, {6}, {5}, {4}},
+    {{12}, {11}, {10}, {9}, {8}, {7}, {6}, {5}} }
+  );
+
+  for (int j = 0; j < batch_size; ++j) {
+    for (int k = 0; k < memory_size; ++k) {
+      for (int i = 0; i < input_nodes.size(); ++i) {
+        const std::string node_name = input_nodes[i];
+        //std::cout << "Node: " << node_name << "; Batch: " << j << "; Memory: " << k << std::endl;
+        //std::cout << "Calc Input: " << model_getModelResults.getNodesMap().at(node_name)->getInput()(j, k) << ", Expected Input: " << input_test(j, k, i) << std::endl;
+        assert(assert_close(model_getModelResults.getNodesMap().at(node_name)->getInput()(j, k), input(j, k, i)));
+      }
+    }
+  }
 }
 
 void test_updateSolverParams()

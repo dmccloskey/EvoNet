@@ -1255,6 +1255,7 @@ BOOST_AUTO_TEST_CASE(getModelResults)
 		{{12, 0, 0}, {11, 0, 0}, {10, 0, 0}, {9, 0, 0}, {8, 0, 0}, {7, 0, 0}, {6, 0, 0}, {5, 0, 0}} }
 	);
 	model_interpreter.mapValuesToLayers(model_getModelResults, input, input_ids, "output");
+  model_interpreter.mapValuesToLayers(model_getModelResults, input, input_ids, "input");
 
 	model_interpreter.FPTT(4);
 

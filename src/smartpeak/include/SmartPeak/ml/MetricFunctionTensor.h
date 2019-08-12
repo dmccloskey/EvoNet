@@ -647,11 +647,11 @@ public:
         error_tensor.chip(metric_index, 0).chip(time_step, 0).device(device) += cosine_similarity.sum();
       else if (this->reduction_func_ == "Mean")
         error_tensor.chip(metric_index, 0).chip(time_step, 0).device(device) += (cosine_similarity / cosine_similarity.constant(TensorT(batch_size))).sum();
-      else if (this->reduction_func_ == "Var") {
-        auto mean = (cosine_similarity / cosine_similarity.constant(TensorT(batch_size))).sum(Eigen::array<int, 1>({ 0 })).broadcast(Eigen::array<int, 1>({ batch_size }));
-        auto var = ((mean - cosine_similarity.chip(0, 1)).pow(TensorT(2)) / mean.constant(TensorT(batch_size) - 1)).sum();
-        error_tensor.chip(metric_index, 0).chip(time_step, 0).device(device) += var;
-      }
+      //else if (this->reduction_func_ == "Var") {
+      //  auto mean = (cosine_similarity / cosine_similarity.constant(TensorT(batch_size))).sum(Eigen::array<int, 1>({ 0 })).broadcast(Eigen::array<int, 1>({ batch_size }));
+      //  auto var = ((mean - cosine_similarity.chip(0, 1)).pow(TensorT(2)) / mean.constant(TensorT(batch_size) - 1)).sum();
+      //  error_tensor.chip(metric_index, 0).chip(time_step, 0).device(device) += var;
+      //}
     };
   };
 
@@ -683,15 +683,15 @@ public:
       auto expected_stdev = ((expected_tensor.chip(0, 2) - expected_tensor.mean(Eigen::array<Eigen::Index, 1>({ 1 })).broadcast(Eigen::array<Eigen::Index, 3>({ 1, layer_size, 1 }))
         ).pow(TensorT(2)).sum(Eigen::array<Eigen::Index, 1>({ 1 })).pow(TensorT(0.5))); // Dim 1 batch_size
       auto PearsonR = cov / (predicted_stdev * expected_stdev);
-      if (this->reduction_func_ == "Sum")
-        error_tensor.chip(metric_index, 0).chip(time_step, 0).device(device) += PearsonR.sum();
-      else if (this->reduction_func_ == "Mean")
-        error_tensor.chip(metric_index, 0).chip(time_step, 0).device(device) += (PearsonR / PearsonR.constant(TensorT(batch_size))).sum();
-      else if (this->reduction_func_ == "Var") {
-        auto mean = (PearsonR / PearsonR.constant(TensorT(batch_size))).sum(Eigen::array<int, 1>({ 0 })).broadcast(Eigen::array<int, 1>({ batch_size }));
-        auto var = ((mean - PearsonR.chip(0, 1)).pow(TensorT(2)) / mean.constant(TensorT(batch_size) - 1)).sum();
-        error_tensor.chip(metric_index, 0).chip(time_step, 0).device(device) += var;
-      }
+      //if (this->reduction_func_ == "Sum")
+      //  error_tensor.chip(metric_index, 0).chip(time_step, 0).device(device) += PearsonR.sum();
+      //else if (this->reduction_func_ == "Mean")
+      //  error_tensor.chip(metric_index, 0).chip(time_step, 0).device(device) += (PearsonR / PearsonR.constant(TensorT(batch_size))).sum();
+      //else if (this->reduction_func_ == "Var") {
+      //  auto mean = (PearsonR / PearsonR.constant(TensorT(batch_size))).sum(Eigen::array<int, 1>({ 0 })).broadcast(Eigen::array<int, 1>({ batch_size }));
+      //  auto var = ((mean - PearsonR.chip(0, 1)).pow(TensorT(2)) / mean.constant(TensorT(batch_size) - 1)).sum();
+      //  error_tensor.chip(metric_index, 0).chip(time_step, 0).device(device) += var;
+      //}
     };
   };
 
