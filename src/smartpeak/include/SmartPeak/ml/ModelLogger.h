@@ -36,6 +36,8 @@ public:
 		void setLogTimeEpoch(const bool& log_time_epoch) { log_time_epoch_ = log_time_epoch; }
 		void setLogTrainValMetricEpoch(const bool& log_train_val_metric_epoch) { log_train_val_metric_epoch_ = log_train_val_metric_epoch; }
 		void setLogExpectedPredictedEpoch(const bool& log_expected_predicted_epoch) { log_expected_predicted_epoch_ = log_expected_predicted_epoch; }
+    void setLogNodeOutputsEpoch(const bool& log_node_outputs_epoch) { log_node_outputs_epoch_ = log_node_outputs_epoch; }
+    void setLogNodeInputsEpoch(const bool& log_node_inputs_epoch) { log_node_inputs_epoch_ = log_node_inputs_epoch; }
 
 		bool getLogTimeEpoch() { return log_time_epoch_; }
 		bool getLogTrainValMetricEpoch() { return log_train_val_metric_epoch_; }

@@ -866,7 +866,7 @@ public:
         std::shared_ptr<SolverOp<TensorT>>(new DummySolverOp<TensorT>()), 0.0, 0.0, false, true);
     }
     if (linear_scale_input) {
-      node_names = model_builder.addLinearScale(model, "LinearScaleInput", "LinearScaleInput", node_names, -1, 1, true);
+      node_names = model_builder.addLinearScale(model, "LinearScaleInput", "LinearScaleInput", node_names, 0, 1, true);
     }
     if (standardize_input) {
       node_names = model_builder.addNormalization(model, "StandardizeInput", "StandardizeInput", node_names, true);
@@ -877,10 +877,10 @@ public:
     const int& n_epochs,
     Model<TensorT>& model,
     ModelInterpreterDefaultDevice<TensorT>& model_interpreter,
-    const std::vector<float>& model_errors) {
+    const std::vector<float>& model_errors) override {
     // Check point the model every 1000 epochs
     if (n_epochs % 200 == 0 && n_epochs != 0) {
-      model_interpreter.getModelResults(model, false, true, false);
+      model_interpreter.getModelResults(model, false, true, false, false);
       // save the model weights
       WeightFile<float> weight_data;
       weight_data.storeWeightValuesCsv(model.getName() + "_" + std::to_string(n_epochs) + "_weights.csv", model.weights_);
@@ -892,24 +892,27 @@ public:
     }
   }
   void trainingModelLogger(const int & n_epochs, Model<TensorT>& model, ModelInterpreterDefaultDevice<TensorT>& model_interpreter, ModelLogger<TensorT>& model_logger,
-    const Eigen::Tensor<TensorT, 3>& expected_values, const std::vector<std::string>& output_nodes, const TensorT & model_error_train, const TensorT & model_error_test,
-    const Eigen::Tensor<TensorT, 1> & model_metrics_train, const Eigen::Tensor<TensorT, 1> & model_metrics_test)
+    const Eigen::Tensor<TensorT, 3>& expected_values, const std::vector<std::string>& output_nodes, const std::vector<std::string>& input_nodes, const TensorT & model_error_train, const TensorT & model_error_test,
+    const Eigen::Tensor<TensorT, 1> & model_metrics_train, const Eigen::Tensor<TensorT, 1> & model_metrics_test) override
   {
     // Set the defaults
     model_logger.setLogTimeEpoch(true);
     model_logger.setLogTrainValMetricEpoch(true);
     model_logger.setLogExpectedPredictedEpoch(false);
+    model_logger.setLogNodeInputsEpoch(false);
 
     // initialize all logs
     if (n_epochs == 0) {
       model_logger.setLogExpectedPredictedEpoch(true);
+      model_logger.setLogNodeInputsEpoch(true);
       model_logger.initLogs(model);
     }
 
     // Per n epoch logging
-    if (n_epochs % 1000 == 0) {
+    if (n_epochs % 1 == 0) {  // FIXME
       model_logger.setLogExpectedPredictedEpoch(true);
-      model_interpreter.getModelResults(model, true, false, false);
+      model_logger.setLogNodeInputsEpoch(true);
+      model_interpreter.getModelResults(model, true, false, false, true);
     }
 
     // Create the metric headers and data arrays
@@ -925,7 +928,7 @@ public:
       log_test_values.push_back(model_metrics_test(metric_iter));
       ++metric_iter;
     }
-    model_logger.writeLogs(model, n_epochs, log_train_headers, log_test_headers, log_train_values, log_test_values, output_nodes, expected_values, output_nodes, {});
+    model_logger.writeLogs(model, n_epochs, log_train_headers, log_test_headers, log_train_values, log_test_values, output_nodes, expected_values, {}, output_nodes, {}, input_nodes, {});
   }
 };
 
@@ -1081,7 +1084,7 @@ void main_reconstruction(const std::string& biochem_rxns_filename,
   ModelTrainerExt<float> model_trainer;
 
   // define the model logger
-  ModelLogger<float> model_logger(true, true, false, false, false, false, false);
+  ModelLogger<float> model_logger(true, true, false, false, false, false, false, true);
 
   // initialize the model replicator
   ModelReplicatorExt<float> model_replicator;
@@ -1094,9 +1097,9 @@ void main_reconstruction(const std::string& biochem_rxns_filename,
     model_trainer.makeModelNormalization(model_normalization, n_input_nodes, true, false, false); // normalization type 1
 
     // Set the model trainer parameters for normalizing the data
-    model_trainer.setBatchSize(64);
+    model_trainer.setBatchSize(8);
     model_trainer.setMemorySize(1);
-    model_trainer.setNEpochsEvaluation(64);
+    model_trainer.setNEpochsEvaluation(8);
     model_trainer.setVerbosityLevel(1);
     model_trainer.setLogging(true, false, false);
     model_trainer.setFindCycles(false);
@@ -1125,21 +1128,21 @@ void main_reconstruction(const std::string& biochem_rxns_filename,
   if (make_model & make_data_caches) {
     std::cout << "Making the model..." << std::endl;
     model_trainer.makeModelFCVAE_2(model_FCVAE, n_input_nodes, n_output_nodes, encoding_size, false, false, false, false,
-      64, 64, 0, 64, 64, 0); // normalization type 0
+      64, 64, 0, 64, 64, 0, use_fold_change); // normalization type 0
   }
   else if (make_model) {
     std::cout << "Making the model..." << std::endl;
     model_trainer.makeModelFCVAE_1(model_FCVAE, n_input_nodes, n_output_nodes, encoding_size, false, false, false, false,
-      64, 64, 0, 64, 64, 0); // normalization type 0
+      64, 64, 0, 64, 64, 0, use_fold_change); // normalization type 0
   }
   else {
     // TODO: load in the trained model
   }
 
   // Set the model trainer parameters for training
-  model_trainer.setBatchSize(64);
+  model_trainer.setBatchSize(8);
   model_trainer.setMemorySize(1);
-  model_trainer.setNEpochsTraining(64);
+  model_trainer.setNEpochsTraining(8);
   model_trainer.setVerbosityLevel(1);
   model_trainer.setLogging(true, false, false);
   model_trainer.setFindCycles(false);
@@ -1215,8 +1218,8 @@ int main(int argc, char** argv)
     true,   // make_model
     false,  // use_mars
     true,   // sample_concs
-    false,  // make_data_caches 
-    true    // use_fold_change
+    true,  // make_data_caches 
+    false    // use_fold_change
   );
 
   return 0;
