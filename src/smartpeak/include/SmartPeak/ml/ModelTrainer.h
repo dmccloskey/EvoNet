@@ -305,7 +305,8 @@ public:
 			InterpreterT& model_interpreter,
 			ModelLogger<TensorT>& model_logger,
 			const Eigen::Tensor<TensorT, 3>& expected_values,
-			const std::vector<std::string>& output_nodes,
+			const std::vector<std::string>& output_nodes, 
+      const std::vector<std::string>& input_nodes,
 			const TensorT& model_error);
 
     /**
@@ -324,6 +325,7 @@ public:
     virtual void trainingModelLogger(const int& n_epochs,
       Model<TensorT>& model, InterpreterT& model_interpreter, ModelLogger<TensorT>& model_logger,
       const Eigen::Tensor<TensorT, 3>& expected_values,  const std::vector<std::string>& output_nodes,
+      const std::vector<std::string>& input_nodes,
       const TensorT& model_error_train, const TensorT& model_error_test,
       const Eigen::Tensor<TensorT, 1> & model_metrics_train, const Eigen::Tensor<TensorT, 1> & model_metrics_test);
 
@@ -347,6 +349,7 @@ public:
 			ModelLogger<TensorT>& model_logger,
 			const Eigen::Tensor<TensorT, 3>& expected_values,
 			const std::vector<std::string>& output_nodes,
+      const std::vector<std::string>& input_nodes,
 			const TensorT& model_error);
 
     /**
@@ -365,6 +368,7 @@ public:
     virtual void validationModelLogger(const int& n_epochs,
       Model<TensorT>& model, InterpreterT& model_interpreter, ModelLogger<TensorT>& model_logger,
       const Eigen::Tensor<TensorT, 3>& expected_values, const std::vector<std::string>& output_nodes,
+      const std::vector<std::string>& input_nodes,
       const TensorT& model_error_train, const TensorT& model_error_test,
       const Eigen::Tensor<TensorT, 1> & model_metrics_train, const Eigen::Tensor<TensorT, 1> & model_metrics_test);
 
@@ -385,7 +389,8 @@ public:
 			Model<TensorT>& model,
 			InterpreterT& model_interpreter,
 			ModelLogger<TensorT>& model_logger,
-			const std::vector<std::string>& output_nodes);
+			const std::vector<std::string>& output_nodes,
+      const std::vector<std::string>& input_nodes);
 
     /*
     @brief Determine the decay factor to reduce the learning rate by if the model_errors has not
@@ -920,7 +925,7 @@ private:
 				std::cout << "Weight Update..." << std::endl;
 			model_interpreter.updateWeights();
 
-			model_interpreter.getModelResults(model, false, false, true);
+			model_interpreter.getModelResults(model, false, false, true, false);
 			const Eigen::Tensor<TensorT, 0> total_error = model.getError().sum();
 			model_error.push_back(total_error(0));
 			if (this->getVerbosityLevel() >= 1)
@@ -930,7 +935,7 @@ private:
 			if (this->getLogTraining()) {
 				if (this->getVerbosityLevel() >= 2)
 					std::cout << "Logging..." << std::endl;
-				this->trainingModelLogger(iter, model, model_interpreter, model_logger, output.chip(iter, 3), output_nodes, total_error(0));
+				this->trainingModelLogger(iter, model, model_interpreter, model_logger, output.chip(iter, 3), output_nodes, input_nodes, total_error(0));
 			}
 
 			// reinitialize the model
@@ -940,7 +945,7 @@ private:
 			}
 		}
 		// copy out results
-		model_interpreter.getModelResults(model, true, true, true);
+		model_interpreter.getModelResults(model, true, true, true, false);
     if (this->getResetInterpreter()) {
       model_interpreter.clear_cache();
     }
@@ -1068,7 +1073,7 @@ private:
       }
 
       // get the model validation error and validation metrics
-      model_interpreter.getModelResults(model, false, false, true);
+      model_interpreter.getModelResults(model, false, false, true, false);
       const Eigen::Tensor<TensorT, 0> total_error_validation = model.getError().sum();
       model_error_validation.push_back(total_error_validation(0));
       Eigen::Tensor<TensorT, 1> total_metrics_validation = model.getMetric().sum(Eigen::array<Eigen::Index, 1>({ 1 }));
@@ -1132,7 +1137,7 @@ private:
       }
 
       // get the model training error
-      model_interpreter.getModelResults(model, false, false, true);
+      model_interpreter.getModelResults(model, false, false, true, false);
       const Eigen::Tensor<TensorT, 0> total_error_training = model.getError().sum();
       model_error_training.push_back(total_error_training(0));
       const Eigen::Tensor<TensorT, 1> total_metrics_training = model.getMetric().sum(Eigen::array<Eigen::Index, 1>({ 1 }));
@@ -1157,7 +1162,7 @@ private:
       if (this->getLogTraining()) {
         if (this->getVerbosityLevel() >= 2)
           std::cout << "Logging..." << std::endl;
-        this->trainingModelLogger(iter, model, model_interpreter, model_logger, loss_output_data_training, loss_output_nodes, total_error_training(0), total_error_validation(0),
+        this->trainingModelLogger(iter, model, model_interpreter, model_logger, loss_output_data_training, loss_output_nodes, input_nodes, total_error_training(0), total_error_validation(0),
           total_metrics_training, total_metrics_validation);
       }
 
@@ -1168,7 +1173,7 @@ private:
       }
     }
     // copy out results
-    model_interpreter.getModelResults(model, true, true, true);
+    model_interpreter.getModelResults(model, true, true, true, false);
 
     // initialize the caches and reset the model (if desired)
     if (this->getResetInterpreter()) {
@@ -1262,7 +1267,7 @@ private:
 				output_node_cnt += this->loss_output_nodes_[loss_iter].size();
 			}
 
-			model_interpreter.getModelResults(model, false, false, true);
+			model_interpreter.getModelResults(model, false, false, true, false);
 			const Eigen::Tensor<TensorT, 0> total_error = model.getError().sum();
 			model_error.push_back(total_error(0));
 			if (this->getVerbosityLevel() >= 1)
@@ -1272,7 +1277,7 @@ private:
 			if (this->getLogValidation()) {
 				if (this->getVerbosityLevel() >= 2)
 					std::cout << "Logging..." << std::endl;
-				this->validationModelLogger(iter, model, model_interpreter, model_logger, output.chip(iter, 3), output_nodes, total_error(0));
+				this->validationModelLogger(iter, model, model_interpreter, model_logger, output.chip(iter, 3), output_nodes, input_nodes, total_error(0));
 			}
 
 			// reinitialize the model
@@ -1282,7 +1287,7 @@ private:
 			}
 		}
 		// copy out results
-		model_interpreter.getModelResults(model, true, true, true);
+		model_interpreter.getModelResults(model, true, true, true, false);
 
     // initialize the caches and reset the model (if desired)
     if (this->getResetInterpreter()) {
@@ -1409,7 +1414,7 @@ private:
       }
 
       // get the model validation error and validation metrics
-      model_interpreter.getModelResults(model, false, false, true);
+      model_interpreter.getModelResults(model, false, false, true, false);
       const Eigen::Tensor<TensorT, 0> total_error_validation = model.getError().sum();
       model_error_validation.push_back(total_error_validation(0));
       Eigen::Tensor<TensorT, 1> total_metrics_validation = model.getMetric().sum(Eigen::array<Eigen::Index, 1>({ 1 }));
@@ -1473,7 +1478,7 @@ private:
       }
 
       // get the model training error
-      model_interpreter.getModelResults(model, false, false, true);
+      model_interpreter.getModelResults(model, false, false, true, false);
       const Eigen::Tensor<TensorT, 0> total_error_training = model.getError().sum();
       model_error_training.push_back(total_error_training(0));
       const Eigen::Tensor<TensorT, 1> total_metrics_training = model.getMetric().sum(Eigen::array<Eigen::Index, 1>({ 1 }));
@@ -1485,7 +1490,7 @@ private:
       if (this->getLogValidation()) {
         if (this->getVerbosityLevel() >= 2)
           std::cout << "Logging..." << std::endl;
-        this->validationModelLogger(iter, model, model_interpreter, model_logger, loss_output_data_training, loss_output_nodes, total_error_training(0), total_error_validation(0),
+        this->validationModelLogger(iter, model, model_interpreter, model_logger, loss_output_data_training, loss_output_nodes, input_nodes, total_error_training(0), total_error_validation(0),
           total_metrics_training, total_metrics_validation);
       }
 
@@ -1496,7 +1501,7 @@ private:
       }
     }
     // copy out results
-    model_interpreter.getModelResults(model, true, true, true);
+    model_interpreter.getModelResults(model, true, true, true, false);
 
     // initialize the caches and reset the model (if desired)
     if (this->getResetInterpreter()) {
@@ -1568,7 +1573,7 @@ private:
 			model_interpreter.FPTT(this->getMemorySize());
 
 			// extract out the model output
-      model_interpreter.getModelResults(model, true, false, false);
+      model_interpreter.getModelResults(model, true, false, false, false);
 			std::vector<Eigen::Tensor<TensorT, 2>> output;
       int node_iter = 0;
 			for (const std::vector<std::string>& output_nodes_vec : this->loss_output_nodes_) {
@@ -1586,7 +1591,7 @@ private:
 			if (this->getLogEvaluation()) {
 				if (this->getVerbosityLevel() >= 2)
 					std::cout << "Logging..." << std::endl;
-				this->evaluationModelLogger(iter, model, model_interpreter, model_logger, output_nodes);
+				this->evaluationModelLogger(iter, model, model_interpreter, model_logger, output_nodes, input_nodes);
 			}
 
 			// reinitialize the model
@@ -1595,7 +1600,7 @@ private:
 			}
 		}
 		// copy out results
-		model_interpreter.getModelResults(model, true, true, false);
+		model_interpreter.getModelResults(model, true, true, false, false);
     if (this->getResetInterpreter()) {
       model_interpreter.clear_cache();
     }
@@ -1659,7 +1664,7 @@ private:
       model_interpreter.FPTT(this->getMemorySize());
 
       // extract out the model output
-      model_interpreter.getModelResults(model, true, false, false);
+      model_interpreter.getModelResults(model, true, false, false, false);
       std::vector<Eigen::Tensor<TensorT, 2>> output;
       int node_iter = 0;
       for (const std::vector<std::string>& output_nodes_vec : this->loss_output_nodes_) {
@@ -1677,7 +1682,7 @@ private:
       if (this->getLogEvaluation()) {
         if (this->getVerbosityLevel() >= 2)
           std::cout << "Logging..." << std::endl;
-        this->evaluationModelLogger(iter, model, model_interpreter, model_logger, output_nodes);
+        this->evaluationModelLogger(iter, model, model_interpreter, model_logger, output_nodes, input_nodes);
       }
 
       // reinitialize the model
@@ -1686,7 +1691,7 @@ private:
       }
     }
     // copy out results
-    model_interpreter.getModelResults(model, true, true, false);
+    model_interpreter.getModelResults(model, true, true, false, false);
     if (this->getResetInterpreter()) {
       model_interpreter.clear_cache();
     }
@@ -1713,63 +1718,22 @@ private:
 	template<typename TensorT, typename InterpreterT>
 	inline void ModelTrainer<TensorT, InterpreterT>::trainingModelLogger(const int & n_epochs, Model<TensorT>& model, InterpreterT & model_interpreter, ModelLogger<TensorT>& model_logger, 
 		const Eigen::Tensor<TensorT, 3>& expected_values,
-		const std::vector<std::string>& output_nodes,
+		const std::vector<std::string>& output_nodes, const std::vector<std::string>& input_nodes,
 		const TensorT& model_error)
 	{
 		if (n_epochs == 0) {
 			model_logger.initLogs(model);
 		}
 		if (n_epochs % 10 == 0) {
-			if (model_logger.getLogExpectedPredictedEpoch())
-				model_interpreter.getModelResults(model, true, false, false);
-			model_logger.writeLogs(model, n_epochs, { "Error" }, {}, { model_error }, {}, output_nodes, expected_values, output_nodes, {});
+      if (model_logger.getLogExpectedPredictedEpoch() || model_logger.getLogNodeOutputsEpoch())
+        model_interpreter.getModelResults(model, true, false, false, false);
+      if (model_logger.getLogNodeInputsEpoch())
+        model_interpreter.getModelResults(model, false, false, false, true);
+			model_logger.writeLogs(model, n_epochs, { "Error" }, {}, { model_error }, {}, output_nodes, expected_values, {}, output_nodes, {}, input_nodes, {});
 		}
 	}
   template<typename TensorT, typename InterpreterT>
-  inline void ModelTrainer<TensorT, InterpreterT>::trainingModelLogger(const int & n_epochs, Model<TensorT>& model, InterpreterT & model_interpreter, ModelLogger<TensorT>& model_logger, const Eigen::Tensor<TensorT, 3>& expected_values, const std::vector<std::string>& output_nodes, 
-    const TensorT & model_error_train, const TensorT & model_error_test, const Eigen::Tensor<TensorT, 1> & model_metrics_train, const Eigen::Tensor<TensorT, 1> & model_metrics_test )
-  {
-    if (n_epochs == 0) {
-      model_logger.initLogs(model);
-    }
-    if (n_epochs % 10 == 0) {
-      // Get the node values if logging the expected and predicted
-      if (model_logger.getLogExpectedPredictedEpoch())
-        model_interpreter.getModelResults(model, true, false, false);
-
-      // Create the metric headers and data arrays
-      std::vector<std::string> log_train_headers = { "Train_Error" };
-      std::vector<std::string> log_test_headers = { "Test_Error" };
-      std::vector<TensorT> log_train_values = { model_error_train };
-      std::vector<TensorT> log_test_values = { model_error_test };
-      int metric_iter = 0;
-      for (const std::string& metric_name : this->metric_names_) {
-        log_train_headers.push_back(metric_name);
-        log_test_headers.push_back(metric_name);
-        log_train_values.push_back(model_metrics_train(metric_iter));
-        log_test_values.push_back(model_metrics_test(metric_iter));
-        ++metric_iter;
-      }
-      model_logger.writeLogs(model, n_epochs, log_train_headers, log_test_headers, log_train_values, log_test_values, output_nodes, expected_values, output_nodes, {});
-    }
-  }
-	template<typename TensorT, typename InterpreterT>
-	inline void ModelTrainer<TensorT, InterpreterT>::validationModelLogger(const int & n_epochs, Model<TensorT>& model, InterpreterT & model_interpreter, ModelLogger<TensorT>& model_logger, 
-		const Eigen::Tensor<TensorT, 3>& expected_values,
-		const std::vector<std::string>& output_nodes,
-		const TensorT& model_error)
-	{
-		if (n_epochs == 0) {
-			model_logger.initLogs(model);
-		}
-		if (n_epochs % 10 == 0) {
-			if (model_logger.getLogExpectedPredictedEpoch())
-				model_interpreter.getModelResults(model, true, false, false);
-			model_logger.writeLogs(model, n_epochs, {}, { "Error" }, {}, { model_error }, output_nodes, expected_values, output_nodes, {});
-		}
-	}
-  template<typename TensorT, typename InterpreterT>
-  inline void ModelTrainer<TensorT, InterpreterT>::validationModelLogger(const int & n_epochs, Model<TensorT>& model, InterpreterT & model_interpreter, ModelLogger<TensorT>& model_logger, const Eigen::Tensor<TensorT, 3>& expected_values, const std::vector<std::string>& output_nodes,
+  inline void ModelTrainer<TensorT, InterpreterT>::trainingModelLogger(const int & n_epochs, Model<TensorT>& model, InterpreterT & model_interpreter, ModelLogger<TensorT>& model_logger, const Eigen::Tensor<TensorT, 3>& expected_values, const std::vector<std::string>& output_nodes, const std::vector<std::string>& input_nodes,
     const TensorT & model_error_train, const TensorT & model_error_test, const Eigen::Tensor<TensorT, 1> & model_metrics_train, const Eigen::Tensor<TensorT, 1> & model_metrics_test)
   {
     if (n_epochs == 0) {
@@ -1777,8 +1741,10 @@ private:
     }
     if (n_epochs % 10 == 0) {
       // Get the node values if logging the expected and predicted
-      if (model_logger.getLogExpectedPredictedEpoch())
-        model_interpreter.getModelResults(model, true, false, false);
+      if (model_logger.getLogExpectedPredictedEpoch() || model_logger.getLogNodeOutputsEpoch())
+        model_interpreter.getModelResults(model, true, false, false, false);
+      if (model_logger.getLogNodeInputsEpoch())
+        model_interpreter.getModelResults(model, false, false, false, true);
 
       // Create the metric headers and data arrays
       std::vector<std::string> log_train_headers = { "Train_Error" };
@@ -1793,19 +1759,69 @@ private:
         log_test_values.push_back(model_metrics_test(metric_iter));
         ++metric_iter;
       }
-      model_logger.writeLogs(model, n_epochs, log_train_headers, log_test_headers, log_train_values, log_test_values, output_nodes, expected_values, output_nodes, {});
+      model_logger.writeLogs(model, n_epochs, log_train_headers, log_test_headers, log_train_values, log_test_values, output_nodes, expected_values, {}, output_nodes, {}, input_nodes, {});
+    }
+  }
+	template<typename TensorT, typename InterpreterT>
+	inline void ModelTrainer<TensorT, InterpreterT>::validationModelLogger(const int & n_epochs, Model<TensorT>& model, InterpreterT & model_interpreter, ModelLogger<TensorT>& model_logger, 
+		const Eigen::Tensor<TensorT, 3>& expected_values,
+		const std::vector<std::string>& output_nodes, const std::vector<std::string>& input_nodes,
+		const TensorT& model_error)
+	{
+		if (n_epochs == 0) {
+			model_logger.initLogs(model);
+		}
+		if (n_epochs % 10 == 0) {
+			if (model_logger.getLogExpectedPredictedEpoch() || model_logger.getLogNodeOutputsEpoch())
+				model_interpreter.getModelResults(model, true, false, false, false);
+      if (model_logger.getLogNodeInputsEpoch())
+        model_interpreter.getModelResults(model, false, false, false, true);
+			model_logger.writeLogs(model, n_epochs, {}, { "Error" }, {}, { model_error }, output_nodes, expected_values, {}, output_nodes, {}, input_nodes, {});
+		}
+	}
+  template<typename TensorT, typename InterpreterT>
+  inline void ModelTrainer<TensorT, InterpreterT>::validationModelLogger(const int & n_epochs, Model<TensorT>& model, InterpreterT & model_interpreter, ModelLogger<TensorT>& model_logger, const Eigen::Tensor<TensorT, 3>& expected_values, const std::vector<std::string>& output_nodes, const std::vector<std::string>& input_nodes,
+    const TensorT & model_error_train, const TensorT & model_error_test, const Eigen::Tensor<TensorT, 1> & model_metrics_train, const Eigen::Tensor<TensorT, 1> & model_metrics_test)
+  {
+    if (n_epochs == 0) {
+      model_logger.initLogs(model);
+    }
+    if (n_epochs % 10 == 0) {
+      // Get the node values if logging the expected and predicted
+      if (model_logger.getLogExpectedPredictedEpoch() || model_logger.getLogNodeOutputsEpoch())
+        model_interpreter.getModelResults(model, true, false, false, false);
+      if (model_logger.getLogNodeInputsEpoch())
+        model_interpreter.getModelResults(model, false, false, false, true);
+
+      // Create the metric headers and data arrays
+      std::vector<std::string> log_train_headers = { "Train_Error" };
+      std::vector<std::string> log_test_headers = { "Test_Error" };
+      std::vector<TensorT> log_train_values = { model_error_train };
+      std::vector<TensorT> log_test_values = { model_error_test };
+      int metric_iter = 0;
+      for (const std::string& metric_name : this->metric_names_) {
+        log_train_headers.push_back(metric_name);
+        log_test_headers.push_back(metric_name);
+        log_train_values.push_back(model_metrics_train(metric_iter));
+        log_test_values.push_back(model_metrics_test(metric_iter));
+        ++metric_iter;
+      }
+      model_logger.writeLogs(model, n_epochs, log_train_headers, log_test_headers, log_train_values, log_test_values, output_nodes, expected_values, {}, output_nodes, {}, input_nodes, {});
     }
   }
 	template<typename TensorT, typename InterpreterT>
 	inline void ModelTrainer<TensorT, InterpreterT>::evaluationModelLogger(const int & n_epochs, Model<TensorT>& model, InterpreterT & model_interpreter, ModelLogger<TensorT>& model_logger,
-		const std::vector<std::string>& output_nodes)
+		const std::vector<std::string>& output_nodes, const std::vector<std::string>& input_nodes)
 	{
 		if (n_epochs == 0) {
 			model_logger.initLogs(model);
 		}
 		if (n_epochs % 1 == 0) {
-			model_interpreter.getModelResults(model, true, true, false);
-			model_logger.writeLogs(model, n_epochs, {}, {}, {}, {}, output_nodes, Eigen::Tensor<TensorT, 3>(), output_nodes, {});
+      if (model_logger.getLogNodeOutputsEpoch())
+        model_interpreter.getModelResults(model, true, false, false, false);
+      if (model_logger.getLogNodeInputsEpoch())
+        model_interpreter.getModelResults(model, false, false, false, true);
+			model_logger.writeLogs(model, n_epochs, {}, {}, {}, {}, output_nodes, Eigen::Tensor<TensorT, 3>(), {}, output_nodes, {}, input_nodes, {});
 		}
 	}
   template<typename TensorT, typename InterpreterT>
