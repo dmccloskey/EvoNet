@@ -102,7 +102,7 @@ public:
               if (ref == 0 || value == 0) input_data(batch_iter, memory_iter, nodes_iter, epoch_iter) = 0;
               // Log10 is used with the assumption that the larges fold change will be on an order of ~10
               // thus, all values will be between -1 and 1
-              else input_data(batch_iter, memory_iter, nodes_iter, epoch_iter) = minFunc(maxFunc(std::log(value / ref) / std::log(10), -1), 1);
+              else input_data(batch_iter, memory_iter, nodes_iter, epoch_iter) = minFunc(maxFunc(std::log(value / ref) / std::log(100), -1), 1);
             }
           }
         }
@@ -1525,7 +1525,7 @@ int main(int argc, char** argv)
   //main_KALE(model_interpreter, model_trainer, model_logger, latentArithmetic, PercentDifferenceTensorOp<float, Eigen::DefaultDevice>(), false, true, false, false);
   //main_KALE(model_interpreter, model_trainer, model_logger, latentArithmetic, EuclideanDistTensorOp<float, Eigen::DefaultDevice>(), false, true, false, false);
   //main_KALE(model_interpreter, model_trainer, model_logger, latentArithmetic, PearsonRTensorOp<float, Eigen::DefaultDevice>(), false, true, false, false);
-  main_KALE(model_interpreter, model_trainer, model_logger, latentArithmetic, ManhattanDistTensorOp<float, Eigen::DefaultDevice>(), false, true, false, false);
+  main_KALE(model_interpreter, model_trainer, model_logger, latentArithmetic, ManhattanDistTensorOp<float, Eigen::DefaultDevice>(), true, false, false, false);
   //main_KALE(model_interpreter, model_trainer, model_logger, latentArithmetic, LogarithmicDistTensorOp<float, Eigen::DefaultDevice>(), false, true, false, false);
   //main_KALE(model_interpreter, model_trainer, model_logger, latentArithmetic, JeffreysAndMatusitaDistTensorOp<float, Eigen::DefaultDevice>(), false, true, false, false);
   //main_IndustrialStrains(model_interpreter, model_trainer, model_logger, latentArithmetic, true, false);
