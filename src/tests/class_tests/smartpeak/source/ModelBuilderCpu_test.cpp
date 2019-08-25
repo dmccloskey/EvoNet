@@ -1046,8 +1046,8 @@ BOOST_AUTO_TEST_CASE(checkFullyConnectedWithXEntropyWLogits)
   input_values.setValues({ {{1, 1}} });
   Eigen::Tensor<float, 2> output_values(batch_size, output_size);
   output_values.setValues({ {0, 1} });
-  std::shared_ptr<LossFunctionTensorOp<float, Eigen::DefaultDevice>> loss_function = std::make_shared<CrossEntropyWithLogitsTensorOp<float, Eigen::DefaultDevice>>(CrossEntropyWithLogitsTensorOp<float, Eigen::DefaultDevice>());
-  std::shared_ptr<LossFunctionGradTensorOp<float, Eigen::DefaultDevice>> loss_function_grad = std::make_shared<CrossEntropyWithLogitsGradTensorOp<float, Eigen::DefaultDevice>>(CrossEntropyWithLogitsGradTensorOp<float, Eigen::DefaultDevice>());
+  std::shared_ptr<LossFunctionTensorOp<float, Eigen::DefaultDevice>> loss_function = std::make_shared<CrossEntropyWithLogitsLossTensorOp<float, Eigen::DefaultDevice>>(CrossEntropyWithLogitsLossTensorOp<float, Eigen::DefaultDevice>());
+  std::shared_ptr<LossFunctionGradTensorOp<float, Eigen::DefaultDevice>> loss_function_grad = std::make_shared<CrossEntropyWithLogitsLossGradTensorOp<float, Eigen::DefaultDevice>>(CrossEntropyWithLogitsLossGradTensorOp<float, Eigen::DefaultDevice>());
   trainModel(model, node_names_input, node_names_output, input_values, output_values, batch_size, memory_size, loss_function, loss_function_grad);
 
   // test for the expected model error

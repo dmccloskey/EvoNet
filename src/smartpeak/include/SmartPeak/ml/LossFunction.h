@@ -439,11 +439,11 @@ public:
     KLD = alpha * log(alpha) + log(n) where n is the number of categories
   */
   template<typename TensorT>
-  class KLDivergenceCatOp : public LossFunctionOp<TensorT>
+  class KLDivergenceCatLossOp : public LossFunctionOp<TensorT>
   {
   public:
     using LossFunctionOp<TensorT>::LossFunctionOp;
-    std::string getName() { return "KLDivergenceCatOp"; };
+    std::string getName() { return "KLDivergenceCatLossOp"; };
     std::vector<TensorT> getParameters() const { return std::vector<TensorT>({ this->eps_, this->scale_ }); }
   };
 

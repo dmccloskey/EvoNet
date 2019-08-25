@@ -514,49 +514,49 @@ BOOST_AUTO_TEST_CASE(gettersAndSettersMSERangeLBGradOp)
 }
 
 /**
-  KLDivergenceCatOp Tests
+  KLDivergenceCatLossOp Tests
 */
 BOOST_AUTO_TEST_CASE(constructorKLDivergenceCatOp)
 {
-  KLDivergenceCatOp<double>* ptrKLDivergenceCat = nullptr;
-  KLDivergenceCatOp<double>* nullPointerKLDivergenceCat = nullptr;
+  KLDivergenceCatLossOp<double>* ptrKLDivergenceCat = nullptr;
+  KLDivergenceCatLossOp<double>* nullPointerKLDivergenceCat = nullptr;
   BOOST_CHECK_EQUAL(ptrKLDivergenceCat, nullPointerKLDivergenceCat);
 }
 
 BOOST_AUTO_TEST_CASE(destructorKLDivergenceCatOp)
 {
-  KLDivergenceCatOp<double>* ptrKLDivergenceCat = nullptr;
-  ptrKLDivergenceCat = new KLDivergenceCatOp<double>();
+  KLDivergenceCatLossOp<double>* ptrKLDivergenceCat = nullptr;
+  ptrKLDivergenceCat = new KLDivergenceCatLossOp<double>();
   delete ptrKLDivergenceCat;
 }
 
 BOOST_AUTO_TEST_CASE(gettersAndSettersKLDivergenceCatOp)
 {
-  KLDivergenceCatOp<float> operation;
-  BOOST_CHECK_EQUAL(operation.getName(), "KLDivergenceCatOp");
+  KLDivergenceCatLossOp<float> operation;
+  BOOST_CHECK_EQUAL(operation.getName(), "KLDivergenceCatLossOp");
 }
 
 /**
-  KLDivergenceCatGradOp Tests
+  KLDivergenceCatLossGradOp Tests
 */
 BOOST_AUTO_TEST_CASE(constructorKLDivergenceCatGradOp)
 {
-  KLDivergenceCatGradOp<double>* ptrKLDivergenceCat = nullptr;
-  KLDivergenceCatGradOp<double>* nullPointerKLDivergenceCat = nullptr;
+  KLDivergenceCatLossGradOp<double>* ptrKLDivergenceCat = nullptr;
+  KLDivergenceCatLossGradOp<double>* nullPointerKLDivergenceCat = nullptr;
   BOOST_CHECK_EQUAL(ptrKLDivergenceCat, nullPointerKLDivergenceCat);
 }
 
 BOOST_AUTO_TEST_CASE(destructorKLDivergenceCatGradOp)
 {
-  KLDivergenceCatGradOp<double>* ptrKLDivergenceCat = nullptr;
-  ptrKLDivergenceCat = new KLDivergenceCatGradOp<double>();
+  KLDivergenceCatLossGradOp<double>* ptrKLDivergenceCat = nullptr;
+  ptrKLDivergenceCat = new KLDivergenceCatLossGradOp<double>();
   delete ptrKLDivergenceCat;
 }
 
 BOOST_AUTO_TEST_CASE(gettersAndSettersKLDivergenceCatGradOp)
 {
-  KLDivergenceCatGradOp<float> operation;
-  BOOST_CHECK_EQUAL(operation.getName(), "KLDivergenceCatGradOp");
+  KLDivergenceCatLossGradOp<float> operation;
+  BOOST_CHECK_EQUAL(operation.getName(), "KLDivergenceCatLossGradOp");
 }
 
 /**
