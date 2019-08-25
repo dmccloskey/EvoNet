@@ -451,11 +451,11 @@ public:
     @brief KLDivergenceCat  loss function gradient.
   */
   template<typename TensorT>
-  class KLDivergenceCatGradOp : public LossFunctionGradOp<TensorT>
+  class KLDivergenceCatLossGradOp : public LossFunctionGradOp<TensorT>
   {
   public:
     using LossFunctionGradOp<TensorT>::LossFunctionGradOp;
-    std::string getName() { return "KLDivergenceCatGradOp"; };
+    std::string getName() { return "KLDivergenceCatLossGradOp"; };
     std::vector<TensorT> getParameters() const { return std::vector<TensorT>({ this->eps_, this->scale_ }); }
   };
 
