@@ -1725,7 +1725,7 @@ private:
 			model_logger.initLogs(model);
 		}
 		if (n_epochs % 10 == 0) {
-      if (model_logger.getLogExpectedPredictedEpoch() || model_logger.getLogNodeOutputsEpoch())
+      if (model_logger.getLogExpectedEpoch() || model_logger.getLogNodeOutputsEpoch())
         model_interpreter.getModelResults(model, true, false, false, false);
       if (model_logger.getLogNodeInputsEpoch())
         model_interpreter.getModelResults(model, false, false, false, true);
@@ -1741,7 +1741,7 @@ private:
     }
     if (n_epochs % 10 == 0) {
       // Get the node values if logging the expected and predicted
-      if (model_logger.getLogExpectedPredictedEpoch() || model_logger.getLogNodeOutputsEpoch())
+      if (model_logger.getLogExpectedEpoch() || model_logger.getLogNodeOutputsEpoch())
         model_interpreter.getModelResults(model, true, false, false, false);
       if (model_logger.getLogNodeInputsEpoch())
         model_interpreter.getModelResults(model, false, false, false, true);
@@ -1772,7 +1772,7 @@ private:
 			model_logger.initLogs(model);
 		}
 		if (n_epochs % 10 == 0) {
-			if (model_logger.getLogExpectedPredictedEpoch() || model_logger.getLogNodeOutputsEpoch())
+			if (model_logger.getLogExpectedEpoch() || model_logger.getLogNodeOutputsEpoch())
 				model_interpreter.getModelResults(model, true, false, false, false);
       if (model_logger.getLogNodeInputsEpoch())
         model_interpreter.getModelResults(model, false, false, false, true);
@@ -1788,7 +1788,7 @@ private:
     }
     if (n_epochs % 10 == 0) {
       // Get the node values if logging the expected and predicted
-      if (model_logger.getLogExpectedPredictedEpoch() || model_logger.getLogNodeOutputsEpoch())
+      if (model_logger.getLogExpectedEpoch() || model_logger.getLogNodeOutputsEpoch())
         model_interpreter.getModelResults(model, true, false, false, false);
       if (model_logger.getLogNodeInputsEpoch())
         model_interpreter.getModelResults(model, false, false, false, true);

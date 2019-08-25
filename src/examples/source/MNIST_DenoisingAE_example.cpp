@@ -162,12 +162,12 @@ public:
   {
     model_logger.setLogTimeEpoch(true);
     model_logger.setLogTrainValMetricEpoch(true);
-    model_logger.setLogExpectedPredictedEpoch(false);
+    model_logger.setLogExpectedEpoch(false);
     if (n_epochs == 0) {
       model_logger.initLogs(model);
     }
     if (n_epochs % 10 == 0) {
-      if (model_logger.getLogExpectedPredictedEpoch())
+      if (model_logger.getLogExpectedEpoch())
         model_interpreter.getModelResults(model, true, false, false);
       model_logger.writeLogs(model, n_epochs, { "Error" }, {}, { model_error }, {}, output_nodes, expected_values);
     }
@@ -179,12 +179,12 @@ public:
   {
     model_logger.setLogTimeEpoch(false);
     model_logger.setLogTrainValMetricEpoch(false);
-    model_logger.setLogExpectedPredictedEpoch(true);
+    model_logger.setLogExpectedEpoch(true);
     if (n_epochs == 0) {
       model_logger.initLogs(model);
     }
     if (n_epochs % 1 == 0) {
-      if (model_logger.getLogExpectedPredictedEpoch())
+      if (model_logger.getLogExpectedEpoch())
         model_interpreter.getModelResults(model, true, false, false);
       model_logger.writeLogs(model, n_epochs, {}, { "Error" }, {}, { model_error }, output_nodes, expected_values);
     }

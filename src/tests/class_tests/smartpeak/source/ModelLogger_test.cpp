@@ -32,7 +32,7 @@ BOOST_AUTO_TEST_CASE(gettersAndSetters1)
   ModelLogger<float> model_logger;
   BOOST_CHECK(!model_logger.getLogTimeEpoch());
   BOOST_CHECK(!model_logger.getLogTrainValMetricEpoch());
-  BOOST_CHECK(!model_logger.getLogExpectedPredictedEpoch());
+  BOOST_CHECK(!model_logger.getLogExpectedEpoch());
   BOOST_CHECK(!model_logger.getLogWeightsEpoch());
   BOOST_CHECK(!model_logger.getLogNodeErrorsEpoch());
   BOOST_CHECK(!model_logger.getLogNodeOutputsEpoch());
@@ -45,7 +45,7 @@ BOOST_AUTO_TEST_CASE(gettersAndSetters2)
    ModelLogger<float> model_logger(true, true, true, true, true, true, true, true);
 	BOOST_CHECK(model_logger.getLogTimeEpoch());
 	BOOST_CHECK(model_logger.getLogTrainValMetricEpoch());
-	BOOST_CHECK(model_logger.getLogExpectedPredictedEpoch());
+	BOOST_CHECK(model_logger.getLogExpectedEpoch());
 	BOOST_CHECK(model_logger.getLogWeightsEpoch());
 	BOOST_CHECK(model_logger.getLogNodeErrorsEpoch());
 	BOOST_CHECK(model_logger.getLogNodeOutputsEpoch());
@@ -63,8 +63,8 @@ BOOST_AUTO_TEST_CASE(initLogs)
 	BOOST_CHECK_EQUAL(model_logger.getLogTimeEpochCSVWriter().getLineCount(), 0);
 	BOOST_CHECK_EQUAL(model_logger.getLogTrainValMetricEpochCSVWriter().getFilename(), "Model1_TrainValMetricsPerEpoch.csv");
 	BOOST_CHECK_EQUAL(model_logger.getLogTrainValMetricEpochCSVWriter().getLineCount(), 0);
-	BOOST_CHECK_EQUAL(model_logger.getLogExpectedPredictedEpochCSVWriter().getFilename(), "Model1_ExpectedPredictedPerEpoch.csv");
-	BOOST_CHECK_EQUAL(model_logger.getLogExpectedPredictedEpochCSVWriter().getLineCount(), 0);
+	BOOST_CHECK_EQUAL(model_logger.getLogExpectedEpochCSVWriter().getFilename(), "Model1_ExpectedPredictedPerEpoch.csv");
+	BOOST_CHECK_EQUAL(model_logger.getLogExpectedEpochCSVWriter().getLineCount(), 0);
 	BOOST_CHECK_EQUAL(model_logger.getLogWeightsEpochCSVWriter().getFilename(), "Model1_WeightsPerEpoch.csv");
 	BOOST_CHECK_EQUAL(model_logger.getLogWeightsEpochCSVWriter().getLineCount(), 0);
 	BOOST_CHECK_EQUAL(model_logger.getLogNodeErrorsEpochCSVWriter().getFilename(), "Model1_NodeErrorsPerEpoch.csv");
@@ -109,7 +109,7 @@ BOOST_AUTO_TEST_CASE(logTrainValMetricsPerEpoch)
 	// [TODO: read in and check]
 }
 
-BOOST_AUTO_TEST_CASE(logExpectedAndPredictedOutputPerEpoch)
+BOOST_AUTO_TEST_CASE(logExpectedOutputPerEpoch)
 {
 	// make the model
 	ModelBuilder<float> model_builder;
@@ -126,8 +126,8 @@ BOOST_AUTO_TEST_CASE(logExpectedAndPredictedOutputPerEpoch)
 	 ModelLogger<float> model_logger(false, false, true, false, false, false, false, false);
 	model_logger.initLogs(model);
 
-	model_logger.logExpectedAndPredictedOutputPerEpoch(model, node_names, expected_values, 0);
-	model_logger.logExpectedAndPredictedOutputPerEpoch(model, node_names, expected_values, 1);
+	model_logger.logExpectedOutputPerEpoch(model, node_names, expected_values, 0);
+	model_logger.logExpectedOutputPerEpoch(model, node_names, expected_values, 1);
 
 	// [TODO: read in and check]
 }

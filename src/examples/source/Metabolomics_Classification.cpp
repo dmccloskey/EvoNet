@@ -685,17 +685,17 @@ public:
     // Set the defaults
     model_logger.setLogTimeEpoch(true);
     model_logger.setLogTrainValMetricEpoch(true);
-    model_logger.setLogExpectedPredictedEpoch(false);
+    model_logger.setLogExpectedEpoch(false);
 
     // initialize all logs
     if (n_epochs == 0) {
-      model_logger.setLogExpectedPredictedEpoch(true);
+      model_logger.setLogExpectedEpoch(true);
       model_logger.initLogs(model);
     }
 
     // Per n epoch logging
     if (n_epochs % 1000 == 0) {
-      model_logger.setLogExpectedPredictedEpoch(true);
+      model_logger.setLogExpectedEpoch(true);
       model_interpreter.getModelResults(model, true, false, false);
     }
 

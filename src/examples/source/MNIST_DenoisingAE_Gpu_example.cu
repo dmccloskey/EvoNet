@@ -177,13 +177,13 @@ public:
     // Per n epoch logging
     if (n_epochs % 1000 == 0) {
       model_logger.setLogExpectedPredictedEpoch(true);
-      if (model_logger.getLogExpectedPredictedEpoch())
+      if (model_logger.getLogExpectedEpoch())
         model_interpreter.getModelResults(model, true, false, false);
       model_logger.writeLogs(model, n_epochs, { "Train_Error" }, { "Test_Error" }, { model_error_train }, { model_error_test }, output_nodes, expected_values);
     }
     else if (n_epochs % 10 == 0) {
       model_logger.setLogExpectedPredictedEpoch(false);
-      if (model_logger.getLogExpectedPredictedEpoch())
+      if (model_logger.getLogExpectedEpoch())
         model_interpreter.getModelResults(model, true, false, false);
       model_logger.writeLogs(model, n_epochs, { "Train_Error" }, { "Test_Error" }, { model_error_train }, { model_error_test }, output_nodes, expected_values);
     }

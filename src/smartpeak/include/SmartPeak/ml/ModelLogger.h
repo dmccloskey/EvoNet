@@ -25,7 +25,7 @@ public:
     ModelLogger() = default; ///< Default constructor
 		ModelLogger(const bool& log_time_epoch, 
       const bool& log_train_val_metric_epoch = false, 
-      const bool& log_expected_predicted_epoch = false,
+      const bool& log_expected_epoch = false,
       const bool& log_weights_epoch = false,
       const bool& log_node_errors_epoch = false,
       const bool& log_node_outputs_epoch = false,
@@ -35,13 +35,13 @@ public:
 
 		void setLogTimeEpoch(const bool& log_time_epoch) { log_time_epoch_ = log_time_epoch; }
 		void setLogTrainValMetricEpoch(const bool& log_train_val_metric_epoch) { log_train_val_metric_epoch_ = log_train_val_metric_epoch; }
-		void setLogExpectedPredictedEpoch(const bool& log_expected_predicted_epoch) { log_expected_predicted_epoch_ = log_expected_predicted_epoch; }
+		void setLogExpectedEpoch(const bool& log_expected_epoch) { log_expected_epoch_ = log_expected_epoch; }
     void setLogNodeOutputsEpoch(const bool& log_node_outputs_epoch) { log_node_outputs_epoch_ = log_node_outputs_epoch; }
     void setLogNodeInputsEpoch(const bool& log_node_inputs_epoch) { log_node_inputs_epoch_ = log_node_inputs_epoch; }
 
 		bool getLogTimeEpoch() { return log_time_epoch_; }
 		bool getLogTrainValMetricEpoch() { return log_train_val_metric_epoch_; }
-		bool getLogExpectedPredictedEpoch() { return log_expected_predicted_epoch_; }
+		bool getLogExpectedEpoch() { return log_expected_epoch_; }
 		bool getLogWeightsEpoch() { return log_weights_epoch_; }
 		bool getLogNodeErrorsEpoch() { return log_node_errors_epoch_; }
 		bool getLogNodeOutputsEpoch() { return log_node_outputs_epoch_; }
@@ -50,7 +50,7 @@ public:
 
 		CSVWriter getLogTimeEpochCSVWriter() { return log_time_epoch_csvwriter_; }
 		CSVWriter getLogTrainValMetricEpochCSVWriter() { return log_train_val_metric_epoch_csvwriter_; }
-		CSVWriter getLogExpectedPredictedEpochCSVWriter() { return log_expected_predicted_epoch_csvwriter_; }
+		CSVWriter getLogExpectedEpochCSVWriter() { return log_expected_epoch_csvwriter_; }
 		CSVWriter getLogWeightsEpochCSVWriter() { return log_weights_epoch_csvwriter_; }
 		CSVWriter getLogNodeErrorsEpochCSVWriter() { return log_node_errors_epoch_csvwriter_; }
 		CSVWriter getLogNodeOutputsEpochCSVWriter() { return log_node_outputs_epoch_csvwriter_; }
@@ -112,7 +112,7 @@ public:
 
 		@returns True for a successfull write operation
 		*/
-		bool logExpectedAndPredictedOutputPerEpoch(Model<TensorT>& model, const std::vector<std::string>& output_node_names, const Eigen::Tensor<TensorT, 3>& expected_values, const int& n_epoch);
+		bool logExpectedOutputPerEpoch(Model<TensorT>& model, const std::vector<std::string>& output_node_names, const Eigen::Tensor<TensorT, 3>& expected_values, const int& n_epoch);
 
 		/**
 		@brief Model<TensorT> weight update ratio for each link for each time step per epoch
@@ -169,8 +169,8 @@ public:
 		CSVWriter log_time_epoch_csvwriter_;
 		bool log_train_val_metric_epoch_ = false; ///< log 
 		CSVWriter log_train_val_metric_epoch_csvwriter_;
-		bool log_expected_predicted_epoch_ = false;
-		CSVWriter log_expected_predicted_epoch_csvwriter_;
+		bool log_expected_epoch_ = false;
+		CSVWriter log_expected_epoch_csvwriter_;
 		bool log_weights_epoch_ = false;
 		CSVWriter log_weights_epoch_csvwriter_;
 		bool log_node_errors_epoch_ = false;
@@ -184,10 +184,10 @@ public:
 
   };
 	template<typename TensorT>
-	ModelLogger<TensorT>::ModelLogger(const bool& log_time_epoch, const bool& log_train_val_metric_epoch, const bool& log_expected_predicted_epoch, 
+	ModelLogger<TensorT>::ModelLogger(const bool& log_time_epoch, const bool& log_train_val_metric_epoch, const bool& log_expected_epoch, 
     const bool& log_weights_epoch, const bool& log_node_errors_epoch, const bool& log_node_outputs_epoch, const bool& log_node_derivatives_epoch,
     const bool& log_node_inputs_epoch = false) :
-		log_time_epoch_(log_time_epoch), log_train_val_metric_epoch_(log_train_val_metric_epoch), log_expected_predicted_epoch_(log_expected_predicted_epoch),
+		log_time_epoch_(log_time_epoch), log_train_val_metric_epoch_(log_train_val_metric_epoch), log_expected_epoch_(log_expected_epoch),
 		log_weights_epoch_(log_weights_epoch), log_node_errors_epoch_(log_node_errors_epoch), log_node_outputs_epoch_(log_node_outputs_epoch),
 		log_node_derivatives_epoch_(log_node_derivatives_epoch),
     log_node_inputs_epoch_(log_node_inputs_epoch)
@@ -207,10 +207,10 @@ public:
 			CSVWriter csvwriter(filename);
 			log_train_val_metric_epoch_csvwriter_ = csvwriter;
 		}
-		if (log_expected_predicted_epoch_) {
+		if (log_expected_epoch_) {
 			std::string filename = model.getName() + "_ExpectedPredictedPerEpoch.csv";
 			CSVWriter csvwriter(filename);
-			log_expected_predicted_epoch_csvwriter_ = csvwriter;
+			log_expected_epoch_csvwriter_ = csvwriter;
 		}
 		if (log_weights_epoch_) {
 			std::string filename = model.getName() + "_WeightsPerEpoch.csv";
@@ -252,8 +252,8 @@ public:
 		if (log_train_val_metric_epoch_) {
 			logTrainValMetricsPerEpoch(model, training_metric_names, validation_metric_names, training_metrics, validation_metrics, n_epochs);
 		}
-		if (log_expected_predicted_epoch_) {
-			logExpectedAndPredictedOutputPerEpoch(model, output_node_names, expected_values, n_epochs);
+		if (log_expected_epoch_) {
+			logExpectedOutputPerEpoch(model, output_node_names, expected_values, n_epochs);
 		}
 		if (log_weights_epoch_) {
 			logWeightsPerEpoch(model, n_epochs, weight_names);
@@ -331,7 +331,7 @@ public:
 	}
 
 	template<typename TensorT>
-	bool ModelLogger<TensorT>::logExpectedAndPredictedOutputPerEpoch(Model<TensorT>& model, const std::vector<std::string>& output_node_names, const Eigen::Tensor<TensorT, 3>& expected_values, const int & n_epoch)
+	bool ModelLogger<TensorT>::logExpectedOutputPerEpoch(Model<TensorT>& model, const std::vector<std::string>& output_node_names, const Eigen::Tensor<TensorT, 3>& expected_values, const int & n_epoch)
 	{
 		std::pair<int, int> bmsizes = model.getBatchAndMemorySizes();
 		int batch_size = bmsizes.first;
@@ -340,38 +340,32 @@ public:
 		assert(output_node_names.size() == expected_values.dimension(2));
 
 		// writer header
-		if (log_expected_predicted_epoch_csvwriter_.getLineCount() == 0) {
+		if (log_expected_epoch_csvwriter_.getLineCount() == 0) {
 			std::vector<std::string> headers = { "Epoch" };
 			for (const std::string& node_name : output_node_names) {
 				for (size_t batch_iter = 0; batch_iter < batch_size; ++batch_iter) {
 					for (size_t memory_iter = 0; memory_iter < memory_size; ++memory_iter) {
-						std::string predicted = node_name + "_Predicted_Batch-" + std::to_string(batch_iter) + "_Memory-" + std::to_string(memory_iter);
-						headers.push_back(predicted);
 						std::string expected = node_name + "_Expected_Batch-" + std::to_string(batch_iter) + "_Memory-" + std::to_string(memory_iter);
 						headers.push_back(expected);
 					}
 				}
 			}
-			log_expected_predicted_epoch_csvwriter_.writeDataInRow(headers.begin(), headers.end());
+			log_expected_epoch_csvwriter_.writeDataInRow(headers.begin(), headers.end());
 		}
 
 		// write next entry
-		if (model.nodes_.at(output_node_names[0])->getOutput().size() < batch_size * memory_size)
-			return false;
-
 		std::vector<std::string> line = { std::to_string(n_epoch) };
 		int node_cnt = 0;
 		for (const std::string& node_name : output_node_names) {
 			for (size_t batch_iter = 0; batch_iter < batch_size; ++batch_iter) {
 				for (size_t memory_iter = 0; memory_iter < memory_size; ++memory_iter) {
           // NOTE: if an error is thrown here, check that all output nodes have been cached in the model (see `model::setInputAndOutputNodes()`)
-          line.push_back(std::to_string(model.nodes_.at(node_name)->getOutput()(batch_iter, memory_iter))); 
 					line.push_back(std::to_string(expected_values(batch_iter, memory_iter, node_cnt)));
 				}
 			}
 			++node_cnt;
 		}
-		log_expected_predicted_epoch_csvwriter_.writeDataInRow(line.begin(), line.end());
+		log_expected_epoch_csvwriter_.writeDataInRow(line.begin(), line.end());
 		return true;
 	}
 
