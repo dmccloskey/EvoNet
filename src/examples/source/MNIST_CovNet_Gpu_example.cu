@@ -521,10 +521,10 @@ void main_MNIST(const std::string& data_dir, const bool& make_model, const bool&
   model_trainer.setFindCycles(false);
   model_trainer.setFastInterpreter(true);
   model_trainer.setLossFunctions({
-    std::shared_ptr<LossFunctionOp<float>>(new CrossEntropyWithLogitsOp<float>()),
+    std::shared_ptr<LossFunctionOp<float>>(new CrossEntropyWithLogitsLossOp<float>()),
     std::shared_ptr<LossFunctionOp<float>>(new MSELossOp<float>()) });
   model_trainer.setLossFunctionGrads({
-    std::shared_ptr<LossFunctionGradOp<float>>(new CrossEntropyWithLogitsGradOp<float>()),
+    std::shared_ptr<LossFunctionGradOp<float>>(new CrossEntropyWithLogitsLossGradOp<float>()),
     std::shared_ptr<LossFunctionGradOp<float>>(new MSELossGradOp<float>()) });
   model_trainer.setLossOutputNodes({
     output_nodes,

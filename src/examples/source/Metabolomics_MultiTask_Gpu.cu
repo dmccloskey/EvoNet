@@ -658,17 +658,17 @@ void main_multiTask(const std::string& biochem_rxns_filename,
   model_trainer.setPreserveOoO(true);
   model_trainer.setLossFunctions({
     std::shared_ptr<LossFunctionOp<float>>(new MSELossOp<float>(1e-6, 1.0)),
-    //std::shared_ptr<LossFunctionOp<float>>(new BCEWithLogitsOp<float>(1e-6, 1.0)),
+    //std::shared_ptr<LossFunctionOp<float>>(new BCEWithLogitsLossOp<float>(1e-6, 1.0)),
     std::shared_ptr<LossFunctionOp<float>>(new KLDivergenceMuLossOp<float>(1e-6, 0.1)),
-    std::shared_ptr<LossFunctionOp<float>>(new KLDivergenceLogVarOp<float>(1e-6, 0.1)),
-    std::shared_ptr<LossFunctionOp<float>>(new CrossEntropyWithLogitsOp<float>()),
+    std::shared_ptr<LossFunctionOp<float>>(new KLDivergenceLogVarLossOp<float>(1e-6, 0.1)),
+    std::shared_ptr<LossFunctionOp<float>>(new CrossEntropyWithLogitsLossOp<float>()),
     std::shared_ptr<LossFunctionOp<float>>(new MSELossOp<float>()) });
   model_trainer.setLossFunctionGrads({
     std::shared_ptr<LossFunctionGradOp<float>>(new MSELossGradOp<float>(1e-6, 1.0)),
-    //std::shared_ptr<LossFunctionGradOp<float>>(new BCEWithLogitsGradOp<float>(1e-6, 1.0)),
+    //std::shared_ptr<LossFunctionGradOp<float>>(new BCEWithLogitsLossGradOp<float>(1e-6, 1.0)),
     std::shared_ptr<LossFunctionGradOp<float>>(new KLDivergenceMuLossGradOp<float>(1e-6, 0.1)),
-    std::shared_ptr<LossFunctionGradOp<float>>(new KLDivergenceLogVarGradOp<float>(1e-6, 0.1)),
-    std::shared_ptr<LossFunctionGradOp<float>>(new CrossEntropyWithLogitsGradOp<float>()),
+    std::shared_ptr<LossFunctionGradOp<float>>(new KLDivergenceLogVarLossGradOp<float>(1e-6, 0.1)),
+    std::shared_ptr<LossFunctionGradOp<float>>(new CrossEntropyWithLogitsLossGradOp<float>()),
     std::shared_ptr<LossFunctionGradOp<float>>(new MSELossGradOp<float>()) });
   model_trainer.setLossOutputNodes({ output_nodes_recon, encoding_nodes_mu, encoding_nodes_logvar,
     output_nodes_class, output_nodes_class });

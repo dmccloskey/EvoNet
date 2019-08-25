@@ -319,8 +319,8 @@ void main_MNIST(const bool& make_model, const bool& train_model) {
   model_trainer.setFindCycles(false);
   model_trainer.setFastInterpreter(true);
   model_trainer.setPreserveOoO(true);
-  model_trainer.setLossFunctions({ std::shared_ptr<LossFunctionOp<float>>(new CrossEntropyWithLogitsOp<float>()) });
-  model_trainer.setLossFunctionGrads({ std::shared_ptr<LossFunctionGradOp<float>>(new CrossEntropyWithLogitsGradOp<float>()) });
+  model_trainer.setLossFunctions({ std::shared_ptr<LossFunctionOp<float>>(new CrossEntropyWithLogitsLossOp<float>()) });
+  model_trainer.setLossFunctionGrads({ std::shared_ptr<LossFunctionGradOp<float>>(new CrossEntropyWithLogitsLossGradOp<float>()) });
   model_trainer.setLossOutputNodes({ output_nodes });
 
   // define the model replicator for growth mode

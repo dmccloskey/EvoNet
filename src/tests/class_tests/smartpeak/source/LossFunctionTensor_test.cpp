@@ -876,7 +876,7 @@ BOOST_AUTO_TEST_CASE(operationfunctionKLDivergenceMuGradOp)
 }
 
 /**
-  KLDivergenceLogVarOp Tests
+  KLDivergenceLogVarLossOp Tests
 */
 BOOST_AUTO_TEST_CASE(constructorKLDivergenceLogVarOp)
 {
@@ -922,7 +922,7 @@ BOOST_AUTO_TEST_CASE(operationfunctionKLDivergenceLogVarOp2)
 }
 
 /**
-  KLDivergenceLogVarGradOp Tests
+  KLDivergenceLogVarLossGradOp Tests
 */
 BOOST_AUTO_TEST_CASE(constructorKLDivergenceLogVarGradOp)
 {
@@ -972,7 +972,7 @@ BOOST_AUTO_TEST_CASE(operationfunctionKLDivergenceLogVarGradOp)
 }
 
 /**
-BCEWithLogitsOp Tests
+BCEWithLogitsLossOp Tests
 */
 BOOST_AUTO_TEST_CASE(constructorBCEWithLogitsOp)
 {
@@ -1018,7 +1018,7 @@ BOOST_AUTO_TEST_CASE(operationfunctionBCEWithLogitsOp)
 }
 
 /**
-BCEWithLogitsGradOp Tests
+BCEWithLogitsLossGradOp Tests
 */
 BOOST_AUTO_TEST_CASE(constructorBCEWithLogitsGradOp)
 {
@@ -1068,7 +1068,7 @@ BOOST_AUTO_TEST_CASE(operationfunctionBCEWithLogitsGradOp)
 }
 
 /**
-  CrossEntropyWithLogitsOp Tests
+  CrossEntropyWithLogitsLossOp Tests
 */
 BOOST_AUTO_TEST_CASE(constructorCrossEntropyWithLogitsOp)
 {
@@ -1121,7 +1121,7 @@ BOOST_AUTO_TEST_CASE(operationfunctionCrossEntropyWithLogitsOp1)
 }
 
 /**
-  CrossEntropyWithLogitsGradOp Tests
+  CrossEntropyWithLogitsLossGradOp Tests
 */
 BOOST_AUTO_TEST_CASE(constructorCrossEntropyWithLogitsGradOp)
 {
@@ -1192,7 +1192,7 @@ BOOST_AUTO_TEST_CASE(operationfunctionCrossEntropyWithLogitsGradOp1)
 }
 
 /**
-  MSERangeUBOp Tests
+  MSERangeUBLossOp Tests
 */
 BOOST_AUTO_TEST_CASE(constructorMSERangeUBOp)
 {
@@ -1238,7 +1238,7 @@ BOOST_AUTO_TEST_CASE(operationfunctionMSERangeUBOp)
 }
 
 /**
-  MSERangeUBGradOp Tests
+  MSERangeUBLossGradOp Tests
 */
 BOOST_AUTO_TEST_CASE(constructorMSERangeUBGradOp)
 {
@@ -1288,7 +1288,7 @@ BOOST_AUTO_TEST_CASE(operationfunctionMSERangeUBGradOp)
 }
 
 /**
-  MSERangeLBOp Tests
+  MSERangeLBLossOp Tests
 */
 BOOST_AUTO_TEST_CASE(constructorMSERangeLBOp)
 {
@@ -1334,7 +1334,7 @@ BOOST_AUTO_TEST_CASE(operationfunctionMSERangeLBOp)
 }
 
 /**
-  MSERangeLBGradOp Tests
+  MSERangeLBLossGradOp Tests
 */
 BOOST_AUTO_TEST_CASE(constructorMSERangeLBGradOp)
 {

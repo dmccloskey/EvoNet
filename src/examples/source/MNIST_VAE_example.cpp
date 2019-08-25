@@ -650,11 +650,11 @@ void main_reconstruction(const std::string& biochem_rxns_filename,
   model_trainer.setLossFunctions({
     std::shared_ptr<LossFunctionOp<float>>(new MSELossOp<float>(1e-6, 1.0)),
     std::shared_ptr<LossFunctionOp<float>>(new KLDivergenceMuLossOp<float>(1e-6, 0.0)),
-    std::shared_ptr<LossFunctionOp<float>>(new KLDivergenceLogVarOp<float>(1e-6, 0.0)) });
+    std::shared_ptr<LossFunctionOp<float>>(new KLDivergenceLogVarLossOp<float>(1e-6, 0.0)) });
   model_trainer.setLossFunctionGrads({
     std::shared_ptr<LossFunctionGradOp<float>>(new MSELossGradOp<float>(1e-6, 1.0)),
     std::shared_ptr<LossFunctionGradOp<float>>(new KLDivergenceMuLossGradOp<float>(1e-6, 0.0)),
-    std::shared_ptr<LossFunctionGradOp<float>>(new KLDivergenceLogVarGradOp<float>(1e-6, 0.0)) });
+    std::shared_ptr<LossFunctionGradOp<float>>(new KLDivergenceLogVarLossGradOp<float>(1e-6, 0.0)) });
   model_trainer.setLossOutputNodes({ output_nodes, encoding_nodes_mu, encoding_nodes_logvar });
   model_trainer.setMetricFunctions({ std::shared_ptr<MetricFunctionOp<float>>(new MAEOp<float>()) });
   model_trainer.setMetricOutputNodes({ output_nodes });

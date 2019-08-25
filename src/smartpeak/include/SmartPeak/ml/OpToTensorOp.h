@@ -223,23 +223,23 @@ namespace SmartPeak
 				LossFunctionTensorOp<TensorT, DeviceT>* op_tensor_class = new KLDivergenceMuTensorOp<TensorT, DeviceT>(op_class->getParameters()[0], op_class->getParameters()[1]);
 				return op_tensor_class;
 			}
-			else if (op_class->getName() == "KLDivergenceLogVarOp") {
+			else if (op_class->getName() == "KLDivergenceLogVarLossOp") {
 				LossFunctionTensorOp<TensorT, DeviceT>* op_tensor_class = new KLDivergenceLogVarTensorOp<TensorT, DeviceT>(op_class->getParameters()[0], op_class->getParameters()[1]);
 				return op_tensor_class;
 			}
-			else if (op_class->getName() == "BCEWithLogitsOp") {
+			else if (op_class->getName() == "BCEWithLogitsLossOp") {
 				LossFunctionTensorOp<TensorT, DeviceT>* op_tensor_class = new BCEWithLogitsTensorOp<TensorT, DeviceT>(op_class->getParameters()[0], op_class->getParameters()[1]);
 				return op_tensor_class;
 			}
-			else if (op_class->getName() == "CrossEntropyWithLogitsOp") {
+			else if (op_class->getName() == "CrossEntropyWithLogitsLossOp") {
 				CrossEntropyWithLogitsTensorOp<TensorT, DeviceT>* op_tensor_class = new CrossEntropyWithLogitsTensorOp<TensorT, DeviceT>(op_class->getParameters()[0], op_class->getParameters()[1]);
 				return op_tensor_class;
 			}
-      else if (op_class->getName() == "MSERangeUBOp") {
+      else if (op_class->getName() == "MSERangeUBLossOp") {
         LossFunctionTensorOp<TensorT, DeviceT>* op_tensor_class = new MSERangeUBTensorOp<TensorT, DeviceT>(op_class->getParameters()[0], op_class->getParameters()[1]);
         return op_tensor_class;
       }
-      else if (op_class->getName() == "MSERangeLBOp") {
+      else if (op_class->getName() == "MSERangeLBLossOp") {
         LossFunctionTensorOp<TensorT, DeviceT>* op_tensor_class = new MSERangeLBTensorOp<TensorT, DeviceT>(op_class->getParameters()[0], op_class->getParameters()[1]);
         return op_tensor_class;
       }
@@ -301,23 +301,23 @@ namespace SmartPeak
 				LossFunctionGradTensorOp<TensorT, DeviceT>* op_tensor_class = new KLDivergenceMuGradTensorOp<TensorT, DeviceT>(op_class->getParameters()[0], op_class->getParameters()[1]);
 				return op_tensor_class;
 			}
-			else if (op_class->getName() == "KLDivergenceLogVarGradOp") {
+			else if (op_class->getName() == "KLDivergenceLogVarLossGradOp") {
 				LossFunctionGradTensorOp<TensorT, DeviceT>* op_tensor_class = new KLDivergenceLogVarGradTensorOp<TensorT, DeviceT>(op_class->getParameters()[0], op_class->getParameters()[1]);
 				return op_tensor_class;
 			}
-			else if (op_class->getName() == "BCEWithLogitsGradOp") {
+			else if (op_class->getName() == "BCEWithLogitsLossGradOp") {
 				LossFunctionGradTensorOp<TensorT, DeviceT>* op_tensor_class = new BCEWithLogitsGradTensorOp<TensorT, DeviceT>(op_class->getParameters()[0], op_class->getParameters()[1]);
 				return op_tensor_class;
 			}
-			else if (op_class->getName() == "CrossEntropyWithLogitsGradOp") {
+			else if (op_class->getName() == "CrossEntropyWithLogitsLossGradOp") {
 				CrossEntropyWithLogitsGradTensorOp<TensorT, DeviceT>* op_tensor_class = new CrossEntropyWithLogitsGradTensorOp<TensorT, DeviceT>(op_class->getParameters()[0], op_class->getParameters()[1]);
 				return op_tensor_class;
 			}
-      else if (op_class->getName() == "MSERangeLBGradOp") {
+      else if (op_class->getName() == "MSERangeLBLossGradOp") {
         LossFunctionGradTensorOp<TensorT, DeviceT>* op_tensor_class = new MSERangeLBGradTensorOp<TensorT, DeviceT>(op_class->getParameters()[0], op_class->getParameters()[1]);
         return op_tensor_class;
       }
-      else if (op_class->getName() == "MSERangeUBGradOp") {
+      else if (op_class->getName() == "MSERangeUBLossGradOp") {
         LossFunctionGradTensorOp<TensorT, DeviceT>* op_tensor_class = new MSERangeUBGradTensorOp<TensorT, DeviceT>(op_class->getParameters()[0], op_class->getParameters()[1]);
         return op_tensor_class;
       }
