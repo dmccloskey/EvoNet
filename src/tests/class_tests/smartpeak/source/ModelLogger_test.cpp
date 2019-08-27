@@ -63,7 +63,7 @@ BOOST_AUTO_TEST_CASE(initLogs)
 	BOOST_CHECK_EQUAL(model_logger.getLogTimeEpochCSVWriter().getLineCount(), 0);
 	BOOST_CHECK_EQUAL(model_logger.getLogTrainValMetricEpochCSVWriter().getFilename(), "Model1_TrainValMetricsPerEpoch.csv");
 	BOOST_CHECK_EQUAL(model_logger.getLogTrainValMetricEpochCSVWriter().getLineCount(), 0);
-	BOOST_CHECK_EQUAL(model_logger.getLogExpectedEpochCSVWriter().getFilename(), "Model1_ExpectedPredictedPerEpoch.csv");
+	BOOST_CHECK_EQUAL(model_logger.getLogExpectedEpochCSVWriter().getFilename(), "Model1_ExpectedPerEpoch.csv");
 	BOOST_CHECK_EQUAL(model_logger.getLogExpectedEpochCSVWriter().getLineCount(), 0);
 	BOOST_CHECK_EQUAL(model_logger.getLogWeightsEpochCSVWriter().getFilename(), "Model1_WeightsPerEpoch.csv");
 	BOOST_CHECK_EQUAL(model_logger.getLogWeightsEpochCSVWriter().getLineCount(), 0);

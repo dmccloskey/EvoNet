@@ -208,7 +208,7 @@ public:
 			log_train_val_metric_epoch_csvwriter_ = csvwriter;
 		}
 		if (log_expected_epoch_) {
-			std::string filename = model.getName() + "_ExpectedPredictedPerEpoch.csv";
+			std::string filename = model.getName() + "_ExpectedPerEpoch.csv";
 			CSVWriter csvwriter(filename);
 			log_expected_epoch_csvwriter_ = csvwriter;
 		}
