@@ -108,14 +108,11 @@ public:
     else
       n_input_pixels = this->model_validation_.component_group_names_.size();
 
-    if (eval && this->use_fold_change_) {
-      assert(n_input_nodes == 2 * n_input_pixels);
-    }
-    else if (eval) {
+    if (eval) {
       assert(n_input_nodes == n_input_pixels);
     }
     else if (this->use_fold_change_) {
-      assert(n_input_nodes == 2 * n_input_pixels + n_encodings_);
+      assert(n_input_nodes == n_input_pixels + n_encodings_);
     }
     else {
       assert(n_loss_output_nodes == 2 * n_input_pixels + 2 * n_encodings_);
@@ -163,21 +160,11 @@ public:
                 this->model_training_.component_group_names_.at(nodes_iter));
             if (ref == 0 || value == 0) {
               input_data(batch_iter, memory_iter, nodes_iter) = 0;
-              input_data(batch_iter, memory_iter, nodes_iter + n_input_pixels) = 0;
             }
             // Log10 is used with the assumption that the larges fold change will be on an order of ~10
             // thus, all values will be between -1 and 1
-            else {
-              TensorT fold_change = minFunc(maxFunc(std::log(value / ref) / std::log(100), -1), 1);
-              if (fold_change < 0) {
-                input_data(batch_iter, memory_iter, nodes_iter) = -fold_change;
-                input_data(batch_iter, memory_iter, nodes_iter + n_input_pixels) = 1;
-              }
-              else {
-                input_data(batch_iter, memory_iter, nodes_iter) = fold_change;
-                input_data(batch_iter, memory_iter, nodes_iter + n_input_pixels) = 0;
-              }
-            }
+            TensorT fold_change = minFunc(maxFunc(std::log(value / ref) / std::log(100), -1), 1);
+            input_data(batch_iter, memory_iter, nodes_iter) = fold_change;
           }
 
           // Assign the loss and metric values
@@ -192,8 +179,7 @@ public:
             if (train) {
               random_value = d(gen);
             }
-            if (this->use_fold_change_) input_data(batch_iter, memory_iter, nodes_iter + 2 * n_input_pixels) = 0; // FIXME random_value; // sample from a normal distribution
-            else input_data(batch_iter, memory_iter, nodes_iter + n_input_pixels) = 0; // FIXME random_value; // sample from a normal distribution
+            input_data(batch_iter, memory_iter, nodes_iter + n_input_pixels) = 0; // FIXME random_value; // sample from a normal distribution
             loss_output_data(batch_iter, memory_iter, nodes_iter + 2 * n_input_pixels) = 0; // Dummy data for KL divergence mu
             loss_output_data(batch_iter, memory_iter, nodes_iter + 2 * n_input_pixels + n_encodings_) = 0; // Dummy data for KL divergence logvar
           }
@@ -402,30 +388,19 @@ public:
     // Data pre-processing steps
     this->addDataPreproccessingSteps(model, node_names_input, linear_scale_input, log_transform_input, standardize_input);
 
-    // Add the input nodes for the direction of change
-    std::vector<std::string> node_names_is_neg;
-    if (is_fold_change) {
-      node_names_is_neg = model_builder.addInputNodes(model, "Input-IsNeg", "Input-IsNeg", n_inputs, true);
-    }
-
     // Add the encoding layers
     std::vector<std::string> node_names = node_names_input;
     if (n_en_hidden_0 > 0) {
       node_names = model_builder.addFullyConnected(model, "EN0", "EN0", node_names, n_en_hidden_0,
-        std::shared_ptr<ActivationOp<TensorT>>(new LeakyReLUOp<TensorT>()),
-        std::shared_ptr<ActivationOp<TensorT>>(new LeakyReLUGradOp<TensorT>()),
-        //std::shared_ptr<ActivationOp<TensorT>>(new LinearOp<TensorT>()),
-        //std::shared_ptr<ActivationOp<TensorT>>(new LinearGradOp<TensorT>()),
+        //std::shared_ptr<ActivationOp<TensorT>>(new LeakyReLUOp<TensorT>()),
+        //std::shared_ptr<ActivationOp<TensorT>>(new LeakyReLUGradOp<TensorT>()),
+        std::shared_ptr<ActivationOp<TensorT>>(new LinearOp<TensorT>()),
+        std::shared_ptr<ActivationOp<TensorT>>(new LinearGradOp<TensorT>()),
         std::shared_ptr<IntegrationOp<TensorT>>(new SumOp<TensorT>()),
         std::shared_ptr<IntegrationErrorOp<TensorT>>(new SumErrorOp<TensorT>()),
         std::shared_ptr<IntegrationWeightGradOp<TensorT>>(new SumWeightGradOp<TensorT>()),
         std::shared_ptr<WeightInitOp<TensorT>>(new RandWeightInitOp<TensorT>((int)(node_names.size() + n_en_hidden_0) / 2, 1)),
         std::shared_ptr<SolverOp<TensorT>>(new AdamOp<TensorT>(1e-4, 0.9, 0.999, 1e-8, 1e2)), 0.0f, 0.0f, false, true);
-      if (is_fold_change) {
-        model_builder.addFullyConnected(model, "EN0", node_names_is_neg, node_names,
-          std::shared_ptr<WeightInitOp<TensorT>>(new RandWeightInitOp<TensorT>((int)(node_names.size() + n_en_hidden_0) / 2, 1)),
-          std::shared_ptr<SolverOp<TensorT>>(new AdamOp<TensorT>(1e-4, 0.9, 0.999, 1e-8, 1e2)), 0.0f, true);
-      }
       if (add_norm) {
         node_names = model_builder.addNormalization(model, "EN0-Norm", "EN0-Norm", node_names, true);
         node_names = model_builder.addSinglyConnected(model, "EN0-Norm-gain", "EN0-Norm-gain", node_names, node_names.size(),
@@ -441,10 +416,10 @@ public:
     }
     if (n_en_hidden_1 > 0) {
       node_names = model_builder.addFullyConnected(model, "EN1", "EN1", node_names, n_en_hidden_1,
-        std::shared_ptr<ActivationOp<TensorT>>(new LeakyReLUOp<TensorT>()),
-        std::shared_ptr<ActivationOp<TensorT>>(new LeakyReLUGradOp<TensorT>()),
-        //std::shared_ptr<ActivationOp<TensorT>>(new LinearOp<TensorT>()),
-        //std::shared_ptr<ActivationOp<TensorT>>(new LinearGradOp<TensorT>()),
+        //std::shared_ptr<ActivationOp<TensorT>>(new LeakyReLUOp<TensorT>()),
+        //std::shared_ptr<ActivationOp<TensorT>>(new LeakyReLUGradOp<TensorT>()),
+        std::shared_ptr<ActivationOp<TensorT>>(new LinearOp<TensorT>()),
+        std::shared_ptr<ActivationOp<TensorT>>(new LinearGradOp<TensorT>()),
         std::shared_ptr<IntegrationOp<TensorT>>(new SumOp<TensorT>()),
         std::shared_ptr<IntegrationErrorOp<TensorT>>(new SumErrorOp<TensorT>()),
         std::shared_ptr<IntegrationWeightGradOp<TensorT>>(new SumWeightGradOp<TensorT>()),
@@ -465,10 +440,10 @@ public:
     }
     if (n_en_hidden_2 > 0) {
       node_names = model_builder.addFullyConnected(model, "EN2", "EN2", node_names, n_en_hidden_2,
-        std::shared_ptr<ActivationOp<TensorT>>(new LeakyReLUOp<TensorT>()),
-        std::shared_ptr<ActivationOp<TensorT>>(new LeakyReLUGradOp<TensorT>()),
-        //std::shared_ptr<ActivationOp<TensorT>>(new LinearOp<TensorT>()),
-        //std::shared_ptr<ActivationOp<TensorT>>(new LinearGradOp<TensorT>()),
+        //std::shared_ptr<ActivationOp<TensorT>>(new LeakyReLUOp<TensorT>()),
+        //std::shared_ptr<ActivationOp<TensorT>>(new LeakyReLUGradOp<TensorT>()),
+        std::shared_ptr<ActivationOp<TensorT>>(new LinearOp<TensorT>()),
+        std::shared_ptr<ActivationOp<TensorT>>(new LinearGradOp<TensorT>()),
         std::shared_ptr<IntegrationOp<TensorT>>(new SumOp<TensorT>()),
         std::shared_ptr<IntegrationErrorOp<TensorT>>(new SumErrorOp<TensorT>()),
         std::shared_ptr<IntegrationWeightGradOp<TensorT>>(new SumWeightGradOp<TensorT>()),
@@ -518,10 +493,10 @@ public:
     // Add the decoding layers
     if (n_de_hidden_0 > 0) {
       node_names = model_builder.addFullyConnected(model, "DE0", "DE0", node_names, n_de_hidden_0,
-        std::shared_ptr<ActivationOp<TensorT>>(new LeakyReLUOp<TensorT>()),
-        std::shared_ptr<ActivationOp<TensorT>>(new LeakyReLUGradOp<TensorT>()),
-        //std::shared_ptr<ActivationOp<TensorT>>(new LinearOp<TensorT>()),
-        //std::shared_ptr<ActivationOp<TensorT>>(new LinearGradOp<TensorT>()),
+        //std::shared_ptr<ActivationOp<TensorT>>(new LeakyReLUOp<TensorT>()),
+        //std::shared_ptr<ActivationOp<TensorT>>(new LeakyReLUGradOp<TensorT>()),
+        std::shared_ptr<ActivationOp<TensorT>>(new LinearOp<TensorT>()),
+        std::shared_ptr<ActivationOp<TensorT>>(new LinearGradOp<TensorT>()),
         std::shared_ptr<IntegrationOp<TensorT>>(new SumOp<TensorT>()),
         std::shared_ptr<IntegrationErrorOp<TensorT>>(new SumErrorOp<TensorT>()),
         std::shared_ptr<IntegrationWeightGradOp<TensorT>>(new SumWeightGradOp<TensorT>()),
@@ -542,10 +517,10 @@ public:
     }
     if (n_de_hidden_1 > 0) {
       node_names = model_builder.addFullyConnected(model, "DE1", "DE1", node_names, n_de_hidden_1,
-        std::shared_ptr<ActivationOp<TensorT>>(new LeakyReLUOp<TensorT>()),
-        std::shared_ptr<ActivationOp<TensorT>>(new LeakyReLUGradOp<TensorT>()),
-        //std::shared_ptr<ActivationOp<TensorT>>(new LinearOp<TensorT>()),
-        //std::shared_ptr<ActivationOp<TensorT>>(new LinearGradOp<TensorT>()),
+        //std::shared_ptr<ActivationOp<TensorT>>(new LeakyReLUOp<TensorT>()),
+        //std::shared_ptr<ActivationOp<TensorT>>(new LeakyReLUGradOp<TensorT>()),
+        std::shared_ptr<ActivationOp<TensorT>>(new LinearOp<TensorT>()),
+        std::shared_ptr<ActivationOp<TensorT>>(new LinearGradOp<TensorT>()),
         std::shared_ptr<IntegrationOp<TensorT>>(new SumOp<TensorT>()),
         std::shared_ptr<IntegrationErrorOp<TensorT>>(new SumErrorOp<TensorT>()),
         std::shared_ptr<IntegrationWeightGradOp<TensorT>>(new SumWeightGradOp<TensorT>()),
@@ -566,10 +541,10 @@ public:
     }
     if (n_de_hidden_2 > 0) {
       node_names = model_builder.addFullyConnected(model, "DE2", "DE2", node_names, n_de_hidden_2,
-        std::shared_ptr<ActivationOp<TensorT>>(new LeakyReLUOp<TensorT>()),
-        std::shared_ptr<ActivationOp<TensorT>>(new LeakyReLUGradOp<TensorT>()),
-        //std::shared_ptr<ActivationOp<TensorT>>(new LinearOp<TensorT>()),
-        //std::shared_ptr<ActivationOp<TensorT>>(new LinearGradOp<TensorT>()),
+        //std::shared_ptr<ActivationOp<TensorT>>(new LeakyReLUOp<TensorT>()),
+        //std::shared_ptr<ActivationOp<TensorT>>(new LeakyReLUGradOp<TensorT>()),
+        std::shared_ptr<ActivationOp<TensorT>>(new LinearOp<TensorT>()),
+        std::shared_ptr<ActivationOp<TensorT>>(new LinearGradOp<TensorT>()),
         std::shared_ptr<IntegrationOp<TensorT>>(new SumOp<TensorT>()),
         std::shared_ptr<IntegrationErrorOp<TensorT>>(new SumErrorOp<TensorT>()),
         std::shared_ptr<IntegrationWeightGradOp<TensorT>>(new SumWeightGradOp<TensorT>()),
@@ -590,18 +565,28 @@ public:
     }
 
     // Add the final output layer
-    std::vector<std::string> node_names_output;
-    std::vector<std::string> node_names_final = node_names; // copy the final node_names before the output
-    node_names = model_builder.addFullyConnected(model, "DE-Output", "DE-Output", node_names, n_outputs,
-      std::shared_ptr<ActivationOp<TensorT>>(new LeakyReLUOp<TensorT>()),
-      std::shared_ptr<ActivationOp<TensorT>>(new LeakyReLUGradOp<TensorT>()),
-      std::shared_ptr<IntegrationOp<TensorT>>(new SumOp<TensorT>()),
-      std::shared_ptr<IntegrationErrorOp<TensorT>>(new SumErrorOp<TensorT>()),
-      std::shared_ptr<IntegrationWeightGradOp<TensorT>>(new SumWeightGradOp<TensorT>()),
-      std::shared_ptr<WeightInitOp<TensorT>>(new RandWeightInitOp<TensorT>((int)(node_names.size() + n_outputs) / 2, 1)),
-      std::shared_ptr<SolverOp<TensorT>>(new AdamOp<TensorT>(1e-4, 0.9, 0.999, 1e-8, 1e2)), 0.0f, 0.0f, false, true);
+    if (is_fold_change) {
+      node_names = model_builder.addFullyConnected(model, "DE-Output", "DE-Output", node_names, n_outputs,
+        std::shared_ptr<ActivationOp<TensorT>>(new LinearOp<TensorT>()),
+        std::shared_ptr<ActivationOp<TensorT>>(new LinearGradOp<TensorT>()),
+        std::shared_ptr<IntegrationOp<TensorT>>(new SumOp<TensorT>()),
+        std::shared_ptr<IntegrationErrorOp<TensorT>>(new SumErrorOp<TensorT>()),
+        std::shared_ptr<IntegrationWeightGradOp<TensorT>>(new SumWeightGradOp<TensorT>()),
+        std::shared_ptr<WeightInitOp<TensorT>>(new RandWeightInitOp<TensorT>((int)(node_names.size() + n_outputs) / 2, 1)),
+        std::shared_ptr<SolverOp<TensorT>>(new AdamOp<TensorT>(1e-4, 0.9, 0.999, 1e-8, 1e2)), 0.0f, 0.0f, false, true);
+    }
+    else {
+      node_names = model_builder.addFullyConnected(model, "DE-Output", "DE-Output", node_names, n_outputs,
+        std::shared_ptr<ActivationOp<TensorT>>(new LeakyReLUOp<TensorT>()),
+        std::shared_ptr<ActivationOp<TensorT>>(new LeakyReLUGradOp<TensorT>()),
+        std::shared_ptr<IntegrationOp<TensorT>>(new SumOp<TensorT>()),
+        std::shared_ptr<IntegrationErrorOp<TensorT>>(new SumErrorOp<TensorT>()),
+        std::shared_ptr<IntegrationWeightGradOp<TensorT>>(new SumWeightGradOp<TensorT>()),
+        std::shared_ptr<WeightInitOp<TensorT>>(new RandWeightInitOp<TensorT>((int)(node_names.size() + n_outputs) / 2, 1)),
+        std::shared_ptr<SolverOp<TensorT>>(new AdamOp<TensorT>(1e-4, 0.9, 0.999, 1e-8, 1e2)), 0.0f, 0.0f, false, true);
+    }
 
-    node_names_output = model_builder.addSinglyConnected(model, "Output", "Output", node_names, n_outputs,
+    std::vector<std::string> node_names_output = model_builder.addSinglyConnected(model, "Output", "Output", node_names, n_outputs,
       std::shared_ptr<ActivationOp<TensorT>>(new LinearOp<TensorT>()),
       std::shared_ptr<ActivationOp<TensorT>>(new LinearGradOp<TensorT>()),
       std::shared_ptr<IntegrationOp<TensorT>>(new SumOp<TensorT>()),
@@ -618,35 +603,6 @@ public:
     // Specify the output node types manually
     for (const std::string& node_name : node_names_output)
       model.getNodesMap().at(node_name)->setType(NodeType::output);
-
-    if (is_fold_change) {
-      node_names = model_builder.addFullyConnected(model, "DE-Output-IsNeg", "DE-Output-IsNeg", node_names_final, n_outputs,
-        std::shared_ptr<ActivationOp<TensorT>>(new LeakyReLUOp<TensorT>()),
-        std::shared_ptr<ActivationOp<TensorT>>(new LeakyReLUGradOp<TensorT>()),
-        std::shared_ptr<IntegrationOp<TensorT>>(new SumOp<TensorT>()),
-        std::shared_ptr<IntegrationErrorOp<TensorT>>(new SumErrorOp<TensorT>()),
-        std::shared_ptr<IntegrationWeightGradOp<TensorT>>(new SumWeightGradOp<TensorT>()),
-        std::shared_ptr<WeightInitOp<TensorT>>(new RandWeightInitOp<TensorT>((int)(node_names.size() + n_outputs) / 2, 1)),
-        std::shared_ptr<SolverOp<TensorT>>(new AdamOp<TensorT>(1e-4, 0.9, 0.999, 1e-8, 1e2)), 0.0f, 0.0f, false, true);
-
-      node_names_output = model_builder.addSinglyConnected(model, "Output-IsNeg", "Output-IsNeg", node_names, n_outputs,
-        std::shared_ptr<ActivationOp<TensorT>>(new LinearOp<TensorT>()),
-        std::shared_ptr<ActivationOp<TensorT>>(new LinearGradOp<TensorT>()),
-        std::shared_ptr<IntegrationOp<TensorT>>(new SumOp<TensorT>()),
-        std::shared_ptr<IntegrationErrorOp<TensorT>>(new SumErrorOp<TensorT>()),
-        std::shared_ptr<IntegrationWeightGradOp<TensorT>>(new SumWeightGradOp<TensorT>()),
-        std::shared_ptr<WeightInitOp<TensorT>>(new ConstWeightInitOp<TensorT>(1)),
-        std::shared_ptr<SolverOp<TensorT>>(new DummySolverOp<TensorT>()), 0.0f, 0.0f, false, true);
-
-      // Subtract out the pre-processed input data to test against all 0's
-      model_builder.addSinglyConnected(model, "Output-IsNeg", node_names_is_neg, node_names_output,
-        std::shared_ptr<WeightInitOp<TensorT>>(new ConstWeightInitOp<TensorT>(-1)),
-        std::shared_ptr<SolverOp<TensorT>>(new DummySolverOp<TensorT>()), 0.0f, true);
-
-      // Specify the output node types manually
-      for (const std::string& node_name : node_names_output)
-        model.getNodesMap().at(node_name)->setType(NodeType::output);
-    }
 
     // Set the input and output nodes
     model.setInputAndOutputNodes();
@@ -950,19 +906,19 @@ public:
     // Set the defaults
     model_logger.setLogTimeEpoch(true);
     model_logger.setLogTrainValMetricEpoch(true);
-    model_logger.setLogExpectedPredictedEpoch(false);
+    model_logger.setLogExpectedEpoch(false);
     model_logger.setLogNodeInputsEpoch(false);
 
     // initialize all logs
     if (n_epochs == 0) {
-      model_logger.setLogExpectedPredictedEpoch(true);
+      model_logger.setLogExpectedEpoch(true);
       model_logger.setLogNodeInputsEpoch(true);
       model_logger.initLogs(model);
     }
 
     // Per n epoch logging
     if (n_epochs % 1 == 0) { // FIXME
-      model_logger.setLogExpectedPredictedEpoch(true);
+      model_logger.setLogExpectedEpoch(true);
       model_logger.setLogNodeInputsEpoch(true);
       model_interpreter.getModelResults(model, true, false, false, true);
     }
@@ -1077,14 +1033,6 @@ void main_reconstruction(const std::string& biochem_rxns_filename,
     input_nodes.push_back(name);
     met_input_nodes.push_back(name);
   }
-  if (use_fold_change) {
-    for (int i = 0; i < n_input_nodes; ++i) {
-      char name_char[512];
-      sprintf(name_char, "Input-IsNeg_%012d", i);
-      std::string name(name_char);
-      input_nodes.push_back(name);
-    }
-  }
 
   // Make the encoding nodes and add them to the input
   for (int i = 0; i < encoding_size; ++i) {
@@ -1096,20 +1044,11 @@ void main_reconstruction(const std::string& biochem_rxns_filename,
 
   // Make the reconstruction nodes
   std::vector<std::string> output_nodes;
-  std::vector<std::string> output_nodes_is_neg;
   for (int i = 0; i < n_output_nodes; ++i) {
     char name_char[512];
     sprintf(name_char, "Output_%012d", i);
     std::string name(name_char);
     output_nodes.push_back(name);
-  }
-  if (use_fold_change) {
-    for (int i = 0; i < n_output_nodes; ++i) {
-      char name_char[512];
-      sprintf(name_char, "Output-IsNeg_%012d", i);
-      std::string name(name_char);
-      output_nodes_is_neg.push_back(name);
-    }
   }
 
   // Make the mu nodes
@@ -1219,32 +1158,17 @@ void main_reconstruction(const std::string& biochem_rxns_filename,
   model_trainer.setFindCycles(false);
   model_trainer.setFastInterpreter(true);
   model_trainer.setPreserveOoO(true);
-  if (use_fold_change) {
-    model_trainer.setLossFunctions({
-      std::shared_ptr<LossFunctionOp<float>>(new MAELossOp<float>(1e-6, 1.0)),
-      std::shared_ptr<LossFunctionOp<float>>(new MSELossOp<float>(1e-6, 1.0)),
-      std::shared_ptr<LossFunctionOp<float>>(new KLDivergenceMuLossOp<float>(1e-6, 0.0)), //FIXME
-      std::shared_ptr<LossFunctionOp<float>>(new KLDivergenceLogVarLossOp<float>(1e-6, 0.0)) });
-    model_trainer.setLossFunctionGrads({
-      std::shared_ptr<LossFunctionGradOp<float>>(new MAELossGradOp<float>(1e-6, 1.0)),
-      std::shared_ptr<LossFunctionGradOp<float>>(new MSELossGradOp<float>(1e-6, 1.0)),
-      std::shared_ptr<LossFunctionGradOp<float>>(new KLDivergenceMuLossGradOp<float>(1e-6, 0.0)),
-      std::shared_ptr<LossFunctionGradOp<float>>(new KLDivergenceLogVarLossGradOp<float>(1e-6, 0.0)) });
-    model_trainer.setLossOutputNodes({ output_nodes, output_nodes_is_neg, encoding_nodes_mu, encoding_nodes_logvar });
-  }
-  else {
-    model_trainer.setLossFunctions({
-      std::shared_ptr<LossFunctionOp<float>>(new MAELossOp<float>(1e-6, 1.0)),
-      std::shared_ptr<LossFunctionOp<float>>(new MAPELossOp<float>(1e-6, 0.0)),
-      std::shared_ptr<LossFunctionOp<float>>(new KLDivergenceMuLossOp<float>(1e-6, 0.0)), //FIXME
-      std::shared_ptr<LossFunctionOp<float>>(new KLDivergenceLogVarLossOp<float>(1e-6, 0.0)) });
-    model_trainer.setLossFunctionGrads({
-      std::shared_ptr<LossFunctionGradOp<float>>(new MAELossGradOp<float>(1e-6, 1.0)),
-      std::shared_ptr<LossFunctionGradOp<float>>(new MAPELossGradOp<float>(1e-6, 0.0)),
-      std::shared_ptr<LossFunctionGradOp<float>>(new KLDivergenceMuLossGradOp<float>(1e-6, 0.0)),
-      std::shared_ptr<LossFunctionGradOp<float>>(new KLDivergenceLogVarLossGradOp<float>(1e-6, 0.0)) });
-    model_trainer.setLossOutputNodes({ output_nodes, output_nodes, encoding_nodes_mu, encoding_nodes_logvar });
-  }
+  model_trainer.setLossFunctions({
+    std::shared_ptr<LossFunctionOp<float>>(new MAELossOp<float>(1e-6, 1.0)),
+    std::shared_ptr<LossFunctionOp<float>>(new MAPELossOp<float>(1e-6, 0.0)),
+    std::shared_ptr<LossFunctionOp<float>>(new KLDivergenceMuLossOp<float>(1e-6, 0.0)), //FIXME
+    std::shared_ptr<LossFunctionOp<float>>(new KLDivergenceLogVarLossOp<float>(1e-6, 0.0)) });
+  model_trainer.setLossFunctionGrads({
+    std::shared_ptr<LossFunctionGradOp<float>>(new MAELossGradOp<float>(1e-6, 1.0)),
+    std::shared_ptr<LossFunctionGradOp<float>>(new MAPELossGradOp<float>(1e-6, 0.0)),
+    std::shared_ptr<LossFunctionGradOp<float>>(new KLDivergenceMuLossGradOp<float>(1e-6, 0.0)),
+    std::shared_ptr<LossFunctionGradOp<float>>(new KLDivergenceLogVarLossGradOp<float>(1e-6, 0.0)) });
+  model_trainer.setLossOutputNodes({ output_nodes, output_nodes, encoding_nodes_mu, encoding_nodes_logvar });
   model_trainer.setMetricFunctions({ std::shared_ptr<MetricFunctionOp<float>>(new MAEOp<float>()) });
   model_trainer.setMetricOutputNodes({ output_nodes });
   model_trainer.setMetricNames({ "MAE" });

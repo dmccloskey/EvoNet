@@ -71,12 +71,7 @@ public:
     else
       n_input_pixels = this->model_validation_.component_group_names_.size();
 
-    if (this->use_fold_change_) {
-      assert(n_input_nodes == 2 * n_input_pixels);
-    }
-    else {
-      assert(n_input_nodes == n_input_pixels);
-    }
+    assert(n_input_nodes == n_input_pixels);
 
     for (int epoch_iter = 0; epoch_iter < n_epochs; ++epoch_iter) {
       for (int batch_iter = 0; batch_iter < batch_size; ++batch_iter) {
@@ -106,21 +101,11 @@ public:
                   this->model_training_.component_group_names_.at(nodes_iter));
               if (ref == 0 || value == 0) {
                 input_data(batch_iter, memory_iter, nodes_iter, epoch_iter) = 0;
-                input_data(batch_iter, memory_iter, nodes_iter + n_input_pixels, epoch_iter) = 0;
               }
               // Log10 is used with the assumption that the larges fold change will be on an order of ~10
               // thus, all values will be between -1 and 1
-              else {
-                TensorT fold_change = minFunc(maxFunc(std::log(value / ref) / std::log(100), -1), 1);
-                if (fold_change < 0) {
-                  input_data(batch_iter, memory_iter, nodes_iter, epoch_iter) = -fold_change;
-                  input_data(batch_iter, memory_iter, nodes_iter + n_input_pixels, epoch_iter) = 1;
-                }
-                else {
-                  input_data(batch_iter, memory_iter, nodes_iter, epoch_iter) = fold_change;
-                  input_data(batch_iter, memory_iter, nodes_iter + n_input_pixels, epoch_iter) = 0;
-                }
-              }
+              TensorT fold_change = minFunc(maxFunc(std::log(value / ref) / std::log(100), -1), 1);
+              input_data(batch_iter, memory_iter, nodes_iter, epoch_iter) = fold_change;
             }
           }
         }
