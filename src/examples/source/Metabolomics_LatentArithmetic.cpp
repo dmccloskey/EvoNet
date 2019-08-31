@@ -147,12 +147,6 @@ public:
     // Data pre-processing steps
     this->addDataPreproccessingSteps(model, node_names_input, linear_scale_input, log_transform_input, standardize_input);
 
-    // Add the input nodes for the direction of change
-    std::vector<std::string> node_names_is_neg;
-    if (is_fold_change) {
-      node_names_is_neg = model_builder.addInputNodes(model, "Input-IsNeg", "Input-IsNeg", n_inputs, true);
-    }
-
     // Add the encoding layers
     std::vector<std::string> node_names = node_names_input;
     if (n_en_hidden_0 > 0) {
@@ -166,11 +160,6 @@ public:
         std::shared_ptr<IntegrationWeightGradOp<TensorT>>(new SumWeightGradOp<TensorT>()),
         std::shared_ptr<WeightInitOp<TensorT>>(new RandWeightInitOp<TensorT>((int)(node_names.size() + n_en_hidden_0) / 2, 1)),
         std::shared_ptr<SolverOp<TensorT>>(new AdamOp<TensorT>(1e-4, 0.9, 0.999, 1e-8)), 0.0f, 0.0f, false, true);
-      if (is_fold_change) {
-        model_builder.addFullyConnected(model, "EN0", node_names_is_neg, node_names,
-          std::shared_ptr<WeightInitOp<TensorT>>(new RandWeightInitOp<TensorT>((int)(node_names.size() + n_en_hidden_0) / 2, 1)),
-          std::shared_ptr<SolverOp<TensorT>>(new AdamOp<TensorT>(1e-4, 0.9, 0.999, 1e-8, 1e2)), 0.0f, true);
-      }
       if (add_norm) {
         node_names = model_builder.addNormalization(model, "EN0-Norm", "EN0-Norm", node_names, true);
         node_names = model_builder.addSinglyConnected(model, "EN0-Norm-gain", "EN0-Norm-gain", node_names, node_names.size(),
@@ -336,18 +325,28 @@ public:
     }
 
     // Add the final output layer
-    std::vector<std::string> node_names_output;
-    std::vector<std::string> node_names_final = node_names; // copy the final node_names before the output
-    node_names = model_builder.addFullyConnected(model, "DE-Output", "DE-Output", node_names, n_outputs,
-      std::shared_ptr<ActivationOp<TensorT>>(new LeakyReLUOp<TensorT>()),
-      std::shared_ptr<ActivationOp<TensorT>>(new LeakyReLUGradOp<TensorT>()),
-      std::shared_ptr<IntegrationOp<TensorT>>(new SumOp<TensorT>()),
-      std::shared_ptr<IntegrationErrorOp<TensorT>>(new SumErrorOp<TensorT>()),
-      std::shared_ptr<IntegrationWeightGradOp<TensorT>>(new SumWeightGradOp<TensorT>()),
-      std::shared_ptr<WeightInitOp<TensorT>>(new RandWeightInitOp<TensorT>((int)(node_names.size() + n_outputs) / 2, 1)),
-      std::shared_ptr<SolverOp<TensorT>>(new AdamOp<TensorT>(1e-4, 0.9, 0.999, 1e-8, 1e2)), 0.0f, 0.0f, false, true);
+    if (is_fold_change) {
+      node_names = model_builder.addFullyConnected(model, "DE-Output", "DE-Output", node_names, n_outputs,
+        std::shared_ptr<ActivationOp<TensorT>>(new LinearOp<TensorT>()),
+        std::shared_ptr<ActivationOp<TensorT>>(new LinearGradOp<TensorT>()),
+        std::shared_ptr<IntegrationOp<TensorT>>(new SumOp<TensorT>()),
+        std::shared_ptr<IntegrationErrorOp<TensorT>>(new SumErrorOp<TensorT>()),
+        std::shared_ptr<IntegrationWeightGradOp<TensorT>>(new SumWeightGradOp<TensorT>()),
+        std::shared_ptr<WeightInitOp<TensorT>>(new RandWeightInitOp<TensorT>((int)(node_names.size() + n_outputs) / 2, 1)),
+        std::shared_ptr<SolverOp<TensorT>>(new AdamOp<TensorT>(1e-4, 0.9, 0.999, 1e-8, 1e2)), 0.0f, 0.0f, false, true);
+    }
+    else {
+      node_names = model_builder.addFullyConnected(model, "DE-Output", "DE-Output", node_names, n_outputs,
+        std::shared_ptr<ActivationOp<TensorT>>(new LeakyReLUOp<TensorT>()),
+        std::shared_ptr<ActivationOp<TensorT>>(new LeakyReLUGradOp<TensorT>()),
+        std::shared_ptr<IntegrationOp<TensorT>>(new SumOp<TensorT>()),
+        std::shared_ptr<IntegrationErrorOp<TensorT>>(new SumErrorOp<TensorT>()),
+        std::shared_ptr<IntegrationWeightGradOp<TensorT>>(new SumWeightGradOp<TensorT>()),
+        std::shared_ptr<WeightInitOp<TensorT>>(new RandWeightInitOp<TensorT>((int)(node_names.size() + n_outputs) / 2, 1)),
+        std::shared_ptr<SolverOp<TensorT>>(new AdamOp<TensorT>(1e-4, 0.9, 0.999, 1e-8, 1e2)), 0.0f, 0.0f, false, true);
+    }
 
-    node_names_output = model_builder.addSinglyConnected(model, "Output", "Output", node_names, n_outputs,
+    std::vector<std::string> node_names_output = model_builder.addSinglyConnected(model, "Output", "Output", node_names, n_outputs,
       std::shared_ptr<ActivationOp<TensorT>>(new LinearOp<TensorT>()),
       std::shared_ptr<ActivationOp<TensorT>>(new LinearGradOp<TensorT>()),
       std::shared_ptr<IntegrationOp<TensorT>>(new SumOp<TensorT>()),
@@ -359,30 +358,6 @@ public:
     // Specify the output node types manually
     for (const std::string& node_name : node_names_output)
       model.getNodesMap().at(node_name)->setType(NodeType::output);
-
-    if (is_fold_change) {
-      node_names = model_builder.addFullyConnected(model, "DE-Output-IsNeg", "DE-Output-IsNeg", node_names_final, n_outputs,
-        std::shared_ptr<ActivationOp<TensorT>>(new LeakyReLUOp<TensorT>()),
-        std::shared_ptr<ActivationOp<TensorT>>(new LeakyReLUGradOp<TensorT>()),
-        std::shared_ptr<IntegrationOp<TensorT>>(new SumOp<TensorT>()),
-        std::shared_ptr<IntegrationErrorOp<TensorT>>(new SumErrorOp<TensorT>()),
-        std::shared_ptr<IntegrationWeightGradOp<TensorT>>(new SumWeightGradOp<TensorT>()),
-        std::shared_ptr<WeightInitOp<TensorT>>(new RandWeightInitOp<TensorT>((int)(node_names.size() + n_outputs) / 2, 1)),
-        std::shared_ptr<SolverOp<TensorT>>(new AdamOp<TensorT>(1e-4, 0.9, 0.999, 1e-8, 1e2)), 0.0f, 0.0f, false, true);
-
-      node_names_output = model_builder.addSinglyConnected(model, "Output-IsNeg", "Output-IsNeg", node_names, n_outputs,
-        std::shared_ptr<ActivationOp<TensorT>>(new LinearOp<TensorT>()),
-        std::shared_ptr<ActivationOp<TensorT>>(new LinearGradOp<TensorT>()),
-        std::shared_ptr<IntegrationOp<TensorT>>(new SumOp<TensorT>()),
-        std::shared_ptr<IntegrationErrorOp<TensorT>>(new SumErrorOp<TensorT>()),
-        std::shared_ptr<IntegrationWeightGradOp<TensorT>>(new SumWeightGradOp<TensorT>()),
-        std::shared_ptr<WeightInitOp<TensorT>>(new ConstWeightInitOp<TensorT>(1)),
-        std::shared_ptr<SolverOp<TensorT>>(new DummySolverOp<TensorT>()), 0.0f, 0.0f, false, true);
-
-      // Specify the output node types manually
-      for (const std::string& node_name : node_names_output)
-        model.getNodesMap().at(node_name)->setType(NodeType::output);
-    }
 
     // Set the input and output nodes
     model.setInputAndOutputNodes();
@@ -812,14 +787,6 @@ public:
       std::string name(name_char);
       input_nodes.push_back(name);
     }
-    if (this->use_fold_change_) {
-      for (int i = 0; i < this->n_input_nodes_; ++i) {
-        char name_char[512];
-        sprintf(name_char, "Input-IsNeg_%012d", i);
-        std::string name(name_char);
-        input_nodes.push_back(name);
-      }
-    }
 
     // Make the mu nodes
     std::vector<std::string> encoding_nodes_mu;
@@ -863,15 +830,6 @@ public:
       std::string name(name_char);
       output_nodes_reconstruction.push_back(name);
     }
-    std::vector<std::string> output_nodes_is_neg;
-    if (this->use_fold_change_) {
-      for (int i = 0; i < this->n_input_nodes_; ++i) {
-        char name_char[512];
-        sprintf(name_char, "Output-IsNeg_%012d", i);
-        std::string name(name_char);
-        output_nodes_is_neg.push_back(name);
-      }
-    }
 
     // Make the encoding nodes
     std::vector<std::string> encoding_nodes;
@@ -884,12 +842,7 @@ public:
 
     // evaluate the decoder
     Eigen::Tensor<TensorT, 3> time_steps_1_input(model_trainer.getBatchSize(), model_trainer.getMemorySize(), model_trainer.getNEpochsEvaluation());
-    if (this->use_fold_change_) {
-      model_trainer.setLossOutputNodes({ output_nodes_reconstruction, output_nodes_is_neg });
-    }
-    else {
-      model_trainer.setLossOutputNodes({ output_nodes_reconstruction });
-    }
+    model_trainer.setLossOutputNodes({ output_nodes_reconstruction });
     Eigen::Tensor<TensorT, 4> reconstructed_output = model_trainer.evaluateModel(
       this->model_decoder_, encoding_output, time_steps_1_input, encoding_nodes, model_logger, this->model_interpreter_decoder_);
 
@@ -960,14 +913,6 @@ public:
       std::string name(name_char);
       input_nodes.push_back(name);
     }
-    if (this->use_fold_change_) {
-      for (int i = 0; i < this->n_input_nodes_; ++i) {
-        char name_char[512];
-        sprintf(name_char, "Input-IsNeg_%012d", i);
-        std::string name(name_char);
-        input_nodes.push_back(name);
-      }
-    }
 
     // Make the classification nodes
     std::vector<std::string> output_nodes_normalization;
@@ -977,15 +922,6 @@ public:
       std::string name(name_char);
       output_nodes_normalization.push_back(name);
     }
-    std::vector<std::string> output_nodes_is_neg;
-    if (this->use_fold_change_) {
-      for (int i = 0; i < this->n_input_nodes_; ++i) {
-        char name_char[512];
-        sprintf(name_char, "Output-IsNeg_%012d", i);
-        std::string name(name_char);
-        output_nodes_is_neg.push_back(name);
-      }
-    }
 
     // generate the input for the expected
     Eigen::Tensor<TensorT, 4> condition_1_input(model_trainer.getBatchSize(), model_trainer.getMemorySize(), (int)input_nodes.size(), model_trainer.getNEpochsEvaluation());
@@ -994,12 +930,7 @@ public:
     this->metabolomics_data_.simulateEvaluationData(condition_1_input, time_steps_1_input);
 
     // normalize the input
-    if (this->use_fold_change_) {
-      model_trainer.setLossOutputNodes({ output_nodes_normalization, output_nodes_is_neg });
-    }
-    else {
-      model_trainer.setLossOutputNodes({ output_nodes_normalization });
-    }
+    model_trainer.setLossOutputNodes({ output_nodes_normalization });
     Eigen::Tensor<TensorT, 4> normalization_output = model_trainer.evaluateModel(
       this->model_normalization_, condition_1_input, time_steps_1_input, input_nodes, model_logger, this->model_interpreter_normalization_);
 
@@ -1042,14 +973,6 @@ public:
       std::string name(name_char);
       input_nodes.push_back(name);
     }
-    if (this->use_fold_change_) {
-      for (int i = 0; i < this->n_input_nodes_; ++i) {
-        char name_char[512];
-        sprintf(name_char, "Input-IsNeg_%012d", i);
-        std::string name(name_char);
-        input_nodes.push_back(name);
-      }
-    }
 
     // Make the classification nodes
     std::vector<std::string> output_nodes_normalization;
@@ -1059,15 +982,6 @@ public:
       std::string name(name_char);
       output_nodes_normalization.push_back(name);
     }
-    std::vector<std::string> output_nodes_is_neg;
-    if (this->use_fold_change_) {
-      for (int i = 0; i < this->n_input_nodes_; ++i) {
-        char name_char[512];
-        sprintf(name_char, "Output-IsNeg_%012d", i);
-        std::string name(name_char);
-        output_nodes_is_neg.push_back(name);
-      }
-    }
 
     // generate the input for the expected
     Eigen::Tensor<TensorT, 4> condition_1_input(model_trainer.getBatchSize(), model_trainer.getMemorySize(), (int)input_nodes.size(), model_trainer.getNEpochsEvaluation());
@@ -1076,12 +990,7 @@ public:
     this->metabolomics_data_.simulateEvaluationData(condition_1_input, time_steps_1_input);
 
     // normalize the expected
-    if (this->use_fold_change_) {
-      model_trainer.setLossOutputNodes({ output_nodes_normalization, output_nodes_is_neg });
-    }
-    else {
-      model_trainer.setLossOutputNodes({ output_nodes_normalization });
-    }
+    model_trainer.setLossOutputNodes({ output_nodes_normalization });
     Eigen::Tensor<TensorT, 4> normalization_output_1 = model_trainer.evaluateModel(
       this->model_normalization_, condition_1_input, time_steps_1_input, input_nodes, model_logger, this->model_interpreter_normalization_);
 
@@ -1092,12 +1001,7 @@ public:
     this->metabolomics_data_.simulateEvaluationData(condition_2_input, time_steps_2_input);
 
     // normalize the expected
-    if (this->use_fold_change_) {
-      model_trainer.setLossOutputNodes({ output_nodes_normalization, output_nodes_is_neg });
-    }
-    else {
-      model_trainer.setLossOutputNodes({ output_nodes_normalization });
-    }
+    model_trainer.setLossOutputNodes({ output_nodes_normalization });
     Eigen::Tensor<TensorT, 4> normalization_output_2 = model_trainer.evaluateModel(
       this->model_normalization_, condition_2_input, time_steps_2_input, input_nodes, model_logger, this->model_interpreter_normalization_);
 
