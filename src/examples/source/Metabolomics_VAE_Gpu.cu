@@ -43,7 +43,7 @@ public:
       assert(n_input_nodes == n_input_pixels);
     }
     else {
-      assert(n_loss_output_nodes == 2 * n_input_pixels + 2 * n_encodings_);
+      assert(n_loss_output_nodes == n_input_pixels + 2 * n_encodings_);
       assert(n_metric_output_nodes % n_input_pixels == 0);
       assert(n_input_nodes == n_input_pixels + n_encodings_);
     }
@@ -76,7 +76,6 @@ public:
             input_data(batch_iter, memory_iter, nodes_iter) = value;
             if (!eval) {
               loss_output_data(batch_iter, memory_iter, nodes_iter) = 0;
-              loss_output_data(batch_iter, memory_iter, nodes_iter + n_input_pixels) = 0;
               metric_output_data(batch_iter, memory_iter, nodes_iter) = 0;
             }
           }
@@ -86,8 +85,8 @@ public:
               random_value = d(gen);
             }
             input_data(batch_iter, memory_iter, nodes_iter + n_input_pixels) = random_value; // sample from a normal distribution
-            loss_output_data(batch_iter, memory_iter, nodes_iter + 2 * n_input_pixels) = 0; // Dummy data for KL divergence mu
-            loss_output_data(batch_iter, memory_iter, nodes_iter + 2 * n_input_pixels + n_encodings_) = 0; // Dummy data for KL divergence logvar
+            loss_output_data(batch_iter, memory_iter, nodes_iter + n_input_pixels) = 0; // Dummy data for KL divergence mu
+            loss_output_data(batch_iter, memory_iter, nodes_iter + n_input_pixels + n_encodings_) = 0; // Dummy data for KL divergence logvar
           }
         }
       }
@@ -115,7 +114,7 @@ public:
       assert(n_input_nodes == n_input_pixels + n_encodings_);
     }
     else {
-      assert(n_loss_output_nodes == 2 * n_input_pixels + 2 * n_encodings_);
+      assert(n_loss_output_nodes == n_input_pixels + 2 * n_encodings_);
       assert(n_metric_output_nodes % n_input_pixels == 0);
       assert(n_input_nodes == n_input_pixels + n_encodings_);
     }
@@ -170,7 +169,6 @@ public:
           // Assign the loss and metric values
           if (!eval) {
             loss_output_data(batch_iter, memory_iter, nodes_iter) = 0;
-            loss_output_data(batch_iter, memory_iter, nodes_iter + n_input_pixels) = 0;
             metric_output_data(batch_iter, memory_iter, nodes_iter) = 0;
           }
 
@@ -180,8 +178,8 @@ public:
               random_value = d(gen);
             }
             input_data(batch_iter, memory_iter, nodes_iter + n_input_pixels) = 0; // FIXME random_value; // sample from a normal distribution
-            loss_output_data(batch_iter, memory_iter, nodes_iter + 2 * n_input_pixels) = 0; // Dummy data for KL divergence mu
-            loss_output_data(batch_iter, memory_iter, nodes_iter + 2 * n_input_pixels + n_encodings_) = 0; // Dummy data for KL divergence logvar
+            loss_output_data(batch_iter, memory_iter, nodes_iter + n_input_pixels) = 0; // Dummy data for KL divergence mu
+            loss_output_data(batch_iter, memory_iter, nodes_iter + n_input_pixels + n_encodings_) = 0; // Dummy data for KL divergence logvar
           }
         }
       }
@@ -238,7 +236,7 @@ public:
     assert(input_batch_size == batch_size);
     assert(input_memory_size == memory_size);
     assert(n_input_nodes == input_nodes + this->n_encodings_);
-    assert(n_loss_output_nodes == 2 * input_nodes + 2 * this->n_encodings_);
+    assert(n_loss_output_nodes == input_nodes + 2 * this->n_encodings_);
     assert(n_metric_output_nodes == input_nodes);
 
     // Gaussian Sampler
@@ -264,10 +262,8 @@ public:
     this->loss_output_data_training_.slice(Eigen::array<Eigen::Index, 4>({ 0, 0, 0, 0 }),
       Eigen::array<Eigen::Index, 4>({ batch_size, memory_size, input_nodes, n_epochs })) = input_data;
     this->loss_output_data_training_.slice(Eigen::array<Eigen::Index, 4>({ 0, 0, input_nodes, 0 }),
-      Eigen::array<Eigen::Index, 4>({ batch_size, memory_size, input_nodes, n_epochs })) = input_data;
-    this->loss_output_data_training_.slice(Eigen::array<Eigen::Index, 4>({ 0, 0, 2 * input_nodes, 0 }),
       Eigen::array<Eigen::Index, 4>({ batch_size, memory_size, this->n_encodings_, n_epochs })) = KL_losses;
-    this->loss_output_data_training_.slice(Eigen::array<Eigen::Index, 4>({ 0, 0, 2 * input_nodes + this->n_encodings_, 0 }),
+    this->loss_output_data_training_.slice(Eigen::array<Eigen::Index, 4>({ 0, 0, input_nodes + this->n_encodings_, 0 }),
       Eigen::array<Eigen::Index, 4>({ batch_size, memory_size, this->n_encodings_, n_epochs })) = KL_losses;
 
     // assign the metric tensors
@@ -291,7 +287,7 @@ public:
     assert(input_batch_size == batch_size);
     assert(input_memory_size == memory_size);
     assert(n_input_nodes == input_nodes + this->n_encodings_);
-    assert(n_loss_output_nodes == 2 * input_nodes + 2 * this->n_encodings_);
+    assert(n_loss_output_nodes == input_nodes + 2 * this->n_encodings_);
     assert(n_metric_output_nodes == input_nodes);
 
     // Dummy data for the KL divergence losses
@@ -314,10 +310,8 @@ public:
     this->loss_output_data_validation_.slice(Eigen::array<Eigen::Index, 4>({ 0, 0, 0, 0 }),
       Eigen::array<Eigen::Index, 4>({ batch_size, memory_size, input_nodes, n_epochs })) = input_data;
     this->loss_output_data_validation_.slice(Eigen::array<Eigen::Index, 4>({ 0, 0, input_nodes, 0 }),
-      Eigen::array<Eigen::Index, 4>({ batch_size, memory_size, input_nodes, n_epochs })) = input_data;
-    this->loss_output_data_validation_.slice(Eigen::array<Eigen::Index, 4>({ 0, 0, 2 * input_nodes, 0 }),
       Eigen::array<Eigen::Index, 4>({ batch_size, memory_size, this->n_encodings_, n_epochs })) = KL_losses;
-    this->loss_output_data_validation_.slice(Eigen::array<Eigen::Index, 4>({ 0, 0, 2 * input_nodes + this->n_encodings_, 0 }),
+    this->loss_output_data_validation_.slice(Eigen::array<Eigen::Index, 4>({ 0, 0, input_nodes + this->n_encodings_, 0 }),
       Eigen::array<Eigen::Index, 4>({ batch_size, memory_size, this->n_encodings_, n_epochs })) = KL_losses;
 
     // assign the metric tensors
@@ -392,10 +386,10 @@ public:
     std::vector<std::string> node_names = node_names_input;
     if (n_en_hidden_0 > 0) {
       node_names = model_builder.addFullyConnected(model, "EN0", "EN0", node_names, n_en_hidden_0,
-        //std::shared_ptr<ActivationOp<TensorT>>(new LeakyReLUOp<TensorT>()),
-        //std::shared_ptr<ActivationOp<TensorT>>(new LeakyReLUGradOp<TensorT>()),
-        std::shared_ptr<ActivationOp<TensorT>>(new LinearOp<TensorT>()),
-        std::shared_ptr<ActivationOp<TensorT>>(new LinearGradOp<TensorT>()),
+        std::shared_ptr<ActivationOp<TensorT>>(new LeakyReLUOp<TensorT>()),
+        std::shared_ptr<ActivationOp<TensorT>>(new LeakyReLUGradOp<TensorT>()),
+        //std::shared_ptr<ActivationOp<TensorT>>(new LinearOp<TensorT>()),
+        //std::shared_ptr<ActivationOp<TensorT>>(new LinearGradOp<TensorT>()),
         std::shared_ptr<IntegrationOp<TensorT>>(new SumOp<TensorT>()),
         std::shared_ptr<IntegrationErrorOp<TensorT>>(new SumErrorOp<TensorT>()),
         std::shared_ptr<IntegrationWeightGradOp<TensorT>>(new SumWeightGradOp<TensorT>()),
@@ -416,10 +410,10 @@ public:
     }
     if (n_en_hidden_1 > 0) {
       node_names = model_builder.addFullyConnected(model, "EN1", "EN1", node_names, n_en_hidden_1,
-        //std::shared_ptr<ActivationOp<TensorT>>(new LeakyReLUOp<TensorT>()),
-        //std::shared_ptr<ActivationOp<TensorT>>(new LeakyReLUGradOp<TensorT>()),
-        std::shared_ptr<ActivationOp<TensorT>>(new LinearOp<TensorT>()),
-        std::shared_ptr<ActivationOp<TensorT>>(new LinearGradOp<TensorT>()),
+        std::shared_ptr<ActivationOp<TensorT>>(new LeakyReLUOp<TensorT>()),
+        std::shared_ptr<ActivationOp<TensorT>>(new LeakyReLUGradOp<TensorT>()),
+        //std::shared_ptr<ActivationOp<TensorT>>(new LinearOp<TensorT>()),
+        //std::shared_ptr<ActivationOp<TensorT>>(new LinearGradOp<TensorT>()),
         std::shared_ptr<IntegrationOp<TensorT>>(new SumOp<TensorT>()),
         std::shared_ptr<IntegrationErrorOp<TensorT>>(new SumErrorOp<TensorT>()),
         std::shared_ptr<IntegrationWeightGradOp<TensorT>>(new SumWeightGradOp<TensorT>()),
@@ -440,10 +434,10 @@ public:
     }
     if (n_en_hidden_2 > 0) {
       node_names = model_builder.addFullyConnected(model, "EN2", "EN2", node_names, n_en_hidden_2,
-        //std::shared_ptr<ActivationOp<TensorT>>(new LeakyReLUOp<TensorT>()),
-        //std::shared_ptr<ActivationOp<TensorT>>(new LeakyReLUGradOp<TensorT>()),
-        std::shared_ptr<ActivationOp<TensorT>>(new LinearOp<TensorT>()),
-        std::shared_ptr<ActivationOp<TensorT>>(new LinearGradOp<TensorT>()),
+        std::shared_ptr<ActivationOp<TensorT>>(new LeakyReLUOp<TensorT>()),
+        std::shared_ptr<ActivationOp<TensorT>>(new LeakyReLUGradOp<TensorT>()),
+        //std::shared_ptr<ActivationOp<TensorT>>(new LinearOp<TensorT>()),
+        //std::shared_ptr<ActivationOp<TensorT>>(new LinearGradOp<TensorT>()),
         std::shared_ptr<IntegrationOp<TensorT>>(new SumOp<TensorT>()),
         std::shared_ptr<IntegrationErrorOp<TensorT>>(new SumErrorOp<TensorT>()),
         std::shared_ptr<IntegrationWeightGradOp<TensorT>>(new SumWeightGradOp<TensorT>()),
@@ -493,10 +487,10 @@ public:
     // Add the decoding layers
     if (n_de_hidden_0 > 0) {
       node_names = model_builder.addFullyConnected(model, "DE0", "DE0", node_names, n_de_hidden_0,
-        //std::shared_ptr<ActivationOp<TensorT>>(new LeakyReLUOp<TensorT>()),
-        //std::shared_ptr<ActivationOp<TensorT>>(new LeakyReLUGradOp<TensorT>()),
-        std::shared_ptr<ActivationOp<TensorT>>(new LinearOp<TensorT>()),
-        std::shared_ptr<ActivationOp<TensorT>>(new LinearGradOp<TensorT>()),
+        std::shared_ptr<ActivationOp<TensorT>>(new LeakyReLUOp<TensorT>()),
+        std::shared_ptr<ActivationOp<TensorT>>(new LeakyReLUGradOp<TensorT>()),
+        //std::shared_ptr<ActivationOp<TensorT>>(new LinearOp<TensorT>()),
+        //std::shared_ptr<ActivationOp<TensorT>>(new LinearGradOp<TensorT>()),
         std::shared_ptr<IntegrationOp<TensorT>>(new SumOp<TensorT>()),
         std::shared_ptr<IntegrationErrorOp<TensorT>>(new SumErrorOp<TensorT>()),
         std::shared_ptr<IntegrationWeightGradOp<TensorT>>(new SumWeightGradOp<TensorT>()),
@@ -517,10 +511,10 @@ public:
     }
     if (n_de_hidden_1 > 0) {
       node_names = model_builder.addFullyConnected(model, "DE1", "DE1", node_names, n_de_hidden_1,
-        //std::shared_ptr<ActivationOp<TensorT>>(new LeakyReLUOp<TensorT>()),
-        //std::shared_ptr<ActivationOp<TensorT>>(new LeakyReLUGradOp<TensorT>()),
-        std::shared_ptr<ActivationOp<TensorT>>(new LinearOp<TensorT>()),
-        std::shared_ptr<ActivationOp<TensorT>>(new LinearGradOp<TensorT>()),
+        std::shared_ptr<ActivationOp<TensorT>>(new LeakyReLUOp<TensorT>()),
+        std::shared_ptr<ActivationOp<TensorT>>(new LeakyReLUGradOp<TensorT>()),
+        //std::shared_ptr<ActivationOp<TensorT>>(new LinearOp<TensorT>()),
+        //std::shared_ptr<ActivationOp<TensorT>>(new LinearGradOp<TensorT>()),
         std::shared_ptr<IntegrationOp<TensorT>>(new SumOp<TensorT>()),
         std::shared_ptr<IntegrationErrorOp<TensorT>>(new SumErrorOp<TensorT>()),
         std::shared_ptr<IntegrationWeightGradOp<TensorT>>(new SumWeightGradOp<TensorT>()),
@@ -541,10 +535,10 @@ public:
     }
     if (n_de_hidden_2 > 0) {
       node_names = model_builder.addFullyConnected(model, "DE2", "DE2", node_names, n_de_hidden_2,
-        //std::shared_ptr<ActivationOp<TensorT>>(new LeakyReLUOp<TensorT>()),
-        //std::shared_ptr<ActivationOp<TensorT>>(new LeakyReLUGradOp<TensorT>()),
-        std::shared_ptr<ActivationOp<TensorT>>(new LinearOp<TensorT>()),
-        std::shared_ptr<ActivationOp<TensorT>>(new LinearGradOp<TensorT>()),
+        std::shared_ptr<ActivationOp<TensorT>>(new LeakyReLUOp<TensorT>()),
+        std::shared_ptr<ActivationOp<TensorT>>(new LeakyReLUGradOp<TensorT>()),
+        //std::shared_ptr<ActivationOp<TensorT>>(new LinearOp<TensorT>()),
+        //std::shared_ptr<ActivationOp<TensorT>>(new LinearGradOp<TensorT>()),
         std::shared_ptr<IntegrationOp<TensorT>>(new SumOp<TensorT>()),
         std::shared_ptr<IntegrationErrorOp<TensorT>>(new SumErrorOp<TensorT>()),
         std::shared_ptr<IntegrationWeightGradOp<TensorT>>(new SumWeightGradOp<TensorT>()),
@@ -917,7 +911,7 @@ public:
     }
 
     // Per n epoch logging
-    if (n_epochs % 1 == 0) { // FIXME
+    if (n_epochs % 200 == 0) { // FIXME
       model_logger.setLogExpectedEpoch(true);
       model_logger.setLogNodeInputsEpoch(true);
       model_interpreter.getModelResults(model, true, false, false, true);
@@ -1020,7 +1014,7 @@ void main_reconstruction(const std::string& biochem_rxns_filename,
   if (simulate_MARs) n_input_nodes = reaction_model.reaction_ids_.size();
   else n_input_nodes = reaction_model.component_group_names_.size();
   const int n_output_nodes = n_input_nodes;
-  const int encoding_size = 16;
+  const int encoding_size = 32;
   metabolomics_data.n_encodings_ = encoding_size;
 
   // Make the input nodes
@@ -1092,7 +1086,7 @@ void main_reconstruction(const std::string& biochem_rxns_filename,
   ModelTrainerExt<float> model_trainer;
 
   // define the model logger
-  ModelLogger<float> model_logger(true, true, false, false, false, false, false, true);
+  ModelLogger<float> model_logger(true, true, false, false, false, false, false, false);
 
   // initialize the model replicator
   ModelReplicatorExt<float> model_replicator;
@@ -1102,12 +1096,13 @@ void main_reconstruction(const std::string& biochem_rxns_filename,
     std::cout << "Making the data caches..." << std::endl;
     // Make the normalization model
     Model<float> model_normalization;
-    model_trainer.makeModelNormalization(model_normalization, n_input_nodes, true, false, false); // normalization type 1
+    model_trainer.makeModelNormalization(model_normalization, n_input_nodes, false, false, false); // normalization type 0
 
     // Set the model trainer parameters for normalizing the data
     model_trainer.setBatchSize(64);
     model_trainer.setMemorySize(1);
-    model_trainer.setNEpochsEvaluation(6400);
+    //model_trainer.setNEpochsEvaluation(6400);
+    model_trainer.setNEpochsEvaluation(100);
     model_trainer.setVerbosityLevel(1);
     model_trainer.setLogging(true, false, false);
     model_trainer.setFindCycles(false);
@@ -1136,12 +1131,12 @@ void main_reconstruction(const std::string& biochem_rxns_filename,
   if (make_model & make_data_caches) {
     std::cout << "Making the model..." << std::endl;
     model_trainer.makeModelFCVAE_2(model_FCVAE, n_input_nodes, n_output_nodes, encoding_size, false, false, false, false,
-      64, 64, 0, 64, 64, 0, use_fold_change); // normalization type 0
+      128, 64, 0, 64, 128, 0, use_fold_change); // normalization type 0
   }
   else if (make_model) {
     std::cout << "Making the model..." << std::endl;
     model_trainer.makeModelFCVAE_1(model_FCVAE, n_input_nodes, n_output_nodes, encoding_size, false, false, false, false,
-      64, 64, 0, 64, 64, 0, use_fold_change); // normalization type 0
+      128, 64, 0, 64, 128, 0, use_fold_change); // normalization type 0
     //ModelFile<float> model_file;
     //model_file.storeModelDot("modelFCVAE1.gv", model_FCVAE);
   }
@@ -1152,7 +1147,8 @@ void main_reconstruction(const std::string& biochem_rxns_filename,
   // Set the model trainer parameters for training
   model_trainer.setBatchSize(64);
   model_trainer.setMemorySize(1);
-  model_trainer.setNEpochsTraining(2 * 6400);
+  //model_trainer.setNEpochsTraining(2 * 6400);
+  model_trainer.setNEpochsTraining(2 * 100);
   model_trainer.setVerbosityLevel(1);
   model_trainer.setLogging(true, false, false);
   model_trainer.setFindCycles(false);
@@ -1160,15 +1156,15 @@ void main_reconstruction(const std::string& biochem_rxns_filename,
   model_trainer.setPreserveOoO(true);
   model_trainer.setLossFunctions({
     std::shared_ptr<LossFunctionOp<float>>(new MAELossOp<float>(1e-6, 1.0)),
-    std::shared_ptr<LossFunctionOp<float>>(new MAPELossOp<float>(1e-6, 0.0)),
     std::shared_ptr<LossFunctionOp<float>>(new KLDivergenceMuLossOp<float>(1e-6, 0.0)), //FIXME
-    std::shared_ptr<LossFunctionOp<float>>(new KLDivergenceLogVarLossOp<float>(1e-6, 0.0)) });
+    std::shared_ptr<LossFunctionOp<float>>(new KLDivergenceLogVarLossOp<float>(1e-6, 0.0))
+    });
   model_trainer.setLossFunctionGrads({
     std::shared_ptr<LossFunctionGradOp<float>>(new MAELossGradOp<float>(1e-6, 1.0)),
-    std::shared_ptr<LossFunctionGradOp<float>>(new MAPELossGradOp<float>(1e-6, 0.0)),
     std::shared_ptr<LossFunctionGradOp<float>>(new KLDivergenceMuLossGradOp<float>(1e-6, 0.0)),
-    std::shared_ptr<LossFunctionGradOp<float>>(new KLDivergenceLogVarLossGradOp<float>(1e-6, 0.0)) });
-  model_trainer.setLossOutputNodes({ output_nodes, output_nodes, encoding_nodes_mu, encoding_nodes_logvar });
+    std::shared_ptr<LossFunctionGradOp<float>>(new KLDivergenceLogVarLossGradOp<float>(1e-6, 0.0))
+    });
+  model_trainer.setLossOutputNodes({ output_nodes, encoding_nodes_mu, encoding_nodes_logvar });
   model_trainer.setMetricFunctions({ std::shared_ptr<MetricFunctionOp<float>>(new MAEOp<float>()) });
   model_trainer.setMetricOutputNodes({ output_nodes });
   model_trainer.setMetricNames({ "MAE" });
@@ -1228,7 +1224,7 @@ int main(int argc, char** argv)
     true,   // make_model
     false,  // use_mars
     true,   // sample_concs
-    false,  // make_data_caches 
+    true,  // make_data_caches 
     true    // use_fold_change
   );
 
