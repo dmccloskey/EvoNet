@@ -24,6 +24,7 @@ namespace SmartPeak
 	protected:
 		TensorT eps_ = 1e-6;
 		TensorT scale_ = 1.0;
+    TensorT reward_ = 10.0;
 	};
 
 	/**
@@ -41,6 +42,7 @@ namespace SmartPeak
 	protected:
 		TensorT eps_ = 1e-6;
 		TensorT scale_ = 1.0;
+    TensorT reward_ = 10.0;
 	};
 
   /**
