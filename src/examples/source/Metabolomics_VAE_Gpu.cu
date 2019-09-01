@@ -1014,7 +1014,7 @@ void main_reconstruction(const std::string& biochem_rxns_filename,
   if (simulate_MARs) n_input_nodes = reaction_model.reaction_ids_.size();
   else n_input_nodes = reaction_model.component_group_names_.size();
   const int n_output_nodes = n_input_nodes;
-  const int encoding_size = 32;
+  const int encoding_size = 16;
   metabolomics_data.n_encodings_ = encoding_size;
 
   // Make the input nodes
@@ -1096,13 +1096,12 @@ void main_reconstruction(const std::string& biochem_rxns_filename,
     std::cout << "Making the data caches..." << std::endl;
     // Make the normalization model
     Model<float> model_normalization;
-    model_trainer.makeModelNormalization(model_normalization, n_input_nodes, false, false, false); // normalization type 0
+    model_trainer.makeModelNormalization(model_normalization, n_input_nodes, true, false, false); // normalization type 1
 
     // Set the model trainer parameters for normalizing the data
     model_trainer.setBatchSize(64);
     model_trainer.setMemorySize(1);
-    //model_trainer.setNEpochsEvaluation(6400);
-    model_trainer.setNEpochsEvaluation(100);
+    model_trainer.setNEpochsEvaluation(6400);
     model_trainer.setVerbosityLevel(1);
     model_trainer.setLogging(true, false, false);
     model_trainer.setFindCycles(false);
@@ -1111,7 +1110,7 @@ void main_reconstruction(const std::string& biochem_rxns_filename,
 
     // Apply the normalization model and make the caches
     model_trainer.setLossOutputNodes({ output_nodes_normalization });
-    const int n_loss_output_nodes = 2 * output_nodes.size() + encoding_nodes_mu.size() + encoding_nodes_logvar.size();
+    const int n_loss_output_nodes = output_nodes.size() + encoding_nodes_mu.size() + encoding_nodes_logvar.size();
     const int n_metric_output_nodes = output_nodes.size();
     std::cout << "Making the data cache for training..." << std::endl;
     metabolomics_data.use_train_for_eval_ = true;
@@ -1131,12 +1130,12 @@ void main_reconstruction(const std::string& biochem_rxns_filename,
   if (make_model & make_data_caches) {
     std::cout << "Making the model..." << std::endl;
     model_trainer.makeModelFCVAE_2(model_FCVAE, n_input_nodes, n_output_nodes, encoding_size, false, false, false, false,
-      128, 64, 0, 64, 128, 0, use_fold_change); // normalization type 0
+      64, 64, 0, 64, 64, 0, use_fold_change); // normalization type 0
   }
   else if (make_model) {
     std::cout << "Making the model..." << std::endl;
     model_trainer.makeModelFCVAE_1(model_FCVAE, n_input_nodes, n_output_nodes, encoding_size, false, false, false, false,
-      128, 64, 0, 64, 128, 0, use_fold_change); // normalization type 0
+      64, 64, 0, 64, 64, 0, use_fold_change); // normalization type 0
     //ModelFile<float> model_file;
     //model_file.storeModelDot("modelFCVAE1.gv", model_FCVAE);
   }
@@ -1147,20 +1146,19 @@ void main_reconstruction(const std::string& biochem_rxns_filename,
   // Set the model trainer parameters for training
   model_trainer.setBatchSize(64);
   model_trainer.setMemorySize(1);
-  //model_trainer.setNEpochsTraining(2 * 6400);
-  model_trainer.setNEpochsTraining(2 * 100);
+  model_trainer.setNEpochsTraining(2 * 6400);
   model_trainer.setVerbosityLevel(1);
   model_trainer.setLogging(true, false, false);
   model_trainer.setFindCycles(false);
   model_trainer.setFastInterpreter(true);
   model_trainer.setPreserveOoO(true);
   model_trainer.setLossFunctions({
-    std::shared_ptr<LossFunctionOp<float>>(new MAELossOp<float>(1e-6, 1.0)),
+    std::shared_ptr<LossFunctionOp<float>>(new MAPELossOp<float>(1e-6, 1.0)),
     std::shared_ptr<LossFunctionOp<float>>(new KLDivergenceMuLossOp<float>(1e-6, 0.0)), //FIXME
     std::shared_ptr<LossFunctionOp<float>>(new KLDivergenceLogVarLossOp<float>(1e-6, 0.0))
     });
   model_trainer.setLossFunctionGrads({
-    std::shared_ptr<LossFunctionGradOp<float>>(new MAELossGradOp<float>(1e-6, 1.0)),
+    std::shared_ptr<LossFunctionGradOp<float>>(new MAPELossGradOp<float>(1e-6, 1.0)),
     std::shared_ptr<LossFunctionGradOp<float>>(new KLDivergenceMuLossGradOp<float>(1e-6, 0.0)),
     std::shared_ptr<LossFunctionGradOp<float>>(new KLDivergenceLogVarLossGradOp<float>(1e-6, 0.0))
     });
@@ -1225,7 +1223,7 @@ int main(int argc, char** argv)
     false,  // use_mars
     true,   // sample_concs
     true,  // make_data_caches 
-    true    // use_fold_change
+    false    // use_fold_change
   );
 
   return 0;
