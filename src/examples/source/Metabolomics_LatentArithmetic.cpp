@@ -680,8 +680,8 @@ public:
     model_decoder_.clear();
 
     // define the encoder and decoders
-    model_trainer.makeModelFCVAE_Encoder(model_encoder_, n_input_nodes_, encoding_size_, false, false, false, false,
-      n_en_hidden_0, n_en_hidden_1, n_en_hidden_2, this->use_fold_change_); // normalization type 0
+    model_trainer.makeModelFCVAE_Encoder(model_encoder_, n_input_nodes_, encoding_size_, true, false, false, false,
+      n_en_hidden_0, n_en_hidden_1, n_en_hidden_2, this->use_fold_change_); // normalization type 1
     model_trainer.makeModelFCVAE_Decoder(model_decoder_, n_input_nodes_, encoding_size_, false,
       n_de_hidden_0, n_de_hidden_1, n_de_hidden_2, this->use_fold_change_);
 
@@ -756,7 +756,7 @@ public:
     model_normalization_.clear();
 
     // define the model
-    model_trainer.makeModelNormalization(model_normalization_, n_input_nodes_, false, false, false, this->use_fold_change_); // Normalization type 0
+    model_trainer.makeModelNormalization(model_normalization_, n_input_nodes_, true, false, false, this->use_fold_change_); // Normalization type 1
   };
 
   /*
@@ -1516,12 +1516,12 @@ int main(int argc, char** argv)
   ModelInterpreterDefaultDevice<float> model_interpreter(model_resources);
   ModelTrainerExt<float> model_trainer;
   model_trainer.setBatchSize(512);
-  model_trainer.setBatchSize(1); // Logging only
+  //model_trainer.setBatchSize(1); // Logging only
   model_trainer.setMemorySize(1);
   model_trainer.setNEpochsEvaluation(1);
   model_trainer.setVerbosityLevel(1);
   model_trainer.setLogging(false, false, false);
-  model_trainer.setLogging(false, false, true); // Logging only
+  //model_trainer.setLogging(false, false, true); // Logging only
   model_trainer.setFindCycles(false);
   model_trainer.setFastInterpreter(true);
   model_trainer.setPreserveOoO(true);
