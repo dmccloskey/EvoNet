@@ -281,18 +281,21 @@ public:
     model_logger.setLogTimeEpoch(true);
     model_logger.setLogTrainValMetricEpoch(true);
     model_logger.setLogExpectedEpoch(false);
+    model_logger.setLogNodeOutputsEpoch(false);
     model_logger.setLogNodeInputsEpoch(false);
 
     // initialize all logs
     if (n_epochs == 0) {
       model_logger.setLogExpectedEpoch(true);
+      model_logger.setLogNodeOutputsEpoch(true);
       model_logger.setLogNodeInputsEpoch(true);
       model_logger.initLogs(model);
     }
 
     // Per n epoch logging
-    if (n_epochs % 1 == 0) {//FIXME
+    if (n_epochs % 1000 == 0) {
       model_logger.setLogExpectedEpoch(true);
+      model_logger.setLogNodeOutputsEpoch(true);
       model_logger.setLogNodeInputsEpoch(true);
       model_interpreter.getModelResults(model, true, false, false, true);
     }

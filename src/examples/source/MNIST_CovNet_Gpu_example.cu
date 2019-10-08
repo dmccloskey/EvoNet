@@ -196,7 +196,7 @@ public:
     }
 
     // Add the final output layer
-    node_names = model_builder.addFullyConnected(model, "Output", "Output", node_names, n_outputs,
+    node_names = model_builder.addFullyConnected(model, "FC1-Output", "FC1-Output", node_names, n_outputs,
       std::shared_ptr<ActivationOp<TensorT>>(new LeakyReLUOp<TensorT>()),
       std::shared_ptr<ActivationOp<TensorT>>(new LeakyReLUGradOp<TensorT>()),
       std::shared_ptr<IntegrationOp<TensorT>>(new SumOp<TensorT>()),
@@ -204,6 +204,16 @@ public:
       std::shared_ptr<IntegrationWeightGradOp<TensorT>>(new SumWeightGradOp<TensorT>()),
       std::shared_ptr<WeightInitOp<TensorT>>(new RandWeightInitOp<TensorT>(node_names.size(), 2)),
       std::shared_ptr<SolverOp<TensorT>>(new AdamOp<TensorT>(1e-3, 0.9, 0.999, 1e-8, 10)), 0.0f, 0.0f, false, true);
+
+    // Add the dummy output layer
+    node_names = model_builder.addSinglyConnected(model, "Output", "Output", node_names, n_outputs,
+      std::shared_ptr<ActivationOp<TensorT>>(new LinearOp<TensorT>()),
+      std::shared_ptr<ActivationOp<TensorT>>(new LinearGradOp<TensorT>()),
+      std::shared_ptr<IntegrationOp<TensorT>>(new SumOp<TensorT>()),
+      std::shared_ptr<IntegrationErrorOp<TensorT>>(new SumErrorOp<TensorT>()),
+      std::shared_ptr<IntegrationWeightGradOp<TensorT>>(new SumWeightGradOp<TensorT>()),
+      std::shared_ptr<WeightInitOp<TensorT>>(new ConstWeightInitOp<TensorT>(1)),
+      std::shared_ptr<SolverOp<TensorT>>(new DummySolverOp<TensorT>()), 0.0f, 0.0f, false, true);
 
     // Manually define the output nodes
     for (const std::string& node_name : node_names)
@@ -219,8 +229,7 @@ public:
     const std::vector<float>& model_errors) {
     if (n_epochs % 1000 == 0 && n_epochs != 0) {
       // save the model every 1000 epochs
-      ModelFile<TensorT> data;
-      model_interpreter.getModelResults(model, false, true, false);
+      model_interpreter.getModelResults(model, false, true, false, false);
 
       //// Save to .csv
       //data.storeModelCsv(model.getName() + "_" + std::to_string(n_epochs) + "_nodes.csv",
@@ -228,65 +237,36 @@ public:
       //	model.getName() + "_" + std::to_string(n_epochs) + "_weights.csv", model);
 
       // Save to binary
+      ModelFile<TensorT> data;
       data.storeModelBinary(model.getName() + "_" + std::to_string(n_epochs) + "_model.binary", model);
       ModelInterpreterFileGpu<TensorT> interpreter_data;
       interpreter_data.storeModelInterpreterBinary(model.getName() + "_" + std::to_string(n_epochs) + "_interpreter.binary", model_interpreter);
     }
   }
   void trainingModelLogger(const int & n_epochs, Model<TensorT>& model, ModelInterpreterGpu<TensorT>& model_interpreter, ModelLogger<TensorT>& model_logger,
-    const Eigen::Tensor<TensorT, 3>& expected_values,
-    const std::vector<std::string>& output_nodes,
-    const TensorT& model_error)
-  {
-    model_logger.setLogTimeEpoch(true);
-    model_logger.setLogTrainValMetricEpoch(true);
-    model_logger.setLogExpectedPredictedEpoch(false);
-    if (n_epochs == 0) {
-      model_logger.initLogs(model);
-    }
-    if (n_epochs % 1 == 0) {
-      if (model_logger.getLogExpectedEpoch())
-        model_interpreter.getModelResults(model, true, false, false);
-      model_logger.writeLogs(model, n_epochs, { "Error" }, {}, { model_error }, {}, output_nodes, expected_values);
-    }
-  }
-  void validationModelLogger(const int & n_epochs, Model<TensorT>& model, ModelInterpreterGpu<TensorT>& model_interpreter, ModelLogger<TensorT>& model_logger,
-    const Eigen::Tensor<TensorT, 3>& expected_values,
-    const std::vector<std::string>& output_nodes,
-    const TensorT& model_error)
-  {
-    model_logger.setLogTimeEpoch(false);
-    model_logger.setLogTrainValMetricEpoch(false);
-    model_logger.setLogExpectedPredictedEpoch(true);
-    if (n_epochs == 0) {
-      model_logger.initLogs(model);
-    }
-    if (n_epochs % 1 == 0) {
-      if (model_logger.getLogExpectedEpoch())
-        model_interpreter.getModelResults(model, true, false, false);
-      model_logger.writeLogs(model, n_epochs, {}, { "Error" }, {}, { model_error }, output_nodes, expected_values);
-    }
-  }
-  void trainingModelLogger(const int & n_epochs, Model<TensorT>& model, ModelInterpreterGpu<TensorT>& model_interpreter, ModelLogger<TensorT>& model_logger,
-    const Eigen::Tensor<TensorT, 3>& expected_values, const std::vector<std::string>& output_nodes, const TensorT & model_error_train, const TensorT & model_error_test,
-    const Eigen::Tensor<TensorT, 1> & model_metrics_train, const Eigen::Tensor<TensorT, 1> & model_metrics_test)
+    const Eigen::Tensor<TensorT, 3>& expected_values, const std::vector<std::string>& output_nodes, const std::vector<std::string>& input_nodes, const TensorT & model_error_train, const TensorT & model_error_test,
+    const Eigen::Tensor<TensorT, 1> & model_metrics_train, const Eigen::Tensor<TensorT, 1> & model_metrics_test) override
   {
     // Set the defaults
     model_logger.setLogTimeEpoch(true);
     model_logger.setLogTrainValMetricEpoch(true);
-    model_logger.setLogExpectedPredictedEpoch(false);
+    model_logger.setLogExpectedEpoch(false);
+    model_logger.setLogNodeOutputsEpoch(false);
+    model_logger.setLogNodeInputsEpoch(false);
 
     // initialize all logs
     if (n_epochs == 0) {
-      //model_logger.setLogExpectedPredictedEpoch(true);
+      model_logger.setLogExpectedEpoch(true);
+      model_logger.setLogNodeOutputsEpoch(true);
       model_logger.initLogs(model);
     }
 
-    //// Per n epoch logging
-    //if (n_epochs % 10 == 0) {
-    //  model_logger.setLogExpectedPredictedEpoch(true);
-    //  model_interpreter.getModelResults(model, true, false, false);
-    //}
+    // Per n epoch logging
+    if (n_epochs % 1000 == 0) {
+      model_logger.setLogExpectedEpoch(true);
+      model_logger.setLogNodeOutputsEpoch(true);
+      model_interpreter.getModelResults(model, true, false, false, false);
+    }
 
     // Create the metric headers and data arrays
     std::vector<std::string> log_train_headers = { "Train_Error" };
@@ -301,7 +281,7 @@ public:
       log_test_values.push_back(model_metrics_test(metric_iter));
       ++metric_iter;
     }
-    model_logger.writeLogs(model, n_epochs, log_train_headers, log_test_headers, log_train_values, log_test_values, output_nodes, expected_values);
+    model_logger.writeLogs(model, n_epochs, log_train_headers, log_test_headers, log_train_values, log_test_values, output_nodes, expected_values, {}, output_nodes, {}, input_nodes, {});
   }
 };
 
@@ -468,7 +448,7 @@ void main_MNIST(const std::string& data_dir, const bool& make_model, const bool&
   PopulationLogger<float> population_logger(true, true);
 
   // define the model logger
-  ModelLogger<float> model_logger(true, true, false, false, false, false, false);
+  ModelLogger<float> model_logger(true, true, false, false, false, false, false, false);
 
   // define the data simulator
   const std::size_t input_size = 784;
