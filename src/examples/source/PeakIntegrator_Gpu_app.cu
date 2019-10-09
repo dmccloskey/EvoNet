@@ -157,7 +157,7 @@ public:
     }
 
     // Add the output nodes
-    node_names = model_builder.addFullyConnected(model, "Intensity_Out", "Intensity_Out", node_names, n_inputs,
+    node_names = model_builder.addFullyConnected(model, "DE_Intensity_Out", "DE_Intensity_Out", node_names, n_inputs,
       std::shared_ptr<ActivationOp<TensorT>>(new LeakyReLUOp<TensorT>()),
       std::shared_ptr<ActivationOp<TensorT>>(new LeakyReLUGradOp<TensorT>()),
       std::shared_ptr<IntegrationOp<TensorT>>(new SumOp<TensorT>()),
@@ -165,6 +165,14 @@ public:
       std::shared_ptr<IntegrationWeightGradOp<TensorT>>(new SumWeightGradOp<TensorT>()),
       std::shared_ptr<WeightInitOp<TensorT>>(new RandWeightInitOp<TensorT>(node_names.size(), 1)),
       std::shared_ptr<SolverOp<TensorT>>(new AdamOp<TensorT>(1e-4, 0.9, 0.999, 1e-8, 1e3, 0.0)), 0.0f, 0.0f, false, true);
+    node_names = model_builder.addSinglyConnected(model, "Intensity_Out", "Intensity_Out", node_names, n_inputs,
+      std::shared_ptr<ActivationOp<TensorT>>(new LinearOp<TensorT>()),
+      std::shared_ptr<ActivationOp<TensorT>>(new LinearGradOp<TensorT>()),
+      std::shared_ptr<IntegrationOp<TensorT>>(new SumOp<TensorT>()),
+      std::shared_ptr<IntegrationErrorOp<TensorT>>(new SumErrorOp<TensorT>()),
+      std::shared_ptr<IntegrationWeightGradOp<TensorT>>(new SumWeightGradOp<TensorT>()),
+      std::shared_ptr<WeightInitOp<TensorT>>(new ConstWeightInitOp<TensorT>(1)),
+      std::shared_ptr<SolverOp<TensorT>>(new DummySolverOp<TensorT>()), 0.0f, 0.0f, false, true);
 
     // Specify the output node types manually
     for (const std::string& node_name : node_names) {
@@ -193,7 +201,7 @@ public:
     }
 
     // Add the output nodes
-    node_names = model_builder.addFullyConnected(model, "IsPeakApex_Out", "IsPeakApex_Out", node_names, n_inputs,
+    node_names = model_builder.addFullyConnected(model, "DE_IsPeakApex_Out", "DE_IsPeakApex_Out", node_names, n_inputs,
       std::shared_ptr<ActivationOp<TensorT>>(new SigmoidOp<TensorT>()),
       std::shared_ptr<ActivationOp<TensorT>>(new SigmoidGradOp<TensorT>()),
       std::shared_ptr<IntegrationOp<TensorT>>(new SumOp<TensorT>()),
@@ -201,6 +209,14 @@ public:
       std::shared_ptr<IntegrationWeightGradOp<TensorT>>(new SumWeightGradOp<TensorT>()),
       std::shared_ptr<WeightInitOp<TensorT>>(new RandWeightInitOp<TensorT>(node_names.size(), 1)),
       std::shared_ptr<SolverOp<TensorT>>(new AdamOp<TensorT>(1e-4, 0.9, 0.999, 1e-8, 1e3, 0.0)), 0.0f, 0.0f, false, true);
+    node_names = model_builder.addSinglyConnected(model, "IsPeakApex_Out", "IsPeakApex_Out", node_names, n_inputs,
+      std::shared_ptr<ActivationOp<TensorT>>(new LinearOp<TensorT>()),
+      std::shared_ptr<ActivationOp<TensorT>>(new LinearGradOp<TensorT>()),
+      std::shared_ptr<IntegrationOp<TensorT>>(new SumOp<TensorT>()),
+      std::shared_ptr<IntegrationErrorOp<TensorT>>(new SumErrorOp<TensorT>()),
+      std::shared_ptr<IntegrationWeightGradOp<TensorT>>(new SumWeightGradOp<TensorT>()),
+      std::shared_ptr<WeightInitOp<TensorT>>(new ConstWeightInitOp<TensorT>(1)),
+      std::shared_ptr<SolverOp<TensorT>>(new DummySolverOp<TensorT>()), 0.0f, 0.0f, false, true);
 
     // Specify the output node types manually
     for (const std::string& node_name : node_names) {
@@ -229,7 +245,7 @@ public:
     }
 
     // Add the output nodes
-    node_names = model_builder.addFullyConnected(model, "IsPeak_Out", "IsPeak_Out", node_names, n_inputs,
+    node_names = model_builder.addFullyConnected(model, "DE_IsPeak_Out", "DE_IsPeak_Out", node_names, n_inputs,
       std::shared_ptr<ActivationOp<TensorT>>(new SigmoidOp<TensorT>()),
       std::shared_ptr<ActivationOp<TensorT>>(new SigmoidGradOp<TensorT>()),
       std::shared_ptr<IntegrationOp<TensorT>>(new SumOp<TensorT>()),
@@ -237,6 +253,14 @@ public:
       std::shared_ptr<IntegrationWeightGradOp<TensorT>>(new SumWeightGradOp<TensorT>()),
       std::shared_ptr<WeightInitOp<TensorT>>(new RandWeightInitOp<TensorT>(node_names.size(), 1)),
       std::shared_ptr<SolverOp<TensorT>>(new AdamOp<TensorT>(1e-4, 0.9, 0.999, 1e-8, 1e3, 0.0)), 0.0f, 0.0f, false, true);
+    node_names = model_builder.addSinglyConnected(model, "IsPeak_Out", "IsPeak_Out", node_names, n_inputs,
+      std::shared_ptr<ActivationOp<TensorT>>(new LinearOp<TensorT>()),
+      std::shared_ptr<ActivationOp<TensorT>>(new LinearGradOp<TensorT>()),
+      std::shared_ptr<IntegrationOp<TensorT>>(new SumOp<TensorT>()),
+      std::shared_ptr<IntegrationErrorOp<TensorT>>(new SumErrorOp<TensorT>()),
+      std::shared_ptr<IntegrationWeightGradOp<TensorT>>(new SumWeightGradOp<TensorT>()),
+      std::shared_ptr<WeightInitOp<TensorT>>(new ConstWeightInitOp<TensorT>(1)),
+      std::shared_ptr<SolverOp<TensorT>>(new DummySolverOp<TensorT>()), 0.0f, 0.0f, false, true);
 
     // Specify the output node types manually
     for (const std::string& node_name : node_names) {
@@ -518,32 +542,32 @@ void main_DenoisingAE(const bool& make_model, const bool& train_model) {
   //data_simulator.emg_mu_offset_ = std::make_pair(-10, 10);
   //data_simulator.emg_sigma_ = std::make_pair(10, 30);
 
-  // Easy (Some issues with the peak start/stop not touching the baseline)
-  data_simulator.step_size_mu_ = std::make_pair(1, 1);
-  data_simulator.step_size_sigma_ = std::make_pair(0, 0);
-  data_simulator.chrom_window_size_ = std::make_pair(input_size, input_size);
-  data_simulator.noise_mu_ = std::make_pair(0, 0);
-  data_simulator.noise_sigma_ = std::make_pair(0, 0.2);
-  data_simulator.baseline_height_ = std::make_pair(0, 0);
-  data_simulator.n_peaks_ = std::make_pair(1, 5);
-  data_simulator.emg_h_ = std::make_pair(0.1, 1.0);
-  data_simulator.emg_tau_ = std::make_pair(0, 0);
-  data_simulator.emg_mu_offset_ = std::make_pair(0, 0);
-  data_simulator.emg_sigma_ = std::make_pair(10, 30);
-
-  //// Test
+  //// Easy (Some issues with the peak start/stop not touching the baseline)
   //data_simulator.step_size_mu_ = std::make_pair(1, 1);
   //data_simulator.step_size_sigma_ = std::make_pair(0, 0);
   //data_simulator.chrom_window_size_ = std::make_pair(input_size, input_size);
   //data_simulator.noise_mu_ = std::make_pair(0, 0);
-  ////data_simulator.noise_sigma_ = std::make_pair(0, 0.2);
-  //data_simulator.noise_sigma_ = std::make_pair(0, 0);
+  //data_simulator.noise_sigma_ = std::make_pair(0, 0.2);
   //data_simulator.baseline_height_ = std::make_pair(0, 0);
-  //data_simulator.n_peaks_ = std::make_pair(1, 2);
-  //data_simulator.emg_h_ = std::make_pair(1, 1);
+  //data_simulator.n_peaks_ = std::make_pair(1, 5);
+  //data_simulator.emg_h_ = std::make_pair(0.1, 1.0);
   //data_simulator.emg_tau_ = std::make_pair(0, 0);
   //data_simulator.emg_mu_offset_ = std::make_pair(0, 0);
-  //data_simulator.emg_sigma_ = std::make_pair(10, 10);
+  //data_simulator.emg_sigma_ = std::make_pair(10, 30);
+
+  // Test
+  data_simulator.step_size_mu_ = std::make_pair(1, 1);
+  data_simulator.step_size_sigma_ = std::make_pair(0, 0);
+  data_simulator.chrom_window_size_ = std::make_pair(input_size, input_size);
+  data_simulator.noise_mu_ = std::make_pair(0, 0);
+  //data_simulator.noise_sigma_ = std::make_pair(0, 0.2);
+  data_simulator.noise_sigma_ = std::make_pair(0, 0);
+  data_simulator.baseline_height_ = std::make_pair(0, 0);
+  data_simulator.n_peaks_ = std::make_pair(1, 2);
+  data_simulator.emg_h_ = std::make_pair(1, 1);
+  data_simulator.emg_tau_ = std::make_pair(0, 0);
+  data_simulator.emg_mu_offset_ = std::make_pair(0, 0);
+  data_simulator.emg_sigma_ = std::make_pair(10, 10);
 
   // Make the input nodes
   std::vector<std::string> input_nodes;
@@ -592,7 +616,7 @@ void main_DenoisingAE(const bool& make_model, const bool& train_model) {
     model_interpreters.push_back(model_interpreter);
   }
   ModelTrainerExt<float> model_trainer;
-  model_trainer.setBatchSize(1);
+  model_trainer.setBatchSize(64);
   model_trainer.setNEpochsTraining(100001);
   model_trainer.setNEpochsValidation(25);
   model_trainer.setNEpochsEvaluation(25);
