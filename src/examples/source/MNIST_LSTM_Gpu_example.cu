@@ -72,7 +72,7 @@ public:
      std::shared_ptr<SolverOp<TensorT>>(new AdamOp<TensorT>(1e-4, 0.9, 0.999, 1e-3, 10.0)), 0.0f, 0.0f, false, specify_layers);
 
     // Add a final output layer
-    node_names = model_builder.addFullyConnected(model, "Output", "Output", node_names, n_outputs,
+    node_names = model_builder.addFullyConnected(model, "FC-Out", "FC-Out", node_names, n_outputs,
       std::shared_ptr<ActivationOp<TensorT>>(new LeakyReLUOp<TensorT>()),
       std::shared_ptr<ActivationOp<TensorT>>(new LeakyReLUGradOp<TensorT>()),
       std::shared_ptr<IntegrationOp<TensorT>>(new SumOp<TensorT>()),
@@ -81,6 +81,14 @@ public:
       //std::shared_ptr<WeightInitOp<TensorT>>(new RangeWeightInitOp<TensorT>(1/(TensorT)node_names.size(), 10/(TensorT)node_names.size())),
       std::shared_ptr<WeightInitOp<TensorT>>(new RandWeightInitOp<TensorT>(node_names.size(), 2)),
       std::shared_ptr<SolverOp<TensorT>>(new AdamOp<TensorT>(1e-4, 0.9, 0.999, 1e-3, 10.0)), 0.0f, 0.0f, false, true);
+    node_names = model_builder.addSinglyConnected(model, "Output", "Output", node_names, n_outputs,
+      std::shared_ptr<ActivationOp<TensorT>>(new LinearOp<TensorT>()),
+      std::shared_ptr<ActivationOp<TensorT>>(new LinearGradOp<TensorT>()),
+      std::shared_ptr<IntegrationOp<TensorT>>(new SumOp<TensorT>()),
+      std::shared_ptr<IntegrationErrorOp<TensorT>>(new SumErrorOp<TensorT>()),
+      std::shared_ptr<IntegrationWeightGradOp<TensorT>>(new SumWeightGradOp<TensorT>()),
+      std::shared_ptr<WeightInitOp<TensorT>>(new ConstWeightInitOp<TensorT>(1)),
+      std::shared_ptr<SolverOp<TensorT>>(new DummySolverOp<TensorT>()), 0.0f, 0.0f, false, true);
 
     for (const std::string& node_name : node_names)
       model.getNodesMap().at(node_name)->setType(NodeType::output);
@@ -102,7 +110,7 @@ public:
     //}
     if (n_epochs % 1000 == 0 && n_epochs != 0) {
       // save the model every 1000 epochs
-      model_interpreter.getModelResults(model, false, true, false);
+      model_interpreter.getModelResults(model, false, true, false, false);
       ModelFile<TensorT> data;
       data.storeModelBinary(model.getName() + "_" + std::to_string(n_epochs) + "_model.binary", model);
       ModelInterpreterFileGpu<TensorT> interpreter_data;
@@ -110,25 +118,29 @@ public:
     }
   }
   void trainingModelLogger(const int & n_epochs, Model<TensorT>& model, ModelInterpreterGpu<TensorT>& model_interpreter, ModelLogger<TensorT>& model_logger,
-    const Eigen::Tensor<TensorT, 3>& expected_values, const std::vector<std::string>& output_nodes, const TensorT & model_error_train, const TensorT & model_error_test,
-    const Eigen::Tensor<TensorT, 1> & model_metrics_train, const Eigen::Tensor<TensorT, 1> & model_metrics_test)
+    const Eigen::Tensor<TensorT, 3>& expected_values, const std::vector<std::string>& output_nodes, const std::vector<std::string>& input_nodes, const TensorT & model_error_train, const TensorT & model_error_test,
+    const Eigen::Tensor<TensorT, 1> & model_metrics_train, const Eigen::Tensor<TensorT, 1> & model_metrics_test) override
   {
     // Set the defaults
     model_logger.setLogTimeEpoch(true);
     model_logger.setLogTrainValMetricEpoch(true);
-    model_logger.setLogExpectedPredictedEpoch(false);
+    model_logger.setLogExpectedEpoch(false);
+    model_logger.setLogNodeOutputsEpoch(false);
+    model_logger.setLogNodeInputsEpoch(false);
 
     // initialize all logs
     if (n_epochs == 0) {
-      //model_logger.setLogExpectedPredictedEpoch(true);
+      model_logger.setLogExpectedEpoch(true);
+      model_logger.setLogNodeOutputsEpoch(true);
       model_logger.initLogs(model);
     }
 
-    //// Per n epoch logging
-    //if (n_epochs % 10 == 0) {
-    //  model_logger.setLogExpectedPredictedEpoch(true);
-    //  model_interpreter.getModelResults(model, true, false, false);
-    //}
+    // Per n epoch logging
+    if (n_epochs % 1000 == 0) {
+      model_logger.setLogExpectedEpoch(true);
+      model_logger.setLogNodeOutputsEpoch(true);
+      model_interpreter.getModelResults(model, true, false, false, false);
+    }
 
     // Create the metric headers and data arrays
     std::vector<std::string> log_train_headers = { "Train_Error" };
@@ -143,7 +155,7 @@ public:
       log_test_values.push_back(model_metrics_test(metric_iter));
       ++metric_iter;
     }
-    model_logger.writeLogs(model, n_epochs, log_train_headers, log_test_headers, log_train_values, log_test_values, output_nodes, expected_values);
+    model_logger.writeLogs(model, n_epochs, log_train_headers, log_test_headers, log_train_values, log_test_values, output_nodes, expected_values, {}, output_nodes, {}, input_nodes, {});
   }
 };
 
@@ -160,7 +172,7 @@ public:
     const int n_output_nodes = loss_output_data.dimension(2);
     const int n_metric_output_nodes = metric_output_data.dimension(2);
 
-    assert(n_output_nodes == this->training_labels.dimension(1));
+    assert(n_output_nodes == 2*this->training_labels.dimension(1));
     assert(n_metric_output_nodes == this->training_labels.dimension(1));
     assert(n_input_nodes == 1);
     assert(memory_size == 784);
@@ -174,6 +186,7 @@ public:
       // Assign the final output data (only once)
       for (int nodes_iter = 0; nodes_iter < this->training_labels.dimension(1); ++nodes_iter) {
         loss_output_data(batch_iter, 0, nodes_iter) = (TensorT)this->training_labels(sample_indices[batch_iter], nodes_iter);
+        loss_output_data(batch_iter, 0, nodes_iter + this->training_labels.dimension(1)) = (TensorT)this->training_labels(sample_indices[batch_iter], nodes_iter);
         metric_output_data(batch_iter, 0, nodes_iter) = (TensorT)this->training_labels(sample_indices[batch_iter], nodes_iter);
       }
 
@@ -194,7 +207,7 @@ public:
     const int n_output_nodes = loss_output_data.dimension(2);
     const int n_metric_output_nodes = metric_output_data.dimension(2);
 
-    assert(n_output_nodes == this->validation_labels.dimension(1));
+    assert(n_output_nodes == 2 * this->validation_labels.dimension(1));
     assert(n_metric_output_nodes == this->validation_labels.dimension(1));
     assert(n_input_nodes == 1);
     assert(memory_size == 784);
@@ -207,6 +220,7 @@ public:
       // Assign the output data
       for (int nodes_iter = 0; nodes_iter < this->validation_labels.dimension(1); ++nodes_iter) {
         loss_output_data(batch_iter, 0, nodes_iter) = (TensorT)this->validation_labels(sample_indices[batch_iter], nodes_iter);
+        loss_output_data(batch_iter, 0, nodes_iter + this->validation_labels.dimension(1)) = (TensorT)this->validation_labels(sample_indices[batch_iter], nodes_iter);
         metric_output_data(batch_iter, 0, nodes_iter) = (TensorT)this->validation_labels(sample_indices[batch_iter], nodes_iter);
       }
       // Assign the input data
@@ -250,7 +264,7 @@ void main_MNIST(const std::string& data_dir, const bool& make_model, const bool&
   PopulationLogger<float> population_logger(true, true);
 
   // define the model logger
-  ModelLogger<float> model_logger(true, true, false, false, false, false, false);
+  ModelLogger<float> model_logger(true, true, false, false, false, false, false, false);
 
   // define the data simulator
   const std::size_t input_size = 784;
@@ -300,7 +314,7 @@ void main_MNIST(const std::string& data_dir, const bool& make_model, const bool&
   ModelTrainerExt<float> model_trainer;
   model_trainer.setBatchSize(32);
   model_trainer.setMemorySize(input_size);
-  model_trainer.setNEpochsTraining(500001);
+  model_trainer.setNEpochsTraining(100001);
   model_trainer.setNEpochsValidation(25);
   model_trainer.setVerbosityLevel(1);
   model_trainer.setLogging(true, true, false);
@@ -310,9 +324,15 @@ void main_MNIST(const std::string& data_dir, const bool& make_model, const bool&
   model_trainer.setPreserveOoO(true);
   model_trainer.setFindCycles(true);
   model_trainer.setFastInterpreter(true);
-  model_trainer.setLossFunctions({ std::shared_ptr<LossFunctionOp<float>>(new CrossEntropyWithLogitsLossOp<float>(1e-6, 1.0)) });
-  model_trainer.setLossFunctionGrads({ std::shared_ptr<LossFunctionGradOp<float>>(new CrossEntropyWithLogitsLossGradOp<float>(1e-6, 1.0)) });
-  model_trainer.setLossOutputNodes({ output_nodes });
+  model_trainer.setLossFunctions({
+    std::shared_ptr<LossFunctionOp<float>>(new CrossEntropyWithLogitsLossOp<float>()),
+    std::shared_ptr<LossFunctionOp<float>>(new MSELossOp<float>()) });
+  model_trainer.setLossFunctionGrads({
+    std::shared_ptr<LossFunctionGradOp<float>>(new CrossEntropyWithLogitsLossGradOp<float>()),
+    std::shared_ptr<LossFunctionGradOp<float>>(new MSELossGradOp<float>()) });
+  model_trainer.setLossOutputNodes({
+    output_nodes,
+    output_nodes });
   model_trainer.setMetricFunctions({ std::shared_ptr<MetricFunctionOp<float>>(new PrecisionMCMicroOp<float>()) });
   model_trainer.setMetricOutputNodes({ output_nodes });
   model_trainer.setMetricNames({ "PrecisionMCMicro" });
