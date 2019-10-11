@@ -521,8 +521,8 @@ void main_MNIST(const std::string& data_dir, const bool& make_model, const bool&
   Model<float> model;
   if (make_model) {
     //model_trainer.makeCovNet(model, input_nodes.size(), output_nodes.size(), 2, 2, 32, 16, 5, 2, false, true);  // Sanity test
-    model_trainer.makeCovNet(model, input_nodes.size(), output_nodes.size(), 8, 2, 128, 32, 5, 2, false, true);  // Minimal solving model
-    //model_trainer.makeCovNet(model, input_nodes.size(), output_nodes.size(), 32, 2, 128, true, true); // Recommended model
+    //model_trainer.makeCovNet(model, input_nodes.size(), output_nodes.size(), 8, 2, 128, 32, 5, 2, false, true);  // Minimal solving model
+    model_trainer.makeCovNet(model, input_nodes.size(), output_nodes.size(), 32, 2, 128, 32, 5, 2, false, true); // Recommended model
   }
   else {
     // read in the trained model
@@ -562,8 +562,8 @@ int main(int argc, char** argv)
 {
   // define the data directory
   //std::string data_dir = "/home/user/data/";
-  std::string data_dir = "C:/Users/domccl/GitHub/mnist/";
-  //std::string data_dir = "C:/Users/dmccloskey/Documents/GitHub/mnist/";
+  //std::string data_dir = "C:/Users/domccl/GitHub/mnist/";
+  std::string data_dir = "C:/Users/dmccloskey/Documents/GitHub/mnist/";
 
   // run the application
   main_MNIST(data_dir, true, true);

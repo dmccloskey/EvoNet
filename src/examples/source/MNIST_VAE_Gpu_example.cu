@@ -437,13 +437,13 @@ void main_MNIST(const std::string& data_dir, const bool& make_model, const bool&
   // define the model trainers and resources for the trainers
   std::vector<ModelInterpreterGpu<float>> model_interpreters;
   for (size_t i = 0; i < n_threads; ++i) {
-    ModelResources model_resources = { ModelDevice(0, 1) };
+    ModelResources model_resources = { ModelDevice(1, 1) };
     ModelInterpreterGpu<float> model_interpreter(model_resources);
     model_interpreters.push_back(model_interpreter);
   }
   ModelTrainerExt<float> model_trainer;
   //model_trainer.setBatchSize(1); // evaluation only
-  model_trainer.setBatchSize(64);
+  model_trainer.setBatchSize(128);
   model_trainer.setNEpochsTraining(200001);
   model_trainer.setNEpochsValidation(25);
   model_trainer.setNEpochsEvaluation(100);
@@ -514,8 +514,8 @@ int main(int argc, char** argv)
 {
   // define the data directory
   //std::string data_dir = "/home/user/data/";
-  std::string data_dir = "C:/Users/domccl/GitHub/mnist/";
-  //std::string data_dir = "C:/Users/dmccloskey/Documents/GitHub/mnist/";
+  //std::string data_dir = "C:/Users/domccl/GitHub/mnist/";
+  std::string data_dir = "C:/Users/dmccloskey/Documents/GitHub/mnist/";
 
   // run the application
   main_MNIST(data_dir, true, true);
