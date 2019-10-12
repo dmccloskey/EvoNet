@@ -193,7 +193,7 @@ void test_loadModelBinary2()
 	data.loadModelInterpreterBinary(filename, model_interpreter_test);
 
 	// Test for the expected model_interpreter operations
-	model_interpreter.getModelResults(model2, true, true, true);
+	model_interpreter.getModelResults(model2, true, true, true, true);
 	model_interpreter.clear_cache();
 
 	// Compile the graph into a set of operations and allocate all tensors

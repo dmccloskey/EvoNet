@@ -211,7 +211,7 @@ public:
     if (n_epochs % 1000 == 0 && n_epochs != 0) {
       // save the model every 1000 epochs
       ModelFile<TensorT> data;
-      model_interpreter.getModelResults(model, false, true, false);
+      model_interpreter.getModelResults(model, false, true, false, false);
 
       //// Save to .csv
       //data.storeModelCsv(model.getName() + "_" + std::to_string(n_epochs) + "_nodes.csv",

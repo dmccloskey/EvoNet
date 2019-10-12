@@ -267,7 +267,7 @@ public:
     const std::vector<float>& model_errors) {
     // Check point the model every 1000 epochs
     if (n_epochs % 500 == 0 && n_epochs != 0) {
-      model_interpreter.getModelResults(model, false, true, false);
+      model_interpreter.getModelResults(model, false, true, false, false);
       ModelFile<TensorT> data;
       data.storeModelBinary(model.getName() + "_" + std::to_string(n_epochs) + "_model.binary", model);
       ModelInterpreterFileDefaultDevice<TensorT> interpreter_data;
@@ -276,7 +276,7 @@ public:
     // Record the nodes/links
     if (n_epochs % 100 == 0 || n_epochs == 0) {
       ModelFile<TensorT> data;
-      model_interpreter.getModelResults(model, false, true, false);
+      model_interpreter.getModelResults(model, false, true, false, false);
       data.storeModelCsv(model.getName() + "_" + std::to_string(n_epochs) + "_nodes.csv",
         model.getName() + "_" + std::to_string(n_epochs) + "_links.csv",
         model.getName() + "_" + std::to_string(n_epochs) + "_weights.csv", model, true, true, true);

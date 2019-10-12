@@ -117,7 +117,7 @@ void test_DAGToy()
   const std::vector<std::string> output_nodes = {"4", "5"};
 	trainer.setLossFunctions({ std::shared_ptr<LossFunctionOp<float>>(new MSELossOp<float>()) });
 	trainer.setLossFunctionGrads({ std::shared_ptr<LossFunctionGradOp<float>>(new MSELossGradOp<float>()) });
-	trainer.setOutputNodes({ output_nodes });
+	trainer.setLossOutputNodes({ output_nodes });
 
   // Make the input data
   Eigen::Tensor<float, 4> input_data(trainer.getBatchSize(), trainer.getMemorySize(), (int)input_nodes.size(), trainer.getNEpochsTraining());
@@ -248,7 +248,7 @@ void test_DCGToy()
   const std::vector<std::string> output_nodes = {"2"};
 	trainer.setLossFunctions({ std::shared_ptr<LossFunctionOp<float>>(new MSELossOp<float>()) });
 	trainer.setLossFunctionGrads({ std::shared_ptr<LossFunctionGradOp<float>>(new MSELossGradOp<float>()) });
-	trainer.setOutputNodes({ output_nodes });
+	trainer.setLossOutputNodes({ output_nodes });
 
   // Make the input data
   Eigen::Tensor<float, 4> input_data(trainer.getBatchSize(), trainer.getMemorySize(), (int)input_nodes.size(), trainer.getNEpochsTraining());
