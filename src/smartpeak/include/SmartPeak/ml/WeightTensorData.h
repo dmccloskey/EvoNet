@@ -264,7 +264,7 @@ protected:
 	template<typename TensorT>
 	class WeightTensorDataCpu : public WeightTensorData<TensorT, Eigen::DefaultDevice> {
 	public:
-		void setWeight(const Eigen::Tensor<TensorT, 2>& weight) {
+		void setWeight(const Eigen::Tensor<TensorT, 2>& weight) override {
 			TensorT* h_weight = new TensorT[this->layer1_size_*this->layer2_size_];
 			// copy the tensor
 			Eigen::TensorMap<Eigen::Tensor<TensorT, 2>> weight_copy(h_weight, this->layer1_size_, this->layer2_size_);
@@ -275,7 +275,7 @@ protected:
 			this->h_weight_updated_ = true;
 			this->d_weight_updated_ = true;
 		}; ///< weight setter
-		void setSolverParams(const Eigen::Tensor<TensorT, 3>& solver_params) {
+		void setSolverParams(const Eigen::Tensor<TensorT, 3>& solver_params) override {
 			TensorT* h_solver_params = new TensorT[this->layer1_size_*this->layer2_size_*this->n_solver_params_];
 			// copy the tensor
 			Eigen::TensorMap<Eigen::Tensor<TensorT, 3>> solver_params_copy(h_solver_params, this->layer1_size_, this->layer2_size_, this->n_solver_params_);
@@ -286,7 +286,7 @@ protected:
 			this->h_solver_params_updated_ = true;
 			this->d_solver_params_updated_ = true;
 		}; ///< solver_params setter
-		void setError(const Eigen::Tensor<TensorT, 2>& error) {
+		void setError(const Eigen::Tensor<TensorT, 2>& error) override {
 			TensorT* h_error = new TensorT[this->layer1_size_*this->layer2_size_];
 			// copy the tensor
 			Eigen::TensorMap<Eigen::Tensor<TensorT, 2>> error_copy(h_error, this->layer1_size_, this->layer2_size_);
@@ -297,7 +297,7 @@ protected:
 			this->h_error_updated_ = true;
 			this->d_error_updated_ = true;
 		}; ///< error setter
-		void setSharedWeights(const Eigen::Tensor<TensorT, 3>& shared_weights) {
+		void setSharedWeights(const Eigen::Tensor<TensorT, 3>& shared_weights) override {
 			TensorT* h_shared_weights = new TensorT[this->layer1_size_*this->layer2_size_*this->n_shared_weights_];
 			// copy the tensor
 			Eigen::TensorMap<Eigen::Tensor<TensorT, 3>> shared_weights_copy(h_shared_weights, this->layer1_size_, this->layer2_size_, this->n_shared_weights_);
@@ -308,10 +308,10 @@ protected:
 			this->h_shared_weights_updated_ = true;
 			this->d_shared_weights_updated_ = true;
 		}; ///< shared_weights setter
-		bool syncHAndDError(Eigen::DefaultDevice& device) { return true; }
-		bool syncHAndDWeight(Eigen::DefaultDevice& device) { return true; }
-		bool syncHAndDSolverParams(Eigen::DefaultDevice& device) { return true; }
-		bool syncHAndDSharedWeights(Eigen::DefaultDevice& device) { return true; }
+		bool syncHAndDError(Eigen::DefaultDevice& device) override { return true; }
+		bool syncHAndDWeight(Eigen::DefaultDevice& device) override { return true; }
+		bool syncHAndDSolverParams(Eigen::DefaultDevice& device) override { return true; }
+		bool syncHAndDSharedWeights(Eigen::DefaultDevice& device) override { return true; }
 	//private:
 	//	friend class cereal::access;
 	//	template<class Archive>
@@ -325,7 +325,7 @@ protected:
 	template<typename TensorT>
 	class WeightTensorDataGpu : public WeightTensorData<TensorT, Eigen::GpuDevice> {
 	public:
-		void setWeight(const Eigen::Tensor<TensorT, 2>& weight) {
+		void setWeight(const Eigen::Tensor<TensorT, 2>& weight) override {
 			// allocate cuda and pinned host layer2
 			TensorT* d_weight;
 			TensorT* h_weight;
@@ -342,7 +342,7 @@ protected:
 			this->h_weight_updated_ = true;
 			this->d_weight_updated_ = false;
 		}; ///< weight setter
-		void setSolverParams(const Eigen::Tensor<TensorT, 3>& solver_params) {
+		void setSolverParams(const Eigen::Tensor<TensorT, 3>& solver_params) override {
 			// allocate cuda and pinned host layer2
 			TensorT* d_solver_params;
 			TensorT* h_solver_params;
@@ -359,7 +359,7 @@ protected:
 			this->h_solver_params_updated_ = true;
 			this->d_solver_params_updated_ = false;
 		}; ///< solver_params setter
-		void setError(const Eigen::Tensor<TensorT, 2>& error) {
+		void setError(const Eigen::Tensor<TensorT, 2>& error) override {
 			// allocate cuda and pinned host layer2
 			TensorT* d_error;
 			TensorT* h_error;
@@ -376,7 +376,7 @@ protected:
 			this->h_error_updated_ = true;
 			this->d_error_updated_ = false;
 		}; ///< error setter
-		void setSharedWeights(const Eigen::Tensor<TensorT, 3>& shared_weights) {
+		void setSharedWeights(const Eigen::Tensor<TensorT, 3>& shared_weights) override {
 			// allocate cuda and pinned host layer2
 			TensorT* d_shared_weights;
 			TensorT* h_shared_weights;
@@ -393,7 +393,7 @@ protected:
 			this->h_shared_weights_updated_ = true;
 			this->d_shared_weights_updated_ = false;
 		}; ///< shared_weights setter
-		bool syncHAndDError(Eigen::GpuDevice& device) {
+		bool syncHAndDError(Eigen::GpuDevice& device) override {
 			if (this->h_error_updated_ && !this->d_error_updated_) {
 				device.memcpyHostToDevice(this->d_error_.get(), this->h_error_.get(), getTensorSize());
 				this->d_error_updated_ = true;
@@ -411,7 +411,7 @@ protected:
 				return false;
 			}
 		}
-		bool syncHAndDWeight(Eigen::GpuDevice& device) {
+		bool syncHAndDWeight(Eigen::GpuDevice& device) override {
 			if (this->h_weight_updated_ && !this->d_weight_updated_) {
 				device.memcpyHostToDevice(this->d_weight_.get(), this->h_weight_.get(), getTensorSize());
 				this->d_weight_updated_ = true;
@@ -430,7 +430,7 @@ protected:
 			}
 			return true;
 		}
-		bool syncHAndDSolverParams(Eigen::GpuDevice& device) {
+		bool syncHAndDSolverParams(Eigen::GpuDevice& device) override {
 			if (this->h_solver_params_updated_ && !this->d_solver_params_updated_) {
 				device.memcpyHostToDevice(this->d_solver_params_.get(), this->h_solver_params_.get(), getSolverParamsSize());
 				this->d_solver_params_updated_ = true;
@@ -449,7 +449,7 @@ protected:
 			}
 			return true;
 		}
-		bool syncHAndDSharedWeights(Eigen::GpuDevice& device) {
+		bool syncHAndDSharedWeights(Eigen::GpuDevice& device) override {
 			if (this->h_shared_weights_updated_ && !this->d_shared_weights_updated_) {
 				device.memcpyHostToDevice(this->d_shared_weights_.get(), this->h_shared_weights_.get(), getSharedWeightsSize());
 				this->d_shared_weights_updated_ = true;
