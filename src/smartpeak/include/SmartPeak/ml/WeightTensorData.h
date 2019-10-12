@@ -113,24 +113,24 @@ public:
     std::string getSinkLayerIntegration() const { return sink_layer_integration_; }
 
 		virtual void setWeight(const Eigen::Tensor<TensorT, 2>& weight) = 0; ///< weight setter
-		Eigen::TensorMap<Eigen::Tensor<TensorT, 2>> getWeight() { std::shared_ptr<TensorT> h_weight = h_weight_; Eigen::TensorMap<Eigen::Tensor<TensorT, 2>> weight(h_weight.get(), layer1_size_, layer2_size_); return weight; }; ///< weight copy getter
-		std::shared_ptr<TensorT> getHWeightPointer() { return h_weight_; }; ///< weight pointer getter
-		std::shared_ptr<TensorT> getDWeightPointer() { return d_weight_; }; ///< weight pointer getter
+		Eigen::TensorMap<Eigen::Tensor<TensorT, 2>> getWeight() { Eigen::TensorMap<Eigen::Tensor<TensorT, 2>> weight(h_weight_.get(), layer1_size_, layer2_size_); return weight; }; ///< weight copy getter
+		std::shared_ptr<TensorT[]> getHWeightPointer() { return h_weight_; }; ///< weight pointer getter
+		std::shared_ptr<TensorT[]> getDWeightPointer() { return d_weight_; }; ///< weight pointer getter
 
     virtual void setSolverParams(const Eigen::Tensor<TensorT, 3>& solver_params) = 0; ///< solver_params setter
 		Eigen::TensorMap<Eigen::Tensor<TensorT, 3>> getSolverParams() { Eigen::TensorMap<Eigen::Tensor<TensorT, 3>> solver_params(h_solver_params_.get(), layer1_size_, layer2_size_, n_solver_params_); return solver_params; }; ///< solver_params copy getter
-		std::shared_ptr<TensorT> getHSolverParamsPointer() { return h_solver_params_; }; ///< solver_params pointer getter
-		std::shared_ptr<TensorT> getDSolverParamsPointer() { return d_solver_params_; }; ///< solver_params pointer getter
+		std::shared_ptr<TensorT[]> getHSolverParamsPointer() { return h_solver_params_; }; ///< solver_params pointer getter
+		std::shared_ptr<TensorT[]> getDSolverParamsPointer() { return d_solver_params_; }; ///< solver_params pointer getter
 
     virtual void setError(const Eigen::Tensor<TensorT, 2>& error) = 0; ///< error setter
 		Eigen::TensorMap<Eigen::Tensor<TensorT, 2>> getError() { Eigen::TensorMap<Eigen::Tensor<TensorT, 2>> error(h_error_.get(), layer1_size_, layer2_size_); return error; }; ///< error copy getter
-		std::shared_ptr<TensorT> getHErrorPointer() { return h_error_; }; ///< error pointer getter
-		std::shared_ptr<TensorT> getDErrorPointer() { return d_error_; }; ///< error pointer getter
+		std::shared_ptr<TensorT[]> getHErrorPointer() { return h_error_; }; ///< error pointer getter
+		std::shared_ptr<TensorT[]> getDErrorPointer() { return d_error_; }; ///< error pointer getter
 
 		virtual void setSharedWeights(const Eigen::Tensor<TensorT, 3>& shared_weights) = 0; ///< shared_weights setter
 		Eigen::TensorMap<Eigen::Tensor<TensorT, 3>> getSharedWeights() { Eigen::TensorMap<Eigen::Tensor<TensorT, 3>> shared_weights(h_shared_weights_.get(), layer1_size_, layer2_size_, n_shared_weights_); return shared_weights; }; ///< shared_weights copy getter
-		std::shared_ptr<TensorT> getHSharedWeightsPointer() { return h_shared_weights_; }; ///< shared_weights pointer getter
-		std::shared_ptr<TensorT> getDSharedWeightsPointer() { return d_shared_weights_; }; ///< shared_weights pointer getter
+		std::shared_ptr<TensorT[]> getHSharedWeightsPointer() { return h_shared_weights_; }; ///< shared_weights pointer getter
+		std::shared_ptr<TensorT[]> getDSharedWeightsPointer() { return d_shared_weights_; }; ///< shared_weights pointer getter
 
 		int getTensorSize() { return layer1_size_ * layer2_size_ * sizeof(TensorT); }; ///< Get the size of each tensor in bytes
 		int getSolverParamsSize() { return layer1_size_ * layer2_size_ * n_solver_params_ * sizeof(TensorT); }; ///< Get the size of each tensor in bytes
@@ -165,14 +165,14 @@ protected:
 				while solver_params have the following dimensions:
 
     */		
-		std::shared_ptr<TensorT> h_weight_;
-		std::shared_ptr<TensorT> h_solver_params_;
-		std::shared_ptr<TensorT> h_error_;
-		std::shared_ptr<TensorT> h_shared_weights_;
-		std::shared_ptr<TensorT> d_weight_;
-		std::shared_ptr<TensorT> d_solver_params_;
-		std::shared_ptr<TensorT> d_error_;
-		std::shared_ptr<TensorT> d_shared_weights_;
+		std::shared_ptr<TensorT[]> h_weight_;
+		std::shared_ptr<TensorT[]> h_solver_params_;
+		std::shared_ptr<TensorT[]> h_error_;
+		std::shared_ptr<TensorT[]> h_shared_weights_;
+		std::shared_ptr<TensorT[]> d_weight_;
+		std::shared_ptr<TensorT[]> d_solver_params_;
+		std::shared_ptr<TensorT[]> d_error_;
+		std::shared_ptr<TensorT[]> d_shared_weights_;
 		// [TODO: add drop probability]
 
 		bool h_error_updated_ = false;
