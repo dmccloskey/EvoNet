@@ -137,7 +137,7 @@ void test_loadModelBinary2()
 
 	// compile the graph into a set of operations and allocate all tensors
 	model_interpreter.getForwardPropogationOperations(model2, batch_size, memory_size, train, false, true, true);
-	model_interpreter.allocateModelErrorTensor(batch_size, memory_size);
+	model_interpreter.allocateModelErrorTensor(batch_size, memory_size, 0);
 
 	// create the input
 	const std::vector<std::string> node_ids = { "0", "1" };
@@ -198,7 +198,7 @@ void test_loadModelBinary2()
 
 	// Compile the graph into a set of operations and allocate all tensors
 	model_interpreter_test.getForwardPropogationOperations(model2, batch_size, memory_size, train, false, true, true);
-	model_interpreter_test.allocateModelErrorTensor(batch_size, memory_size);
+	model_interpreter_test.allocateModelErrorTensor(batch_size, memory_size, 0);
 
 	// RE-START: model_interpreter test taken from ModelinterpreterCpu_test
 	// iterate until we find the optimal values

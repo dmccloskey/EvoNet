@@ -89,12 +89,12 @@ public:
 		model1.addLinks({ l1, l2, l3, l4, lb1, lb2, l5, l6, l7, l8, lb3, lb4 });
 		return model1;
 	}
-	void adaptiveTrainerScheduler override(
+	void adaptiveTrainerScheduler (
 		const int& n_generations,
 		const int& n_epochs,
 		Model<TensorT>& model,
 		ModelInterpreterGpu<TensorT>& model_interpreter,
-		const std::vector<TensorT>& model_errors) {}
+		const std::vector<TensorT>& model_errors) override {}
 };
 
 void test_DAGToy() 
@@ -222,12 +222,12 @@ public:
 		model2.addLinks({ l1, l2, l3, lb1, lb2 });
 		return model2;
 	}
-	void adaptiveTrainerScheduler override (
+	void adaptiveTrainerScheduler (
 		const int& n_generations,
 		const int& n_epochs,
 		Model<TensorT>& model,
 		ModelInterpreterGpu<TensorT>& model_interpreter,
-		const std::vector<TensorT>& model_errors) {}
+		const std::vector<TensorT>& model_errors) override {}
 };
 
 void test_DCGToy() 
