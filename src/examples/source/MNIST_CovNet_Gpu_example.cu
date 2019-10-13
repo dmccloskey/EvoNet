@@ -226,7 +226,7 @@ public:
     const int& n_epochs,
     Model<TensorT>& model,
     ModelInterpreterGpu<TensorT>& model_interpreter,
-    const std::vector<float>& model_errors) {
+    const std::vector<float>& model_errors) override {
     if (n_epochs % 1000 == 0 && n_epochs != 0) {
       // save the model every 1000 epochs
       model_interpreter.getModelResults(model, false, true, false, false);
@@ -289,7 +289,7 @@ template<typename TensorT>
 class DataSimulatorExt : public MNISTSimulator<TensorT>
 {
 public:
-  void simulateTrainingData(Eigen::Tensor<TensorT, 4>& input_data, Eigen::Tensor<TensorT, 4>& output_data, Eigen::Tensor<TensorT, 3>& time_steps)
+  void simulateTrainingData(Eigen::Tensor<TensorT, 4>& input_data, Eigen::Tensor<TensorT, 4>& output_data, Eigen::Tensor<TensorT, 3>& time_steps)override
   {
     // infer data dimensions based on the input tensors
     const int batch_size = input_data.dimension(0);
@@ -322,7 +322,7 @@ public:
 
     time_steps.setConstant(1.0f);
   }
-  void simulateValidationData(Eigen::Tensor<TensorT, 4>& input_data, Eigen::Tensor<TensorT, 4>& output_data, Eigen::Tensor<TensorT, 3>& time_steps)
+  void simulateValidationData(Eigen::Tensor<TensorT, 4>& input_data, Eigen::Tensor<TensorT, 4>& output_data, Eigen::Tensor<TensorT, 3>& time_steps)override
   {
     // infer data dimensions based on the input tensors
     const int batch_size = input_data.dimension(0);
@@ -353,7 +353,7 @@ public:
 
     time_steps.setConstant(1.0f);
   }
-  void simulateTrainingData(Eigen::Tensor<TensorT, 3>& input_data, Eigen::Tensor<TensorT, 3>& loss_output_data, Eigen::Tensor<TensorT, 3>& metric_output_data, Eigen::Tensor<TensorT, 2>& time_steps)
+  void simulateTrainingData(Eigen::Tensor<TensorT, 3>& input_data, Eigen::Tensor<TensorT, 3>& loss_output_data, Eigen::Tensor<TensorT, 3>& metric_output_data, Eigen::Tensor<TensorT, 2>& time_steps)override
   {
     // infer data dimensions based on the input tensors
     const int batch_size = input_data.dimension(0);
@@ -384,7 +384,7 @@ public:
       }
     }
   }
-  void simulateValidationData(Eigen::Tensor<TensorT, 3>& input_data, Eigen::Tensor<TensorT, 3>& loss_output_data, Eigen::Tensor<TensorT, 3>& metric_output_data, Eigen::Tensor<TensorT, 2>& time_steps)
+  void simulateValidationData(Eigen::Tensor<TensorT, 3>& input_data, Eigen::Tensor<TensorT, 3>& loss_output_data, Eigen::Tensor<TensorT, 3>& metric_output_data, Eigen::Tensor<TensorT, 2>& time_steps)override
   {
     // infer data dimensions based on the input tensors
     const int batch_size = input_data.dimension(0);

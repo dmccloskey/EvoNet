@@ -10,7 +10,7 @@ template<typename TensorT>
 class DAGToyModelTrainer : public ModelTrainerGpu<TensorT>
 {
 public:
-	Model<TensorT> makeModel()
+	Model<TensorT> makeModel() override
 	{
 		// CopyNPasted from Model_DAG_Test
 		Node<TensorT> i1, i2, h1, h2, o1, o2, b1, b2;
@@ -89,7 +89,7 @@ public:
 		model1.addLinks({ l1, l2, l3, l4, lb1, lb2, l5, l6, l7, l8, lb3, lb4 });
 		return model1;
 	}
-	void adaptiveTrainerScheduler(
+	void adaptiveTrainerScheduler override(
 		const int& n_generations,
 		const int& n_epochs,
 		Model<TensorT>& model,
@@ -176,7 +176,7 @@ template<typename TensorT>
 class DCGToyModelTrainer : public ModelTrainerGpu<TensorT>
 {
 public:
-	Model<TensorT> makeModel()
+	Model<TensorT> makeModel() override
 	{
 		// CopyNPasted from Model_DCG_Test
 		Node<TensorT> i1, h1, o1, b1, b2;
@@ -222,7 +222,7 @@ public:
 		model2.addLinks({ l1, l2, l3, lb1, lb2 });
 		return model2;
 	}
-	void adaptiveTrainerScheduler(
+	void adaptiveTrainerScheduler override (
 		const int& n_generations,
 		const int& n_epochs,
 		Model<TensorT>& model,

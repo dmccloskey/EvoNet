@@ -66,15 +66,15 @@ public:
 		time_steps.setConstant(1.0f);
 	}
 
-	void simulateTrainingData(Eigen::Tensor<TensorT, 4>& input_data, Eigen::Tensor<TensorT, 4>& output_data, Eigen::Tensor<TensorT, 3>& time_steps)
+	void simulateTrainingData(Eigen::Tensor<TensorT, 4>& input_data, Eigen::Tensor<TensorT, 4>& output_data, Eigen::Tensor<TensorT, 3>& time_steps)override
 	{
 		simulateData(input_data, output_data, time_steps);
 	}
-	void simulateValidationData(Eigen::Tensor<TensorT, 4>& input_data, Eigen::Tensor<TensorT, 4>& output_data, Eigen::Tensor<TensorT, 3>& time_steps)
+	void simulateValidationData(Eigen::Tensor<TensorT, 4>& input_data, Eigen::Tensor<TensorT, 4>& output_data, Eigen::Tensor<TensorT, 3>& time_steps)override
 	{
 		simulateData(input_data, output_data, time_steps);
 	}
-	void simulateEvaluationData(Eigen::Tensor<TensorT, 4>& input_data, Eigen::Tensor<TensorT, 3>& time_steps) {};
+	void simulateEvaluationData(Eigen::Tensor<TensorT, 4>& input_data, Eigen::Tensor<TensorT, 3>& time_steps) override {};
 };
 
 // Extended classes
@@ -265,7 +265,7 @@ public:
 		const int& n_epochs,
 		Model<TensorT>& model,
 		ModelInterpreterDefaultDevice<TensorT>& model_interpreter,
-		const std::vector<float>& model_errors) {
+		const std::vector<float>& model_errors)override {
 		if (n_epochs % 500 == 0 && n_epochs != 0) {
 			// save the model every 500 epochs
 			ModelFile<TensorT> data;
@@ -285,7 +285,7 @@ public:
 	void trainingModelLogger(const int & n_epochs, Model<TensorT>& model, ModelInterpreterDefaultDevice<TensorT>& model_interpreter, ModelLogger<TensorT>& model_logger,
 		const Eigen::Tensor<TensorT, 3>& expected_values,
 		const std::vector<std::string>& output_nodes,
-		const TensorT& model_error)
+		const TensorT& model_error)override
 	{
 		//model_logger.setLogTimeEpoch(true);
 		//model_logger.setLogTrainValMetricEpoch(true);
@@ -302,7 +302,7 @@ public:
 	void validationModelLogger(const int & n_epochs, Model<TensorT>& model, ModelInterpreterDefaultDevice<TensorT>& model_interpreter, ModelLogger<TensorT>& model_logger,
 		const Eigen::Tensor<TensorT, 3>& expected_values,
 		const std::vector<std::string>& output_nodes,
-		const TensorT& model_error)
+		const TensorT& model_error)override
 	{
 		//model_logger.setLogTimeEpoch(false);
 		//model_logger.setLogTrainValMetricEpoch(false);
@@ -325,7 +325,7 @@ public:
 	void adaptiveReplicatorScheduler(
 		const int& n_generations,
 		std::vector<Model<TensorT>>& models,
-		std::vector<std::vector<std::tuple<int, std::string, TensorT>>>& models_errors_per_generations)
+		std::vector<std::vector<std::tuple<int, std::string, TensorT>>>& models_errors_per_generations)override
 	{
     if (n_generations > 2) {
       // Calculate the mean of the previous and current model erros
@@ -401,7 +401,7 @@ public:
 	void adaptivePopulationScheduler(
 		const int& n_generations,
 		std::vector<Model<TensorT>>& models,
-		std::vector<std::vector<std::tuple<int, std::string, TensorT>>>& models_errors_per_generations)
+		std::vector<std::vector<std::tuple<int, std::string, TensorT>>>& models_errors_per_generations)override
 	{
     // Adjust the population sizes
     // 
