@@ -5,10 +5,77 @@
 
 using namespace SmartPeak;
 using namespace std;
+template<typename TensorT>
+
+class DataSimulatorDAGToy : public DataSimulator<TensorT> {
+public:
+  void simulateTrainingData(Eigen::Tensor<TensorT, 3>& input_data, Eigen::Tensor<TensorT, 3>& loss_output_data, Eigen::Tensor<TensorT, 3>& metric_output_data, Eigen::Tensor<TensorT, 2>& time_steps) override {
+    // Make the input data
+    input_data.setValues({ {{1, 5, 1, 1}}, {{2, 6, 1, 1}}, {{3, 7, 1, 1}}, {{4, 8, 1, 1}} });
+
+    // Make the output data
+    loss_output_data.setValues({ {{0, 1}}, {{0, 1}}, {{0, 1}}, {{0, 1}} });
+    metric_output_data.setValues({ {{0, 1}}, {{0, 1}}, {{0, 1}}, {{0, 1}} });
+
+    // Make the simulation time_steps
+    time_steps.setConstant(1);
+  };
+  void simulateValidationData(Eigen::Tensor<TensorT, 3>& input_data, Eigen::Tensor<TensorT, 3>& loss_output_data, Eigen::Tensor<TensorT, 3>& metric_output_data, Eigen::Tensor<TensorT, 2>& time_steps) override {
+    // Make the input data
+    input_data.setValues({ {{1, 1, 5, 1}}, {{1, 1, 2, 6}}, {{1, 1, 3, 7}}, {{1, 1, 4, 8 }} });
+
+    // Make the output data
+    loss_output_data.setValues({ {{1, 0}}, {{1, 0}}, {{1, 0}}, {{1, 0}} });
+    metric_output_data.setValues({ {{0, 1}}, {{0, 1}}, {{0, 1}}, {{0, 1}} });
+
+    // Make the simulation time_steps
+    time_steps.setConstant(1);
+  };
+};
 
 template<typename TensorT>
-class DAGToyModelTrainer : public ModelTrainerGpu<TensorT>
-{
+class DataSimulatorDCGToy : public DataSimulator<TensorT> {
+public:
+  void simulateTrainingData(Eigen::Tensor<TensorT, 3>& input_data, Eigen::Tensor<TensorT, 3>& loss_output_data, Eigen::Tensor<TensorT, 3>& metric_output_data, Eigen::Tensor<TensorT, 2>& time_steps) override {
+    // Make the input data
+    input_data.setValues(
+      { {{8, 0, 0}, {7, 0, 0}, {6, 0, 0}, {5, 0, 0}, {4, 0, 0}, {3, 0, 0}, {2, 0, 0}, {1, 0, 0}},
+      {{9, 0, 0}, {8, 0, 0}, {7, 0, 0}, {6, 0, 0}, {5, 0, 0}, {4, 0, 0}, {3, 0, 0}, {2, 0, 0}},
+      {{10, 0, 0}, {9, 0, 0}, {8, 0, 0}, {7, 0, 0}, {6, 0, 0}, {5, 0, 0}, {4, 0, 0}, {3, 0, 0}},
+      {{11, 0, 0}, {10, 0, 0}, {9, 0, 0}, {8, 0, 0}, {7, 0, 0}, {6, 0, 0}, {5, 0, 0}, {4, 0, 0}},
+      {{12, 0, 0}, {11, 0, 0}, {10, 0, 0}, {9, 0, 0}, {8, 0, 0}, {7, 0, 0}, {6, 0, 0}, {5, 0, 0}} }
+    );
+
+    // Make the output data
+    loss_output_data.setValues(
+      { { { 4 },{ 4 },{ 3 },{ 3 },{ 2 },{ 2 },{ 1 },{ 1 } },
+      { { 5 },{ 4 },{ 4 },{ 3 },{ 3 },{ 2 },{ 2 },{ 1 } },
+      { { 5 },{ 5 },{ 4 },{ 4 },{ 3 },{ 3 },{ 2 },{ 2 } },
+      { { 6 },{ 5 },{ 5 },{ 4 },{ 4 },{ 3 },{ 3 },{ 2 } },
+      { { 6 },{ 6 },{ 5 },{ 5 },{ 4 },{ 4 },{ 3 },{ 3 } } });
+    metric_output_data.setValues(
+      { { { 4 },{ 4 },{ 3 },{ 3 },{ 2 },{ 2 },{ 1 },{ 1 } },
+      { { 5 },{ 4 },{ 4 },{ 3 },{ 3 },{ 2 },{ 2 },{ 1 } },
+      { { 5 },{ 5 },{ 4 },{ 4 },{ 3 },{ 3 },{ 2 },{ 2 } },
+      { { 6 },{ 5 },{ 5 },{ 4 },{ 4 },{ 3 },{ 3 },{ 2 } },
+      { { 6 },{ 6 },{ 5 },{ 5 },{ 4 },{ 4 },{ 3 },{ 3 } } });
+
+    // Make the simulation time_steps
+    time_steps.setValues({
+      {1, 1, 1, 1, 1, 1, 1, 1},
+      {1, 1, 1, 1, 1, 1, 1, 1},
+      {1, 1, 1, 1, 1, 1, 1, 1},
+      {1, 1, 1, 1, 1, 1, 1, 1},
+      {1, 1, 1, 1, 1, 1, 1, 1} }
+    );
+  }
+  void simulateValidationData(Eigen::Tensor<TensorT, 3>& input_data, Eigen::Tensor<TensorT, 3>& loss_output_data, Eigen::Tensor<TensorT, 3>& metric_output_data, Eigen::Tensor<TensorT, 2>& time_steps) override {
+    simulateTrainingData(input_data, loss_output_data, metric_output_data, time_steps);
+  }
+};
+
+template<typename TensorT>
+class DAGToyModelTrainer : public ModelTrainerGpu<TensorT> {
 public:
 	Model<TensorT> makeModel() override
 	{
@@ -87,6 +154,7 @@ public:
 		model1.addNodes({ i1, i2, h1, h2, o1, o2, b1, b2 });
 		model1.addWeights({ w1, w2, w3, w4, wb1, wb2, w5, w6, w7, w8, wb3, wb4 });
 		model1.addLinks({ l1, l2, l3, l4, lb1, lb2, l5, l6, l7, l8, lb3, lb4 });
+    model1.setInputAndOutputNodes();
 		return model1;
 	}
 	void adaptiveTrainerScheduler (
@@ -105,7 +173,6 @@ void test_DAGToy()
 
 	// Define the model resources
 	ModelResources model_resources = { ModelDevice(0, 1) };
-	ModelInterpreterGpu<float> model_interpreter(model_resources);
 
   // Test parameters
   trainer.setBatchSize(4);
@@ -162,14 +229,64 @@ void test_DAGToy()
 
   Model<float> model1 = trainer.makeModel();
   trainer.trainModel(model1, input_data, output_data, time_steps,
-    input_nodes, ModelLogger<float>(), model_interpreter);
+    input_nodes, ModelLogger<float>(), ModelInterpreterGpu<float>(model_resources));
 
   const Eigen::Tensor<float, 0> total_error = model1.getError().sum();
-	std::cout << "Model DAG Toy error: " << total_error(0) << std::endl;
   assert(total_error(0) <= 757.0);
 
-	// TODO validateModel
+  std::vector<float> validation_errors = trainer.validateModel(model1, input_data, output_data, time_steps,
+    input_nodes, ModelLogger<float>(), ModelInterpreterGpu<float>(model_resources));
+
+  const Eigen::Tensor<float, 0> total_error2 = model1.getError().sum();
+  assert(total_error2(0) <= 757.0);
+  assert(validation_errors[0] <= 757.0);
+
 	// TODO evaluateModel
+}
+
+void test_DAGToy2()
+{
+  // Define the makeModel and trainModel scripts
+  DAGToyModelTrainer<float> trainer;
+
+  // Define the model resources
+  ModelResources model_resources = { ModelDevice(0, 1) };
+
+  // Test parameters
+  trainer.setBatchSize(4);
+  trainer.setMemorySize(1);
+  trainer.setNEpochsTraining(20);
+  trainer.setNEpochsValidation(20);
+  trainer.setLogging(false, false);
+  const std::vector<std::string> input_nodes = { "0", "1", "6", "7" }; // true inputs + biases
+  const std::vector<std::string> output_nodes = { "4", "5" };
+  trainer.setLossFunctions({ std::shared_ptr<LossFunctionOp<float>>(new MSELossOp<float>()) });
+  trainer.setLossFunctionGrads({ std::shared_ptr<LossFunctionGradOp<float>>(new MSELossGradOp<float>()) });
+  trainer.setLossOutputNodes({ output_nodes });
+  trainer.setMetricFunctions({ std::shared_ptr<MetricFunctionOp<float>>(new MAEOp<float>()) });
+  trainer.setMetricOutputNodes({ output_nodes });
+  trainer.setMetricNames({ "MAE" });
+
+  DataSimulatorDAGToy<float> data_simulator;
+
+  Model<float> model1 = trainer.makeModel();
+  std::pair<std::vector<float>, std::vector<float>> errors = trainer.trainModel(model1, data_simulator,
+    input_nodes, ModelLogger<float>(), ModelInterpreterGpu<float>(model_resources));
+
+  const Eigen::Tensor<float, 0> total_error = model1.getError().sum();
+  assert(total_error(0) <= 757.0);
+  assert(errors.first.back() <= 757.0);
+  assert(errors.second.back() <= 486.0);
+
+  std::pair<std::vector<float>, std::vector<float>> validation_errors = trainer.validateModel(model1, data_simulator,
+    input_nodes, ModelLogger<float>(), ModelInterpreterGpu<float>(model_resources));
+
+  const Eigen::Tensor<float, 0> total_error_validation = model1.getError().sum();
+  assert(total_error_validation(0) <= 749.843);
+  assert(validation_errors.first.back() <= 749.843);
+  assert(validation_errors.second.back() <= 455.844);
+
+  // TODO evaluateModel
 }
 
 template<typename TensorT>
@@ -220,6 +337,7 @@ public:
 		model2.addNodes({ i1, h1, o1, b1, b2 });
 		model2.addWeights({ w1, w2, w3, wb1, wb2 });
 		model2.addLinks({ l1, l2, l3, lb1, lb2 });
+    model2.setInputAndOutputNodes();
 		return model2;
 	}
 	void adaptiveTrainerScheduler (
@@ -302,17 +420,60 @@ void test_DCGToy()
     input_nodes, ModelLogger<float>(), ModelInterpreterGpu<float>(model_resources));
 
   const Eigen::Tensor<float, 0> total_error = model1.getError().sum();
-	std::cout << "Model DCG Toy error: " << total_error(0) << std::endl;
   assert(total_error(0) <= 1492.6);
 
-	// TODO validateModel
-	// TODO evaluateModel
+  std::vector<float> validation_errors = trainer.validateModel(model1, input_data, output_data, time_steps,
+    input_nodes, ModelLogger<float>(), ModelInterpreterGpu<float>(model_resources));
+
+  const Eigen::Tensor<float, 0> total_error2 = model1.getError().sum();
+  assert(total_error2(0) <= 1492.6);
+  assert(validation_errors[0] <= 1492.6);
+  // TODO evaluateModel
+}
+
+void test_DCGToy2()
+{
+  // Define the makeModel and trainModel scripts
+  DCGToyModelTrainer<float> trainer;
+
+  // Define the model resources
+  ModelResources model_resources = { ModelDevice(0, 1) };
+
+  // Test parameters
+  trainer.setBatchSize(5);
+  trainer.setMemorySize(8);
+  trainer.setNEpochsTraining(50);
+  trainer.setNEpochsValidation(50);
+  const std::vector<std::string> input_nodes = { "0", "3", "4" }; // true inputs + biases
+  const std::vector<std::string> output_nodes = { "2" };
+  trainer.setLossFunctions({ std::shared_ptr<LossFunctionOp<float>>(new MSELossOp<float>()) });
+  trainer.setLossFunctionGrads({ std::shared_ptr<LossFunctionGradOp<float>>(new MSELossGradOp<float>()) });
+  trainer.setLossOutputNodes({ output_nodes });
+  trainer.setMetricFunctions({ std::shared_ptr<MetricFunctionOp<float>>(new MAEOp<float>()) });
+  trainer.setMetricOutputNodes({ output_nodes });
+  trainer.setMetricNames({ "MAE" });
+
+  // Make data simulator
+  DataSimulatorDCGToy<float> data_simulator;
+
+  Model<float> model1 = trainer.makeModel();
+
+  std::pair<std::vector<float>, std::vector<float>> errors = trainer.trainModel(model1, data_simulator,
+    input_nodes, ModelLogger<float>(), ModelInterpreterGpu<float>(model_resources));
+
+  const Eigen::Tensor<float, 0> total_error2 = model1.getError().sum();
+  assert(total_error2(0) <= 1492.6);
+  assert(errors.first.back() <= 1492.6);
+  assert(errors.second.back() <= 1492.6);
+  // TODO evaluateModel
 }
 
 int main(int argc, char** argv)
 {
-	test_DAGToy();
-	test_DCGToy();
+	//test_DAGToy();
+  test_DAGToy2();
+	//test_DCGToy();
+  test_DCGToy2();
 	return 0;
 }
 

@@ -88,6 +88,7 @@ Model<float> makeModel1()
 	model1.addNodes({ i1, i2, h1, h2, o1, o2, b1, b2 });
 	model1.addWeights({ w1, w2, w3, w4, wb1, wb2, w5, w6, w7, w8, wb3, wb4 });
 	model1.addLinks({ l1, l2, l3, l4, lb1, lb2, l5, l6, l7, l8, lb3, lb4 });
+  model1.setInputAndOutputNodes();
 	return model1;
 }
 
@@ -97,7 +98,8 @@ void test_loadModelBinary1()
 	ModelInterpreterFileGpu<float> data;
 
 	// START: model_interpreter test taken from ModelinterpreterCpu_test
-	ModelInterpreterGpu<float> model_interpreter;
+  ModelResources model_resources = { ModelDevice(0, 1) };
+	ModelInterpreterGpu<float> model_interpreter(model_resources);
 	const int batch_size = 4;
 	const int memory_size = 1;
 	const bool train = true;
@@ -123,7 +125,8 @@ void test_loadModelBinary2()
 	ModelInterpreterFileGpu<float> data;
 
 	// START: model_interpreter test taken from ModelinterpreterCpu_test
-	ModelInterpreterGpu<float> model_interpreter;
+  ModelResources model_resources = { ModelDevice(0, 1) };
+  ModelInterpreterGpu<float> model_interpreter(model_resources);
 	const int batch_size = 4;
 	const int memory_size = 1;
 	const bool train = true;

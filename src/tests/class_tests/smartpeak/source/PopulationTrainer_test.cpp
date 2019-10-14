@@ -659,8 +659,8 @@ BOOST_AUTO_TEST_CASE(evalModels)
 			BOOST_CHECK_EQUAL(population[i].getNodesMap().at(output_nodes[0])->getOutput().size(), 0);
 		}
 		else {
-			BOOST_CHECK_EQUAL(population[i].getError().size(), 40); // error has not been calculated
-			BOOST_CHECK_EQUAL(total_output(0), 340);
+			BOOST_CHECK_EQUAL(population[i].getError().size(), 0); // error has not been calculated
+			BOOST_CHECK_EQUAL(total_output(0), 260);
 			BOOST_CHECK_EQUAL(population[i].getNodesMap().at(output_nodes[0])->getOutput().size(), batch_size*(memory_size + 1));
 		}
 	}
