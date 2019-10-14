@@ -525,8 +525,8 @@ void main_DenoisingAE(const bool& make_model, const bool& train_model) {
 
   // define the data simulator
   const std::size_t input_size = 512;
-  const std::size_t encoding_size = 16;
-  const std::size_t n_hidden = 128;
+  const std::size_t encoding_size = 64;
+  const std::size_t n_hidden = 256;
   DataSimulatorExt<float> data_simulator;
 
   // Hard
@@ -616,7 +616,7 @@ void main_DenoisingAE(const bool& make_model, const bool& train_model) {
     model_interpreters.push_back(model_interpreter);
   }
   ModelTrainerExt<float> model_trainer;
-  model_trainer.setBatchSize(64);
+  model_trainer.setBatchSize(256);
   model_trainer.setNEpochsTraining(100001);
   model_trainer.setNEpochsValidation(25);
   model_trainer.setNEpochsEvaluation(25);
@@ -668,15 +668,15 @@ void main_DenoisingAE(const bool& make_model, const bool& train_model) {
     ModelInterpreterFileGpu<float> model_interpreter_file;
     model_interpreter_file.loadModelInterpreterBinary(interpreter_filename, model_interpreters[0]); // FIX ME!
   }
-  std::vector<Model<float>> population = { model };
+  //std::vector<Model<float>> population = { model };
 
   if (train_model) {
     // Train the model
     std::pair<std::vector<float>, std::vector<float>> model_errors = model_trainer.trainModel(model, data_simulator,
       input_nodes, model_logger, model_interpreters.front());
 
-    PopulationTrainerFile<float> population_trainer_file;
-    population_trainer_file.storeModels(population, "PeakIntegrator");
+    //PopulationTrainerFile<float> population_trainer_file;
+    //population_trainer_file.storeModels(population, "PeakIntegrator");
 
     //// Evolve the population
     //std::vector<std::vector<std::tuple<int, std::string, float>>> models_validation_errors_per_generation = population_trainer.evolveModels(
@@ -687,9 +687,9 @@ void main_DenoisingAE(const bool& make_model, const bool& train_model) {
     //population_trainer_file.storeModelValidations("PeakIntegrator_Errors.csv", models_validation_errors_per_generation);
   }
   else {
-    // Evaluate the population
-    population_trainer.evaluateModels(
-      population, model_trainer, model_interpreters, model_replicator, data_simulator, model_logger, input_nodes);
+    //// Evaluate the population
+    //population_trainer.evaluateModels(
+    //  population, model_trainer, model_interpreters, model_replicator, data_simulator, model_logger, input_nodes);
   }
 }
 
