@@ -40,7 +40,6 @@ public:
         std::make_pair(0, 0),
         std::make_pair(0, 0),
         std::make_pair(0, 0));
-        );
 		}
 	}
 };
@@ -149,8 +148,8 @@ public:
 
 void test_trainModels() 
 {
-	const std::vector<std::string> input_nodes = { "Input_0" }; // true inputs + biases
-	const std::vector<std::string> output_nodes = { "Output_0" };
+  const std::vector<std::string> input_nodes = { "Input_000000000000" }; // true inputs + biases
+  const std::vector<std::string> output_nodes = { "Output_000000000000" };
 	const int batch_size = 5;
 	const int memory_size = 8;
 	const int n_epochs_training = 5;
@@ -278,8 +277,8 @@ void test_trainModels()
 
 void test_evalModels()
 {
-	const std::vector<std::string> input_nodes = { "Input_0" }; // true inputs + biases
-	const std::vector<std::string> output_nodes = { "Output_0" };
+  const std::vector<std::string> input_nodes = { "Input_000000000000" }; // true inputs + biases
+  const std::vector<std::string> output_nodes = { "Output_000000000000" };
 	const int batch_size = 5;
 	const int memory_size = 8;
 	const int n_epochs_training = 5;
