@@ -51,13 +51,19 @@ public:
           name_,
           links_,
           nodes_,
-					weights_
+					weights_,
+					input_nodes_,
+					output_nodes_,
+					cyclic_pairs_
         ) == std::tie(
           other.id_,
           other.name_,
           other.links_,
           other.nodes_,
-          other.weights_
+          other.weights_,
+					other.input_nodes_,
+					other.output_nodes_,
+					other.cyclic_pairs_
         )
       ;
     }
