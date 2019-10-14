@@ -33,7 +33,7 @@ public:
   @param[in] n_hidden The length of the hidden layers
   @param[in] specify_layers Whether to give the `ModelInterpreter` "hints" as to the correct network structure during graph to tensor compilation
   */
-  void makeVAE(Model<TensorT>& model, int n_inputs = 784, int n_encodings = 64, int n_hidden_0 = 512, bool specify_layer = false, bool add_norm = true) {
+  void makeVAEFullyConn(Model<TensorT>& model, int n_inputs = 784, int n_encodings = 64, int n_hidden_0 = 512, bool specify_layer = false, bool add_norm = true) {
     model.setId(0);
     model.setName("VAE");
 
@@ -474,7 +474,7 @@ void main_MNIST(const std::string& data_dir, const bool& make_model, const bool&
   std::cout << "Initializing the population..." << std::endl;
   Model<float> model;
   if (make_model) {
-    ModelTrainerExt<float>().makeVAE(model, input_size, encoding_size, n_hidden, true, true);
+    ModelTrainerExt<float>().makeVAEFullyConn(model, input_size, encoding_size, n_hidden, true, true);
   }
   else {
     // read in the trained model
