@@ -456,10 +456,10 @@ public:
 		for (const std::vector<std::string>& node_names_l : node_names_dec_fc1) {
 			for (size_t d = 0; d < n_dec_depth_1; ++d) {
 				std::vector<std::string> node_names;
-				//std::string conv_name = "Dec-Conv0-" + std::to_string(l_cnt) + "-" + std::to_string(d);
+				std::string conv_module = "Dec-Conv0-" + std::to_string(l_cnt) + "-" + std::to_string(d);
 				std::string conv_name = "Dec-Conv0-" + std::to_string(d);
 				if (l_cnt == 0) {
-					node_names = model_builder.addConvolution(model, conv_name, conv_name, node_names_l,
+					node_names = model_builder.addConvolution(model, conv_name, conv_module, node_names_l,
 						sqrt(node_names_l.size()), sqrt(node_names_l.size()), filter_size - 1, filter_size - 1,
 						filter_size, filter_size, stride_size, 0, 0,
 						std::shared_ptr<ActivationOp<TensorT>>(new LeakyReLUOp<TensorT>()),
@@ -474,7 +474,7 @@ public:
 					node_names_l0.push_back(node_names);
 				}
 				else {
-					model_builder.addConvolution(model, conv_name, conv_name, node_names_l, node_names_l0.at(d),
+					model_builder.addConvolution(model, conv_name, conv_module, node_names_l, node_names_l0.at(d),
 						sqrt(node_names_l.size()), sqrt(node_names_l.size()), filter_size - 1, filter_size - 1,
 						filter_size, filter_size, stride_size, 0, 0,
 						std::shared_ptr<WeightInitOp<TensorT>>(new RandWeightInitOp<TensorT>(filter_size * filter_size, 2)),
@@ -491,10 +491,10 @@ public:
 		for (const std::vector<std::string>& node_names_l : node_names_l0) {
 			for (size_t d = 0; d < n_dec_depth_2; ++d) {
 				std::vector<std::string> node_names;
-				//std::string conv_name = "Dec-Conv1-" + std::to_string(l_cnt) + "-" + std::to_string(d);
+				std::string conv_module = "Dec-Conv1-" + std::to_string(l_cnt) + "-" + std::to_string(d);
 				std::string conv_name = "Dec-Conv1-" + std::to_string(d);
 				if (l_cnt == 0) {
-					node_names = model_builder.addConvolution(model, conv_name, conv_name, node_names_l,
+					node_names = model_builder.addConvolution(model, conv_name, conv_module, node_names_l,
 						sqrt(node_names_l.size()), sqrt(node_names_l.size()), filter_size - 1, filter_size - 1,
 						filter_size, filter_size, stride_size, 0, 0,
 						std::shared_ptr<ActivationOp<TensorT>>(new LeakyReLUOp<TensorT>()),
@@ -509,7 +509,7 @@ public:
 					node_names_l1.push_back(node_names);
 				}
 				else {
-					model_builder.addConvolution(model, conv_name, conv_name, node_names_l, node_names_l1.at(d),
+					model_builder.addConvolution(model, conv_name, conv_module, node_names_l, node_names_l1.at(d),
 						sqrt(node_names_l.size()), sqrt(node_names_l.size()), filter_size - 1, filter_size - 1,
 						filter_size, filter_size, stride_size, 0, 0,
 						std::shared_ptr<WeightInitOp<TensorT>>(new RandWeightInitOp<TensorT>(filter_size * filter_size, 2)),
@@ -525,10 +525,10 @@ public:
 		for (const std::vector<std::string>& node_names_l : node_names_l1) {
 			for (size_t d = 0; d < n_dec_depth_3; ++d) {
 				std::vector<std::string> node_names;
-				//std::string conv_name = "Dec-Conv2-" + std::to_string(l_cnt) + "-" + std::to_string(d);
+				std::string conv_module = "Dec-Conv2-" + std::to_string(l_cnt) + "-" + std::to_string(d);
 				std::string conv_name = "Dec-Conv2-" + std::to_string(d);
 				if (l_cnt == 0) {
-					node_names = model_builder.addConvolution(model, conv_name, conv_name, node_names_l,
+					node_names = model_builder.addConvolution(model, conv_name, conv_module, node_names_l,
 						sqrt(node_names_l.size()), sqrt(node_names_l.size()), filter_size - 1, filter_size - 1,
 						filter_size, filter_size, stride_size, 0, 0,
 						std::shared_ptr<ActivationOp<TensorT>>(new LeakyReLUOp<TensorT>()),
@@ -543,7 +543,7 @@ public:
 					node_names_l2.push_back(node_names);
 				}
 				else {
-					model_builder.addConvolution(model, conv_name, conv_name, node_names_l, node_names_l2.at(d),
+					model_builder.addConvolution(model, conv_name, conv_module, node_names_l, node_names_l2.at(d),
 						sqrt(node_names_l.size()), sqrt(node_names_l.size()), filter_size - 1, filter_size - 1,
 						filter_size, filter_size, stride_size, 0, 0,
 						std::shared_ptr<WeightInitOp<TensorT>>(new RandWeightInitOp<TensorT>(filter_size * filter_size, 2)),
@@ -878,11 +878,11 @@ void main_MNIST(const std::string& data_dir, const bool& make_model, const bool&
 	ModelReplicatorExt<float> model_replicator;
 
 	// define the initial population
-	std::cout << "Initializing the population..." << std::endl;
 	Model<float> model;
 	if (make_model) {
+		std::cout << "Making the model..." << std::endl;
 		//ModelTrainerExt<float>().makeVAEFullyConn(model, input_size, encoding_size, 128, false, true);
-		ModelTrainerExt<float>().makeVAECovNet(model, input_size, encoding_size, 2, 1, 2, 2, 1, 1, 256, 256, 4, 1, false, true);
+		ModelTrainerExt<float>().makeVAECovNet(model, input_size, encoding_size, 32, 1, 2, 2, 1, 1, 128, 128, 7, 1, false, true);
 	}
 	else {
 		// read in the trained model
@@ -896,7 +896,7 @@ void main_MNIST(const std::string& data_dir, const bool& make_model, const bool&
 		ModelInterpreterFileDefaultDevice<float> model_interpreter_file;
 		model_interpreter_file.loadModelInterpreterBinary(interpreter_filename, model_interpreters[0]); // FIX ME!
 	}
-	std::vector<Model<float>> population = { model };
+	//std::vector<Model<float>> population = { model };
 
 	if (train_model) {
 		// Train the model
@@ -912,9 +912,9 @@ void main_MNIST(const std::string& data_dir, const bool& make_model, const bool&
 		//population_trainer_file.storeModelValidations("MNISTErrors.csv", models_validation_errors_per_generation);
 	}
 	else {
-		// Evaluate the population
-		population_trainer.evaluateModels(
-			population, model_trainer, model_interpreters, model_replicator, data_simulator, model_logger, input_nodes);
+		//// Evaluate the population
+		//population_trainer.evaluateModels(
+		//	population, model_trainer, model_interpreters, model_replicator, data_simulator, model_logger, input_nodes);
 	}
 }
 
