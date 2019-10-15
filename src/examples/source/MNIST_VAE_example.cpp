@@ -333,7 +333,7 @@ public:
 					node_names_conv_linearized.push_back(node_name);
 				}
 			}
-			last_conv_depth = n_enc_depth_3 * n_enc_depth_2;
+			last_conv_depth = n_enc_depth_3 * n_enc_depth_2 * n_enc_depth_1;
 		}
 		else if (node_names_l1.size()) {
 			for (const std::vector<std::string>& node_names_l : node_names_l1) {
@@ -341,7 +341,7 @@ public:
 					node_names_conv_linearized.push_back(node_name);
 				}
 			}
-			last_conv_depth = n_enc_depth_2;
+			last_conv_depth = n_enc_depth_2 * n_enc_depth_1;
 		}
 		else {
 			for (const std::vector<std::string>& node_names_l : node_names_l0) {
@@ -349,7 +349,7 @@ public:
 					node_names_conv_linearized.push_back(node_name);
 				}
 			}
-			last_conv_depth = 1;
+			last_conv_depth = n_enc_depth_1;
 		}
 
 		// Add the FC layers
@@ -422,18 +422,21 @@ public:
 		int node_iter = 0;
 		std::vector<std::vector<std::string>> node_names_dec_fc1;
 		for (size_t d = 0; d < last_conv_depth; ++d) {
-			std::vector<std::string> node_names(node_names_dec_fc0.begin() + node_iter, node_names_dec_fc0.begin() + node_iter + n_dec_fc);
-			node_names = model_builder.addFullyConnected(model, "Dec-FC1", "Dec-FC1", node_names, node_names_conv_linearized.size(),
+			std::vector<std::string> node_names;
+			std::string fc_name = "Dec-FC1-" + std::to_string(d);
+			node_names = model_builder.addFullyConnected(model, fc_name, fc_name, node_names_dec_fc0, n_dec_fc,
 				std::shared_ptr<ActivationOp<TensorT>>(new LeakyReLUOp<TensorT>()),
 				std::shared_ptr<ActivationOp<TensorT>>(new LeakyReLUGradOp<TensorT>()),
 				std::shared_ptr<IntegrationOp<TensorT>>(new SumOp<TensorT>()),
 				std::shared_ptr<IntegrationErrorOp<TensorT>>(new SumErrorOp<TensorT>()),
 				std::shared_ptr<IntegrationWeightGradOp<TensorT>>(new SumWeightGradOp<TensorT>()),
-				std::shared_ptr<WeightInitOp<TensorT>>(new RandWeightInitOp<TensorT>((TensorT)(node_names.size() + node_names_conv_linearized.size()) / 2, 1)),
+				std::shared_ptr<WeightInitOp<TensorT>>(new RandWeightInitOp<TensorT>((TensorT)(node_names.size() + n_dec_fc) / 2, 1)),
 				std::shared_ptr<SolverOp<TensorT>>(new AdamOp<TensorT>(1e-4, 0.9, 0.999, 1e-8)), 0.0f, 0.0f, false, specify_layers);
 			if (add_norm) {
-				node_names = model_builder.addNormalization(model, "DE-FC0-Norm", "DE-FC0-Norm", node_names, true);
-				node_names = model_builder.addSinglyConnected(model, "DE-FC0-Norm-gain", "DE-FC0-Norm-gain", node_names, node_names.size(),
+				std::string norm_name = "Dec-FC1-Norm-" + std::to_string(d);
+				node_names = model_builder.addNormalization(model, norm_name, norm_name, node_names, true);
+				std::string gain_name = "Dec-FC1-Norm-gain-" + std::to_string(d);
+				node_names = model_builder.addSinglyConnected(model, gain_name, gain_name, node_names, node_names.size(),
 					std::shared_ptr<ActivationOp<TensorT>>(new LeakyReLUOp<TensorT>()), // Nonlinearity occures after the normalization
 					std::shared_ptr<ActivationOp<TensorT>>(new LeakyReLUGradOp<TensorT>()),
 					std::shared_ptr<IntegrationOp<TensorT>>(new SumOp<TensorT>()),
@@ -453,10 +456,11 @@ public:
 		for (const std::vector<std::string>& node_names_l : node_names_dec_fc1) {
 			for (size_t d = 0; d < n_dec_depth_1; ++d) {
 				std::vector<std::string> node_names;
-				std::string conv_name = "Dec-Conv0-" + std::to_string(l_cnt) + "-" + std::to_string(d);
+				//std::string conv_name = "Dec-Conv0-" + std::to_string(l_cnt) + "-" + std::to_string(d);
+				std::string conv_name = "Dec-Conv0-" + std::to_string(d);
 				if (l_cnt == 0) {
 					node_names = model_builder.addConvolution(model, conv_name, conv_name, node_names_l,
-						sqrt(node_names_l.size()), sqrt(node_names_l.size()), 0, 0,
+						sqrt(node_names_l.size()), sqrt(node_names_l.size()), filter_size - 1, filter_size - 1,
 						filter_size, filter_size, stride_size, 0, 0,
 						std::shared_ptr<ActivationOp<TensorT>>(new LeakyReLUOp<TensorT>()),
 						std::shared_ptr<ActivationOp<TensorT>>(new LeakyReLUGradOp<TensorT>()),
@@ -471,7 +475,7 @@ public:
 				}
 				else {
 					model_builder.addConvolution(model, conv_name, conv_name, node_names_l, node_names_l0.at(d),
-						sqrt(node_names_l.size()), sqrt(node_names_l.size()), 0, 0,
+						sqrt(node_names_l.size()), sqrt(node_names_l.size()), filter_size - 1, filter_size - 1,
 						filter_size, filter_size, stride_size, 0, 0,
 						std::shared_ptr<WeightInitOp<TensorT>>(new RandWeightInitOp<TensorT>(filter_size * filter_size, 2)),
 						std::shared_ptr<SolverOp<TensorT>>(new AdamOp<TensorT>(1e-3, 0.9, 0.999, 1e-8, 100)), 0.0f, 0.0f, specify_layers);
@@ -487,10 +491,11 @@ public:
 		for (const std::vector<std::string>& node_names_l : node_names_l0) {
 			for (size_t d = 0; d < n_dec_depth_2; ++d) {
 				std::vector<std::string> node_names;
-				std::string conv_name = "Dec-Conv1-" + std::to_string(l_cnt) + "-" + std::to_string(d);
+				//std::string conv_name = "Dec-Conv1-" + std::to_string(l_cnt) + "-" + std::to_string(d);
+				std::string conv_name = "Dec-Conv1-" + std::to_string(d);
 				if (l_cnt == 0) {
 					node_names = model_builder.addConvolution(model, conv_name, conv_name, node_names_l,
-						sqrt(node_names_l.size()), sqrt(node_names_l.size()), 0, 0,
+						sqrt(node_names_l.size()), sqrt(node_names_l.size()), filter_size - 1, filter_size - 1,
 						filter_size, filter_size, stride_size, 0, 0,
 						std::shared_ptr<ActivationOp<TensorT>>(new LeakyReLUOp<TensorT>()),
 						std::shared_ptr<ActivationOp<TensorT>>(new LeakyReLUGradOp<TensorT>()),
@@ -505,7 +510,7 @@ public:
 				}
 				else {
 					model_builder.addConvolution(model, conv_name, conv_name, node_names_l, node_names_l1.at(d),
-						sqrt(node_names_l.size()), sqrt(node_names_l.size()), 0, 0,
+						sqrt(node_names_l.size()), sqrt(node_names_l.size()), filter_size - 1, filter_size - 1,
 						filter_size, filter_size, stride_size, 0, 0,
 						std::shared_ptr<WeightInitOp<TensorT>>(new RandWeightInitOp<TensorT>(filter_size * filter_size, 2)),
 						std::shared_ptr<SolverOp<TensorT>>(new AdamOp<TensorT>(1e-3, 0.9, 0.999, 1e-8, 100)), 0.0f, 0.0f, specify_layers);
@@ -520,10 +525,11 @@ public:
 		for (const std::vector<std::string>& node_names_l : node_names_l1) {
 			for (size_t d = 0; d < n_dec_depth_3; ++d) {
 				std::vector<std::string> node_names;
-				std::string conv_name = "Dec-Conv2-" + std::to_string(l_cnt) + "-" + std::to_string(d);
+				//std::string conv_name = "Dec-Conv2-" + std::to_string(l_cnt) + "-" + std::to_string(d);
+				std::string conv_name = "Dec-Conv2-" + std::to_string(d);
 				if (l_cnt == 0) {
 					node_names = model_builder.addConvolution(model, conv_name, conv_name, node_names_l,
-						sqrt(node_names_l.size()), sqrt(node_names_l.size()), 0, 0,
+						sqrt(node_names_l.size()), sqrt(node_names_l.size()), filter_size - 1, filter_size - 1,
 						filter_size, filter_size, stride_size, 0, 0,
 						std::shared_ptr<ActivationOp<TensorT>>(new LeakyReLUOp<TensorT>()),
 						std::shared_ptr<ActivationOp<TensorT>>(new LeakyReLUGradOp<TensorT>()),
@@ -538,7 +544,7 @@ public:
 				}
 				else {
 					model_builder.addConvolution(model, conv_name, conv_name, node_names_l, node_names_l2.at(d),
-						sqrt(node_names_l.size()), sqrt(node_names_l.size()), 0, 0,
+						sqrt(node_names_l.size()), sqrt(node_names_l.size()), filter_size - 1, filter_size - 1,
 						filter_size, filter_size, stride_size, 0, 0,
 						std::shared_ptr<WeightInitOp<TensorT>>(new RandWeightInitOp<TensorT>(filter_size * filter_size, 2)),
 						std::shared_ptr<SolverOp<TensorT>>(new AdamOp<TensorT>(1e-3, 0.9, 0.999, 1e-8, 100)), 0.0f, 0.0f, specify_layers);
@@ -876,7 +882,7 @@ void main_MNIST(const std::string& data_dir, const bool& make_model, const bool&
 	Model<float> model;
 	if (make_model) {
 		//ModelTrainerExt<float>().makeVAEFullyConn(model, input_size, encoding_size, 128, false, true);
-		ModelTrainerExt<float>().makeVAECovNet(model, input_size, encoding_size, 32, 1, 2, 2, 1, 1, 256, 256, 4, 1, false, true);
+		ModelTrainerExt<float>().makeVAECovNet(model, input_size, encoding_size, 2, 1, 2, 2, 1, 1, 256, 256, 4, 1, false, true);
 	}
 	else {
 		// read in the trained model
