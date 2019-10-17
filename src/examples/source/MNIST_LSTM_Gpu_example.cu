@@ -269,8 +269,8 @@ void main_MNIST(const std::string& data_dir, const bool& make_model, const bool&
   // define the data simulator
   const std::size_t input_size = 784;
   const std::size_t n_labels = 10;
-  const std::size_t n_blocks = 128;
-  const std::size_t n_hidden = 32;
+  const std::size_t n_blocks = 256;
+  const std::size_t n_hidden = 128;
   const std::size_t training_data_size = 60000; //60000;
   const std::size_t validation_data_size = 10000; //10000;
   DataSimulatorExt<float> data_simulator;
@@ -312,12 +312,12 @@ void main_MNIST(const std::string& data_dir, const bool& make_model, const bool&
     model_interpreters.push_back(model_interpreter);
   }
   ModelTrainerExt<float> model_trainer;
-  model_trainer.setBatchSize(32);
+  model_trainer.setBatchSize(64);
   model_trainer.setMemorySize(input_size);
   model_trainer.setNEpochsTraining(100001);
   model_trainer.setNEpochsValidation(25);
   model_trainer.setVerbosityLevel(1);
-  model_trainer.setLogging(true, true, false);
+  model_trainer.setLogging(true, false, false);
   model_trainer.setNTETTSteps(1);
   model_trainer.setNTBPTTSteps(256);
   //model_trainer.setNTBPTTSteps(input_size);
@@ -358,7 +358,7 @@ void main_MNIST(const std::string& data_dir, const bool& make_model, const bool&
     ModelInterpreterFileGpu<float> model_interpreter_file;
     model_interpreter_file.loadModelInterpreterBinary(interpreter_filename, model_interpreters[0]);
   }
-  std::vector<Model<float>> population = { model };
+  //std::vector<Model<float>> population = { model };
 
   if (train_model) {
     // Train the model
@@ -380,21 +380,31 @@ void main_MNIST(const std::string& data_dir, const bool& make_model, const bool&
     //  population.front(), true, true, true);
   }
   else {
-    // Evaluate the population
-    population_trainer.evaluateModels(
-      population, model_trainer, model_interpreters, model_replicator, data_simulator, model_logger, input_nodes);
+    //// Evaluate the population
+    //population_trainer.evaluateModels(
+    //  population, model_trainer, model_interpreters, model_replicator, data_simulator, model_logger, input_nodes);
   }
 };
 
 int main(int argc, char** argv)
 {
-  // define the data directory
-  //std::string data_dir = "/home/user/data/";
-  std::string data_dir = "C:/Users/domccl/GitHub/mnist/";
-  //std::string data_dir = "C:/Users/dmccloskey/Documents/GitHub/mnist/";
+	// Parse the user commands
+	std::string data_dir = "C:/Users/dmccloskey/Documents/GitHub/mnist/";
+	//std::string data_dir = "/home/user/data/";
+	//std::string data_dir = "C:/Users/domccl/GitHub/mnist/";
+	bool make_model = true, train_model = true;
+	if (argc >= 2) {
+		data_dir = argv[1];
+	}
+	if (argc >= 3) {
+		make_model = (argv[2] == std::string("true")) ? true : false;
+	}
+	if (argc >= 4) {
+		train_model = (argv[3] == std::string("true")) ? true : false;
+	}
 
-  // run the application
-  main_MNIST(data_dir, true, true);
+	// run the application
+	main_MNIST(data_dir, make_model, train_model);
 
   return 0;
 }
