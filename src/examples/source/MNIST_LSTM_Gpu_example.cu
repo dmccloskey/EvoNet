@@ -30,7 +30,9 @@ public:
   @param[in] n_cells The number of cells in each LSTM block
   @param[in] specify_layers Whether to give the `ModelInterpreter` "hints" as to the correct network structure during graph to tensor compilation
   */
-  void makeLSTM(Model<TensorT>& model, int n_inputs = 784, int n_outputs = 10, int n_blocks = 512, int n_cells = 1, int n_hidden = 32, bool specify_layers = true) {
+	void makeLSTM(Model<TensorT>& model, const int& n_inputs = 784, const int& n_outputs = 10,
+		const int& n_blocks_1 = 512, const int& n_cells_1 = 1, const int& n_blocks_2 = 512, const int& n_cells_2 = 1,
+		const int& n_hidden = 32, const bool& add_forget_gate = true, const bool& specify_layers = true) {
     model.setId(0);
     model.setName("LSTM");
 
@@ -40,26 +42,29 @@ public:
     std::vector<std::string> node_names_input = model_builder.addInputNodes(model, "Input", "Input", n_inputs, specify_layers);
 
     // Add the LSTM layer(s)
-    std::vector<std::string> node_names = model_builder.addLSTM(model, "LSTM-01", "LSTM-01", node_names_input, n_blocks, n_cells,
+    std::vector<std::string> node_names = model_builder.addLSTM(model, "LSTM-01", "LSTM-01", node_names_input, n_blocks_1, n_cells_1,
       std::shared_ptr<ActivationOp<TensorT>>(new LeakyReLUOp<float>()),
       std::shared_ptr<ActivationOp<TensorT>>(new LeakyReLUGradOp<float>()),
       std::shared_ptr<IntegrationOp<TensorT>>(new SumOp<TensorT>()),
       std::shared_ptr<IntegrationErrorOp<TensorT>>(new SumErrorOp<TensorT>()),
       std::shared_ptr<IntegrationWeightGradOp<TensorT>>(new SumWeightGradOp<TensorT>()),
       //std::shared_ptr<WeightInitOp<TensorT>>(new RandWeightInitOp<TensorT>(0.4)),
-      std::shared_ptr<WeightInitOp<TensorT>>(new RandWeightInitOp<TensorT>((TensorT)(node_names_input.size() + n_blocks) / 2, 1)),
+      std::shared_ptr<WeightInitOp<TensorT>>(new RandWeightInitOp<TensorT>((TensorT)(node_names_input.size() + n_blocks_1) / 2, 1)),
       std::shared_ptr<SolverOp<TensorT>>(new AdamOp<TensorT>(1e-4, 0.9, 0.999, 1e-3, 10.0)),
-      0.0f, 0.0f, false, true, 1, specify_layers);
-    node_names = model_builder.addLSTM(model, "LSTM-02", "LSTM-02", node_names, n_blocks, n_cells,
-      std::shared_ptr<ActivationOp<TensorT>>(new LeakyReLUOp<float>()),
-      std::shared_ptr<ActivationOp<TensorT>>(new LeakyReLUGradOp<float>()),
-      std::shared_ptr<IntegrationOp<TensorT>>(new SumOp<TensorT>()),
-      std::shared_ptr<IntegrationErrorOp<TensorT>>(new SumErrorOp<TensorT>()),
-      std::shared_ptr<IntegrationWeightGradOp<TensorT>>(new SumWeightGradOp<TensorT>()),
-      //std::shared_ptr<WeightInitOp<TensorT>>(new RandWeightInitOp<TensorT>(0.4)),
-      std::shared_ptr<WeightInitOp<TensorT>>(new RandWeightInitOp<TensorT>((TensorT)(node_names.size() + n_blocks) / 2, 1)),
-      std::shared_ptr<SolverOp<TensorT>>(new AdamOp<TensorT>(1e-4, 0.9, 0.999, 1e-3, 10.0)),
-      0.0f, 0.0f, false, true, 1, specify_layers);
+      0.0f, 0.0f, false, add_forget_gate, 1, specify_layers);
+
+		if (n_blocks_2 > 0) {
+			node_names = model_builder.addLSTM(model, "LSTM-02", "LSTM-02", node_names, n_blocks_2, n_cells_2,
+				std::shared_ptr<ActivationOp<TensorT>>(new LeakyReLUOp<float>()),
+				std::shared_ptr<ActivationOp<TensorT>>(new LeakyReLUGradOp<float>()),
+				std::shared_ptr<IntegrationOp<TensorT>>(new SumOp<TensorT>()),
+				std::shared_ptr<IntegrationErrorOp<TensorT>>(new SumErrorOp<TensorT>()),
+				std::shared_ptr<IntegrationWeightGradOp<TensorT>>(new SumWeightGradOp<TensorT>()),
+				//std::shared_ptr<WeightInitOp<TensorT>>(new RandWeightInitOp<TensorT>(0.4)),
+				std::shared_ptr<WeightInitOp<TensorT>>(new RandWeightInitOp<TensorT>((TensorT)(node_names.size() + n_blocks_2) / 2, 1)),
+				std::shared_ptr<SolverOp<TensorT>>(new AdamOp<TensorT>(1e-4, 0.9, 0.999, 1e-3, 10.0)),
+				0.0f, 0.0f, false, add_forget_gate, 1, specify_layers);
+		}
 
    // Add a fully connected layer
    node_names = model_builder.addFullyConnected(model, "FC-01", "FC-01", node_names, n_hidden,
@@ -269,7 +274,11 @@ void main_MNIST(const std::string& data_dir, const bool& make_model, const bool&
   // define the data simulator
   const std::size_t input_size = 784;
   const std::size_t n_labels = 10;
-  const std::size_t n_blocks = 256;
+  const std::size_t n_blocks_1 = 256;
+	const std::size_t n_cells_1 = 1;
+	const std::size_t n_blocks_2 = 256;
+	const std::size_t n_cells_2 = 1;
+	const bool add_forget_gate = true;
   const std::size_t n_hidden = 128;
   const std::size_t training_data_size = 60000; //60000;
   const std::size_t validation_data_size = 10000; //10000;
@@ -307,7 +316,7 @@ void main_MNIST(const std::string& data_dir, const bool& make_model, const bool&
   // define the model trainers and resources for the trainers
   std::vector<ModelInterpreterGpu<float>> model_interpreters;
   for (size_t i = 0; i < n_threads; ++i) {
-    ModelResources model_resources = { ModelDevice(0, 1) };
+    ModelResources model_resources = { ModelDevice(2, 1) };
     ModelInterpreterGpu<float> model_interpreter(model_resources);
     model_interpreters.push_back(model_interpreter);
   }
@@ -344,13 +353,13 @@ void main_MNIST(const std::string& data_dir, const bool& make_model, const bool&
   std::cout << "Initializing the population..." << std::endl;
   Model<float> model;
   if (make_model) {
-    model_trainer.makeLSTM(model, input_nodes.size(), output_nodes.size(), n_blocks, 1, n_hidden, true);
+    model_trainer.makeLSTM(model, input_nodes.size(), output_nodes.size(), n_blocks_1, n_cells_1, n_blocks_2, n_cells_2, n_hidden, add_forget_gate, true);
   }
   else {
     // read in the trained model
     std::cout << "Reading in the model..." << std::endl;
-    const std::string model_filename = data_dir + "LSTM_9000_model.binary";
-    const std::string interpreter_filename = data_dir + "LSTM_9000_interpreter.binary";
+    const std::string model_filename = data_dir + "LSTM_model.binary";
+    const std::string interpreter_filename = data_dir + "LSTM_interpreter.binary";
     ModelFile<float> model_file;
     model_file.loadModelBinary(model_filename, model);
     model.setId(1);
