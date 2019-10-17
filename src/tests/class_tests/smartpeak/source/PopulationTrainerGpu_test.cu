@@ -13,16 +13,7 @@ using namespace std;
 // Extended classes used for testing
 template<typename TensorT>
 class ModelTrainerExt : public ModelTrainerGpu<TensorT>
-{
-public:
-	Model<TensorT> makeModel() { return Model<TensorT>(); }
-	void adaptiveTrainerScheduler(
-		const int& n_generations,
-		const int& n_epochs,
-		Model<TensorT>& model,
-		ModelInterpreterGpu<TensorT>& model_interpreter,
-		const std::vector<float>& model_errors) {}
-};
+{};
 
 template<typename TensorT>
 class ModelReplicatorExt : public ModelReplicator<TensorT>
@@ -31,19 +22,24 @@ public:
 	void adaptiveReplicatorScheduler(
 		const int& n_generations,
 		std::vector<Model<TensorT>>& models,
-		std::vector<std::vector<std::tuple<int, std::string, float>>>& models_errors_per_generations)
+		std::vector<std::vector<std::tuple<int, std::string, float>>>& models_errors_per_generations) override
 	{
 		if (n_generations >= 0)
 		{
 			setRandomModifications(
-				std::make_pair(0, 0),
-				std::make_pair(1, 1),
-				std::make_pair(0, 0),
-				std::make_pair(1, 1),
-				std::make_pair(0, 0),
-				std::make_pair(0, 0),
-				std::make_pair(0, 0),
-				std::make_pair(0, 0));
+        std::make_pair(0, 0), // addNodeDown
+        std::make_pair(0, 0), // addNodeRight
+        std::make_pair(0, 0), // copyNodeDown 
+        std::make_pair(0, 0), // copyNodeRight
+        std::make_pair(1, 1), // addLink
+        std::make_pair(0, 0), // copyLink
+        std::make_pair(0, 0), // deleteNode
+        std::make_pair(1, 1), // deleteLink
+        std::make_pair(0, 0), // changeActivation
+        std::make_pair(0, 0), // changeIntegration
+        std::make_pair(0, 0),
+        std::make_pair(0, 0),
+        std::make_pair(0, 0));
 		}
 	}
 };
@@ -55,7 +51,7 @@ public:
 	void adaptivePopulationScheduler(
 		const int& n_generations,
 		std::vector<Model<TensorT>>& models,
-		std::vector<std::vector<std::tuple<int, std::string, float>>>& models_errors_per_generations)
+		std::vector<std::vector<std::tuple<int, std::string, float>>>& models_errors_per_generations) override
 	{
 		if (n_generations == getNGenerations() - 1)
 		{
@@ -76,7 +72,7 @@ template<typename TensorT>
 class DataSimulatorExt : public DataSimulator<TensorT>
 {
 public:
-	void simulateEvaluationData(Eigen::Tensor<TensorT, 4>& input_data, Eigen::Tensor<TensorT, 3>& time_steps)
+	void simulateEvaluationData(Eigen::Tensor<TensorT, 4>& input_data, Eigen::Tensor<TensorT, 3>& time_steps) override
 	{
 		// infer data dimensions based on the input tensors
 		const int batch_size = input_data.dimension(0);
@@ -140,11 +136,11 @@ public:
 		time_steps.setConstant(1.0f);
 	}
 
-	void simulateTrainingData(Eigen::Tensor<TensorT, 4>& input_data, Eigen::Tensor<TensorT, 4>& output_data, Eigen::Tensor<TensorT, 3>& time_steps)
+	void simulateTrainingData(Eigen::Tensor<TensorT, 4>& input_data, Eigen::Tensor<TensorT, 4>& output_data, Eigen::Tensor<TensorT, 3>& time_steps) override
 	{
 		simulateData(input_data, output_data, time_steps);
 	}
-	void simulateValidationData(Eigen::Tensor<TensorT, 4>& input_data, Eigen::Tensor<TensorT, 4>& output_data, Eigen::Tensor<TensorT, 3>& time_steps)
+	void simulateValidationData(Eigen::Tensor<TensorT, 4>& input_data, Eigen::Tensor<TensorT, 4>& output_data, Eigen::Tensor<TensorT, 3>& time_steps) override
 	{
 		simulateData(input_data, output_data, time_steps);
 	}
@@ -152,8 +148,8 @@ public:
 
 void test_trainModels() 
 {
-	const std::vector<std::string> input_nodes = { "Input_0" }; // true inputs + biases
-	const std::vector<std::string> output_nodes = { "Output_0" };
+  const std::vector<std::string> input_nodes = { "Input_000000000000" }; // true inputs + biases
+  const std::vector<std::string> output_nodes = { "Output_000000000000" };
 	const int batch_size = 5;
 	const int memory_size = 8;
 	const int n_epochs_training = 5;
@@ -176,7 +172,7 @@ void test_trainModels()
 	model_trainer.setNEpochsEvaluation(n_epochs_evaluation);
 	model_trainer.setLossFunctions({ std::shared_ptr<LossFunctionOp<float>>(new MSELossOp<float>()) });
 	model_trainer.setLossFunctionGrads({ std::shared_ptr<LossFunctionGradOp<float>>(new MSELossGradOp<float>()) });
-	model_trainer.setOutputNodes({ output_nodes });
+	model_trainer.setLossOutputNodes({ output_nodes });
 
   ModelReplicatorExt<float> model_replicator;
   model_replicator.setNNodeDownAdditions(1);
@@ -281,8 +277,8 @@ void test_trainModels()
 
 void test_evalModels()
 {
-	const std::vector<std::string> input_nodes = { "Input_0" }; // true inputs + biases
-	const std::vector<std::string> output_nodes = { "Output_0" };
+  const std::vector<std::string> input_nodes = { "Input_000000000000" }; // true inputs + biases
+  const std::vector<std::string> output_nodes = { "Output_000000000000" };
 	const int batch_size = 5;
 	const int memory_size = 8;
 	const int n_epochs_training = 5;
@@ -305,7 +301,7 @@ void test_evalModels()
 	model_trainer.setNEpochsEvaluation(n_epochs_evaluation);
 	model_trainer.setLossFunctions({ std::shared_ptr<LossFunctionOp<float>>(new MSELossOp<float>()) });
 	model_trainer.setLossFunctionGrads({ std::shared_ptr<LossFunctionGradOp<float>>(new MSELossGradOp<float>()) });
-	model_trainer.setOutputNodes({ output_nodes });
+	model_trainer.setLossOutputNodes({ output_nodes });
 
 	ModelReplicatorExt<float> model_replicator;
 	model_replicator.setNNodeDownAdditions(1);
@@ -392,8 +388,8 @@ void test_evalModels()
 			assert(population[i].getNodesMap().at(output_nodes[0])->getOutput().size() == 0);
 		}
 		else {
-			assert(population[i].getError().size() == 40); // error has not been calculated
-			assert(total_output(0) == 340);
+			assert(population[i].getError().size() == 0); // error has not been calculated
+			assert(total_output(0) == 260);
 			assert(population[i].getNodesMap().at(output_nodes[0])->getOutput().size() == batch_size*(memory_size + 1));
 		}
 	}
@@ -439,7 +435,7 @@ void test_exampleUsage()
 	model_trainer.setNEpochsEvaluation(n_epochs_evaluation);
 	model_trainer.setLossFunctions({ std::shared_ptr<LossFunctionOp<float>>(new MSELossOp<float>()) });
 	model_trainer.setLossFunctionGrads({ std::shared_ptr<LossFunctionGradOp<float>>(new MSELossGradOp<float>()) });
-	model_trainer.setOutputNodes({ output_nodes });
+	model_trainer.setLossOutputNodes({ output_nodes });
 
   // define the model replicator for growth mode
 	ModelReplicatorExt<float> model_replicator;

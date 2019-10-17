@@ -19,7 +19,7 @@ public:
 	void adaptiveReplicatorScheduler(
 		const int& n_generations,
 		std::vector<Model<TensorT>>& models,
-		std::vector<std::vector<std::tuple<int, std::string, TensorT>>>& models_errors_per_generations)	{	}
+		std::vector<std::vector<std::tuple<int, std::string, TensorT>>>& models_errors_per_generations) override	{	}
 };
 
 BOOST_AUTO_TEST_SUITE(ModelReplicator1)

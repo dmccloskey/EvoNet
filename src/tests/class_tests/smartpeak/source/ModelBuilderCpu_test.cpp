@@ -34,7 +34,7 @@ void trainModel(Model<TensorT>& model, const std::vector<std::string>& input_nod
   model_interpreter.executeWeightUpdateOperations(); // Weight update
 
   // retrieve the results
-  model_interpreter.getModelResults(model, true, true, true);
+  model_interpreter.getModelResults(model, true, true, true, false);
 }
 
 BOOST_AUTO_TEST_SUITE(ModelBuilderCpu1)

@@ -15,16 +15,7 @@ using namespace std;
 // Extended classes used for testing
 template<typename TensorT>
 class ModelTrainerExt : public ModelTrainerDefaultDevice<TensorT>
-{
-public:
-	Model<TensorT> makeModel() { return Model<TensorT>(); }
-	void adaptiveTrainerScheduler(
-		const int& n_generations,
-		const int& n_epochs,
-		Model<TensorT>& model,
-		ModelInterpreterDefaultDevice<TensorT>& model_interpreter,
-		const std::vector<float>& model_errors) {}
-};
+{};
 
 template<typename TensorT>
 class ModelReplicatorExt : public ModelReplicator<TensorT>
@@ -33,7 +24,7 @@ public:
 	void adaptiveReplicatorScheduler(
 		const int& n_generations,
 		std::vector<Model<TensorT>>& models,
-		std::vector<std::vector<std::tuple<int, std::string, float>>>& models_errors_per_generations)
+		std::vector<std::vector<std::tuple<int, std::string, float>>>& models_errors_per_generations) override
 	{
 		if (n_generations >= 0)
 		{
@@ -62,7 +53,7 @@ public:
 	void adaptivePopulationScheduler(
 		const int& n_generations,
 		std::vector<Model<TensorT>>& models,
-		std::vector<std::vector<std::tuple<int, std::string, float>>>& models_errors_per_generations)
+		std::vector<std::vector<std::tuple<int, std::string, float>>>& models_errors_per_generations) override
 	{
 		if (n_generations == getNGenerations() - 1)
 		{
@@ -83,7 +74,7 @@ template<typename TensorT>
 class DataSimulatorExt : public DataSimulator<TensorT>
 {
 public:
-	void simulateEvaluationData(Eigen::Tensor<TensorT, 4>& input_data, Eigen::Tensor<TensorT, 3>& time_steps)
+	void simulateEvaluationData(Eigen::Tensor<TensorT, 4>& input_data, Eigen::Tensor<TensorT, 3>& time_steps) override
 	{
 		// infer data dimensions based on the input tensors
 		const int batch_size = input_data.dimension(0);
@@ -147,11 +138,11 @@ public:
 		time_steps.setConstant(1.0f);
 	}
 
-	void simulateTrainingData(Eigen::Tensor<TensorT, 4>& input_data, Eigen::Tensor<TensorT, 4>& output_data, Eigen::Tensor<TensorT, 3>& time_steps)
+	void simulateTrainingData(Eigen::Tensor<TensorT, 4>& input_data, Eigen::Tensor<TensorT, 4>& output_data, Eigen::Tensor<TensorT, 3>& time_steps) override
 	{
 		simulateData(input_data, output_data, time_steps);
 	}
-	void simulateValidationData(Eigen::Tensor<TensorT, 4>& input_data, Eigen::Tensor<TensorT, 4>& output_data, Eigen::Tensor<TensorT, 3>& time_steps)
+	void simulateValidationData(Eigen::Tensor<TensorT, 4>& input_data, Eigen::Tensor<TensorT, 4>& output_data, Eigen::Tensor<TensorT, 3>& time_steps) override
 	{
 		simulateData(input_data, output_data, time_steps);
 	}
@@ -668,8 +659,8 @@ BOOST_AUTO_TEST_CASE(evalModels)
 			BOOST_CHECK_EQUAL(population[i].getNodesMap().at(output_nodes[0])->getOutput().size(), 0);
 		}
 		else {
-			BOOST_CHECK_EQUAL(population[i].getError().size(), 40); // error has not been calculated
-			BOOST_CHECK_EQUAL(total_output(0), 340);
+			BOOST_CHECK_EQUAL(population[i].getError().size(), 0); // error has not been calculated
+			BOOST_CHECK_EQUAL(total_output(0), 260);
 			BOOST_CHECK_EQUAL(population[i].getNodesMap().at(output_nodes[0])->getOutput().size(), batch_size*(memory_size + 1));
 		}
 	}

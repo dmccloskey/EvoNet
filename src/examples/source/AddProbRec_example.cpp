@@ -39,7 +39,7 @@ template<typename TensorT>
 class DataSimulatorExt : public AddProbSimulator<TensorT>
 {
 public:
-	void simulateData(Eigen::Tensor<TensorT, 4>& input_data, Eigen::Tensor<TensorT, 4>& output_data, Eigen::Tensor<TensorT, 3>& time_steps)
+	void simulateData(Eigen::Tensor<TensorT, 4>& input_data, Eigen::Tensor<TensorT, 4>& output_data, Eigen::Tensor<TensorT, 3>& time_steps)override
 	{
 		// infer data dimensions based on the input tensors
 		const int batch_size = input_data.dimension(0);
@@ -94,9 +94,9 @@ public:
 
 		time_steps.setConstant(1.0f);
 	}
-	void simulateTrainingData(Eigen::Tensor<TensorT, 4>& input_data, Eigen::Tensor<TensorT, 4>& output_data, Eigen::Tensor<TensorT, 3>& time_steps)	{	simulateData(input_data, output_data, time_steps); }
-	void simulateValidationData(Eigen::Tensor<TensorT, 4>& input_data, Eigen::Tensor<TensorT, 4>& output_data, Eigen::Tensor<TensorT, 3>& time_steps)	{	simulateData(input_data, output_data, time_steps); }
-	void simulateEvaluationData(Eigen::Tensor<TensorT, 4>& input_data, Eigen::Tensor<TensorT, 3>& time_steps) {};
+	void simulateTrainingData(Eigen::Tensor<TensorT, 4>& input_data, Eigen::Tensor<TensorT, 4>& output_data, Eigen::Tensor<TensorT, 3>& time_steps)	override {	simulateData(input_data, output_data, time_steps); }
+	void simulateValidationData(Eigen::Tensor<TensorT, 4>& input_data, Eigen::Tensor<TensorT, 4>& output_data, Eigen::Tensor<TensorT, 3>& time_steps)	override {	simulateData(input_data, output_data, time_steps); }
+	void simulateEvaluationData(Eigen::Tensor<TensorT, 4>& input_data, Eigen::Tensor<TensorT, 3>& time_steps)override {};
   void simulateData(Eigen::Tensor<TensorT, 3>& input_data, Eigen::Tensor<TensorT, 3>& output_data, Eigen::Tensor<TensorT, 2>& time_steps)
   {
     // infer data dimensions based on the input tensors
@@ -136,8 +136,8 @@ public:
 
     time_steps.setConstant(1.0f);
   }
-  void simulateTrainingData(Eigen::Tensor<TensorT, 3>& input_data, Eigen::Tensor<TensorT, 3>& output_data, Eigen::Tensor<TensorT, 2>& time_steps) { simulateData(input_data, output_data, time_steps); }
-  void simulateValidationData(Eigen::Tensor<TensorT, 3>& input_data, Eigen::Tensor<TensorT, 3>& output_data, Eigen::Tensor<TensorT, 2>& time_steps) { simulateData(input_data, output_data, time_steps); }
+  void simulateTrainingData(Eigen::Tensor<TensorT, 3>& input_data, Eigen::Tensor<TensorT, 3>& output_data, Eigen::Tensor<TensorT, 2>& time_steps)override { simulateData(input_data, output_data, time_steps); }
+  void simulateValidationData(Eigen::Tensor<TensorT, 3>& input_data, Eigen::Tensor<TensorT, 3>& output_data, Eigen::Tensor<TensorT, 2>& time_steps)override { simulateData(input_data, output_data, time_steps); }
 };
 
 // Extended classes
@@ -372,13 +372,13 @@ public:
 	void trainingModelLogger(const int & n_epochs, Model<TensorT>& model, ModelInterpreterDefaultDevice<TensorT>& model_interpreter, ModelLogger<TensorT>& model_logger,
 		const Eigen::Tensor<TensorT, 3>& expected_values,
 		const std::vector<std::string>& output_nodes,
-		const TensorT& model_error)
+		const TensorT& model_error)override
 	{ // Left blank intentionally to prevent writing of files during training
 	}
 	void validationModelLogger(const int & n_epochs, Model<TensorT>& model, ModelInterpreterDefaultDevice<TensorT>& model_interpreter, ModelLogger<TensorT>& model_logger,
 		const Eigen::Tensor<TensorT, 3>& expected_values,
 		const std::vector<std::string>& output_nodes,
-		const TensorT& model_error)
+		const TensorT& model_error)override
 	{ // Left blank intentionally to prevent writing of files during validation
 	}
   void adaptiveTrainerScheduler(
@@ -386,7 +386,7 @@ public:
     const int& n_epochs,
     Model<TensorT>& model,
     ModelInterpreterDefaultDevice<TensorT>& model_interpreter,
-    const std::vector<float>& model_errors) {
+    const std::vector<float>& model_errors)override {
     //if (n_epochs % 100 == 0 && n_epochs > 100) {
     //  // anneal the learning rate by half on each plateau
     //  TensorT lr_new = this->reduceLROnPlateau(model_errors, 0.5, 100, 10, 0.1);
@@ -397,7 +397,7 @@ public:
     //}
     if (n_epochs % 1000 == 0 && n_epochs != 0) {
       // save the model every 1000 epochs
-      model_interpreter.getModelResults(model, false, true, false);
+      model_interpreter.getModelResults(model, false, true, false, false);
       ModelFile<TensorT> data;
       data.storeModelBinary(model.getName() + "_" + std::to_string(n_epochs) + "_model.binary", model);
       ModelInterpreterFileDefaultDevice<TensorT> interpreter_data;
@@ -416,7 +416,7 @@ public:
 	void adaptiveReplicatorScheduler(
 		const int& n_generations,
 		std::vector<Model<TensorT>>& models,
-		std::vector<std::vector<std::tuple<int, std::string, TensorT>>>& models_errors_per_generations)
+		std::vector<std::vector<std::tuple<int, std::string, TensorT>>>& models_errors_per_generations)override
 	{
     // Adjust the models modifications rates
     //this->setModificationRateByPrevError(n_generations, models, models_errors_per_generations);
@@ -555,7 +555,7 @@ public:
 	void adaptivePopulationScheduler(
 		const int& n_generations,
 		std::vector<Model<TensorT>>& models,
-		std::vector<std::vector<std::tuple<int, std::string, TensorT>>>& models_errors_per_generations)
+		std::vector<std::vector<std::tuple<int, std::string, TensorT>>>& models_errors_per_generations)override
 	{
     // Adjust the population size
     //this->setPopulationSizeFixed(n_generations, models, models_errors_per_generations);
@@ -672,7 +672,7 @@ public:
 		const int& n_generations,
 		std::vector<Model<TensorT>>& models,
 		PopulationLogger<TensorT>& population_logger,
-		const std::vector<std::tuple<int, std::string, TensorT>>& models_validation_errors_per_generation) {
+		const std::vector<std::tuple<int, std::string, TensorT>>& models_validation_errors_per_generation) override {
 		// Export the selected models
 		for (auto& model : models) {
 			ModelFile<TensorT> data;
