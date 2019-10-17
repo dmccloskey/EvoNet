@@ -54,7 +54,7 @@ namespace SmartPeak
 
 			@returns std::pair<TensorT, TensorT> of best left and right points for the peak
 		*/
-		std::pair<TensorT, TensorT> getBestLeftAndRight(std::vector<TensorT>& x_O, std::vector<TensorT>& y_O, const TensorT& rt, const TensorT& peak_apex, const TensorT& detection_threshold = 0.1) const;
+		std::pair<TensorT, TensorT> getBestLeftAndRight(std::vector<TensorT>& x_O, std::vector<TensorT>& y_O, const TensorT& rt, const TensorT& detection_threshold = 1e-2) const;
 
 		/**
 			@brief simulates two vector of points that correspond to x and y values that
@@ -386,15 +386,14 @@ namespace SmartPeak
 	}
 
 	template<typename TensorT>
-	inline std::pair<TensorT, TensorT> PeakSimulator<TensorT>::getBestLeftAndRight(std::vector<TensorT>& x_O, std::vector<TensorT>& y_O, const TensorT& rt, const TensorT& peak_apex, const TensorT& detection_threshold) const
+	inline std::pair<TensorT, TensorT> PeakSimulator<TensorT>::getBestLeftAndRight(std::vector<TensorT>& x_O, std::vector<TensorT>& y_O, const TensorT& rt, const TensorT& detection_threshold) const
 	{
 		TensorT best_left = (TensorT)0;
 		TensorT best_right = (TensorT)0;
-		TensorT offset = peak_apex * detection_threshold;
 
 		// iterate from the left
 		for (int i = 1; i < x_O.size() - 1; ++i) {
-			if (y_O[i] >= baseline_left_ + 0.25 * noise_sigma_ - offset) {
+			if (y_O[i] > baseline_left_ + noise_sigma_ + detection_threshold) {
 				best_left = x_O[i - 1];
 				break;
 			}
@@ -404,7 +403,7 @@ namespace SmartPeak
 
 		// iterate from the right
 		for (int i = x_O.size() - 2; i >= 0; --i) {
-			if (y_O[i] >= baseline_right_ + 0.25 * noise_sigma_ - offset) {
+			if (y_O[i] > baseline_right_ + noise_sigma_ + detection_threshold) {
 				best_right = x_O[i + 1];
 				break;
 			}
