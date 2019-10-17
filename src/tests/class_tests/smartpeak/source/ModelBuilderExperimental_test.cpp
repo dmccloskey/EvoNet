@@ -44,9 +44,9 @@ BOOST_AUTO_TEST_CASE(addInteractionGraph1)
 	// make the fully connected 
 	model_builder.addInteractionGraph(
 		elementary_graph, model, "Mod", "Mod1",
-		std::shared_ptr<ActivationOp<float>>(new ReLUOp<float>()), std::shared_ptr<ActivationOp<float>>(new ReLUGradOp<float>()),
-		std::shared_ptr<IntegrationOp<float>>(new SumOp<float>()), std::shared_ptr<IntegrationErrorOp<float>>(new SumErrorOp<float>()), std::shared_ptr<IntegrationWeightGradOp<float>>(new SumWeightGradOp<float>()),
-		std::shared_ptr<WeightInitOp<float>>(new ConstWeightInitOp<float>(1.0)), std::shared_ptr<SolverOp<float>>(new SGDOp<float>(0.1, 0.9)));
+		std::make_shared<ReLUOp<float>>(ReLUOp<float>()), std::make_shared<ReLUGradOp<float>>(ReLUGradOp<float>()),
+		std::make_shared<SumOp<float>>(SumOp<float>()), std::make_shared<SumErrorOp<float>>(SumErrorOp<float>()), std::make_shared<SumWeightGradOp<float>>(SumWeightGradOp<float>()),
+		std::make_shared<ConstWeightInitOp<float>>(ConstWeightInitOp<float>(1.0)), std::make_shared<SGDOp<float>>(SGDOp<float>(0.1, 0.9)));
 
 	std::vector<std::string> node_names_test = { "glc", "atp", "g6p", "h", "adp", "HK" };
 	std::vector<std::string> link_names_test = { "glc_to_HK", "atp_to_HK", "HK_to_g6p", "HK_to_h", "HK_to_adp" };
@@ -114,7 +114,7 @@ BOOST_AUTO_TEST_CASE(addBiochemicalReaction1)
   // make the fully connected 
   model_builder.addBiochemicalReactions(
     model, reactions, "Mod", "Mod1",
-    std::shared_ptr<WeightInitOp<float>>(new RandWeightInitOp<float>(4.0)), std::shared_ptr<SolverOp<float>>(new SGDOp<float>(0.1, 0.9)), 1);
+    std::make_shared<RandWeightInitOp<float>>(RandWeightInitOp<float>(4.0)), std::make_shared<SGDOp<float>>(SGDOp<float>(0.1, 0.9)), 1);
 
   std::vector<std::string> node_names_minReLU = { "HK1:glc","HK1&glc:atp", "HK1&adp&h::g6p", "HK1&adp::h", "HK1::adp" };
   std::vector<std::string> node_names_sumReLU = { "HK1", "adp","atp","g6p","glc","h", "HK1:adp","HK1&adp","HK1&adp&h","HK1&adp&h:g6p","HK1&adp:h", "HK1::glc","HK1&glc","HK1&glc&atp","HK1&glc::atp"};
@@ -224,7 +224,7 @@ BOOST_AUTO_TEST_CASE(addBiochemicalReaction2)
   // make the fully connected 
   model_builder.addBiochemicalReactions(
     model, reactions, "Mod", "Mod1",
-    std::shared_ptr<WeightInitOp<float>>(new RandWeightInitOp<float>(4.0)), std::shared_ptr<SolverOp<float>>(new SGDOp<float>(0.1, 0.9)), 2);
+    std::make_shared<RandWeightInitOp<float>>(RandWeightInitOp<float>(4.0)), std::make_shared<SGDOp<float>>(SGDOp<float>(0.1, 0.9)), 2);
 
   std::vector<std::string> node_names_minReLU = { "HK1:glc:atp","HK1::adp::h::g6p" };
   std::vector<std::string> node_names_sumReLU = { "HK1", "adp","atp","g6p","glc","h", "HK1::glc::atp", "HK1:adp:h:g6p","HK1&glc&atp" };

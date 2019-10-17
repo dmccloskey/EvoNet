@@ -38,11 +38,11 @@ BOOST_AUTO_TEST_CASE(storeAndLoadCsv)
       "Node_" + std::to_string(i), 
       NodeType::hidden,
       NodeStatus::initialized,
-      std::shared_ptr<ActivationOp<float>>(new ReLUOp<float>()), 
-			std::shared_ptr<ActivationOp<float>>(new ReLUGradOp<float>()), 
-			std::shared_ptr<IntegrationOp<float>>(new SumOp<float>()), 
-			std::shared_ptr<IntegrationErrorOp<float>>(new SumErrorOp<float>()), 
-			std::shared_ptr<IntegrationWeightGradOp<float>>(new SumWeightGradOp<float>())));
+      std::make_shared<ReLUOp<float>>(ReLUOp<float>()), 
+			std::make_shared<ReLUGradOp<float>>(ReLUGradOp<float>()), 
+			std::make_shared<SumOp<float>>(SumOp<float>()), 
+			std::make_shared<SumErrorOp<float>>(SumErrorOp<float>()), 
+			std::make_shared<SumWeightGradOp<float>>(SumWeightGradOp<float>())));
 		node->setModuleName("Mod_" + std::to_string(i));
 		node->setLayerName("Layer_" + std::to_string(i));
 		node->setTensorIndex(std::make_pair(i, i+1));
@@ -87,11 +87,11 @@ BOOST_AUTO_TEST_CASE(storeAndLoadBinary)
 			"Node_" + std::to_string(i),
 			NodeType::hidden,
 			NodeStatus::initialized,
-			std::shared_ptr<ActivationOp<float>>(new ReLUOp<float>()),
-			std::shared_ptr<ActivationOp<float>>(new ReLUGradOp<float>()),
-			std::shared_ptr<IntegrationOp<float>>(new SumOp<float>()),
-			std::shared_ptr<IntegrationErrorOp<float>>(new SumErrorOp<float>()),
-			std::shared_ptr<IntegrationWeightGradOp<float>>(new SumWeightGradOp<float>())));
+			std::make_shared<ReLUOp<float>>(ReLUOp<float>()),
+			std::make_shared<ReLUGradOp<float>>(ReLUGradOp<float>()),
+			std::make_shared<SumOp<float>>(SumOp<float>()),
+			std::make_shared<SumErrorOp<float>>(SumErrorOp<float>()),
+			std::make_shared<SumWeightGradOp<float>>(SumWeightGradOp<float>())));
 		node->setModuleName("Mod_" + std::to_string(i));
 		node->setLayerName("Layer_" + std::to_string(i));
 		node->setTensorIndex(std::make_pair(i, i + 1));

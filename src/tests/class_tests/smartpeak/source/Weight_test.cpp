@@ -116,8 +116,8 @@ BOOST_AUTO_TEST_CASE(assignment)
   weight.setModuleId(1);
   weight.setModuleName("Mod1");
   weight.setDropProbability(0.0f);
-  weight.setWeightInitOp(std::shared_ptr<WeightInitOp<float>>(new ConstWeightInitOp<float>(2.0)));
-  weight.setSolverOp(std::shared_ptr<SolverOp<float>>(new SGDOp<float>(0.01, 0.9)));
+  weight.setWeightInitOp(std::make_shared<ConstWeightInitOp<float>>(ConstWeightInitOp<float>(2.0)));
+  weight.setSolverOp(std::make_shared<SGDOp<float>>(SGDOp<float>(0.01, 0.9)));
 
   Weight<float> weight2(weight);
   BOOST_CHECK_EQUAL(weight.getId(), weight2.getId());

@@ -55,10 +55,10 @@ BOOST_AUTO_TEST_CASE(gettersAndSetters)
 	model_replicator.setNNodeActivationChanges(6);
 	model_replicator.setNNodeIntegrationChanges(7);
 	std::vector<std::pair<std::shared_ptr<ActivationOp<float>>, std::shared_ptr<ActivationOp<float>>>> activations = {
-		std::make_pair(std::shared_ptr<ActivationOp<float>>(new LinearOp<float>()), std::shared_ptr<ActivationOp<float>>(new LinearGradOp<float>())) };
+		std::make_pair(std::make_shared<LinearOp<float>>(LinearOp<float>()), std::make_shared<LinearGradOp<float>>(LinearGradOp<float>())) };
 	model_replicator.setNodeActivations(activations);
 	std::vector<std::tuple<std::shared_ptr<IntegrationOp<float>>, std::shared_ptr<IntegrationErrorOp<float>>, std::shared_ptr<IntegrationWeightGradOp<float>>>> integrations = {
-		std::make_tuple(std::shared_ptr<IntegrationOp<float>>(new SumOp<float>()), std::shared_ptr<IntegrationErrorOp<float>>(new SumErrorOp<float>()), std::shared_ptr<IntegrationWeightGradOp<float>>(new SumWeightGradOp<float>())) };
+		std::make_tuple(std::make_shared<SumOp<float>>(SumOp<float>()), std::make_shared<SumErrorOp<float>>(SumErrorOp<float>()), std::make_shared<SumWeightGradOp<float>>(SumWeightGradOp<float>())) };
 	model_replicator.setNodeIntegrations(integrations);
 
   BOOST_CHECK_EQUAL(model_replicator.getNNodeDownAdditions(), 1);
@@ -568,36 +568,36 @@ Model<float> makeModel1()
   Model<float> model1;
 
   // Toy network: 1 hidden layer, fully connected, DAG
-  i1 = Node<float>("0", NodeType::input, NodeStatus::activated, std::shared_ptr<ActivationOp<float>>(new LinearOp<float>()), std::shared_ptr<ActivationOp<float>>(new LinearGradOp<float>()), std::shared_ptr<IntegrationOp<float>>(new SumOp<float>()), std::shared_ptr<IntegrationErrorOp<float>>(new SumErrorOp<float>()), std::shared_ptr<IntegrationWeightGradOp<float>>(new SumWeightGradOp<float>()));
-  i2 = Node<float>("1", NodeType::input, NodeStatus::activated, std::shared_ptr<ActivationOp<float>>(new LinearOp<float>()), std::shared_ptr<ActivationOp<float>>(new LinearGradOp<float>()), std::shared_ptr<IntegrationOp<float>>(new SumOp<float>()), std::shared_ptr<IntegrationErrorOp<float>>(new SumErrorOp<float>()), std::shared_ptr<IntegrationWeightGradOp<float>>(new SumWeightGradOp<float>()));
-  h1 = Node<float>("2", NodeType::hidden, NodeStatus::deactivated, std::shared_ptr<ActivationOp<float>>(new ReLUOp<float>()), std::shared_ptr<ActivationOp<float>>(new ReLUGradOp<float>()), std::shared_ptr<IntegrationOp<float>>(new SumOp<float>()), std::shared_ptr<IntegrationErrorOp<float>>(new SumErrorOp<float>()), std::shared_ptr<IntegrationWeightGradOp<float>>(new SumWeightGradOp<float>()));
-  h2 = Node<float>("3", NodeType::hidden, NodeStatus::deactivated, std::shared_ptr<ActivationOp<float>>(new ReLUOp<float>()), std::shared_ptr<ActivationOp<float>>(new ReLUGradOp<float>()), std::shared_ptr<IntegrationOp<float>>(new SumOp<float>()), std::shared_ptr<IntegrationErrorOp<float>>(new SumErrorOp<float>()), std::shared_ptr<IntegrationWeightGradOp<float>>(new SumWeightGradOp<float>()));
-  o1 = Node<float>("4", NodeType::output, NodeStatus::deactivated, std::shared_ptr<ActivationOp<float>>(new ReLUOp<float>()), std::shared_ptr<ActivationOp<float>>(new ReLUGradOp<float>()), std::shared_ptr<IntegrationOp<float>>(new SumOp<float>()), std::shared_ptr<IntegrationErrorOp<float>>(new SumErrorOp<float>()), std::shared_ptr<IntegrationWeightGradOp<float>>(new SumWeightGradOp<float>()));
-  o2 = Node<float>("5", NodeType::output, NodeStatus::deactivated, std::shared_ptr<ActivationOp<float>>(new ReLUOp<float>()), std::shared_ptr<ActivationOp<float>>(new ReLUGradOp<float>()), std::shared_ptr<IntegrationOp<float>>(new SumOp<float>()), std::shared_ptr<IntegrationErrorOp<float>>(new SumErrorOp<float>()), std::shared_ptr<IntegrationWeightGradOp<float>>(new SumWeightGradOp<float>()));
-  b1 = Node<float>("6", NodeType::bias, NodeStatus::activated, std::shared_ptr<ActivationOp<float>>(new LinearOp<float>()), std::shared_ptr<ActivationOp<float>>(new LinearGradOp<float>()), std::shared_ptr<IntegrationOp<float>>(new SumOp<float>()), std::shared_ptr<IntegrationErrorOp<float>>(new SumErrorOp<float>()), std::shared_ptr<IntegrationWeightGradOp<float>>(new SumWeightGradOp<float>()));
-  b2 = Node<float>("7", NodeType::bias, NodeStatus::activated, std::shared_ptr<ActivationOp<float>>(new LinearOp<float>()), std::shared_ptr<ActivationOp<float>>(new LinearGradOp<float>()), std::shared_ptr<IntegrationOp<float>>(new SumOp<float>()), std::shared_ptr<IntegrationErrorOp<float>>(new SumErrorOp<float>()), std::shared_ptr<IntegrationWeightGradOp<float>>(new SumWeightGradOp<float>()));
+  i1 = Node<float>("0", NodeType::input, NodeStatus::activated, std::make_shared<LinearOp<float>>(LinearOp<float>()), std::make_shared<LinearGradOp<float>>(LinearGradOp<float>()), std::make_shared<SumOp<float>>(SumOp<float>()), std::make_shared<SumErrorOp<float>>(SumErrorOp<float>()), std::make_shared<SumWeightGradOp<float>>(SumWeightGradOp<float>()));
+  i2 = Node<float>("1", NodeType::input, NodeStatus::activated, std::make_shared<LinearOp<float>>(LinearOp<float>()), std::make_shared<LinearGradOp<float>>(LinearGradOp<float>()), std::make_shared<SumOp<float>>(SumOp<float>()), std::make_shared<SumErrorOp<float>>(SumErrorOp<float>()), std::make_shared<SumWeightGradOp<float>>(SumWeightGradOp<float>()));
+  h1 = Node<float>("2", NodeType::hidden, NodeStatus::deactivated, std::make_shared<ReLUOp<float>>(ReLUOp<float>()), std::make_shared<ReLUGradOp<float>>(ReLUGradOp<float>()), std::make_shared<SumOp<float>>(SumOp<float>()), std::make_shared<SumErrorOp<float>>(SumErrorOp<float>()), std::make_shared<SumWeightGradOp<float>>(SumWeightGradOp<float>()));
+  h2 = Node<float>("3", NodeType::hidden, NodeStatus::deactivated, std::make_shared<ReLUOp<float>>(ReLUOp<float>()), std::make_shared<ReLUGradOp<float>>(ReLUGradOp<float>()), std::make_shared<SumOp<float>>(SumOp<float>()), std::make_shared<SumErrorOp<float>>(SumErrorOp<float>()), std::make_shared<SumWeightGradOp<float>>(SumWeightGradOp<float>()));
+  o1 = Node<float>("4", NodeType::output, NodeStatus::deactivated, std::make_shared<ReLUOp<float>>(ReLUOp<float>()), std::make_shared<ReLUGradOp<float>>(ReLUGradOp<float>()), std::make_shared<SumOp<float>>(SumOp<float>()), std::make_shared<SumErrorOp<float>>(SumErrorOp<float>()), std::make_shared<SumWeightGradOp<float>>(SumWeightGradOp<float>()));
+  o2 = Node<float>("5", NodeType::output, NodeStatus::deactivated, std::make_shared<ReLUOp<float>>(ReLUOp<float>()), std::make_shared<ReLUGradOp<float>>(ReLUGradOp<float>()), std::make_shared<SumOp<float>>(SumOp<float>()), std::make_shared<SumErrorOp<float>>(SumErrorOp<float>()), std::make_shared<SumWeightGradOp<float>>(SumWeightGradOp<float>()));
+  b1 = Node<float>("6", NodeType::bias, NodeStatus::activated, std::make_shared<LinearOp<float>>(LinearOp<float>()), std::make_shared<LinearGradOp<float>>(LinearGradOp<float>()), std::make_shared<SumOp<float>>(SumOp<float>()), std::make_shared<SumErrorOp<float>>(SumErrorOp<float>()), std::make_shared<SumWeightGradOp<float>>(SumWeightGradOp<float>()));
+  b2 = Node<float>("7", NodeType::bias, NodeStatus::activated, std::make_shared<LinearOp<float>>(LinearOp<float>()), std::make_shared<LinearGradOp<float>>(LinearGradOp<float>()), std::make_shared<SumOp<float>>(SumOp<float>()), std::make_shared<SumErrorOp<float>>(SumErrorOp<float>()), std::make_shared<SumWeightGradOp<float>>(SumWeightGradOp<float>()));
 
   // weights  
   std::shared_ptr<WeightInitOp<float>> weight_init;
   std::shared_ptr<SolverOp<float>> solver;
   // weight_init.reset(new RandWeightInitOp(1.0)); // No random init for testing
-  weight_init.reset(new ConstWeightInitOp<float>(1.0));
-  solver.reset(new SGDOp<float>(0.01, 0.9));
+  weight_init = std::make_shared<ConstWeightInitOp<float>>(ConstWeightInitOp<float>(1.0));
+  solver = std::make_shared<SGDOp<float>>(SGDOp<float>(0.01, 0.9));
   w1 = Weight<float>("0", weight_init, solver);
-  weight_init.reset(new ConstWeightInitOp<float>(1.0));
-  solver.reset(new SGDOp<float>(0.01, 0.9));
+  weight_init = std::make_shared<ConstWeightInitOp<float>>(ConstWeightInitOp<float>(1.0));
+  solver = std::make_shared<SGDOp<float>>(SGDOp<float>(0.01, 0.9));
   w2 = Weight<float>("1", weight_init, solver);
-  weight_init.reset(new ConstWeightInitOp<float>(1.0));
-  solver.reset(new SGDOp<float>(0.01, 0.9));
+  weight_init = std::make_shared<ConstWeightInitOp<float>>(ConstWeightInitOp<float>(1.0));
+  solver = std::make_shared<SGDOp<float>>(SGDOp<float>(0.01, 0.9));
   w3 = Weight<float>("2", weight_init, solver);
-  weight_init.reset(new ConstWeightInitOp<float>(1.0));
-  solver.reset(new SGDOp<float>(0.01, 0.9));
+  weight_init = std::make_shared<ConstWeightInitOp<float>>(ConstWeightInitOp<float>(1.0));
+  solver = std::make_shared<SGDOp<float>>(SGDOp<float>(0.01, 0.9));
   w4 = Weight<float>("3", weight_init, solver);
-  weight_init.reset(new ConstWeightInitOp<float>(1.0));
-  solver.reset(new SGDOp<float>(0.01, 0.9));
+  weight_init = std::make_shared<ConstWeightInitOp<float>>(ConstWeightInitOp<float>(1.0));
+  solver = std::make_shared<SGDOp<float>>(SGDOp<float>(0.01, 0.9));
   wb1 = Weight<float>("4", weight_init, solver);
-  weight_init.reset(new ConstWeightInitOp<float>(1.0));
-  solver.reset(new SGDOp<float>(0.01, 0.9));
+  weight_init = std::make_shared<ConstWeightInitOp<float>>(ConstWeightInitOp<float>(1.0));
+  solver = std::make_shared<SGDOp<float>>(SGDOp<float>(0.01, 0.9));
   wb2 = Weight<float>("5", weight_init, solver);
   // input layer + bias
   l1 = Link("0_to_2", "0", "2", "0");
@@ -607,23 +607,23 @@ Model<float> makeModel1()
   lb1 = Link("6_to_2", "6", "2", "4");
   lb2 = Link("6_to_3", "6", "3", "5");
   // weights
-  weight_init.reset(new ConstWeightInitOp<float>(1.0));
-  solver.reset(new SGDOp<float>(0.01, 0.9));
+  weight_init = std::make_shared<ConstWeightInitOp<float>>(ConstWeightInitOp<float>(1.0));
+  solver = std::make_shared<SGDOp<float>>(SGDOp<float>(0.01, 0.9));
   w5 = Weight<float>("6", weight_init, solver);
-  weight_init.reset(new ConstWeightInitOp<float>(1.0));
-  solver.reset(new SGDOp<float>(0.01, 0.9));
+  weight_init = std::make_shared<ConstWeightInitOp<float>>(ConstWeightInitOp<float>(1.0));
+  solver = std::make_shared<SGDOp<float>>(SGDOp<float>(0.01, 0.9));
   w6 = Weight<float>("7", weight_init, solver);
-  weight_init.reset(new ConstWeightInitOp<float>(1.0));
-  solver.reset(new SGDOp<float>(0.01, 0.9));
+  weight_init = std::make_shared<ConstWeightInitOp<float>>(ConstWeightInitOp<float>(1.0));
+  solver = std::make_shared<SGDOp<float>>(SGDOp<float>(0.01, 0.9));
   w7 = Weight<float>("8", weight_init, solver);
-  weight_init.reset(new ConstWeightInitOp<float>(1.0));
-  solver.reset(new SGDOp<float>(0.01, 0.9));
+  weight_init = std::make_shared<ConstWeightInitOp<float>>(ConstWeightInitOp<float>(1.0));
+  solver = std::make_shared<SGDOp<float>>(SGDOp<float>(0.01, 0.9));
   w8 = Weight<float>("9", weight_init, solver);
-  weight_init.reset(new ConstWeightInitOp<float>(1.0));
-  solver.reset(new SGDOp<float>(0.01, 0.9));
+  weight_init = std::make_shared<ConstWeightInitOp<float>>(ConstWeightInitOp<float>(1.0));
+  solver = std::make_shared<SGDOp<float>>(SGDOp<float>(0.01, 0.9));
   wb3 = Weight<float>("10", weight_init, solver);
-  weight_init.reset(new ConstWeightInitOp<float>(1.0));
-  solver.reset(new SGDOp<float>(0.01, 0.9));
+  weight_init = std::make_shared<ConstWeightInitOp<float>>(ConstWeightInitOp<float>(1.0));
+  solver = std::make_shared<SGDOp<float>>(SGDOp<float>(0.01, 0.9));
   wb4 = Weight<float>("11", weight_init, solver);
   // hidden layer + bias
   l5 = Link("2_to_4", "2", "4", "6");
@@ -1096,7 +1096,7 @@ BOOST_AUTO_TEST_CASE(changeNodeActivation)
 {
 	ModelReplicatorExt<float> model_replicator;
 	model_replicator.setNodeActivations({
-		std::make_pair(std::shared_ptr<ActivationOp<float>>(new ELUOp<float>()), std::shared_ptr<ActivationOp<float>>(new ELUGradOp<float>()))});
+		std::make_pair(std::make_shared<ELUOp<float>>(ELUOp<float>()), std::make_shared<ELUGradOp<float>>(ELUGradOp<float>()))});
 	std::vector<std::string> node_names = { "0", "1", "2", "3", "4", "5", "6", "7" };
 	model_replicator.changeNodeActivation(model_changeNodeActivation);
 
@@ -1125,7 +1125,7 @@ Model<float> model_changeNodeIntegration = makeModel1();
 BOOST_AUTO_TEST_CASE(changeNodeIntegration)
 {
 	ModelReplicatorExt<float> model_replicator;
-	model_replicator.setNodeIntegrations({ std::make_tuple(std::shared_ptr<IntegrationOp<float>>(new ProdOp<float>()), std::shared_ptr<IntegrationErrorOp<float>>(new ProdErrorOp<float>()), std::shared_ptr<IntegrationWeightGradOp<float>>(new ProdWeightGradOp<float>())) });
+	model_replicator.setNodeIntegrations({ std::make_tuple(std::make_shared<ProdOp<float>>(ProdOp<float>()), std::make_shared<ProdErrorOp<float>>(ProdErrorOp<float>()), std::make_shared<ProdWeightGradOp<float>>(ProdWeightGradOp<float>())) });
 	std::vector<std::string> node_names = { "0", "1", "2", "3", "4", "5", "6", "7" };
 	model_replicator.changeNodeIntegration(model_changeNodeIntegration);
 
@@ -1587,9 +1587,9 @@ BOOST_AUTO_TEST_CASE(modifyModel)
 	model_replicator.setNNodeDeletions(0);
 	model_replicator.setNLinkDeletions(0);
 	model_replicator.setNNodeActivationChanges(1);
-	model_replicator.setNodeActivations({std::make_pair(std::shared_ptr<ActivationOp<float>>(new ELUOp<float>()), std::shared_ptr<ActivationOp<float>>(new ELUGradOp<float>()))});
+	model_replicator.setNodeActivations({std::make_pair(std::make_shared<ELUOp<float>>(ELUOp<float>()), std::make_shared<ELUGradOp<float>>(ELUGradOp<float>()))});
 	model_replicator.setNNodeIntegrationChanges(0);
-	model_replicator.setNodeIntegrations({std::make_tuple(std::shared_ptr<IntegrationOp<float>>(new ProdOp<float>()), std::shared_ptr<IntegrationErrorOp<float>>(new ProdErrorOp<float>()), std::shared_ptr<IntegrationWeightGradOp<float>>(new ProdWeightGradOp<float>()))});
+	model_replicator.setNodeIntegrations({std::make_tuple(std::make_shared<ProdOp<float>>(ProdOp<float>()), std::make_shared<ProdErrorOp<float>>(ProdErrorOp<float>()), std::make_shared<ProdWeightGradOp<float>>(ProdWeightGradOp<float>()))});
 	model_replicator.modifyModel(model_modifyModel4);
 	BOOST_CHECK_EQUAL(model_modifyModel4.getNodes().size(), 8);
 	node_activation_changes = 0;
@@ -1609,9 +1609,9 @@ BOOST_AUTO_TEST_CASE(modifyModel)
 	model_replicator.setNNodeDeletions(0);
 	model_replicator.setNLinkDeletions(0);
 	model_replicator.setNNodeActivationChanges(0);
-	model_replicator.setNodeActivations({ std::make_pair(std::shared_ptr<ActivationOp<float>>(new ELUOp<float>()), std::shared_ptr<ActivationOp<float>>(new ELUGradOp<float>())) });
+	model_replicator.setNodeActivations({ std::make_pair(std::make_shared<ELUOp<float>>(ELUOp<float>()), std::make_shared<ELUGradOp<float>>(ELUGradOp<float>())) });
 	model_replicator.setNNodeIntegrationChanges(1);
-	model_replicator.setNodeIntegrations({ std::make_tuple(std::shared_ptr<IntegrationOp<float>>(new ProdOp<float>()), std::shared_ptr<IntegrationErrorOp<float>>(new ProdErrorOp<float>()), std::shared_ptr<IntegrationWeightGradOp<float>>(new ProdWeightGradOp<float>())) });
+	model_replicator.setNodeIntegrations({ std::make_tuple(std::make_shared<ProdOp<float>>(ProdOp<float>()), std::make_shared<ProdErrorOp<float>>(ProdErrorOp<float>()), std::make_shared<ProdWeightGradOp<float>>(ProdWeightGradOp<float>())) });
 	model_replicator.modifyModel(model_modifyModel5);
 	BOOST_CHECK_EQUAL(model_modifyModel5.getNodes().size(), 8);
 	node_activation_changes = 0;
