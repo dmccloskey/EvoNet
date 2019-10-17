@@ -525,8 +525,8 @@ void main_DenoisingAE(const bool& make_model, const bool& train_model) {
 
 	// define the data simulator
 	const std::size_t input_size = 512;
-	const std::size_t encoding_size = 16;
-	const std::size_t n_hidden = 128;
+	const std::size_t encoding_size = 2; // 64;
+	const std::size_t n_hidden = 16; // 256;
 	DataSimulatorExt<float> data_simulator;
 
 	// Hard
@@ -616,7 +616,7 @@ void main_DenoisingAE(const bool& make_model, const bool& train_model) {
 		model_interpreters.push_back(model_interpreter);
 	}
 	ModelTrainerExt<float> model_trainer;
-	model_trainer.setBatchSize(64);
+	model_trainer.setBatchSize(256);
 	model_trainer.setNEpochsTraining(100001);
 	model_trainer.setNEpochsValidation(25);
 	model_trainer.setNEpochsEvaluation(25);
@@ -643,9 +643,9 @@ void main_DenoisingAE(const bool& make_model, const bool& train_model) {
 	ModelReplicatorExt<float> model_replicator;
 
 	// define the initial population
+	std::cout << "Initializing the population..." << std::endl;
 	Model<float> model;
 	if (make_model) {
-		std::cout << "Making the model..." << std::endl;
 		model_trainer.makeDenoisingAE(model, input_size, encoding_size, n_hidden, false);
 	}
 	else {
@@ -662,6 +662,7 @@ void main_DenoisingAE(const bool& make_model, const bool& train_model) {
 		for (auto& weight : model.weights_) {
 			weight.second->getSolverOp()->setLearningRate(1e-5);
 		}
+		model.setInputAndOutputNodes();
 
 		// read in the model interpreter data
 		ModelInterpreterFileDefaultDevice<float> model_interpreter_file;
@@ -688,7 +689,7 @@ void main_DenoisingAE(const bool& make_model, const bool& train_model) {
 	else {
 		//// Evaluate the population
 		//population_trainer.evaluateModels(
-		//	population, model_trainer, model_interpreters, model_replicator, data_simulator, model_logger, input_nodes);
+		//  population, model_trainer, model_interpreters, model_replicator, data_simulator, model_logger, input_nodes);
 	}
 }
 
