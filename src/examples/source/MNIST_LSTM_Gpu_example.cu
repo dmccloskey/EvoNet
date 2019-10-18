@@ -36,7 +36,7 @@ public:
   @param[in] specify_layers Whether to give the `ModelInterpreter` "hints" as to the correct network structure during graph to tensor compilation
   */
 	void makeLSTM(Model<TensorT>& model, const int& n_inputs = 784, const int& n_outputs = 10,
-		const int& n_blocks_1 = 512, const int& n_cells_1 = 1, const int& n_blocks_2 = 512, const int& n_cells_2 = 1,
+		const int& n_blocks_1 = 128, const int& n_cells_1 = 1, const int& n_blocks_2 = 0, const int& n_cells_2 = 1,
 		const int& n_hidden = 32, const bool& add_forget_gate = true, const bool& specify_layers = true) {
     model.setId(0);
     model.setName("LSTM");
@@ -53,9 +53,9 @@ public:
       std::make_shared<SumOp<TensorT>>(SumOp<TensorT>()),
       std::make_shared<SumErrorOp<TensorT>>(SumErrorOp<TensorT>()),
       std::make_shared<SumWeightGradOp<TensorT>>(SumWeightGradOp<TensorT>()),
-      //std::make_shared<RandWeightInitOp<TensorT>>(RandWeightInitOp<TensorT>(0.4)),
-      std::make_shared<RandWeightInitOp<TensorT>>(RandWeightInitOp<TensorT>((TensorT)(node_names_input.size() + n_blocks_1) / 2, 1)),
-      std::make_shared<AdamOp<TensorT>>(AdamOp<TensorT>(1e-4, 0.9, 0.999, 1e-3, 10.0)),
+      std::make_shared<RandWeightInitOp<TensorT>>(ConstWeightInitOp<TensorT>(1.0)),
+      //std::make_shared<RandWeightInitOp<TensorT>>(RandWeightInitOp<TensorT>((TensorT)(node_names_input.size() + n_blocks_1) / 2, 1)),
+      std::make_shared<AdamOp<TensorT>>(AdamOp<TensorT>(1e-4, 0.9, 0.999, 1e-3, 1.0)),
       0.0f, 0.0f, false, add_forget_gate, 1, specify_layers);
 
 		if (n_blocks_2 > 0) {
@@ -65,21 +65,23 @@ public:
 				std::make_shared<SumOp<TensorT>>(SumOp<TensorT>()),
 				std::make_shared<SumErrorOp<TensorT>>(SumErrorOp<TensorT>()),
 				std::make_shared<SumWeightGradOp<TensorT>>(SumWeightGradOp<TensorT>()),
-				//std::make_shared<RandWeightInitOp<TensorT>>(RandWeightInitOp<TensorT>(0.4)),
-				std::make_shared<RandWeightInitOp<TensorT>>(RandWeightInitOp<TensorT>((TensorT)(node_names.size() + n_blocks_2) / 2, 1)),
-				std::make_shared<AdamOp<TensorT>>(AdamOp<TensorT>(1e-4, 0.9, 0.999, 1e-3, 10.0)),
+				std::make_shared<RandWeightInitOp<TensorT>>(ConstWeightInitOp<TensorT>(1.0)),
+				//std::make_shared<RandWeightInitOp<TensorT>>(RandWeightInitOp<TensorT>((TensorT)(node_names.size() + n_blocks_2) / 2, 1)),
+				std::make_shared<AdamOp<TensorT>>(AdamOp<TensorT>(1e-4, 0.9, 0.999, 1e-3, 1.0)),
 				0.0f, 0.0f, false, add_forget_gate, 1, specify_layers);
 		}
 
-   // Add a fully connected layer
-   node_names = model_builder.addFullyConnected(model, "FC-01", "FC-01", node_names, n_hidden,
-     std::make_shared<LeakyReLUOp<TensorT>>(LeakyReLUOp<TensorT>()),
-     std::make_shared<LeakyReLUGradOp<TensorT>>(LeakyReLUGradOp<TensorT>()),
-     std::make_shared<SumOp<TensorT>>(SumOp<TensorT>()),
-     std::make_shared<SumErrorOp<TensorT>>(SumErrorOp<TensorT>()),
-     std::make_shared<SumWeightGradOp<TensorT>>(SumWeightGradOp<TensorT>()),
-     std::make_shared<RandWeightInitOp<TensorT>>(RandWeightInitOp<TensorT>((TensorT)(node_names.size() + n_hidden)/2, 1)),
-     std::make_shared<AdamOp<TensorT>>(AdamOp<TensorT>(1e-4, 0.9, 0.999, 1e-3, 10.0)), 0.0f, 0.0f, false, specify_layers);
+    // Add a fully connected layer
+    if (n_hidden > 0) {
+      node_names = model_builder.addFullyConnected(model, "FC-01", "FC-01", node_names, n_hidden,
+        std::make_shared<LeakyReLUOp<TensorT>>(LeakyReLUOp<TensorT>()),
+        std::make_shared<LeakyReLUGradOp<TensorT>>(LeakyReLUGradOp<TensorT>()),
+        std::make_shared<SumOp<TensorT>>(SumOp<TensorT>()),
+        std::make_shared<SumErrorOp<TensorT>>(SumErrorOp<TensorT>()),
+        std::make_shared<SumWeightGradOp<TensorT>>(SumWeightGradOp<TensorT>()),
+        std::make_shared<RandWeightInitOp<TensorT>>(RandWeightInitOp<TensorT>((TensorT)(node_names.size() + n_hidden) / 2, 1)),
+        std::make_shared<AdamOp<TensorT>>(AdamOp<TensorT>(1e-4, 0.9, 0.999, 1e-3, 1.0)), 0.0f, 0.0f, false, specify_layers);
+    }
 
     // Add a final output layer
     node_names = model_builder.addFullyConnected(model, "FC-Out", "FC-Out", node_names, n_outputs,
@@ -90,7 +92,7 @@ public:
       std::make_shared<SumWeightGradOp<TensorT>>(SumWeightGradOp<TensorT>()),
       //std::shared_ptr<WeightInitOp<TensorT>>(new RangeWeightInitOp<TensorT>(1/(TensorT)node_names.size(), 10/(TensorT)node_names.size())),
       std::make_shared<RandWeightInitOp<TensorT>>(RandWeightInitOp<TensorT>(node_names.size(), 2)),
-      std::make_shared<AdamOp<TensorT>>(AdamOp<TensorT>(1e-4, 0.9, 0.999, 1e-3, 10.0)), 0.0f, 0.0f, false, true);
+      std::make_shared<AdamOp<TensorT>>(AdamOp<TensorT>(1e-4, 0.9, 0.999, 1e-3, 1.0)), 0.0f, 0.0f, false, true);
     node_names = model_builder.addSinglyConnected(model, "Output", "Output", node_names, n_outputs,
       std::make_shared<LinearOp<TensorT>>(LinearOp<TensorT>()),
       std::make_shared<LinearGradOp<TensorT>>(LinearGradOp<TensorT>()),

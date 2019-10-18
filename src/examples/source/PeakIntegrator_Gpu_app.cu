@@ -199,6 +199,25 @@ public:
         std::make_shared<ConstWeightInitOp<TensorT>>(ConstWeightInitOp<TensorT>(1)),
         std::make_shared<AdamOp<TensorT>>(AdamOp<TensorT>(1e-3, 0.9, 0.999, 1e-8, 10, 0.0)), 0.0, 0.0, true, true);
     }
+    node_names = model_builder.addFullyConnected(model, "DE_IsPeakApex_1", "DE_IsPeakApex_1", node_names_encoding, n_hidden_0,
+      std::make_shared<LeakyReLUOp<TensorT>>(LeakyReLUOp<TensorT>()),
+      std::make_shared<LeakyReLUGradOp<TensorT>>(LeakyReLUGradOp<TensorT>()),
+      std::make_shared<SumOp<TensorT>>(SumOp<TensorT>()),
+      std::make_shared<SumErrorOp<TensorT>>(SumErrorOp<TensorT>()),
+      std::make_shared<SumWeightGradOp<TensorT>>(SumWeightGradOp<TensorT>()),
+      std::make_shared<RandWeightInitOp<TensorT>>(RandWeightInitOp<TensorT>((int)(node_names_encoding.size() + n_hidden_0) / 2, 1)),
+      std::make_shared<AdamOp<TensorT>>(AdamOp<TensorT>(1e-3, 0.9, 0.999, 1e-8, 10, 0.0)), 0.0f, 0.0f, false, true);
+    if (add_norm) {
+      node_names = model_builder.addNormalization(model, "DE_IsPeakApex_1-Norm", "DE_IsPeakApex_1-Norm", node_names, true);
+      node_names = model_builder.addSinglyConnected(model, "DE_IsPeakApex_1-Norm-gain", "DE_IsPeakApex_1-Norm-gain", node_names, node_names.size(),
+        std::make_shared<LeakyReLUOp<TensorT>>(LeakyReLUOp<TensorT>()),
+        std::make_shared<LeakyReLUGradOp<TensorT>>(LeakyReLUGradOp<TensorT>()),
+        std::make_shared<SumOp<TensorT>>(SumOp<TensorT>()),
+        std::make_shared<SumErrorOp<TensorT>>(SumErrorOp<TensorT>()),
+        std::make_shared<SumWeightGradOp<TensorT>>(SumWeightGradOp<TensorT>()),
+        std::make_shared<ConstWeightInitOp<TensorT>>(ConstWeightInitOp<TensorT>(1)),
+        std::make_shared<AdamOp<TensorT>>(AdamOp<TensorT>(1e-3, 0.9, 0.999, 1e-8, 10, 0.0)), 0.0, 0.0, true, true);
+    }
 
     // Add the output nodes
     node_names = model_builder.addFullyConnected(model, "DE_IsPeakApex_Out", "DE_IsPeakApex_Out", node_names, n_inputs,
@@ -235,6 +254,25 @@ public:
     if (add_norm) {
       node_names = model_builder.addNormalization(model, "DE_IsPeak_0-Norm", "DE_IsPeak_0-Norm", node_names, true);
       node_names = model_builder.addSinglyConnected(model, "DE_IsPeak_0-Norm-gain", "DE_IsPeak_0-Norm-gain", node_names, node_names.size(),
+        std::make_shared<LeakyReLUOp<TensorT>>(LeakyReLUOp<TensorT>()),
+        std::make_shared<LeakyReLUGradOp<TensorT>>(LeakyReLUGradOp<TensorT>()),
+        std::make_shared<SumOp<TensorT>>(SumOp<TensorT>()),
+        std::make_shared<SumErrorOp<TensorT>>(SumErrorOp<TensorT>()),
+        std::make_shared<SumWeightGradOp<TensorT>>(SumWeightGradOp<TensorT>()),
+        std::make_shared<ConstWeightInitOp<TensorT>>(ConstWeightInitOp<TensorT>(1)),
+        std::make_shared<AdamOp<TensorT>>(AdamOp<TensorT>(1e-3, 0.9, 0.999, 1e-8, 10, 0.0)), 0.0, 0.0, true, true);
+    }
+    node_names = model_builder.addFullyConnected(model, "DE_IsPeak_1", "DE_IsPeak_1", node_names_encoding, n_hidden_0,
+      std::make_shared<LeakyReLUOp<TensorT>>(LeakyReLUOp<TensorT>()),
+      std::make_shared<LeakyReLUGradOp<TensorT>>(LeakyReLUGradOp<TensorT>()),
+      std::make_shared<SumOp<TensorT>>(SumOp<TensorT>()),
+      std::make_shared<SumErrorOp<TensorT>>(SumErrorOp<TensorT>()),
+      std::make_shared<SumWeightGradOp<TensorT>>(SumWeightGradOp<TensorT>()),
+      std::make_shared<RandWeightInitOp<TensorT>>(RandWeightInitOp<TensorT>((int)(node_names_encoding.size() + n_hidden_0) / 2, 1)),
+      std::make_shared<AdamOp<TensorT>>(AdamOp<TensorT>(1e-3, 0.9, 0.999, 1e-8, 10, 0.0)), 0.0f, 0.0f, false, true);
+    if (add_norm) {
+      node_names = model_builder.addNormalization(model, "DE_IsPeak_1-Norm", "DE_IsPeak_1-Norm", node_names, true);
+      node_names = model_builder.addSinglyConnected(model, "DE_IsPeak_1-Norm-gain", "DE_IsPeak_1-Norm-gain", node_names, node_names.size(),
         std::make_shared<LeakyReLUOp<TensorT>>(LeakyReLUOp<TensorT>()),
         std::make_shared<LeakyReLUGradOp<TensorT>>(LeakyReLUGradOp<TensorT>()),
         std::make_shared<SumOp<TensorT>>(SumOp<TensorT>()),
