@@ -53,7 +53,7 @@ public:
       std::make_shared<SumOp<TensorT>>(SumOp<TensorT>()),
       std::make_shared<SumErrorOp<TensorT>>(SumErrorOp<TensorT>()),
       std::make_shared<SumWeightGradOp<TensorT>>(SumWeightGradOp<TensorT>()),
-      std::make_shared<RandWeightInitOp<TensorT>>(ConstWeightInitOp<TensorT>(1.0)),
+      std::make_shared<ConstWeightInitOp<TensorT>>(ConstWeightInitOp<TensorT>(1.0)),
       //std::make_shared<RandWeightInitOp<TensorT>>(RandWeightInitOp<TensorT>((TensorT)(node_names_input.size() + n_blocks_1) / 2, 1)),
       std::make_shared<AdamOp<TensorT>>(AdamOp<TensorT>(1e-4, 0.9, 0.999, 1e-3, 1.0)),
       0.0f, 0.0f, false, add_forget_gate, 1, specify_layers);
@@ -65,7 +65,7 @@ public:
 				std::make_shared<SumOp<TensorT>>(SumOp<TensorT>()),
 				std::make_shared<SumErrorOp<TensorT>>(SumErrorOp<TensorT>()),
 				std::make_shared<SumWeightGradOp<TensorT>>(SumWeightGradOp<TensorT>()),
-				std::make_shared<RandWeightInitOp<TensorT>>(ConstWeightInitOp<TensorT>(1.0)),
+				std::make_shared<ConstWeightInitOp<TensorT>>(ConstWeightInitOp<TensorT>(1.0)),
 				//std::make_shared<RandWeightInitOp<TensorT>>(RandWeightInitOp<TensorT>((TensorT)(node_names.size() + n_blocks_2) / 2, 1)),
 				std::make_shared<AdamOp<TensorT>>(AdamOp<TensorT>(1e-4, 0.9, 0.999, 1e-3, 1.0)),
 				0.0f, 0.0f, false, add_forget_gate, 1, specify_layers);
@@ -281,15 +281,31 @@ void main_MNIST(const std::string& data_dir, const bool& make_model, const bool&
   // define the data simulator
   const std::size_t input_size = 784;
   const std::size_t n_labels = 10;
-  const std::size_t n_blocks_1 = 256;
+	const std::size_t training_data_size = 60000; //60000;
+	const std::size_t validation_data_size = 10000; //10000;
+	DataSimulatorExt<float> data_simulator;
+
+	// Model architecture config 0
+  const std::size_t n_blocks_1 = 128;
 	const std::size_t n_cells_1 = 1;
-	const std::size_t n_blocks_2 = 256;
+	const std::size_t n_blocks_2 = 0;
 	const std::size_t n_cells_2 = 1;
 	const bool add_forget_gate = true;
-  const std::size_t n_hidden = 128;
-  const std::size_t training_data_size = 60000; //60000;
-  const std::size_t validation_data_size = 10000; //10000;
-  DataSimulatorExt<float> data_simulator;
+  const std::size_t n_hidden = 0;
+	//// Model architecture config 1
+	//const std::size_t n_blocks_1 = 128;
+	//const std::size_t n_cells_1 = 1;
+	//const std::size_t n_blocks_2 = 0;
+	//const std::size_t n_cells_2 = 1;
+	//const bool add_forget_gate = true;
+	//const std::size_t n_hidden = 64;
+	//// Model architecture config 2
+	//const std::size_t n_blocks_1 = 128;
+	//const std::size_t n_cells_1 = 1;
+	//const std::size_t n_blocks_2 = 128;
+	//const std::size_t n_cells_2 = 1;
+	//const bool add_forget_gate = true;
+	//const std::size_t n_hidden = 0;
 
   // read in the training data
   std::string training_data_filename = data_dir + "train-images.idx3-ubyte";
@@ -328,7 +344,7 @@ void main_MNIST(const std::string& data_dir, const bool& make_model, const bool&
     model_interpreters.push_back(model_interpreter);
   }
   ModelTrainerExt<float> model_trainer;
-  model_trainer.setBatchSize(64);
+  model_trainer.setBatchSize(16);
   model_trainer.setMemorySize(input_size);
   model_trainer.setNEpochsTraining(100001);
   model_trainer.setNEpochsValidation(25);
