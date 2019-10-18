@@ -23,11 +23,10 @@ public:
   /*
   @brief LSTM classifier
 
-  Pixel by Pixel MNIST.
-  It has been noted that GRUs converge with greater regularity that LSTMs on this problem.
-  Examples include the following:
+  Pixel by Pixel MNIST.  Examples include the following:
     arXiv:1511.06464: 128 hidden units, alpha = 1e-3, gradient clipping of 1, highest test accuracy of 98.2%
     arXiv:1504.00941: 100 hidden units, alpha = 10e-8, all weights initialized to 1 and all biases initialized to 0, gradient clipping of 1, lowest test error rate of 3%
+    arXiv:1801.06105
 
   @param[in, out] model The network model
   @param[in] n_inputs The number of pixel inputs
