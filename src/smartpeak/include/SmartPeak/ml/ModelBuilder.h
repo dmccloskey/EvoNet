@@ -2613,7 +2613,7 @@ public:
 			if (specify_layer) blockMultInput.setLayerName(module_name + "-BlockMultInput");
 			model.addNodes({ blockMultInput });
 
-			// Make the output multiplier node[add drop prob]
+			// Make the output multiplier node
 			char blockOutput_name_char[512];
 			sprintf(blockOutput_name_char, "%s-BlockMultOutput-%012d", name.data(), cell_iter);
 			std::string blockOutput_name(blockOutput_name_char);

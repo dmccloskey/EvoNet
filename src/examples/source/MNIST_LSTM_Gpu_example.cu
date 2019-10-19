@@ -25,6 +25,7 @@ public:
 
   Pixel by Pixel MNIST.  Examples include the following:
     arXiv:1511.06464: 128 hidden units, alpha = 1e-3, gradient clipping of 1, highest test accuracy of 98.2%
+    arXiv:1504.00941: 100 hidden units, alpha = 0.01, forget_gate_bias = 1, gradient clipping of 1, lowest test error rate of 3%
     arXiv:1504.00941: 100 hidden units, alpha = 10e-8, all weights initialized to 1 and all biases initialized to 0, gradient clipping of 1, lowest test error rate of 3%
     arXiv:1801.06105
 
@@ -53,10 +54,9 @@ public:
       std::make_shared<SumOp<TensorT>>(SumOp<TensorT>()),
       std::make_shared<SumErrorOp<TensorT>>(SumErrorOp<TensorT>()),
       std::make_shared<SumWeightGradOp<TensorT>>(SumWeightGradOp<TensorT>()),
-      std::make_shared<ConstWeightInitOp<TensorT>>(ConstWeightInitOp<TensorT>(1.0)),
-      //std::make_shared<RandWeightInitOp<TensorT>>(RandWeightInitOp<TensorT>((TensorT)(node_names_input.size() + n_blocks_1) / 2, 1)),
-      std::make_shared<AdamOp<TensorT>>(AdamOp<TensorT>(1e-4, 0.9, 0.999, 1e-3, 1.0)),
-      0.0f, 0.0f, false, add_forget_gate, 1, specify_layers);
+      std::make_shared<RandWeightInitOp<TensorT>>(RandWeightInitOp<TensorT>((TensorT)(node_names_input.size() + n_blocks_1) / 2, 1)),
+      std::make_shared<AdamOp<TensorT>>(AdamOp<TensorT>(1e-3, 0.9, 0.999, 1e-3, 1.0)),
+      0.0f, 0.0f, true, add_forget_gate, 1, specify_layers);
 
 		if (n_blocks_2 > 0) {
 			node_names = model_builder.addLSTM(model, "LSTM-02", "LSTM-02", node_names, n_blocks_2, n_cells_2,
@@ -65,10 +65,9 @@ public:
 				std::make_shared<SumOp<TensorT>>(SumOp<TensorT>()),
 				std::make_shared<SumErrorOp<TensorT>>(SumErrorOp<TensorT>()),
 				std::make_shared<SumWeightGradOp<TensorT>>(SumWeightGradOp<TensorT>()),
-				std::make_shared<ConstWeightInitOp<TensorT>>(ConstWeightInitOp<TensorT>(1.0)),
-				//std::make_shared<RandWeightInitOp<TensorT>>(RandWeightInitOp<TensorT>((TensorT)(node_names.size() + n_blocks_2) / 2, 1)),
-				std::make_shared<AdamOp<TensorT>>(AdamOp<TensorT>(1e-4, 0.9, 0.999, 1e-3, 1.0)),
-				0.0f, 0.0f, false, add_forget_gate, 1, specify_layers);
+				std::make_shared<RandWeightInitOp<TensorT>>(RandWeightInitOp<TensorT>((TensorT)(node_names.size() + n_blocks_2) / 2, 1)),
+				std::make_shared<AdamOp<TensorT>>(AdamOp<TensorT>(1e-3, 0.9, 0.999, 1e-3, 1.0)),
+				0.0f, 0.0f, true, add_forget_gate, 1, specify_layers);
 		}
 
     // Add a fully connected layer
@@ -80,7 +79,7 @@ public:
         std::make_shared<SumErrorOp<TensorT>>(SumErrorOp<TensorT>()),
         std::make_shared<SumWeightGradOp<TensorT>>(SumWeightGradOp<TensorT>()),
         std::make_shared<RandWeightInitOp<TensorT>>(RandWeightInitOp<TensorT>((TensorT)(node_names.size() + n_hidden) / 2, 1)),
-        std::make_shared<AdamOp<TensorT>>(AdamOp<TensorT>(1e-4, 0.9, 0.999, 1e-3, 1.0)), 0.0f, 0.0f, false, specify_layers);
+        std::make_shared<AdamOp<TensorT>>(AdamOp<TensorT>(1e-3, 0.9, 0.999, 1e-3, 1.0)), 0.0f, 0.0f, false, specify_layers);
     }
 
     // Add a final output layer
@@ -90,9 +89,8 @@ public:
       std::make_shared<SumOp<TensorT>>(SumOp<TensorT>()),
       std::make_shared<SumErrorOp<TensorT>>(SumErrorOp<TensorT>()),
       std::make_shared<SumWeightGradOp<TensorT>>(SumWeightGradOp<TensorT>()),
-      //std::shared_ptr<WeightInitOp<TensorT>>(new RangeWeightInitOp<TensorT>(1/(TensorT)node_names.size(), 10/(TensorT)node_names.size())),
       std::make_shared<RandWeightInitOp<TensorT>>(RandWeightInitOp<TensorT>(node_names.size(), 2)),
-      std::make_shared<AdamOp<TensorT>>(AdamOp<TensorT>(1e-4, 0.9, 0.999, 1e-3, 1.0)), 0.0f, 0.0f, false, true);
+      std::make_shared<AdamOp<TensorT>>(AdamOp<TensorT>(1e-3, 0.9, 0.999, 1e-3, 1.0)), 0.0f, 0.0f, false, true);
     node_names = model_builder.addSinglyConnected(model, "Output", "Output", node_names, n_outputs,
       std::make_shared<LinearOp<TensorT>>(LinearOp<TensorT>()),
       std::make_shared<LinearGradOp<TensorT>>(LinearGradOp<TensorT>()),
@@ -344,7 +342,7 @@ void main_MNIST(const std::string& data_dir, const bool& make_model, const bool&
     model_interpreters.push_back(model_interpreter);
   }
   ModelTrainerExt<float> model_trainer;
-  model_trainer.setBatchSize(16);
+  model_trainer.setBatchSize(32);
   model_trainer.setMemorySize(input_size);
   model_trainer.setNEpochsTraining(100001);
   model_trainer.setNEpochsValidation(25);

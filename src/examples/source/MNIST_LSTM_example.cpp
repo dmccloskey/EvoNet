@@ -23,6 +23,12 @@ public:
 	/*
 	@brief LSTM classifier
 
+	Pixel by Pixel MNIST.  Examples include the following:
+		arXiv:1511.06464: 128 hidden units, alpha = 1e-3, gradient clipping of 1, highest test accuracy of 98.2%
+		arXiv:1504.00941: 100 hidden units, alpha = 0.01, forget_gate_bias = 1, gradient clipping of 1, lowest test error rate of 3%
+		arXiv:1504.00941: 100 hidden units, alpha = 10e-8, all weights initialized to 1 and all biases initialized to 0, gradient clipping of 1, lowest test error rate of 3%
+		arXiv:1801.06105
+
 	@param[in, out] model The network model
 	@param[in] n_inputs The number of pixel inputs
 	@param[in] n_outputs The number of classifier outputs
@@ -31,7 +37,7 @@ public:
 	@param[in] specify_layers Whether to give the `ModelInterpreter` "hints" as to the correct network structure during graph to tensor compilation
 	*/
 	void makeLSTM(Model<TensorT>& model, const int& n_inputs = 784, const int& n_outputs = 10,
-		const int& n_blocks_1 = 512, const int& n_cells_1 = 1, const int& n_blocks_2 = 512, const int& n_cells_2 = 1,
+		const int& n_blocks_1 = 128, const int& n_cells_1 = 1, const int& n_blocks_2 = 0, const int& n_cells_2 = 1,
 		const int& n_hidden = 32, const bool& add_forget_gate = true, const bool& specify_layers = true) {
 		model.setId(0);
 		model.setName("LSTM");
@@ -48,10 +54,9 @@ public:
 			std::make_shared<SumOp<TensorT>>(SumOp<TensorT>()),
 			std::make_shared<SumErrorOp<TensorT>>(SumErrorOp<TensorT>()),
 			std::make_shared<SumWeightGradOp<TensorT>>(SumWeightGradOp<TensorT>()),
-			//std::make_shared<RandWeightInitOp<TensorT>>(RandWeightInitOp<TensorT>(0.4)),
 			std::make_shared<RandWeightInitOp<TensorT>>(RandWeightInitOp<TensorT>((TensorT)(node_names_input.size() + n_blocks_1) / 2, 1)),
-			std::make_shared<AdamOp<TensorT>>(AdamOp<TensorT>(1e-4, 0.9, 0.999, 1e-3, 10.0)),
-			0.0f, 0.0f, false, add_forget_gate, 1, specify_layers);
+			std::make_shared<AdamOp<TensorT>>(AdamOp<TensorT>(1e-3, 0.9, 0.999, 1e-3, 1.0)),
+			0.0f, 0.0f, true, add_forget_gate, 1, specify_layers);
 
 		if (n_blocks_2 > 0) {
 			node_names = model_builder.addLSTM(model, "LSTM-02", "LSTM-02", node_names, n_blocks_2, n_cells_2,
@@ -60,21 +65,22 @@ public:
 				std::make_shared<SumOp<TensorT>>(SumOp<TensorT>()),
 				std::make_shared<SumErrorOp<TensorT>>(SumErrorOp<TensorT>()),
 				std::make_shared<SumWeightGradOp<TensorT>>(SumWeightGradOp<TensorT>()),
-				//std::make_shared<RandWeightInitOp<TensorT>>(RandWeightInitOp<TensorT>(0.4)),
 				std::make_shared<RandWeightInitOp<TensorT>>(RandWeightInitOp<TensorT>((TensorT)(node_names.size() + n_blocks_2) / 2, 1)),
-				std::make_shared<AdamOp<TensorT>>(AdamOp<TensorT>(1e-4, 0.9, 0.999, 1e-3, 10.0)),
-				0.0f, 0.0f, false, add_forget_gate, 1, specify_layers);
+				std::make_shared<AdamOp<TensorT>>(AdamOp<TensorT>(1e-3, 0.9, 0.999, 1e-3, 1.0)),
+				0.0f, 0.0f, true, add_forget_gate, 1, specify_layers);
 		}
 
 		// Add a fully connected layer
-		node_names = model_builder.addFullyConnected(model, "FC-01", "FC-01", node_names, n_hidden,
-			std::make_shared<LeakyReLUOp<TensorT>>(LeakyReLUOp<TensorT>()),
-			std::make_shared<LeakyReLUGradOp<TensorT>>(LeakyReLUGradOp<TensorT>()),
-			std::make_shared<SumOp<TensorT>>(SumOp<TensorT>()),
-			std::make_shared<SumErrorOp<TensorT>>(SumErrorOp<TensorT>()),
-			std::make_shared<SumWeightGradOp<TensorT>>(SumWeightGradOp<TensorT>()),
-			std::make_shared<RandWeightInitOp<TensorT>>(RandWeightInitOp<TensorT>((TensorT)(node_names.size() + n_hidden) / 2, 1)),
-			std::make_shared<AdamOp<TensorT>>(AdamOp<TensorT>(1e-4, 0.9, 0.999, 1e-3, 10.0)), 0.0f, 0.0f, false, specify_layers);
+		if (n_hidden > 0) {
+			node_names = model_builder.addFullyConnected(model, "FC-01", "FC-01", node_names, n_hidden,
+				std::make_shared<LeakyReLUOp<TensorT>>(LeakyReLUOp<TensorT>()),
+				std::make_shared<LeakyReLUGradOp<TensorT>>(LeakyReLUGradOp<TensorT>()),
+				std::make_shared<SumOp<TensorT>>(SumOp<TensorT>()),
+				std::make_shared<SumErrorOp<TensorT>>(SumErrorOp<TensorT>()),
+				std::make_shared<SumWeightGradOp<TensorT>>(SumWeightGradOp<TensorT>()),
+				std::make_shared<RandWeightInitOp<TensorT>>(RandWeightInitOp<TensorT>((TensorT)(node_names.size() + n_hidden) / 2, 1)),
+				std::make_shared<AdamOp<TensorT>>(AdamOp<TensorT>(1e-3, 0.9, 0.999, 1e-3, 1.0)), 0.0f, 0.0f, false, specify_layers);
+		}
 
 		// Add a final output layer
 		node_names = model_builder.addFullyConnected(model, "FC-Out", "FC-Out", node_names, n_outputs,
@@ -83,9 +89,8 @@ public:
 			std::make_shared<SumOp<TensorT>>(SumOp<TensorT>()),
 			std::make_shared<SumErrorOp<TensorT>>(SumErrorOp<TensorT>()),
 			std::make_shared<SumWeightGradOp<TensorT>>(SumWeightGradOp<TensorT>()),
-			//std::shared_ptr<WeightInitOp<TensorT>>(new RangeWeightInitOp<TensorT>(1/(TensorT)node_names.size(), 10/(TensorT)node_names.size())),
 			std::make_shared<RandWeightInitOp<TensorT>>(RandWeightInitOp<TensorT>(node_names.size(), 2)),
-			std::make_shared<AdamOp<TensorT>>(AdamOp<TensorT>(1e-4, 0.9, 0.999, 1e-3, 10.0)), 0.0f, 0.0f, false, true);
+			std::make_shared<AdamOp<TensorT>>(AdamOp<TensorT>(1e-3, 0.9, 0.999, 1e-3, 1.0)), 0.0f, 0.0f, false, true);
 		node_names = model_builder.addSinglyConnected(model, "Output", "Output", node_names, n_outputs,
 			std::make_shared<LinearOp<TensorT>>(LinearOp<TensorT>()),
 			std::make_shared<LinearGradOp<TensorT>>(LinearGradOp<TensorT>()),
@@ -104,7 +109,7 @@ public:
 		const int& n_epochs,
 		Model<TensorT>& model,
 		ModelInterpreterDefaultDevice<TensorT>& model_interpreter,
-		const std::vector<float>& model_errors) {
+		const std::vector<float>& model_errors) override {
 		//if (n_epochs % 100 == 0 && n_epochs > 100) {
 		//  // anneal the learning rate by half on each plateau
 		//  TensorT lr_new = this->reduceLROnPlateau(model_errors, 0.5, 100, 10, 0.1);
@@ -168,7 +173,7 @@ template<typename TensorT>
 class DataSimulatorExt : public MNISTSimulator<TensorT>
 {
 public:
-	void simulateTrainingData(Eigen::Tensor<TensorT, 3>& input_data, Eigen::Tensor<TensorT, 3>& loss_output_data, Eigen::Tensor<TensorT, 3>& metric_output_data, Eigen::Tensor<TensorT, 2>& time_steps)
+	void simulateTrainingData(Eigen::Tensor<TensorT, 3>& input_data, Eigen::Tensor<TensorT, 3>& loss_output_data, Eigen::Tensor<TensorT, 3>& metric_output_data, Eigen::Tensor<TensorT, 2>& time_steps)override
 	{
 		// infer data dimensions based on the input tensors
 		const int batch_size = input_data.dimension(0);
@@ -203,7 +208,7 @@ public:
 			}
 		}
 	}
-	void simulateValidationData(Eigen::Tensor<TensorT, 3>& input_data, Eigen::Tensor<TensorT, 3>& loss_output_data, Eigen::Tensor<TensorT, 3>& metric_output_data, Eigen::Tensor<TensorT, 2>& time_steps)
+	void simulateValidationData(Eigen::Tensor<TensorT, 3>& input_data, Eigen::Tensor<TensorT, 3>& loss_output_data, Eigen::Tensor<TensorT, 3>& metric_output_data, Eigen::Tensor<TensorT, 2>& time_steps)override
 	{
 		// infer data dimensions based on the input tensors
 		const int batch_size = input_data.dimension(0);
@@ -274,15 +279,31 @@ void main_MNIST(const std::string& data_dir, const bool& make_model, const bool&
 	// define the data simulator
 	const std::size_t input_size = 784;
 	const std::size_t n_labels = 10;
-	const std::size_t n_blocks_1 = 256;
-	const std::size_t n_cells_1 = 1;
-	const std::size_t n_blocks_2 = 256;
-	const std::size_t n_cells_2 = 1;
-	const bool add_forget_gate = true;
-	const std::size_t n_hidden = 128;
 	const std::size_t training_data_size = 60000; //60000;
 	const std::size_t validation_data_size = 10000; //10000;
 	DataSimulatorExt<float> data_simulator;
+
+	// Model architecture config 0
+	const std::size_t n_blocks_1 = 128;
+	const std::size_t n_cells_1 = 1;
+	const std::size_t n_blocks_2 = 0;
+	const std::size_t n_cells_2 = 1;
+	const bool add_forget_gate = true;
+	const std::size_t n_hidden = 0;
+	//// Model architecture config 1
+	//const std::size_t n_blocks_1 = 128;
+	//const std::size_t n_cells_1 = 1;
+	//const std::size_t n_blocks_2 = 0;
+	//const std::size_t n_cells_2 = 1;
+	//const bool add_forget_gate = true;
+	//const std::size_t n_hidden = 64;
+	//// Model architecture config 2
+	//const std::size_t n_blocks_1 = 128;
+	//const std::size_t n_cells_1 = 1;
+	//const std::size_t n_blocks_2 = 128;
+	//const std::size_t n_cells_2 = 1;
+	//const bool add_forget_gate = true;
+	//const std::size_t n_hidden = 0;
 
 	// read in the training data
 	std::string training_data_filename = data_dir + "train-images.idx3-ubyte";
@@ -316,12 +337,12 @@ void main_MNIST(const std::string& data_dir, const bool& make_model, const bool&
 	// define the model trainers and resources for the trainers
 	std::vector<ModelInterpreterDefaultDevice<float>> model_interpreters;
 	for (size_t i = 0; i < n_threads; ++i) {
-		ModelResources model_resources = { ModelDevice(0, 1) };
+		ModelResources model_resources = { ModelDevice(2, 1) };
 		ModelInterpreterDefaultDevice<float> model_interpreter(model_resources);
 		model_interpreters.push_back(model_interpreter);
 	}
 	ModelTrainerExt<float> model_trainer;
-	model_trainer.setBatchSize(64);
+	model_trainer.setBatchSize(32);
 	model_trainer.setMemorySize(input_size);
 	model_trainer.setNEpochsTraining(100001);
 	model_trainer.setNEpochsValidation(25);
