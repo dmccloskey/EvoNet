@@ -798,6 +798,7 @@ BOOST_AUTO_TEST_CASE(destructorKLDivergenceMuOp)
 
 BOOST_AUTO_TEST_CASE(operationfunctionKLDivergenceMuOp)
 {
+	// Without capacity
   KLDivergenceMuLossTensorOp<float, Eigen::DefaultDevice> operation;
 
   const int memory_size = 2;
@@ -823,6 +824,18 @@ BOOST_AUTO_TEST_CASE(operationfunctionKLDivergenceMuOp)
   BOOST_CHECK_CLOSE(error(1, 0), 3, 1e-6);
   BOOST_CHECK_CLOSE(error(0, 1), 0, 1e-6);
   BOOST_CHECK_CLOSE(error(1, 1), 0, 1e-6);
+
+	// With capacity
+	KLDivergenceMuLossTensorOp<float, Eigen::DefaultDevice> operationC(1e-3, 1, 5);
+
+	float errorC_ptr[] = { 0, 0, 0, 0 };
+
+	operationC(y_pred.data(), y_true.data(), errorC_ptr, batch_size, memory_size, layer_size, time_step, device);
+	Eigen::TensorMap<Eigen::Tensor<float, 2>> errorC(errorC_ptr, batch_size, memory_size);
+	BOOST_CHECK_CLOSE(errorC(0, 0), -5, 1e-6);
+	BOOST_CHECK_CLOSE(errorC(1, 0), -2, 1e-6);
+	BOOST_CHECK_CLOSE(errorC(0, 1), 0, 1e-6);
+	BOOST_CHECK_CLOSE(errorC(1, 1), 0, 1e-6);
 }
 
 /**
@@ -844,6 +857,7 @@ BOOST_AUTO_TEST_CASE(destructorKLDivergenceMuGradOp)
 
 BOOST_AUTO_TEST_CASE(operationfunctionKLDivergenceMuGradOp)
 {
+	// Without capacity
   KLDivergenceMuLossGradTensorOp<float, Eigen::DefaultDevice> operation;
 
   const int memory_size = 2;
@@ -873,6 +887,22 @@ BOOST_AUTO_TEST_CASE(operationfunctionKLDivergenceMuGradOp)
   BOOST_CHECK_CLOSE(error(0, 1, 1), 0.0, 1e-6);
   BOOST_CHECK_CLOSE(error(1, 0, 1), -4.0, 1e-6);
   BOOST_CHECK_CLOSE(error(1, 1, 1), 0.0, 1e-6);
+
+	// With capacity
+	KLDivergenceMuLossGradTensorOp<float, Eigen::DefaultDevice> operationC(1e-6, 1, 5);
+
+	float errorC_ptr[] = { 0, 0, 0, 0, 0, 0, 0, 0 };
+
+	operationC(y_pred.data(), y_true.data(), errorC_ptr, batch_size, memory_size, layer_size, time_step, device);
+	Eigen::TensorMap<Eigen::Tensor<float, 3>> errorC(errorC_ptr, batch_size, memory_size, layer_size);
+	BOOST_CHECK_CLOSE(errorC(0, 0, 0), 3.0, 1e-6);
+	BOOST_CHECK_CLOSE(errorC(0, 1, 0), 0.0, 1e-6);
+	BOOST_CHECK_CLOSE(errorC(1, 0, 0), 1.0, 1e-6);
+	BOOST_CHECK_CLOSE(errorC(1, 1, 0), 0.0, 1e-6);
+	BOOST_CHECK_CLOSE(errorC(0, 0, 1), 3.0, 1e-6);
+	BOOST_CHECK_CLOSE(errorC(0, 1, 1), 0.0, 1e-6);
+	BOOST_CHECK_CLOSE(errorC(1, 0, 1), 1.0, 1e-6);
+	BOOST_CHECK_CLOSE(errorC(1, 1, 1), 0.0, 1e-6);
 }
 
 /**
@@ -894,6 +924,7 @@ BOOST_AUTO_TEST_CASE(destructorKLDivergenceLogVarOp)
 
 BOOST_AUTO_TEST_CASE(operationfunctionKLDivergenceLogVarOp2)
 {
+	// Without capacity
   KLDivergenceLogVarLossTensorOp<float, Eigen::DefaultDevice> operation;
 
   const int memory_size = 2;
@@ -919,6 +950,18 @@ BOOST_AUTO_TEST_CASE(operationfunctionKLDivergenceLogVarOp2)
   BOOST_CHECK_CLOSE(error(1, 0), 2.43656349, 1e-6);
   BOOST_CHECK_CLOSE(error(0, 1), 0, 1e-6);
   BOOST_CHECK_CLOSE(error(1, 1), 0, 1e-6);
+
+	// With capacity
+	KLDivergenceLogVarLossTensorOp<float, Eigen::DefaultDevice> operationC(1e-3, 1, 5);
+
+	float errorC_ptr[] = { 0, 0, 0, 0 };
+
+	operationC(y_pred.data(), y_true.data(), errorC_ptr, batch_size, memory_size, layer_size, time_step, device);
+	Eigen::TensorMap<Eigen::Tensor<float, 2>> errorC(errorC_ptr, batch_size, memory_size);
+	BOOST_CHECK_CLOSE(errorC(0, 0), -3.70255756, 1e-6);
+	BOOST_CHECK_CLOSE(errorC(1, 0), -2.56343651, 1e-6);
+	BOOST_CHECK_CLOSE(errorC(0, 1), 0, 1e-6);
+	BOOST_CHECK_CLOSE(errorC(1, 1), 0, 1e-6);
 }
 
 /**
@@ -940,6 +983,7 @@ BOOST_AUTO_TEST_CASE(destructorKLDivergenceLogVarGradOp)
 
 BOOST_AUTO_TEST_CASE(operationfunctionKLDivergenceLogVarGradOp)
 {
+	// Without capacity
   KLDivergenceLogVarLossGradTensorOp<float, Eigen::DefaultDevice> operation;
 
   const int memory_size = 2;
@@ -969,6 +1013,22 @@ BOOST_AUTO_TEST_CASE(operationfunctionKLDivergenceLogVarGradOp)
   BOOST_CHECK_CLOSE(error(0, 1, 1), 0, 1e-6);
   BOOST_CHECK_CLOSE(error(1, 0, 1), -2.21828175, 1e-6);
   BOOST_CHECK_CLOSE(error(1, 1, 1), 0.0, 1e-6);
+
+	// With capacity
+	KLDivergenceLogVarLossGradTensorOp<float, Eigen::DefaultDevice> operationC(1e-6, 1, 5);
+
+	float errorC_ptr[] = { 0, 0, 0, 0, 0, 0, 0, 0 };
+
+	operationC(y_pred.data(), y_true.data(), errorC_ptr, batch_size, memory_size, layer_size, time_step, device);
+	Eigen::TensorMap<Eigen::Tensor<float, 3>> errorC(errorC_ptr, batch_size, memory_size, layer_size);
+	BOOST_CHECK_CLOSE(errorC(0, 0, 0), 3.85127878, 1e-6);
+	BOOST_CHECK_CLOSE(errorC(0, 1, 0), 0.0, 1e-6);
+	BOOST_CHECK_CLOSE(errorC(1, 0, 0), 2.78171825, 1e-6);
+	BOOST_CHECK_CLOSE(errorC(1, 1, 0), 0.0, 1e-6);
+	BOOST_CHECK_CLOSE(errorC(0, 0, 1), 3.85127878, 1e-6);
+	BOOST_CHECK_CLOSE(errorC(0, 1, 1), 0.0, 1e-6);
+	BOOST_CHECK_CLOSE(errorC(1, 0, 1), 2.78171825, 1e-6);
+	BOOST_CHECK_CLOSE(errorC(1, 1, 1), 0.0, 1e-6);
 }
 
 /**
@@ -1402,6 +1462,7 @@ BOOST_AUTO_TEST_CASE(destructorKLDivergenceCatOp)
 
 BOOST_AUTO_TEST_CASE(operationfunctionKLDivergenceCatOp)
 {
+	// Without capacity
   KLDivergenceCatLossTensorOp<float, Eigen::DefaultDevice> operation;
 
   const int memory_size = 2;
@@ -1427,6 +1488,18 @@ BOOST_AUTO_TEST_CASE(operationfunctionKLDivergenceCatOp)
   BOOST_CHECK_CLOSE(error(1, 0), 30.2493725, 1e-6);
   BOOST_CHECK_CLOSE(error(0, 1), 0, 1e-6);
   BOOST_CHECK_CLOSE(error(1, 1), 0, 1e-6);
+
+	// With capacity
+	KLDivergenceCatLossTensorOp<float, Eigen::DefaultDevice> operationC(1e-3, 1, 5);
+
+	float errorC_ptr[] = { 0, 0, 0, 0 };
+
+	operationC(y_pred.data(), y_true.data(), errorC_ptr, batch_size, memory_size, layer_size, time_step, device);
+	Eigen::TensorMap<Eigen::Tensor<float, 2>> errorC(errorC_ptr, batch_size, memory_size);
+	BOOST_CHECK_CLOSE(errorC(0, 0), 5.43656349, 1e-6);
+	BOOST_CHECK_CLOSE(errorC(1, 0), 29.5562248, 1e-6);
+	BOOST_CHECK_CLOSE(errorC(0, 1), 0, 1e-6);
+	BOOST_CHECK_CLOSE(errorC(1, 1), 0, 1e-6);
 }
 
 /**
@@ -1448,6 +1521,7 @@ BOOST_AUTO_TEST_CASE(destructorKLDivergenceCatGradOp)
 
 BOOST_AUTO_TEST_CASE(operationfunctionKLDivergenceCatGradOp)
 {
+	// No capacity
   KLDivergenceCatLossGradTensorOp<float, Eigen::DefaultDevice> operation;
 
   const int memory_size = 2;
@@ -1469,14 +1543,30 @@ BOOST_AUTO_TEST_CASE(operationfunctionKLDivergenceCatGradOp)
 
   operation(y_pred.data(), y_true.data(), error_ptr, batch_size, memory_size, layer_size, time_step, device);
   Eigen::TensorMap<Eigen::Tensor<float, 3>> error(error_ptr, batch_size, memory_size, layer_size);
-  BOOST_CHECK_CLOSE(error(0, 0, 0), -2.71828175, 1e-6);
+  BOOST_CHECK_CLOSE(error(0, 0, 0), -5.43656349, 1e-6);
   BOOST_CHECK_CLOSE(error(0, 1, 0), 0.0, 1e-6);
-  BOOST_CHECK_CLOSE(error(1, 0, 0), -2.71828175, 1e-6);
+  BOOST_CHECK_CLOSE(error(1, 0, 0), -22.1671677, 1e-6);
   BOOST_CHECK_CLOSE(error(1, 1, 0), 0.0, 1e-6);
-  BOOST_CHECK_CLOSE(error(0, 0, 1), -7.38905621, 1e-6);
+  BOOST_CHECK_CLOSE(error(0, 0, 1), -5.43656349, 1e-6);
   BOOST_CHECK_CLOSE(error(0, 1, 1), 0.0, 1e-6);
-  BOOST_CHECK_CLOSE(error(1, 0, 1), -7.38905621, 1e-6);
+  BOOST_CHECK_CLOSE(error(1, 0, 1), -22.1671677, 1e-6);
   BOOST_CHECK_CLOSE(error(1, 1, 1), 0.0, 1e-6);
+
+	// With capacity
+	KLDivergenceCatLossGradTensorOp<float, Eigen::DefaultDevice> operationC(1e-6, 1, 5);
+
+	float errorC_ptr[] = { 0, 0, 0, 0, 0, 0, 0, 0 };
+
+	operationC(y_pred.data(), y_true.data(), errorC_ptr, batch_size, memory_size, layer_size, time_step, device);
+	Eigen::TensorMap<Eigen::Tensor<float, 3>> errorC(errorC_ptr, batch_size, memory_size, layer_size);
+	BOOST_CHECK_CLOSE(errorC(0, 0, 0), -4.74341631, 1e-6);
+	BOOST_CHECK_CLOSE(errorC(0, 1, 0), 0.0, 1e-6);
+	BOOST_CHECK_CLOSE(errorC(1, 0, 0), -21.47402, 1e-6);
+	BOOST_CHECK_CLOSE(errorC(1, 1, 0), 0.0, 1e-6);
+	BOOST_CHECK_CLOSE(errorC(0, 0, 1), -4.74341631, 1e-6);
+	BOOST_CHECK_CLOSE(errorC(0, 1, 1), 0.0, 1e-6);
+	BOOST_CHECK_CLOSE(errorC(1, 0, 1), -21.47402, 1e-6);
+	BOOST_CHECK_CLOSE(errorC(1, 1, 1), 0.0, 1e-6);
 }
 
 /**
