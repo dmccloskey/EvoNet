@@ -614,16 +614,22 @@ public:
 		//    std::cout << "The learning rate has been annealed by a factor of " << lr_new << std::endl;
 		//  }
 		//}
+
+		// Increase the KL divergence capacity
+		TensorT capacity_z = 5 / 2.5e4 * n_epochs;
+		if (capacity_z > 5) capacity_z = 5;
+		this->getLossFunctions().at(1) = std::make_shared<KLDivergenceMuLossOp<float>>(KLDivergenceMuLossOp<float>(1e-6, 30.0, capacity_z));
+		this->getLossFunctions().at(2) = std::make_shared<KLDivergenceLogVarLossOp<float>>(KLDivergenceLogVarLossOp<float>(1e-6, 30.0, capacity_z));
+		this->getLossFunctionGrads().at(1) = std::make_shared<KLDivergenceMuLossGradOp<float>>(KLDivergenceMuLossGradOp<float>(1e-6, 30.0, capacity_z));
+		this->getLossFunctionGrads().at(2) = std::make_shared<KLDivergenceLogVarLossGradOp<float>>(KLDivergenceLogVarLossGradOp<float>(1e-6, 30.0, capacity_z));
+
 		if (n_epochs % 1000 == 0 && n_epochs != 0) {
 			// save the model every 1000 epochs
 			model_interpreter.getModelResults(model, false, true, false, false);
-			// save the model weights
-			WeightFile<float> weight_data;
-			//weight_data.storeWeightValuesCsv(model.getName() + "_" + std::to_string(n_epochs) + "_weights.csv", model.weights_);
-			weight_data.storeWeightsBinary(model.getName() + "_" + std::to_string(n_epochs) + "_weights.binary", model.weights_);
+
 			// save the model and tensors to binary
-			//ModelFile<TensorT> data;
-			//data.storeModelBinary(model.getName() + "_" + std::to_string(n_epochs) + "_model.binary", model);
+			ModelFile<TensorT> data;
+			data.storeModelBinary(model.getName() + "_" + std::to_string(n_epochs) + "_model.binary", model);
 			ModelInterpreterFileGpu<TensorT> interpreter_data;
 			interpreter_data.storeModelInterpreterBinary(model.getName() + "_" + std::to_string(n_epochs) + "_interpreter.binary", model_interpreter);
 		}
@@ -847,7 +853,7 @@ void main_MNIST(const std::string& data_dir, const bool& make_model, const bool&
 	// define the model trainers and resources for the trainers
 	std::vector<ModelInterpreterGpu<float>> model_interpreters;
 	for (size_t i = 0; i < n_threads; ++i) {
-		ModelResources model_resources = { ModelDevice(1, 1) };
+		ModelResources model_resources = { ModelDevice(3, 1) };
 		ModelInterpreterGpu<float> model_interpreter(model_resources);
 		model_interpreters.push_back(model_interpreter);
 	}
@@ -865,13 +871,13 @@ void main_MNIST(const std::string& data_dir, const bool& make_model, const bool&
 	model_trainer.setLossFunctions({
 		std::make_shared<MSELossOp<float>>(MSELossOp<float>(1e-6, 1.0)),
 		//std::make_shared<BCEWithLogitsLossOp<float>>(BCEWithLogitsLossOp<float>(1e-6, 1.0)),
-		std::make_shared<KLDivergenceMuLossOp<float>>(KLDivergenceMuLossOp<float>(1e-6, 1.0)),
-		std::make_shared<KLDivergenceLogVarLossOp<float>>(KLDivergenceLogVarLossOp<float>(1e-6, 1.0)) });
+		std::make_shared<KLDivergenceMuLossOp<float>>(KLDivergenceMuLossOp<float>(1e-6, 30.0, 0.0)),
+		std::make_shared<KLDivergenceLogVarLossOp<float>>(KLDivergenceLogVarLossOp<float>(1e-6, 30.0, 0.0)) });
 	model_trainer.setLossFunctionGrads({
 		std::make_shared<MSELossGradOp<float>>(MSELossGradOp<float>(1e-6, 1.0)),
 		//std::make_shared<BCEWithLogitsLossGradOp<float>>(BCEWithLogitsLossGradOp<float>(1e-6, 1.0)),
-		std::make_shared<KLDivergenceMuLossGradOp<float>>(KLDivergenceMuLossGradOp<float>(1e-6, 1.0)),
-		std::make_shared<KLDivergenceLogVarLossGradOp<float>>(KLDivergenceLogVarLossGradOp<float>(1e-6, 1.0)) });
+		std::make_shared<KLDivergenceMuLossGradOp<float>>(KLDivergenceMuLossGradOp<float>(1e-6, 30.0, 0.0)),
+		std::make_shared<KLDivergenceLogVarLossGradOp<float>>(KLDivergenceLogVarLossGradOp<float>(1e-6, 30.0, 0.0)) });
 	model_trainer.setLossOutputNodes({ output_nodes, encoding_nodes_mu, encoding_nodes_logvar });
 	model_trainer.setMetricFunctions({ std::make_shared<MAEOp<float>>(MAEOp<float>()) });
 	model_trainer.setMetricOutputNodes({ output_nodes });
@@ -884,7 +890,7 @@ void main_MNIST(const std::string& data_dir, const bool& make_model, const bool&
 	Model<float> model;
 	if (make_model) {
 		std::cout << "Making the model..." << std::endl;
-		ModelTrainerExt<float>().makeVAEFullyConn(model, input_size, encoding_size, 128, false, true);
+		ModelTrainerExt<float>().makeVAEFullyConn(model, input_size, encoding_size, 512, false, true);
 		//ModelTrainerExt<float>().makeVAECovNet(model, input_size, encoding_size, 32, 1, 2, 2, 1, 1, 128, 128, 7, 1, false, true);
 	}
 	else {
