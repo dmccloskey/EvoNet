@@ -33,7 +33,7 @@ public:
 	@param[in] n_hidden The length of the hidden layers
 	@param[in] specify_layers Whether to give the `ModelInterpreter` "hints" as to the correct network structure during graph to tensor compilation
 	*/
-	void makeVAEFullyConn(Model<TensorT>& model, int n_inputs = 784, int n_encodings = 64, int n_hidden_0 = 512, bool specify_layers = false, bool add_norm = true) {
+	void makeVAEFullyConn(Model<TensorT>& model, int n_inputs = 784, int n_encodings = 64, int n_hidden_0 = 512, bool add_norm = false, bool specify_layers = true) {
 		model.setId(0);
 		model.setName("VAE");
 
@@ -862,13 +862,13 @@ void main_MNIST(const std::string& data_dir, const bool& make_model, const bool&
 	model_trainer.setLossFunctions({
 		std::make_shared<MSELossOp<float>>(MSELossOp<float>(1e-6, 1.0)),
 		//std::make_shared<BCEWithLogitsLossOp<float>>(BCEWithLogitsLossOp<float>(1e-6, 1.0)),
-		std::make_shared<KLDivergenceMuLossOp<float>>(KLDivergenceMuLossOp<float>(1e-6, 1.0)),
-		std::make_shared<KLDivergenceLogVarLossOp<float>>(KLDivergenceLogVarLossOp<float>(1e-6, 1.0)) });
+		std::make_shared<KLDivergenceMuLossOp<float>>(KLDivergenceMuLossOp<float>(1e-6, 0.0, 0.0)),
+		std::make_shared<KLDivergenceLogVarLossOp<float>>(KLDivergenceLogVarLossOp<float>(1e-6, 0.0, 0.0)) });
 	model_trainer.setLossFunctionGrads({
 		std::make_shared<MSELossGradOp<float>>(MSELossGradOp<float>(1e-6, 1.0)),
 		//std::make_shared<BCEWithLogitsLossGradOp<float>>(BCEWithLogitsLossGradOp<float>(1e-6, 1.0)),
-		std::make_shared<KLDivergenceMuLossGradOp<float>>(KLDivergenceMuLossGradOp<float>(1e-6, 1.0)),
-		std::make_shared<KLDivergenceLogVarLossGradOp<float>>(KLDivergenceLogVarLossGradOp<float>(1e-6, 1.0)) });
+		std::make_shared<KLDivergenceMuLossGradOp<float>>(KLDivergenceMuLossGradOp<float>(1e-6, 0.0, 0.0)),
+		std::make_shared<KLDivergenceLogVarLossGradOp<float>>(KLDivergenceLogVarLossGradOp<float>(1e-6, 0.0, 0.0)) });
 	model_trainer.setLossOutputNodes({ output_nodes, encoding_nodes_mu, encoding_nodes_logvar });
 	model_trainer.setMetricFunctions({ std::make_shared<MAEOp<float>>(MAEOp<float>()) });
 	model_trainer.setMetricOutputNodes({ output_nodes });
@@ -881,8 +881,8 @@ void main_MNIST(const std::string& data_dir, const bool& make_model, const bool&
 	Model<float> model;
 	if (make_model) {
 		std::cout << "Making the model..." << std::endl;
-		//ModelTrainerExt<float>().makeVAEFullyConn(model, input_size, encoding_size, 128, false, true);
-		ModelTrainerExt<float>().makeVAECovNet(model, input_size, encoding_size, 32, 1, 2, 2, 1, 1, 128, 128, 7, 1, false, true);
+		ModelTrainerExt<float>().makeVAEFullyConn(model, input_size, encoding_size, 128, false, true);
+		//ModelTrainerExt<float>().makeVAECovNet(model, input_size, encoding_size, 32, 1, 2, 2, 1, 1, 128, 128, 7, 1, false, true);
 	}
 	else {
 		// read in the trained model
