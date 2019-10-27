@@ -618,10 +618,10 @@ void main_MNIST(const std::string& data_dir, const bool& make_model, const bool&
 	Model<float> model;
 	if (make_model) {
 		std::cout << "Making the model..." << std::endl;
-		//model_trainer.makeCovNet(model, input_nodes.size(), output_nodes.size(), 2, 2, 32, 16, 5, 2, false, true);  // Sanity test
+		model_trainer.makeCovNet(model, input_nodes.size(), output_nodes.size(), 2, 2, 0, 32, 4, 7, 1, 2, 2, false, true, true);  // Sanity test
 		//model_trainer.makeCovNet(model, input_nodes.size(), output_nodes.size(), 8, 2, 128, 32, 5, 2, false, true);  // Minimal solving model
-		model_trainer.makeCovNet(model, input_nodes.size(), output_nodes.size(), 32, 2, 1, 512, 32, 5, 1, 2, 2, true, true, true); // Recommended model
-		//model_trainer.makeCovNet(model, input_nodes.size(), output_nodes.size(), 32, 1, 2, 256, 32, 7, 1, 2, 2, false, true, true); // Recommended model
+		//model_trainer.makeCovNet(model, input_nodes.size(), output_nodes.size(), 32, 2, 1, 512, 32, 5, 1, 2, 2, true, true, true); // Recommended model
+		//model_trainer.makeCovNet(model, input_nodes.size(), output_nodes.size(), 32, 2, 0, 256, 32, 7, 1, 2, 2, false, true, true); // Recommended model
 	}
 	else {
 		// read in the trained model
@@ -635,7 +635,7 @@ void main_MNIST(const std::string& data_dir, const bool& make_model, const bool&
 		ModelInterpreterFileGpu<float> model_interpreter_file;
 		model_interpreter_file.loadModelInterpreterBinary(interpreter_filename, model_interpreters[0]);
 	}
-	std::vector<Model<float>> population = { model };
+	//std::vector<Model<float>> population = { model };
 
 	if (train_model) {
 		// Train the model
@@ -652,10 +652,10 @@ void main_MNIST(const std::string& data_dir, const bool& make_model, const bool&
 		//population_trainer_file.storeModelValidations("MNISTErrors.csv", models_validation_errors_per_generation);
 	}
 	else {
-		// Evaluate the population
-		std::cout << "Evaluating the model..." << std::endl;
-		population_trainer.evaluateModels(
-			population, model_trainer, model_interpreters, model_replicator, data_simulator, model_logger, input_nodes);
+		//// Evaluate the population
+		//std::cout << "Evaluating the model..." << std::endl;
+		//population_trainer.evaluateModels(
+		//	population, model_trainer, model_interpreters, model_replicator, data_simulator, model_logger, input_nodes);
 	}
 }
 
