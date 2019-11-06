@@ -636,6 +636,14 @@ public:
 		//this->getLossFunctionGrads().at(1) = std::make_shared<KLDivergenceMuLossGradOp<float>>(KLDivergenceMuLossGradOp<float>(1e-6, 30.0, capacity_z));
 		//this->getLossFunctionGrads().at(2) = std::make_shared<KLDivergenceLogVarLossGradOp<float>>(KLDivergenceLogVarLossGradOp<float>(1e-6, 30.0, capacity_z));
 
+		// Increase the KL divergence beta
+		TensorT beta = 30 / 2.5e4 * n_epochs;
+		if (beta > 30) beta = 30;
+		this->getLossFunctions().at(1) = std::make_shared<KLDivergenceMuLossOp<float>>(KLDivergenceMuLossOp<float>(1e-6, beta, 0.0));
+		this->getLossFunctions().at(2) = std::make_shared<KLDivergenceLogVarLossOp<float>>(KLDivergenceLogVarLossOp<float>(1e-6, beta, 0.0));
+		this->getLossFunctionGrads().at(1) = std::make_shared<KLDivergenceMuLossGradOp<float>>(KLDivergenceMuLossGradOp<float>(1e-6, beta, 0.0));
+		this->getLossFunctionGrads().at(2) = std::make_shared<KLDivergenceLogVarLossGradOp<float>>(KLDivergenceLogVarLossGradOp<float>(1e-6, beta, 0.0));
+
 		if (n_epochs % 1000 == 0 && n_epochs != 0) {
 			// save the model every 1000 epochs
 			model_interpreter.getModelResults(model, false, true, false, false);
@@ -713,19 +721,19 @@ public:
 		// make the start and end sample indices
 		Eigen::Tensor<int, 1> sample_indices = this->getTrainingIndices(batch_size, 1);
 
-		std::random_device rd{};
-		std::mt19937 gen{ rd() };
-		std::normal_distribution<> d{ 1.0f, 1.0f };
-
 		// Reformat the input data for training
 		for (int batch_iter = 0; batch_iter < batch_size; ++batch_iter) {
 			for (int memory_iter = 0; memory_iter < memory_size; ++memory_iter) {
+
+				// Gaussian Sampler
+				Eigen::Tensor<TensorT, 2> gaussian_samples = GaussianSampler<TensorT>(1, n_encodings_);
+
 				for (int nodes_iter = 0; nodes_iter < n_input_pixels; ++nodes_iter) {
 					input_data(batch_iter, memory_iter, nodes_iter) = this->training_data(sample_indices[batch_iter], nodes_iter);
 					loss_output_data(batch_iter, memory_iter, nodes_iter) = this->training_data(sample_indices[batch_iter], nodes_iter);
 					metric_output_data(batch_iter, memory_iter, nodes_iter) = this->training_data(sample_indices[batch_iter], nodes_iter);
 					if (nodes_iter < n_encodings_) {
-						input_data(batch_iter, memory_iter, nodes_iter + n_input_pixels) = d(gen); // sample from a normal distribution
+						input_data(batch_iter, memory_iter, nodes_iter + n_input_pixels) = gaussian_samples(0, nodes_iter); // sample from a normal distribution
 						loss_output_data(batch_iter, memory_iter, nodes_iter + n_input_pixels) = 0; // Dummy data for KL divergence mu
 						loss_output_data(batch_iter, memory_iter, nodes_iter + n_input_pixels + n_encodings_) = 0; // Dummy data for KL divergence logvar
 					}
@@ -802,7 +810,7 @@ void main_MNIST(const std::string& data_dir, const bool& make_model, const bool&
 
 	// define the data simulator
 	const std::size_t input_size = 784;
-	const std::size_t encoding_size = 16;
+	const std::size_t encoding_size = 64;
 	const std::size_t training_data_size = 60000; //60000;
 	const std::size_t validation_data_size = 10000; //10000;
 	DataSimulatorExt<float> data_simulator;
@@ -882,13 +890,13 @@ void main_MNIST(const std::string& data_dir, const bool& make_model, const bool&
 	model_trainer.setFindCycles(false);
 	model_trainer.setFastInterpreter(true);
 	model_trainer.setLossFunctions({
-		std::make_shared<MSELossOp<float>>(MSELossOp<float>(1e-6, 1.0)),
-		//std::make_shared<BCEWithLogitsLossOp<float>>(BCEWithLogitsLossOp<float>(1e-6, 1.0)),
+		//std::make_shared<MSELossOp<float>>(MSELossOp<float>(1e-6, 1.0)),
+		std::make_shared<BCEWithLogitsLossOp<float>>(BCEWithLogitsLossOp<float>(1e-6, 1.0)),
 		std::make_shared<KLDivergenceMuLossOp<float>>(KLDivergenceMuLossOp<float>(1e-6, 0.0, 0.0)), //30
 		std::make_shared<KLDivergenceLogVarLossOp<float>>(KLDivergenceLogVarLossOp<float>(1e-6, 0.0, 0.0)) }); //30
 	model_trainer.setLossFunctionGrads({
-		std::make_shared<MSELossGradOp<float>>(MSELossGradOp<float>(1e-6, 1.0)),
-		//std::make_shared<BCEWithLogitsLossGradOp<float>>(BCEWithLogitsLossGradOp<float>(1e-6, 1.0)),
+		//std::make_shared<MSELossGradOp<float>>(MSELossGradOp<float>(1e-6, 1.0)),
+		std::make_shared<BCEWithLogitsLossGradOp<float>>(BCEWithLogitsLossGradOp<float>(1e-6, 1.0)),
 		std::make_shared<KLDivergenceMuLossGradOp<float>>(KLDivergenceMuLossGradOp<float>(1e-6, 0.0, 0.0)),
 		std::make_shared<KLDivergenceLogVarLossGradOp<float>>(KLDivergenceLogVarLossGradOp<float>(1e-6, 0.0, 0.0)) });
 	model_trainer.setLossOutputNodes({ output_nodes, encoding_nodes_mu, encoding_nodes_logvar });
@@ -903,7 +911,7 @@ void main_MNIST(const std::string& data_dir, const bool& make_model, const bool&
 	Model<float> model;
 	if (make_model) {
 		std::cout << "Making the model..." << std::endl;
-		ModelTrainerExt<float>().makeVAEFullyConn(model, input_size, encoding_size, 256, true, true);
+		ModelTrainerExt<float>().makeVAEFullyConn(model, input_size, encoding_size, 512, true, true);
 		//ModelTrainerExt<float>().makeVAECovNet(model, input_size, encoding_size, 32, 1, 2, 2, 1, 1, 128, 128, 7, 1, false, true);
 	}
 	else {

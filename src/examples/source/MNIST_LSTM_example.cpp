@@ -49,8 +49,8 @@ public:
 
 		// Add the LSTM layer(s)
 		std::vector<std::string> node_names = model_builder.addLSTM(model, "LSTM-01", "LSTM-01", node_names_input, n_blocks_1, n_cells_1,
-			std::make_shared<LeakyReLUOp<TensorT>>(LeakyReLUOp<float>()),
-			std::make_shared<LeakyReLUGradOp<TensorT>>(LeakyReLUGradOp<float>()),
+			std::make_shared<TanHOp<TensorT>>(TanHOp<float>()),
+			std::make_shared<TanHGradOp<TensorT>>(TanHGradOp<float>()),
 			std::make_shared<SumOp<TensorT>>(SumOp<TensorT>()),
 			std::make_shared<SumErrorOp<TensorT>>(SumErrorOp<TensorT>()),
 			std::make_shared<SumWeightGradOp<TensorT>>(SumWeightGradOp<TensorT>()),
@@ -60,8 +60,8 @@ public:
 
 		if (n_blocks_2 > 0) {
 			node_names = model_builder.addLSTM(model, "LSTM-02", "LSTM-02", node_names, n_blocks_2, n_cells_2,
-				std::make_shared<LeakyReLUOp<TensorT>>(LeakyReLUOp<float>()),
-				std::make_shared<LeakyReLUGradOp<TensorT>>(LeakyReLUGradOp<float>()),
+				std::make_shared<TanHOp<TensorT>>(TanHOp<float>()),
+				std::make_shared<TanHGradOp<TensorT>>(TanHGradOp<float>()),
 				std::make_shared<SumOp<TensorT>>(SumOp<TensorT>()),
 				std::make_shared<SumErrorOp<TensorT>>(SumErrorOp<TensorT>()),
 				std::make_shared<SumWeightGradOp<TensorT>>(SumWeightGradOp<TensorT>()),
@@ -73,8 +73,8 @@ public:
 		// Add a fully connected layer
 		if (n_hidden > 0) {
 			node_names = model_builder.addFullyConnected(model, "FC-01", "FC-01", node_names, n_hidden,
-				std::make_shared<LeakyReLUOp<TensorT>>(LeakyReLUOp<TensorT>()),
-				std::make_shared<LeakyReLUGradOp<TensorT>>(LeakyReLUGradOp<TensorT>()),
+				std::make_shared<TanHOp<TensorT>>(TanHOp<TensorT>()),
+				std::make_shared<TanHGradOp<TensorT>>(TanHGradOp<TensorT>()),
 				std::make_shared<SumOp<TensorT>>(SumOp<TensorT>()),
 				std::make_shared<SumErrorOp<TensorT>>(SumErrorOp<TensorT>()),
 				std::make_shared<SumWeightGradOp<TensorT>>(SumWeightGradOp<TensorT>()),
@@ -84,8 +84,8 @@ public:
 
 		// Add a final output layer
 		node_names = model_builder.addFullyConnected(model, "FC-Out", "FC-Out", node_names, n_outputs,
-			std::make_shared<LeakyReLUOp<TensorT>>(LeakyReLUOp<TensorT>()),
-			std::make_shared<LeakyReLUGradOp<TensorT>>(LeakyReLUGradOp<TensorT>()),
+			std::make_shared<TanHOp<TensorT>>(TanHOp<TensorT>()),
+			std::make_shared<TanHGradOp<TensorT>>(TanHGradOp<TensorT>()),
 			std::make_shared<SumOp<TensorT>>(SumOp<TensorT>()),
 			std::make_shared<SumErrorOp<TensorT>>(SumErrorOp<TensorT>()),
 			std::make_shared<SumWeightGradOp<TensorT>>(SumWeightGradOp<TensorT>()),
