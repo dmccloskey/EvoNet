@@ -335,7 +335,7 @@ public:
 		ModelBuilder<TensorT> model_builder;
 
 		// Add the inputs
-		std::vector<std::string> node_names_input = model_builder.addInputNodes(model, "Input", "Input", n_inputs, specify_layers);
+		std::vector<std::string> node_names = model_builder.addInputNodes(model, "Input", "Input", n_inputs, specify_layers);
 
 		// Define the activation based on `add_norm`
 		std::shared_ptr<ActivationOp<TensorT>> activation, activation_grad;
@@ -357,11 +357,10 @@ public:
 		auto solver_op = std::make_shared<AdamOp<TensorT>>(AdamOp<TensorT>(5e-4, 0.9, 0.999, 1e-8, 10));
 
 		// Add the 1st FC layer
-		std::vector<std::string> node_names;
 		if (n_hidden_0 > 0) {
-			node_names = model_builder.addFullyConnected(model, "EN0", "EN0", node_names_input, n_hidden_0,
+			node_names = model_builder.addFullyConnected(model, "EN0", "EN0", node_names, n_hidden_0,
 				activation, activation_grad, integration_op, integration_error_op, integration_weight_grad_op,
-				std::make_shared<RandWeightInitOp<TensorT>>(RandWeightInitOp<TensorT>((TensorT)(node_names_input.size() + node_names.size()) / 2, 1)),
+				std::make_shared<RandWeightInitOp<TensorT>>(RandWeightInitOp<TensorT>((TensorT)(node_names.size() + n_hidden_0) / 2, 1)),
 				solver_op, 0.0f, 0.0f, false, specify_layers);
 			if (add_norm) {
 				node_names = model_builder.addNormalization(model, "EN0-Norm", "EN0-Norm", node_names, true);
@@ -377,9 +376,9 @@ public:
 
 		// Add the 2nd FC layer
 		if (n_hidden_1 > 0) {
-			node_names = model_builder.addFullyConnected(model, "EN1", "EN1", node_names, n_hidden_0,
+			node_names = model_builder.addFullyConnected(model, "EN1", "EN1", node_names, n_hidden_1,
 				activation, activation_grad, integration_op, integration_error_op, integration_weight_grad_op,
-				std::make_shared<RandWeightInitOp<TensorT>>(RandWeightInitOp<TensorT>((TensorT)(node_names.size() + node_names.size()) / 2, 1)),
+				std::make_shared<RandWeightInitOp<TensorT>>(RandWeightInitOp<TensorT>((TensorT)(node_names.size() + n_hidden_1) / 2, 1)),
 				solver_op, 0.0f, 0.0f, false, specify_layers);
 			if (add_norm) {
 				node_names = model_builder.addNormalization(model, "EN1-Norm", "EN1-Norm", node_names, true);
@@ -395,9 +394,9 @@ public:
 
 		// Add the 3nd FC layer
 		if (n_hidden_2 > 0) {
-			node_names = model_builder.addFullyConnected(model, "EN2", "EN2", node_names, n_hidden_0,
+			node_names = model_builder.addFullyConnected(model, "EN2", "EN2", node_names, n_hidden_2,
 				activation, activation_grad, integration_op, integration_error_op, integration_weight_grad_op,
-				std::make_shared<RandWeightInitOp<TensorT>>(RandWeightInitOp<TensorT>((TensorT)(node_names.size() + node_names.size()) / 2, 1)),
+				std::make_shared<RandWeightInitOp<TensorT>>(RandWeightInitOp<TensorT>((TensorT)(node_names.size() + n_hidden_2) / 2, 1)),
 				solver_op, 0.0f, 0.0f, false, specify_layers);
 			if (add_norm) {
 				node_names = model_builder.addNormalization(model, "EN2-Norm", "EN2-Norm", node_names, true);
