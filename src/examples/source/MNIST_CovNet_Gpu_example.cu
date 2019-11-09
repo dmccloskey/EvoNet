@@ -37,7 +37,8 @@ public:
 		const int& n_depth_1 = 32, const int& n_depth_2 = 2, const int& n_depth_3 = 2,
 		const int& n_fc_1 = 128, const int& n_fc_2 = 32, const int& filter_size = 5, const int& filter_stride = 1,
 		const int& pool_size = 2, const int& pool_stride = 2,
-		const bool& add_pool = true, const bool& add_norm = false, const bool& specify_layers = false) {
+		const bool& add_pool = true, const bool& add_norm = false, const bool& specify_layers = false,
+		const bool& share_weights = true) {
 		model.setId(0);
 		model.setName("CovNet");
 
@@ -67,7 +68,7 @@ public:
 				std::make_shared<SumErrorOp<TensorT>>(SumErrorOp<TensorT>()),
 				std::make_shared<SumWeightGradOp<TensorT>>(SumWeightGradOp<TensorT>()),
 				std::make_shared<RandWeightInitOp<TensorT>>(RandWeightInitOp<TensorT>(filter_size * filter_size, 2)),
-				std::make_shared<AdamOp<TensorT>>(AdamOp<TensorT>(1e-3, 0.9, 0.999, 1e-8, 10)), 0.0f, 0.0f, false, specify_layers);
+				std::make_shared<AdamOp<TensorT>>(AdamOp<TensorT>(1e-3, 0.9, 0.999, 1e-8, 10)), 0.0f, 0.0f, false, specify_layers, share_weights);
 			if (add_norm) {
 				std::string norm_name = "Norm0-" + std::to_string(d);
 				node_names = model_builder.addNormalization(model, norm_name, norm_name, node_names, specify_layers);
@@ -121,7 +122,7 @@ public:
 					std::make_shared<SumErrorOp<TensorT>>(SumErrorOp<TensorT>()),
 					std::make_shared<SumWeightGradOp<TensorT>>(SumWeightGradOp<TensorT>()),
 					std::make_shared<RandWeightInitOp<TensorT>>(RandWeightInitOp<TensorT>(filter_size * filter_size, 2)),
-					std::make_shared<AdamOp<TensorT>>(AdamOp<TensorT>(1e-3, 0.9, 0.999, 1e-8, 10)), 0.0f, 0.0f, false, specify_layers);
+					std::make_shared<AdamOp<TensorT>>(AdamOp<TensorT>(1e-3, 0.9, 0.999, 1e-8, 10)), 0.0f, 0.0f, false, specify_layers, share_weights);
 				if (add_norm) {
 					std::string norm_name = "Norm1-" + std::to_string(l_cnt) + "-" + std::to_string(d);
 					node_names = model_builder.addNormalization(model, norm_name, norm_name, node_names, specify_layers);
@@ -177,7 +178,7 @@ public:
 					std::make_shared<SumErrorOp<TensorT>>(SumErrorOp<TensorT>()),
 					std::make_shared<SumWeightGradOp<TensorT>>(SumWeightGradOp<TensorT>()),
 					std::make_shared<RandWeightInitOp<TensorT>>(RandWeightInitOp<TensorT>(filter_size * filter_size, 2)),
-					std::make_shared<AdamOp<TensorT>>(AdamOp<TensorT>(1e-3, 0.9, 0.999, 1e-8, 10)), 0.0f, 0.0f, false, specify_layers);
+					std::make_shared<AdamOp<TensorT>>(AdamOp<TensorT>(1e-3, 0.9, 0.999, 1e-8, 10)), 0.0f, 0.0f, false, specify_layers, share_weights);
 				if (add_norm) {
 					std::string norm_name = "Norm2-" + std::to_string(l_cnt) + "-" + std::to_string(d);
 					node_names = model_builder.addNormalization(model, norm_name, norm_name, node_names, specify_layers);
@@ -732,11 +733,11 @@ void main_MNIST(const std::string& data_dir, const bool& make_model, const bool&
 	Model<float> model;
 	if (make_model) {
 		std::cout << "Making the model..." << std::endl;
-		model_trainer.makeFullyConn(model, input_nodes.size(), output_nodes.size(), 512, 256, 64, true, true);  // Baseline
+		//model_trainer.makeFullyConn(model, input_nodes.size(), output_nodes.size(), 512, 256, 64, true, true);  // Baseline
 		//model_trainer.makeCovNet(model, input_nodes.size(), output_nodes.size(), 2, 2, 0, 32, 4, 7, 1, 2, 2, false, true, true);  // Sanity test
 		//model_trainer.makeCovNet(model, input_nodes.size(), output_nodes.size(), 8, 2, 128, 32, 5, 2, false, true);  // Minimal solving model
-		//model_trainer.makeCovNet(model, input_nodes.size(), output_nodes.size(), 32, 2, 1, 512, 32, 5, 1, 2, 2, true, true, true); // Recommended model
-		//model_trainer.makeCovNet(model, input_nodes.size(), output_nodes.size(), 32, 2, 0, 256, 32, 7, 1, 2, 2, false, true, true); // Recommended model
+		//model_trainer.makeCovNet(model, input_nodes.size(), output_nodes.size(), 32, 2, 0, 512, 32, 5, 1, 2, 2, true, true, true); // Recommended model
+		model_trainer.makeCovNet(model, input_nodes.size(), output_nodes.size(), 32, 2, 0, 256, 32, 7, 1, 2, 2, false, true, true, false); // Recommended model
 	}
 	else {
 		// read in the trained model

@@ -152,7 +152,7 @@ BOOST_AUTO_TEST_CASE(comparison1)
  * Part 1 test suit for the Model class
  *
  * The following test methods that are
- * required of a standard feed forward neural network
+ * required of a standard feed-forward neural network
 */
 
 Model<float> model_getNextInactiveLayer = makeModelToy1();
@@ -424,7 +424,7 @@ BOOST_AUTO_TEST_CASE(getFPOpsOoO)
 
   std::vector<OperationList<float>> FP_operations_expanded;
   int iter = 0;
-  model_interpreter.getFPOpsOoO_(model_getFPOpsOoO, true, FP_operations_expanded, iter);
+  model_interpreter.getFPOpsOoO_(model_getFPOpsOoO, FP_operations_expanded, iter);
 
   BOOST_CHECK_EQUAL(iter, 2);
   BOOST_CHECK_EQUAL(FP_operations_expanded.size(), 12);
@@ -727,9 +727,16 @@ BOOST_AUTO_TEST_CASE(getForwardPropogationLayerTensorDimensions)
   BOOST_CHECK(make_weight_tensors[1]);
 }
 
+/* MISSING TEST COVERAGE:
+1. no explicit test coverage for `setForwardPropogationLayerTensors_`
+  - would need to break into seperate functions `getForwardPropogationLayerTensorDimensions_` and `allocateForwardPropogationLayerTensors_`
+    in order to properly test
+2. no explicit test coverage for `checkFutureOperations_` and `checkPreviousOperations_`
+*/
+
 /*
-The following test the expected `tensor_ops_steps` and `FP_operations` for more
-complicated model structures
+The following tests test the expected `tensor_ops_steps` and `FP_operations` for more complicated model structures
+  that include Dot product attention, Variational Autoencoder, and Convolution networks
 */
 
 template<typename TensorT>
@@ -1109,7 +1116,7 @@ BOOST_AUTO_TEST_CASE(makeModelSolution1)
 
   int iter_test = 0;
   std::vector<OperationList<float>> FP_operations_expanded_test;
-  model_interpreter.getFPOpsOoO_(model_test, true, FP_operations_expanded_test, iter_test);
+  model_interpreter.getFPOpsOoO_(model_test, FP_operations_expanded_test, iter_test);
 
   std::set<std::string> identified_sink_nodes_test;
   std::map<std::string, std::vector<int>> tensor_ops_test = model_interpreter.getTensorOperations(FP_operations_expanded_test, identified_sink_nodes_test, true);
@@ -1120,7 +1127,7 @@ BOOST_AUTO_TEST_CASE(makeModelSolution1)
 
   int iter = 0;
   std::vector<OperationList<float>> FP_operations_expanded;
-  model_interpreter.getFPOpsOoO_(model, true, FP_operations_expanded, iter);
+  model_interpreter.getFPOpsOoO_(model, FP_operations_expanded, iter);
 
   std::set<std::string> identified_sink_nodes;
   std::map<std::string, std::vector<int>> tensor_ops = model_interpreter.getTensorOperations(FP_operations_expanded, identified_sink_nodes, false);
@@ -1152,7 +1159,7 @@ BOOST_AUTO_TEST_CASE(makeModelAttention1)
 
   int iter_test = 0;
   std::vector<OperationList<float>> FP_operations_expanded_test;
-  model_interpreter.getFPOpsOoO_(model_test, true, FP_operations_expanded_test, iter_test);
+  model_interpreter.getFPOpsOoO_(model_test, FP_operations_expanded_test, iter_test);
 
   std::set<std::string> identified_sink_nodes_test;
   std::map<std::string, std::vector<int>> tensor_ops_test = model_interpreter.getTensorOperations(FP_operations_expanded_test, identified_sink_nodes_test, true);
@@ -1163,7 +1170,7 @@ BOOST_AUTO_TEST_CASE(makeModelAttention1)
 
   int iter = 0;
   std::vector<OperationList<float>> FP_operations_expanded;
-  model_interpreter.getFPOpsOoO_(model, true, FP_operations_expanded, iter);
+  model_interpreter.getFPOpsOoO_(model, FP_operations_expanded, iter);
 
   std::set<std::string> identified_sink_nodes;
   std::map<std::string, std::vector<int>> tensor_ops = model_interpreter.getTensorOperations(FP_operations_expanded, identified_sink_nodes, false);
@@ -1195,7 +1202,7 @@ BOOST_AUTO_TEST_CASE(makeModelAttention2)
 
   int iter_test = 0;
   std::vector<OperationList<float>> FP_operations_expanded_test;
-  model_interpreter.getFPOpsOoO_(model_test, true, FP_operations_expanded_test, iter_test);
+  model_interpreter.getFPOpsOoO_(model_test, FP_operations_expanded_test, iter_test);
 
   std::set<std::string> identified_sink_nodes_test;
   std::map<std::string, std::vector<int>> tensor_ops_test = model_interpreter.getTensorOperations(FP_operations_expanded_test, identified_sink_nodes_test, true);
@@ -1206,7 +1213,7 @@ BOOST_AUTO_TEST_CASE(makeModelAttention2)
 
   int iter = 0;
   std::vector<OperationList<float>> FP_operations_expanded;
-  model_interpreter.getFPOpsOoO_(model, true, FP_operations_expanded, iter);
+  model_interpreter.getFPOpsOoO_(model, FP_operations_expanded, iter);
 
   std::set<std::string> identified_sink_nodes;
   std::map<std::string, std::vector<int>> tensor_ops = model_interpreter.getTensorOperations(FP_operations_expanded, identified_sink_nodes, false);
@@ -1238,7 +1245,7 @@ BOOST_AUTO_TEST_CASE(makeModelAttention3)
 
   int iter_test = 0;
   std::vector<OperationList<float>> FP_operations_expanded_test;
-  model_interpreter.getFPOpsOoO_(model_test, true, FP_operations_expanded_test, iter_test);
+  model_interpreter.getFPOpsOoO_(model_test, FP_operations_expanded_test, iter_test);
 
   std::set<std::string> identified_sink_nodes_test;
   std::map<std::string, std::vector<int>> tensor_ops_test = model_interpreter.getTensorOperations(FP_operations_expanded_test, identified_sink_nodes_test, true);
@@ -1249,7 +1256,7 @@ BOOST_AUTO_TEST_CASE(makeModelAttention3)
 
   int iter = 0;
   std::vector<OperationList<float>> FP_operations_expanded;
-  model_interpreter.getFPOpsOoO_(model, true, FP_operations_expanded, iter);
+  model_interpreter.getFPOpsOoO_(model, FP_operations_expanded, iter);
 
   std::set<std::string> identified_sink_nodes;
   std::map<std::string, std::vector<int>> tensor_ops = model_interpreter.getTensorOperations(FP_operations_expanded, identified_sink_nodes, false);
@@ -1281,7 +1288,7 @@ BOOST_AUTO_TEST_CASE(makeModelVAE1)
 
   int iter_test = 0;
   std::vector<OperationList<float>> FP_operations_expanded_test;
-  model_interpreter.getFPOpsOoO_(model_test, true, FP_operations_expanded_test, iter_test);
+  model_interpreter.getFPOpsOoO_(model_test, FP_operations_expanded_test, iter_test);
 
   std::set<std::string> identified_sink_nodes_test;
   std::map<std::string, std::vector<int>> tensor_ops_test = model_interpreter.getTensorOperations(FP_operations_expanded_test, identified_sink_nodes_test, true);
@@ -1292,7 +1299,7 @@ BOOST_AUTO_TEST_CASE(makeModelVAE1)
 
   int iter = 0;
   std::vector<OperationList<float>> FP_operations_expanded;
-  model_interpreter.getFPOpsOoO_(model, true, FP_operations_expanded, iter);
+  model_interpreter.getFPOpsOoO_(model, FP_operations_expanded, iter);
 
   std::set<std::string> identified_sink_nodes;
   std::map<std::string, std::vector<int>> tensor_ops = model_interpreter.getTensorOperations(FP_operations_expanded, identified_sink_nodes, false);
@@ -1324,7 +1331,7 @@ BOOST_AUTO_TEST_CASE(makeModelCovNet1)
 
   int iter_test = 0;
   std::vector<OperationList<float>> FP_operations_expanded_test;
-  model_interpreter.getFPOpsOoO_(model_test, true, FP_operations_expanded_test, iter_test);
+  model_interpreter.getFPOpsOoO_(model_test, FP_operations_expanded_test, iter_test);
 
   std::set<std::string> identified_sink_nodes_test;
   std::map<std::string, std::vector<int>> tensor_ops_test = model_interpreter.getTensorOperations(FP_operations_expanded_test, identified_sink_nodes_test, true);
@@ -1335,7 +1342,7 @@ BOOST_AUTO_TEST_CASE(makeModelCovNet1)
 
   int iter = 0;
   std::vector<OperationList<float>> FP_operations_expanded;
-  model_interpreter.getFPOpsOoO_(model, true, FP_operations_expanded, iter);
+  model_interpreter.getFPOpsOoO_(model, FP_operations_expanded, iter);
 
   std::set<std::string> identified_sink_nodes;
   std::map<std::string, std::vector<int>> tensor_ops = model_interpreter.getTensorOperations(FP_operations_expanded, identified_sink_nodes, false);

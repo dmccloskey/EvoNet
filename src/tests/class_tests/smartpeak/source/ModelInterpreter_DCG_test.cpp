@@ -553,7 +553,7 @@ BOOST_AUTO_TEST_CASE(makeModelLSTM1)
 
   int iter_test = 0;
   std::vector<OperationList<float>> FP_operations_expanded_test;
-  model_interpreter.getFPOpsOoO_(model_test, true, FP_operations_expanded_test, iter_test);
+  model_interpreter.getFPOpsOoO_(model_test, FP_operations_expanded_test, iter_test);
 
   std::set<std::string> identified_sink_nodes_test;
   std::map<std::string, std::vector<int>> tensor_ops_test = model_interpreter.getTensorOperations(FP_operations_expanded_test, identified_sink_nodes_test, true);
@@ -565,7 +565,7 @@ BOOST_AUTO_TEST_CASE(makeModelLSTM1)
 
   int iter = 0;
   std::vector<OperationList<float>> FP_operations_expanded;
-  model_interpreter.getFPOpsOoO_(model, true, FP_operations_expanded, iter);
+  model_interpreter.getFPOpsOoO_(model, FP_operations_expanded, iter);
 
   std::set<std::string> identified_sink_nodes;
   std::map<std::string, std::vector<int>> tensor_ops = model_interpreter.getTensorOperations(FP_operations_expanded, identified_sink_nodes, false);
@@ -597,7 +597,7 @@ BOOST_AUTO_TEST_CASE(makeModelLSTM2)
 
   int iter_test = 0;
   std::vector<OperationList<float>> FP_operations_expanded_test;
-  model_interpreter.getFPOpsOoO_(model_test, true, FP_operations_expanded_test, iter_test);
+  model_interpreter.getFPOpsOoO_(model_test, FP_operations_expanded_test, iter_test);
 
   std::set<std::string> identified_sink_nodes_test;
   std::map<std::string, std::vector<int>> tensor_ops_test = model_interpreter.getTensorOperations(FP_operations_expanded_test, identified_sink_nodes_test, true);
@@ -609,7 +609,7 @@ BOOST_AUTO_TEST_CASE(makeModelLSTM2)
 
   int iter = 0;
   std::vector<OperationList<float>> FP_operations_expanded;
-  model_interpreter.getFPOpsOoO_(model, true, FP_operations_expanded, iter);
+  model_interpreter.getFPOpsOoO_(model, FP_operations_expanded, iter);
 
   std::set<std::string> identified_sink_nodes;
   std::map<std::string, std::vector<int>> tensor_ops = model_interpreter.getTensorOperations(FP_operations_expanded, identified_sink_nodes, false);

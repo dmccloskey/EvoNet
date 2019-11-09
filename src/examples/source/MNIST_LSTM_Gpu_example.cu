@@ -26,8 +26,7 @@ public:
 	Pixel by Pixel MNIST.  Examples include the following:
 		arXiv:1511.06464: 128 hidden units, alpha = 1e-3, gradient clipping of 1, highest test accuracy of 98.2%
 		arXiv:1504.00941: 100 hidden units, alpha = 0.01, forget_gate_bias = 1, gradient clipping of 1, lowest test error rate of 3%
-		arXiv:1504.00941: 100 hidden units, alpha = 10e-8, all weights initialized to 1 and all biases initialized to 0, gradient clipping of 1, lowest test error rate of 3%
-		arXiv:1801.06105
+		arXiv:1801.06105: 100 hidden units, alpha = 1e-6, gradient clipping of 1
 
 	@param[in, out] model The network model
 	@param[in] n_inputs The number of pixel inputs
@@ -108,6 +107,9 @@ public:
 	/*
 	@brief RNN classifier
 
+  References
+		arXiv:1504.00941: 100 hidden units, alpha = 10e-8, all weights initialized to 1 and all biases initialized to 0, gradient clipping of 1, lowest test error rate of 3%
+
 	@param[in, out] model The network model
 	@param[in] n_inputs The number of pixel inputs
 	@param[in] n_outputs The number of classifier outputs
@@ -116,7 +118,7 @@ public:
 	@param[in] specify_layers Whether to give the `ModelInterpreter` "hints" as to the correct network structure during graph to tensor compilation
 	*/
 	void makeRNN(Model<TensorT>& model, const int& n_inputs = 784, const int& n_outputs = 10,
-		const int& n_hidden_0 = 32, const int& n_hidden_1 = 32, const bool& add_norm = true, const bool& specify_layers = true) {
+		const int& n_hidden_0 = 32, const int& n_hidden_1 = 32, const bool& add_identity = false, const bool& add_norm = true, const bool& specify_layers = true) {
 		model.setId(0);
 		model.setName("RNN");
 
@@ -152,7 +154,16 @@ public:
 				solver_op, 0.0f, 0.0f, false, specify_layers);
 			model_builder.addSinglyConnected(model, "EN0-Rec", node_names, node_names,
 				std::make_shared<ConstWeightInitOp<TensorT>>(ConstWeightInitOp<TensorT>(TensorT(1))),
-				std::make_shared<DummySolverOp<TensorT>>(DummySolverOp<TensorT>()), 0.0f, specify_layers);
+				solver_op, 0.0f, specify_layers);
+      if (add_identity) {
+        std::vector<std::string> node_names_tmp = model_builder.addSinglyConnected(model, "EN0-Identity0", "EN0-Identity0", node_names, node_names.size(),
+          activation, activation_grad, integration_op, integration_error_op, integration_weight_grad_op,
+          std::make_shared<ConstWeightInitOp<TensorT>>(ConstWeightInitOp<TensorT>(TensorT(1))),
+          std::make_shared<DummySolverOp<TensorT>>(DummySolverOp<TensorT>()), 0.0f, false, specify_layers);
+        model_builder.addSinglyConnected(model, "EN0-Identity1", node_names_tmp, node_names,
+          std::make_shared<ConstWeightInitOp<TensorT>>(ConstWeightInitOp<TensorT>(TensorT(1))),
+          std::make_shared<DummySolverOp<TensorT>>(DummySolverOp<TensorT>()), 0.0f, specify_layers);
+      }
 			if (add_norm) {
 				node_names = model_builder.addNormalization(model, "EN0-Norm", "EN0-Norm", node_names, true);
 				node_names = model_builder.addSinglyConnected(model, "EN0-Norm-gain", "EN0-Norm-gain", node_names, node_names.size(),
@@ -173,7 +184,16 @@ public:
 				solver_op, 0.0f, 0.0f, false, specify_layers);
 			model_builder.addSinglyConnected(model, "EN1-Rec", node_names, node_names,
 				std::make_shared<ConstWeightInitOp<TensorT>>(ConstWeightInitOp<TensorT>(TensorT(1))),
-				std::make_shared<DummySolverOp<TensorT>>(DummySolverOp<TensorT>()), 0.0f, specify_layers);
+				solver_op, 0.0f, specify_layers);
+      if (add_identity) {
+        std::vector<std::string> node_names_tmp = model_builder.addSinglyConnected(model, "EN1-Identity0", "EN1-Identity0", node_names, node_names.size(),
+          activation, activation_grad, integration_op, integration_error_op, integration_weight_grad_op,
+          std::make_shared<ConstWeightInitOp<TensorT>>(ConstWeightInitOp<TensorT>(TensorT(1))),
+          std::make_shared<DummySolverOp<TensorT>>(DummySolverOp<TensorT>()), 0.0f, false, specify_layers);
+        model_builder.addSinglyConnected(model, "EN1-Identity1", node_names_tmp, node_names,
+          std::make_shared<ConstWeightInitOp<TensorT>>(ConstWeightInitOp<TensorT>(TensorT(1))),
+          std::make_shared<DummySolverOp<TensorT>>(DummySolverOp<TensorT>()), 0.0f, specify_layers);
+      }
 			if (add_norm) {
 				node_names = model_builder.addNormalization(model, "EN1-Norm", "EN1-Norm", node_names, true);
 				node_names = model_builder.addSinglyConnected(model, "EN1-Norm-gain", "EN1-Norm-gain", node_names, node_names.size(),
@@ -194,9 +214,7 @@ public:
 		node_names = model_builder.addSinglyConnected(model, "Output", "Output", node_names, n_outputs,
 			std::make_shared<LinearOp<TensorT>>(LinearOp<TensorT>()),
 			std::make_shared<LinearGradOp<TensorT>>(LinearGradOp<TensorT>()),
-			std::make_shared<SumOp<TensorT>>(SumOp<TensorT>()),
-			std::make_shared<SumErrorOp<TensorT>>(SumErrorOp<TensorT>()),
-			std::make_shared<SumWeightGradOp<TensorT>>(SumWeightGradOp<TensorT>()),
+      integration_op, integration_error_op, integration_weight_grad_op,
 			std::make_shared<ConstWeightInitOp<TensorT>>(ConstWeightInitOp<TensorT>(1)),
 			std::make_shared<DummySolverOp<TensorT>>(DummySolverOp<TensorT>()), 0.0f, 0.0f, false, true);
 
@@ -475,7 +493,7 @@ void main_MNIST(const std::string& data_dir, const bool& make_model, const bool&
 	std::cout << "Initializing the population..." << std::endl;
 	Model<float> model;
 	if (make_model) {
-		model_trainer.makeRNN(model, input_nodes.size(), output_nodes.size(), 128, 128, true, true);
+		model_trainer.makeRNN(model, input_nodes.size(), output_nodes.size(), 128, 128, true, true, true);
 		//model_trainer.makeLSTM(model, input_nodes.size(), output_nodes.size(), n_blocks_1, n_cells_1, n_blocks_2, n_cells_2, n_hidden, add_forget_gate, true);
 	}
 	else {
