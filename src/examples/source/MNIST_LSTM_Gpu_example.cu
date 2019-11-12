@@ -144,7 +144,7 @@ public:
 		auto integration_weight_grad_op = std::make_shared<SumWeightGradOp<TensorT>>(SumWeightGradOp<TensorT>());
 
 		// Define the solver
-		auto solver_op = std::make_shared<AdamOp<TensorT>>(AdamOp<TensorT>(1e-4, 0.9, 0.999, 1e-8, 10));
+		auto solver_op = std::make_shared<AdamOp<TensorT>>(AdamOp<TensorT>(1e-3, 0.9, 0.999, 1e-8, 10));
 
 		// Add the 1st RNN layer
 		if (n_hidden_0 > 0) {
