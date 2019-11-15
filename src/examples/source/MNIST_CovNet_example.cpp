@@ -733,11 +733,13 @@ void main_MNIST(const std::string& data_dir, const bool& make_model, const bool&
 	Model<float> model;
 	if (make_model) {
 		std::cout << "Making the model..." << std::endl;
-		model_trainer.makeFullyConn(model, input_nodes.size(), output_nodes.size(), 8, 8, 0, true, true);  // Sanity test
-		//model_trainer.makeCovNet(model, input_nodes.size(), output_nodes.size(), 2, 2, 0, 32, 4, 7, 1, 2, 2, false, true, true);  // Sanity test
+		model_trainer.makeCovNet(model, 36, 2, 1, 1, 0, 8, 1, 3, 1, 2, 2, true, true, true);  // Sanity test
 		//model_trainer.makeCovNet(model, input_nodes.size(), output_nodes.size(), 8, 2, 128, 32, 5, 2, false, true);  // Minimal solving model
 		//model_trainer.makeCovNet(model, input_nodes.size(), output_nodes.size(), 32, 2, 1, 512, 32, 5, 1, 2, 2, true, true, true); // Recommended model
 		//model_trainer.makeCovNet(model, input_nodes.size(), output_nodes.size(), 32, 2, 0, 256, 32, 7, 1, 2, 2, false, true, true); // Recommended model
+
+    ModelFile<float> model_file;
+    model_file.storeModelDot(data_dir + model.getName() + ".gv", model);
 	}
 	else {
 		// read in the trained model
