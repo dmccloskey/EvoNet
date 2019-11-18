@@ -196,8 +196,10 @@ public:
 
     // Add the output nodes
     node_names = model_builder.addFullyConnected(model, "DE_Intensity_Out", "DE_Intensity_Out", node_names, n_inputs,
-      std::make_shared<LeakyReLUOp<TensorT>>(LeakyReLUOp<TensorT>()),
-      std::make_shared<LeakyReLUGradOp<TensorT>>(LeakyReLUGradOp<TensorT>()), 
+      std::make_shared<SigmoidOp<TensorT>>(SigmoidOp<TensorT>()),
+      std::make_shared<SigmoidGradOp<TensorT>>(SigmoidGradOp<TensorT>()),
+      //std::make_shared<LeakyReLUOp<TensorT>>(LeakyReLUOp<TensorT>()),
+      //std::make_shared<LeakyReLUGradOp<TensorT>>(LeakyReLUGradOp<TensorT>()), 
       integration_op, integration_error_op, integration_weight_grad_op,
       std::make_shared<RandWeightInitOp<TensorT>>(RandWeightInitOp<TensorT>(node_names.size(), 1)),
       solver_op, 0.0f, 0.0f, false, specify_layers);
@@ -245,8 +247,10 @@ public:
 
     // Add the output nodes
     node_names = model_builder.addFullyConnected(model, "DE_IsPeakApex_Out", "DE_IsPeakApex_Out", node_names, n_inputs,
-      std::make_shared<LeakyReLUOp<TensorT>>(LeakyReLUOp<TensorT>()),
-      std::make_shared<LeakyReLUGradOp<TensorT>>(LeakyReLUGradOp<TensorT>()), 
+      std::make_shared<SigmoidOp<TensorT>>(SigmoidOp<TensorT>()),
+      std::make_shared<SigmoidGradOp<TensorT>>(SigmoidGradOp<TensorT>()),
+      //std::make_shared<LeakyReLUOp<TensorT>>(LeakyReLUOp<TensorT>()),
+      //std::make_shared<LeakyReLUGradOp<TensorT>>(LeakyReLUGradOp<TensorT>()), 
       integration_op, integration_error_op, integration_weight_grad_op,
       std::make_shared<RandWeightInitOp<TensorT>>(RandWeightInitOp<TensorT>(node_names.size(), 1)),
       solver_op, 0.0f, 0.0f, false, specify_layers);
@@ -293,8 +297,10 @@ public:
 
     // Add the output nodes
     node_names = model_builder.addFullyConnected(model, "DE_IsPeak_Out", "DE_IsPeak_Out", node_names, n_inputs,
-      std::make_shared<LeakyReLUOp<TensorT>>(LeakyReLUOp<TensorT>()),
-      std::make_shared<LeakyReLUGradOp<TensorT>>(LeakyReLUGradOp<TensorT>()), 
+      std::make_shared<SigmoidOp<TensorT>>(SigmoidOp<TensorT>()),
+      std::make_shared<SigmoidGradOp<TensorT>>(SigmoidGradOp<TensorT>()),
+      //std::make_shared<LeakyReLUOp<TensorT>>(LeakyReLUOp<TensorT>()),
+      //std::make_shared<LeakyReLUGradOp<TensorT>>(LeakyReLUGradOp<TensorT>()), 
       integration_op, integration_error_op, integration_weight_grad_op,
       std::make_shared<RandWeightInitOp<TensorT>>(RandWeightInitOp<TensorT>(node_names.size(), 1)),
       solver_op, 0.0f, 0.0f, false, specify_layers);
