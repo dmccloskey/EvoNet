@@ -25,6 +25,7 @@ set(graph_executables_list
 set(ml_executables_list
   ActivationFunction_test
   ActivationFunctionTensor_test
+  ActivationFunctionTensorGpu_test
   IntegrationFunction_test
   IntegrationFunctionTensor_test
   IntegrationFunctionTensorGpu_test
