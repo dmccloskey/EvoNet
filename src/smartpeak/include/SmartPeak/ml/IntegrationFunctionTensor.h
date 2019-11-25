@@ -54,25 +54,25 @@ public:
 		SumTensorOp() {};
 		~SumTensorOp() {};
 		void operator()(TensorT* source_output, TensorT* weights, TensorT* sink_input, const int& batch_size, const int& memory_size, const int& source_layer_size, const int& sink_layer_size, const int& source_time_step, const int& sink_time_step, DeviceT& device) {
-			//Eigen::TensorMap<Eigen::Tensor<TensorT, 3>> sink_input_tensor(sink_input, batch_size, memory_size, sink_layer_size);
-			//Eigen::TensorMap<Eigen::Tensor<TensorT, 3>> source_output_tensor(source_output, batch_size, memory_size, source_layer_size);
-			//Eigen::TensorMap<Eigen::Tensor<TensorT, 2>> weight_tensor(weights, source_layer_size, sink_layer_size);
-			//Eigen::array<Eigen::IndexPair<int>, 1> product_dims = { Eigen::IndexPair<int>(1, 0) };
-			//sink_input_tensor.chip(sink_time_step, 1).device(device) += (source_output_tensor.chip(source_time_step, 1)).contract(weight_tensor, product_dims);
-
-      Eigen::TensorMap<Eigen::Tensor<TensorT, 3>> sink_input_tensor(sink_input, batch_size, memory_size, sink_layer_size);
-      Eigen::TensorMap<Eigen::Tensor<TensorT, 4>> source_output_tensor(source_output, batch_size, memory_size, source_layer_size, 1);
-      Eigen::TensorMap<Eigen::Tensor<TensorT, 3>> weight_tensor(weights, 1, source_layer_size, sink_layer_size);
+      operator_(source_output, weights, sink_input, batch_size, memory_size, source_layer_size, sink_layer_size, source_time_step, sink_time_step, device);
+		};
+    template<typename TT=TensorT, std::enable_if_t<std::is_same<TT, double>::value, int> = 0>
+    void operator_(TT* source_output, TT* weights, TT* sink_input, const int& batch_size, const int& memory_size, const int& source_layer_size, const int& sink_layer_size, const int& source_time_step, const int& sink_time_step, DeviceT& device){
+      Eigen::TensorMap<Eigen::Tensor<TT, 3>> sink_input_tensor(sink_input, batch_size, memory_size, sink_layer_size);
+      Eigen::TensorMap<Eigen::Tensor<TT, 4>> source_output_tensor(source_output, batch_size, memory_size, source_layer_size, 1);
+      Eigen::TensorMap<Eigen::Tensor<TT, 3>> weight_tensor(weights, 1, source_layer_size, sink_layer_size);
       auto weight_tensor_exp = weight_tensor.broadcast(Eigen::array<int, 3>({ batch_size, 1, 1 }));
       auto source_bcast = source_output_tensor.chip(source_time_step, 1).broadcast(Eigen::array<int, 3>({ 1, 1, sink_layer_size }));
       sink_input_tensor.chip(sink_time_step, 1).device(device) += (source_bcast * weight_tensor_exp).sum(Eigen::array<int, 1>({ 1 })).eval();
-
-      //// DEBUG (only on CPU)
-      //std::cout << "[SumTensorOp]Sink Time step " << sink_time_step << std::endl;
-      //std::cout << "[SumTensorOp]Source: " << source_output_tensor.chip(source_time_step, 1) << std::endl;
-      //std::cout << "[SumTensorOp]Weight: " << weight_tensor << std::endl;
-      //std::cout << "[SumTensorOp]Sink (End): " << sink_input_tensor.chip(sink_time_step, 1) << std::endl;
-		};
+    }
+    template<typename TT = TensorT, std::enable_if_t<!std::is_same<TT, double>::value, int> = 0>
+    void operator_(TT* source_output, TT* weights, TT* sink_input, const int& batch_size, const int& memory_size, const int& source_layer_size, const int& sink_layer_size, const int& source_time_step, const int& sink_time_step, DeviceT& device){
+      Eigen::TensorMap<Eigen::Tensor<TT, 3>> sink_input_tensor(sink_input, batch_size, memory_size, sink_layer_size);
+      Eigen::TensorMap<Eigen::Tensor<TT, 3>> source_output_tensor(source_output, batch_size, memory_size, source_layer_size);
+      Eigen::TensorMap<Eigen::Tensor<TT, 2>> weight_tensor(weights, source_layer_size, sink_layer_size);
+      Eigen::array<Eigen::IndexPair<int>, 1> product_dims = { Eigen::IndexPair<int>(1, 0) };
+      sink_input_tensor.chip(sink_time_step, 1).device(device) += (source_output_tensor.chip(source_time_step, 1)).contract(weight_tensor, product_dims);
+    }
 		std::string getName() const { return "SumTensorOp"; };
 	//private:
 	//	friend class cereal::access;
@@ -141,13 +141,6 @@ public:
         assert(cudaFree(tmp_data) == cudaSuccess);
       }
 #endif
-
-      //// DEBUG (only on CPU)
-      //std::cout << "[ProdTensorOp]Source: " << source_output_tensor.chip(source_time_step, 1) << std::endl;
-      //std::cout << "[ProdTensorOp]Weight: " << weight_tensor << std::endl;
-      //std::cout << "[ProdTensorOp]source_weight_exp: " << source_weight_exp << std::endl;
-      //std::cout << "[ProdTensorOp]source_weight_1: " << source_weight_1 << std::endl;
-      //std::cout << "[ProdTensorOp]Sink (End): " << sink_input_tensor.chip(sink_time_step, 1) << std::endl;
 		}
 		std::string getName() const { return "ProdTensorOp"; };
 	//private:
@@ -273,11 +266,6 @@ public:
      
       // Step 5: Replace all 1e24 with 0
       sink_input_tensor.chip(sink_time_step, 1).device(device) = (sink_input_tensor_tmp >= sink_input_tensor_tmp.constant(TensorT(1e24))).select(sink_input_tensor_tmp.constant(TensorT(0)), sink_input_tensor_tmp);
-
-      //// DEBUG (only on CPU)
-      //std::cout << "Source: "<< source_output_tensor.chip(source_time_step, 1) << std::endl;
-      //std::cout << "Weight: " << weight_tensor << std::endl;
-      //std::cout << "Sink: " << sink_input_tensor.chip(sink_time_step, 1) << std::endl;
 
       if (typeid(device).name() == typeid(Eigen::DefaultDevice).name()) {
         delete[] tmp_data;
@@ -435,22 +423,27 @@ public:
 		SumErrorTensorOp() {};
 		~SumErrorTensorOp() {};
 		void operator()(TensorT* source_error, TensorT *source_input, TensorT* weight, TensorT* sink_output, TensorT* sink_error, TensorT* sink_derivative, const int& n_input_nodes, const int& batch_size, const int& memory_size, const int& source_layer_size, const int& sink_layer_size, const int& source_time_step, const int& sink_time_step, DeviceT& device) {
-			//Eigen::TensorMap<Eigen::Tensor<TensorT, 3>> sink_error_tensor(sink_error, batch_size, memory_size, sink_layer_size);
-			//Eigen::TensorMap<Eigen::Tensor<TensorT, 3>> sink_derivative_tensor(sink_derivative, batch_size, memory_size, sink_layer_size);
-			//Eigen::TensorMap<Eigen::Tensor<TensorT, 3>> source_error_tensor(source_error, batch_size, memory_size, source_layer_size);
-			//Eigen::TensorMap<Eigen::Tensor<TensorT, 2>> weight_tensor(weight, sink_layer_size, source_layer_size); // NOTE: source/sink are reversed
-			//Eigen::array<Eigen::IndexPair<int>, 1> product_dims = { Eigen::IndexPair<int>(1, 0) }; // NOTE: we are taking the transpose of the weight matrix
-			//sink_error_tensor.chip(sink_time_step, 1).device(device) += (source_error_tensor.chip(source_time_step, 1)).contract(weight_tensor.shuffle(Eigen::array<int, 2>({ 1, 0 })), product_dims) * (sink_derivative_tensor.chip(sink_time_step, 1));
- 
-      Eigen::TensorMap<Eigen::Tensor<TensorT, 3>> sink_error_tensor(sink_error, batch_size, memory_size, sink_layer_size);
-      Eigen::TensorMap<Eigen::Tensor<TensorT, 3>> sink_derivative_tensor(sink_derivative, batch_size, memory_size, sink_layer_size);
-      Eigen::TensorMap<Eigen::Tensor<TensorT, 4>> source_error_tensor(source_error, batch_size, memory_size, 1, source_layer_size);
-      Eigen::TensorMap<Eigen::Tensor<TensorT, 3>> weight_tensor(weight, 1, sink_layer_size, source_layer_size); // NOTE: source/sink are reversed
-      auto source_error_bcast = source_error_tensor.chip(source_time_step, 1).broadcast(Eigen::array<Eigen::Index, 3>({1, sink_layer_size, 1}));
+      operator_(source_error, source_input, weight, sink_output, sink_error, sink_derivative, n_input_nodes, batch_size, memory_size, source_layer_size, sink_layer_size, source_time_step, sink_time_step, device);
+		};
+    template<typename TT = TensorT, std::enable_if_t<std::is_same<TT, double>::value, int> = 0>
+    void operator_(TT* source_error, TT* source_input, TT* weight, TT* sink_output, TT* sink_error, TT* sink_derivative, const int& n_input_nodes, const int& batch_size, const int& memory_size, const int& source_layer_size, const int& sink_layer_size, const int& source_time_step, const int& sink_time_step, DeviceT& device) {
+      Eigen::TensorMap<Eigen::Tensor<TT, 3>> sink_error_tensor(sink_error, batch_size, memory_size, sink_layer_size);
+      Eigen::TensorMap<Eigen::Tensor<TT, 3>> sink_derivative_tensor(sink_derivative, batch_size, memory_size, sink_layer_size);
+      Eigen::TensorMap<Eigen::Tensor<TT, 4>> source_error_tensor(source_error, batch_size, memory_size, 1, source_layer_size);
+      Eigen::TensorMap<Eigen::Tensor<TT, 3>> weight_tensor(weight, 1, sink_layer_size, source_layer_size); // NOTE: source/sink are reversed
+      auto source_error_bcast = source_error_tensor.chip(source_time_step, 1).broadcast(Eigen::array<Eigen::Index, 3>({ 1, sink_layer_size, 1 }));
       auto weight_bcast = weight_tensor.broadcast(Eigen::array<Eigen::Index, 3>({ batch_size, 1, 1 }));
       sink_error_tensor.chip(sink_time_step, 1).device(device) += (source_error_bcast * weight_bcast).sum(Eigen::array<int, 1>({ 2 })) * sink_derivative_tensor.chip(sink_time_step, 1);
-
-		};
+    }
+    template<typename TT = TensorT, std::enable_if_t<!std::is_same<TT, double>::value, int> = 0>
+    void operator_(TT* source_error, TT* source_input, TT* weight, TT* sink_output, TT* sink_error, TT* sink_derivative, const int& n_input_nodes, const int& batch_size, const int& memory_size, const int& source_layer_size, const int& sink_layer_size, const int& source_time_step, const int& sink_time_step, DeviceT& device) {
+      Eigen::TensorMap<Eigen::Tensor<TT, 3>> sink_error_tensor(sink_error, batch_size, memory_size, sink_layer_size);
+      Eigen::TensorMap<Eigen::Tensor<TT, 3>> sink_derivative_tensor(sink_derivative, batch_size, memory_size, sink_layer_size);
+      Eigen::TensorMap<Eigen::Tensor<TT, 3>> source_error_tensor(source_error, batch_size, memory_size, source_layer_size);
+      Eigen::TensorMap<Eigen::Tensor<TT, 2>> weight_tensor(weight, sink_layer_size, source_layer_size); // NOTE: source/sink are reversed
+      Eigen::array<Eigen::IndexPair<int>, 1> product_dims = { Eigen::IndexPair<int>(1, 0) }; // NOTE: we are taking the transpose of the weight matrix
+      sink_error_tensor.chip(sink_time_step, 1).device(device) += (source_error_tensor.chip(source_time_step, 1)).contract(weight_tensor.shuffle(Eigen::array<int, 2>({ 1, 0 })), product_dims) * (sink_derivative_tensor.chip(sink_time_step, 1));
+    }
 		std::string getName() const { return "SumErrorTensorOp"; };
 	//private:
 	//	friend class cereal::access;
@@ -626,22 +619,28 @@ public:
 	public:
 		MeanErrorTensorOp() {};
 		~MeanErrorTensorOp() {};
-		void operator()(TensorT* source_error, TensorT *source_input, TensorT* weight, TensorT* sink_output, TensorT* sink_error, TensorT* sink_derivative, const int& n_input_nodes, const int& batch_size, const int& memory_size, const int& source_layer_size, const int& sink_layer_size, const int& source_time_step, const int& sink_time_step, DeviceT& device)  {
-			//Eigen::TensorMap<Eigen::Tensor<TensorT, 3>> sink_error_tensor(sink_error, batch_size, memory_size, sink_layer_size);
-			//Eigen::TensorMap<Eigen::Tensor<TensorT, 3>> sink_derivative_tensor(sink_derivative, batch_size, memory_size, sink_layer_size);
-			//Eigen::TensorMap<Eigen::Tensor<TensorT, 3>> source_error_tensor(source_error, batch_size, memory_size, source_layer_size);
-			//Eigen::TensorMap<Eigen::Tensor<TensorT, 2>> weight_tensor(weight, sink_layer_size, source_layer_size); // NOTE: source/sink are reversed
-			//Eigen::array<Eigen::IndexPair<int>, 1> product_dims = { Eigen::IndexPair<int>(1, 0) }; // NOTE: we are taking the transpose of the weight matrix
-			//sink_error_tensor.chip(sink_time_step, 1).device(device) += (source_error_tensor.chip(source_time_step, 1)).contract(weight_tensor.shuffle(Eigen::array<int, 2>({ 1, 0 })), product_dims) * sink_error_tensor.chip(sink_time_step, 1).constant(TensorT(1)/(TensorT)n_input_nodes) * (sink_derivative_tensor.chip(sink_time_step, 1));
-      Eigen::TensorMap<Eigen::Tensor<TensorT, 3>> sink_error_tensor(sink_error, batch_size, memory_size, sink_layer_size);
-      Eigen::TensorMap<Eigen::Tensor<TensorT, 3>> sink_derivative_tensor(sink_derivative, batch_size, memory_size, sink_layer_size);
-      Eigen::TensorMap<Eigen::Tensor<TensorT, 4>> source_error_tensor(source_error, batch_size, memory_size, 1, source_layer_size);
-      Eigen::TensorMap<Eigen::Tensor<TensorT, 3>> weight_tensor(weight, 1, sink_layer_size, source_layer_size); // NOTE: source/sink are reversed
+    void operator()(TensorT* source_error, TensorT* source_input, TensorT* weight, TensorT* sink_output, TensorT* sink_error, TensorT* sink_derivative, const int& n_input_nodes, const int& batch_size, const int& memory_size, const int& source_layer_size, const int& sink_layer_size, const int& source_time_step, const int& sink_time_step, DeviceT& device) {
+      operator_(source_error, source_input, weight, sink_output, sink_error, sink_derivative, n_input_nodes, batch_size, memory_size, source_layer_size, sink_layer_size, source_time_step, sink_time_step, device);
+    };
+    template<typename TT = TensorT, std::enable_if_t<std::is_same<TT, double>::value, int> = 0>
+    void operator_(TT* source_error, TT* source_input, TT* weight, TT* sink_output, TT* sink_error, TT* sink_derivative, const int& n_input_nodes, const int& batch_size, const int& memory_size, const int& source_layer_size, const int& sink_layer_size, const int& source_time_step, const int& sink_time_step, DeviceT& device) {
+      Eigen::TensorMap<Eigen::Tensor<TT, 3>> sink_error_tensor(sink_error, batch_size, memory_size, sink_layer_size);
+      Eigen::TensorMap<Eigen::Tensor<TT, 3>> sink_derivative_tensor(sink_derivative, batch_size, memory_size, sink_layer_size);
+      Eigen::TensorMap<Eigen::Tensor<TT, 4>> source_error_tensor(source_error, batch_size, memory_size, 1, source_layer_size);
+      Eigen::TensorMap<Eigen::Tensor<TT, 3>> weight_tensor(weight, 1, sink_layer_size, source_layer_size); // NOTE: source/sink are reversed
       auto source_error_bcast = source_error_tensor.chip(source_time_step, 1).broadcast(Eigen::array<Eigen::Index, 3>({ 1, sink_layer_size, 1 }));
       auto weight_bcast = weight_tensor.broadcast(Eigen::array<Eigen::Index, 3>({ batch_size, 1, 1 }));
-      sink_error_tensor.chip(sink_time_step, 1).device(device) += (source_error_bcast * weight_bcast).sum(Eigen::array<int, 1>({ 2 })) * sink_error_tensor.chip(sink_time_step, 1).constant(TensorT(1) / (TensorT)n_input_nodes) * (sink_derivative_tensor.chip(sink_time_step, 1));
-
-		};
+      sink_error_tensor.chip(sink_time_step, 1).device(device) += (source_error_bcast * weight_bcast).sum(Eigen::array<int, 1>({ 2 })) * sink_error_tensor.chip(sink_time_step, 1).constant(TT(1) / (TT)n_input_nodes) * (sink_derivative_tensor.chip(sink_time_step, 1));
+    }
+    template<typename TT = TensorT, std::enable_if_t<!std::is_same<TT, double>::value, int> = 0>
+    void operator_(TT* source_error, TT* source_input, TT* weight, TT* sink_output, TT* sink_error, TT* sink_derivative, const int& n_input_nodes, const int& batch_size, const int& memory_size, const int& source_layer_size, const int& sink_layer_size, const int& source_time_step, const int& sink_time_step, DeviceT& device) {
+      Eigen::TensorMap<Eigen::Tensor<TT, 3>> sink_error_tensor(sink_error, batch_size, memory_size, sink_layer_size);
+      Eigen::TensorMap<Eigen::Tensor<TT, 3>> sink_derivative_tensor(sink_derivative, batch_size, memory_size, sink_layer_size);
+      Eigen::TensorMap<Eigen::Tensor<TT, 3>> source_error_tensor(source_error, batch_size, memory_size, source_layer_size);
+      Eigen::TensorMap<Eigen::Tensor<TT, 2>> weight_tensor(weight, sink_layer_size, source_layer_size); // NOTE: source/sink are reversed
+      Eigen::array<Eigen::IndexPair<int>, 1> product_dims = { Eigen::IndexPair<int>(1, 0) }; // NOTE: we are taking the transpose of the weight matrix
+      sink_error_tensor.chip(sink_time_step, 1).device(device) += (source_error_tensor.chip(source_time_step, 1)).contract(weight_tensor.shuffle(Eigen::array<int, 2>({ 1, 0 })), product_dims) * sink_error_tensor.chip(sink_time_step, 1).constant(TT(1)/(TT)n_input_nodes) * (sink_derivative_tensor.chip(sink_time_step, 1));
+    }
 		std::string getName() const { return "MeanErrorTensorOp"; };
 	//private:
 	//	friend class cereal::access;
@@ -660,25 +659,31 @@ public:
 	public:
 		VarModErrorTensorOp() {};
 		~VarModErrorTensorOp() {};
-		void operator()(TensorT* source_error, TensorT *source_input, TensorT* weight, TensorT* sink_output, TensorT* sink_error, TensorT* sink_derivative, const int& n_input_nodes, const int& batch_size, const int& memory_size, const int& source_layer_size, const int& sink_layer_size, const int& source_time_step, const int& sink_time_step, DeviceT& device) {
-			//Eigen::TensorMap<Eigen::Tensor<TensorT, 3>> sink_error_tensor(sink_error, batch_size, memory_size, sink_layer_size);
-			//Eigen::TensorMap<Eigen::Tensor<TensorT, 3>> sink_derivative_tensor(sink_derivative, batch_size, memory_size, sink_layer_size);
-			//Eigen::TensorMap<Eigen::Tensor<TensorT, 3>> source_error_tensor(source_error, batch_size, memory_size, source_layer_size);
-			//Eigen::TensorMap<Eigen::Tensor<TensorT, 2>> weight_tensor(weight, sink_layer_size, source_layer_size); // NOTE: source/sink are reversed
-			//Eigen::array<Eigen::IndexPair<int>, 1> product_dims = { Eigen::IndexPair<int>(1, 0) }; // NOTE: we are taking the transpose of the weight matrix
-			//sink_error_tensor.chip(sink_time_step, 1).device(device) += (source_error_tensor.chip(source_time_step, 1)).contract(weight_tensor.shuffle(Eigen::array<int, 2>({ 1, 0 })), product_dims) 
-			//	* sink_error_tensor.chip(sink_time_step, 1).constant(TensorT(1) / (TensorT)n_input_nodes).eval() * sink_error_tensor.chip(sink_time_step, 1).constant((TensorT)2).eval()
-			//	* (sink_derivative_tensor.chip(sink_time_step, 1));
-      Eigen::TensorMap<Eigen::Tensor<TensorT, 3>> sink_error_tensor(sink_error, batch_size, memory_size, sink_layer_size);
-      Eigen::TensorMap<Eigen::Tensor<TensorT, 3>> sink_derivative_tensor(sink_derivative, batch_size, memory_size, sink_layer_size);
-      Eigen::TensorMap<Eigen::Tensor<TensorT, 4>> source_error_tensor(source_error, batch_size, memory_size, 1, source_layer_size);
-      Eigen::TensorMap<Eigen::Tensor<TensorT, 3>> weight_tensor(weight, 1, sink_layer_size, source_layer_size); // NOTE: source/sink are reversed
+    void operator()(TensorT* source_error, TensorT* source_input, TensorT* weight, TensorT* sink_output, TensorT* sink_error, TensorT* sink_derivative, const int& n_input_nodes, const int& batch_size, const int& memory_size, const int& source_layer_size, const int& sink_layer_size, const int& source_time_step, const int& sink_time_step, DeviceT& device) {
+      operator_(source_error, source_input, weight, sink_output, sink_error, sink_derivative, n_input_nodes, batch_size, memory_size, source_layer_size, sink_layer_size, source_time_step, sink_time_step, device);
+    };
+    template<typename TT = TensorT, std::enable_if_t<std::is_same<TT, double>::value, int> = 0>
+    void operator_(TT* source_error, TT* source_input, TT* weight, TT* sink_output, TT* sink_error, TT* sink_derivative, const int& n_input_nodes, const int& batch_size, const int& memory_size, const int& source_layer_size, const int& sink_layer_size, const int& source_time_step, const int& sink_time_step, DeviceT& device) {
+      Eigen::TensorMap<Eigen::Tensor<TT, 3>> sink_error_tensor(sink_error, batch_size, memory_size, sink_layer_size);
+      Eigen::TensorMap<Eigen::Tensor<TT, 3>> sink_derivative_tensor(sink_derivative, batch_size, memory_size, sink_layer_size);
+      Eigen::TensorMap<Eigen::Tensor<TT, 4>> source_error_tensor(source_error, batch_size, memory_size, 1, source_layer_size);
+      Eigen::TensorMap<Eigen::Tensor<TT, 3>> weight_tensor(weight, 1, sink_layer_size, source_layer_size); // NOTE: source/sink are reversed
       auto source_error_bcast = source_error_tensor.chip(source_time_step, 1).broadcast(Eigen::array<Eigen::Index, 3>({ 1, sink_layer_size, 1 }));
       auto weight_bcast = weight_tensor.broadcast(Eigen::array<Eigen::Index, 3>({ batch_size, 1, 1 }));
-      sink_error_tensor.chip(sink_time_step, 1).device(device) += (source_error_bcast * weight_bcast).sum(Eigen::array<int, 1>({ 2 })) * sink_error_tensor.chip(sink_time_step, 1).constant(TensorT(1) / (TensorT)n_input_nodes).eval() * sink_error_tensor.chip(sink_time_step, 1).constant((TensorT)2).eval()
+      sink_error_tensor.chip(sink_time_step, 1).device(device) += (source_error_bcast * weight_bcast).sum(Eigen::array<int, 1>({ 2 })) * sink_error_tensor.chip(sink_time_step, 1).constant(TT(1) / (TT)n_input_nodes).eval() * sink_error_tensor.chip(sink_time_step, 1).constant((TT)2).eval()
         * (sink_derivative_tensor.chip(sink_time_step, 1));
-
-		};
+    }
+    template<typename TT = TensorT, std::enable_if_t<!std::is_same<TT, double>::value, int> = 0>
+    void operator_(TT* source_error, TT* source_input, TT* weight, TT* sink_output, TT* sink_error, TT* sink_derivative, const int& n_input_nodes, const int& batch_size, const int& memory_size, const int& source_layer_size, const int& sink_layer_size, const int& source_time_step, const int& sink_time_step, DeviceT& device) {
+      Eigen::TensorMap<Eigen::Tensor<TT, 3>> sink_error_tensor(sink_error, batch_size, memory_size, sink_layer_size);
+      Eigen::TensorMap<Eigen::Tensor<TT, 3>> sink_derivative_tensor(sink_derivative, batch_size, memory_size, sink_layer_size);
+      Eigen::TensorMap<Eigen::Tensor<TT, 3>> source_error_tensor(source_error, batch_size, memory_size, source_layer_size);
+      Eigen::TensorMap<Eigen::Tensor<TT, 2>> weight_tensor(weight, sink_layer_size, source_layer_size); // NOTE: source/sink are reversed
+      Eigen::array<Eigen::IndexPair<int>, 1> product_dims = { Eigen::IndexPair<int>(1, 0) }; // NOTE: we are taking the transpose of the weight matrix
+      sink_error_tensor.chip(sink_time_step, 1).device(device) += (source_error_tensor.chip(source_time_step, 1)).contract(weight_tensor.shuffle(Eigen::array<int, 2>({ 1, 0 })), product_dims) 
+      	* sink_error_tensor.chip(sink_time_step, 1).constant(TT(1) / (TT)n_input_nodes).eval() * sink_error_tensor.chip(sink_time_step, 1).constant((TT)2).eval()
+      	* (sink_derivative_tensor.chip(sink_time_step, 1));
+    }
 		std::string getName() const { return "VarModErrorTensorOp"; };
 	//private:
 	//	friend class cereal::access;
@@ -761,25 +766,29 @@ public:
 	{
 	public:
 		void operator()(TensorT* sink_error, TensorT* source_output, TensorT* weight, TensorT* source_input, TensorT* weight_error, const int& n_input_nodes, const int& batch_size, const int& memory_size, const int& source_layer_size, const int& sink_layer_size, DeviceT& device) {
-			//Eigen::TensorMap<Eigen::Tensor<TensorT, 3>> sink_error_tensor(sink_error, batch_size, memory_size, sink_layer_size);
-			//Eigen::TensorMap<Eigen::Tensor<TensorT, 3>> source_output_tensor(source_output, batch_size, memory_size, source_layer_size);
-			//Eigen::TensorMap<Eigen::Tensor<TensorT, 2>> weight_error_tensor(weight_error, source_layer_size, sink_layer_size);
-
-			//Eigen::array<Eigen::IndexPair<int>, 2> double_contraction_product_dims = { Eigen::IndexPair<int>(1,1), Eigen::IndexPair<int>(0,0) };
-			//auto tmp = -source_output_tensor.contract(sink_error_tensor, double_contraction_product_dims);
-			//// NOTE: Double contraction along the memory and batch (equivalent to a double sum along the products of the batch and memory dimensions)
-			//weight_error_tensor.device(device) += tmp * tmp.constant(TensorT(1) / (TensorT)batch_size).eval();
-			//// NOTE: Requires a correction by dividing by the batch size
-
-      Eigen::TensorMap<Eigen::Tensor<TensorT, 4>> sink_error_tensor(sink_error, batch_size, memory_size, 1, sink_layer_size);
-      Eigen::TensorMap<Eigen::Tensor<TensorT, 4>> source_output_tensor(source_output, batch_size, memory_size, source_layer_size, 1);
-      Eigen::TensorMap<Eigen::Tensor<TensorT, 2>> weight_error_tensor(weight_error, source_layer_size, sink_layer_size);
-
+      operator_(sink_error, source_output, weight, source_input, weight_error, n_input_nodes, batch_size, memory_size, source_layer_size, sink_layer_size, device);
+		};
+    template<typename TT = TensorT, std::enable_if_t<std::is_same<TT, double>::value, int> = 0>
+    void operator_(TT* sink_error, TT* source_output, TT* weight, TT* source_input, TT* weight_error, const int& n_input_nodes, const int& batch_size, const int& memory_size, const int& source_layer_size, const int& sink_layer_size, DeviceT& device) {
+      Eigen::TensorMap<Eigen::Tensor<TT, 4>> sink_error_tensor(sink_error, batch_size, memory_size, 1, sink_layer_size);
+      Eigen::TensorMap<Eigen::Tensor<TT, 4>> source_output_tensor(source_output, batch_size, memory_size, source_layer_size, 1);
+      Eigen::TensorMap<Eigen::Tensor<TT, 2>> weight_error_tensor(weight_error, source_layer_size, sink_layer_size);
       auto sink_error_bcast = sink_error_tensor.broadcast(Eigen::array<Eigen::Index, 4>({ 1, 1, source_layer_size, 1 }));
       auto source_output_bcast = source_output_tensor.broadcast(Eigen::array<Eigen::Index, 4>({ 1, 1, 1, sink_layer_size }));
       auto tmp = -(source_output_bcast * sink_error_bcast).sum(Eigen::array<int, 2>({ 0, 1 }));
-      weight_error_tensor.device(device) += tmp * tmp.constant(TensorT(1) / (TensorT)batch_size).eval();
-		};
+      weight_error_tensor.device(device) += tmp * tmp.constant(TT(1) / (TT)batch_size).eval();
+    }
+    template<typename TT = TensorT, std::enable_if_t<!std::is_same<TT, double>::value, int> = 0>
+    void operator_(TT* sink_error, TT* source_output, TT* weight, TT* source_input, TT* weight_error, const int& n_input_nodes, const int& batch_size, const int& memory_size, const int& source_layer_size, const int& sink_layer_size, DeviceT& device) {
+      Eigen::TensorMap<Eigen::Tensor<TT, 3>> sink_error_tensor(sink_error, batch_size, memory_size, sink_layer_size);
+      Eigen::TensorMap<Eigen::Tensor<TT, 3>> source_output_tensor(source_output, batch_size, memory_size, source_layer_size);
+      Eigen::TensorMap<Eigen::Tensor<TT, 2>> weight_error_tensor(weight_error, source_layer_size, sink_layer_size);
+      Eigen::array<Eigen::IndexPair<int>, 2> double_contraction_product_dims = { Eigen::IndexPair<int>(1,1), Eigen::IndexPair<int>(0,0) };
+      auto tmp = -source_output_tensor.contract(sink_error_tensor, double_contraction_product_dims);
+      // NOTE: Double contraction along the memory and batch (equivalent to a double sum along the products of the batch and memory dimensions)
+      weight_error_tensor.device(device) += tmp * tmp.constant(TT(1) / (TT)batch_size).eval();
+      // NOTE: Requires a correction by dividing by the batch size
+    }
 		std::string getName() const { return "SumWeightGradTensorOp"; };
 	//private:
 	//	friend class cereal::access;
@@ -812,13 +821,6 @@ public:
 			auto scaled_error = -sink_error_tensor.broadcast(Eigen::array<int, 4>({ 1, 1, source_layer_size, 1 })) * input_normalized_tensor;
 			// step 3: sum along the memory and average along the batch dimensions
 			weight_error_tensor.device(device) += scaled_error.sum(Eigen::array<int, 2>({ 0, 1 })) * weight_error_tensor.constant(TensorT(1) / (TensorT)batch_size).eval();
-
-      //// DEBUG (only on CPU)
-      //std::cout << "[ProdWeightGradTensorOp]weight_tensor: " << weight_tensor << std::endl;
-      //std::cout << "[ProdWeightGradTensorOp]source_input_tensor: " << source_input_tensor << std::endl;
-      //std::cout << "[ProdWeightGradTensorOp]input_normalized_tensor: " << input_normalized_tensor << std::endl;
-      //std::cout << "[ProdWeightGradTensorOp]scaled_error: " << scaled_error << std::endl;
-      //std::cout << "[ProdWeightGradTensorOp]weight_error_tensor (End): " << weight_error_tensor << std::endl;
 		};
 		std::string getName() const { return "ProdWeightGradTensorOp"; };
 	//private:
@@ -838,25 +840,30 @@ public:
 	public:
 		MaxWeightGradTensorOp() {};
 		~MaxWeightGradTensorOp() {};
-		void operator()(TensorT* sink_error, TensorT* source_output, TensorT* weight, TensorT* source_input, TensorT* weight_error, const int& n_input_nodes, const int& batch_size, const int& memory_size, const int& source_layer_size, const int& sink_layer_size, DeviceT& device) {
-			//Eigen::TensorMap<Eigen::Tensor<TensorT, 3>> sink_error_tensor(sink_error, batch_size, memory_size, sink_layer_size);
-			//Eigen::TensorMap<Eigen::Tensor<TensorT, 3>> source_output_tensor(source_output, batch_size, memory_size, source_layer_size);
-			//Eigen::TensorMap<Eigen::Tensor<TensorT, 2>> weight_error_tensor(weight_error, source_layer_size, sink_layer_size);
-			//// NOTE : same as SumWeightGrad given the assumption that the errors for non max links have been zero'd out previously
-			//Eigen::array<Eigen::IndexPair<int>, 2> double_contraction_product_dims = { Eigen::IndexPair<int>(1,1), Eigen::IndexPair<int>(0,0) };
-			//auto tmp = -source_output_tensor.contract(sink_error_tensor, double_contraction_product_dims);
-			//// NOTE: Double contraction along the memory and batch (equivalent to a double sum along the products of the batch and memory dimensions)
-			//weight_error_tensor.device(device) += tmp * weight_error_tensor.constant(TensorT(1) / (TensorT)batch_size).eval();
-			//// NOTE: Requires a correction by dividing by the batch size
-
-      Eigen::TensorMap<Eigen::Tensor<TensorT, 4>> sink_error_tensor(sink_error, batch_size, memory_size, 1, sink_layer_size);
-      Eigen::TensorMap<Eigen::Tensor<TensorT, 4>> source_output_tensor(source_output, batch_size, memory_size, source_layer_size, 1);
-      Eigen::TensorMap<Eigen::Tensor<TensorT, 2>> weight_error_tensor(weight_error, source_layer_size, sink_layer_size);
+    void operator()(TensorT* sink_error, TensorT* source_output, TensorT* weight, TensorT* source_input, TensorT* weight_error, const int& n_input_nodes, const int& batch_size, const int& memory_size, const int& source_layer_size, const int& sink_layer_size, DeviceT& device) {
+      operator_(sink_error, source_output, weight, source_input, weight_error, n_input_nodes, batch_size, memory_size, source_layer_size, sink_layer_size, device);
+    };
+    template<typename TT = TensorT, std::enable_if_t<std::is_same<TT, double>::value, int> = 0>
+    void operator_(TT* sink_error, TT* source_output, TT* weight, TT* source_input, TT* weight_error, const int& n_input_nodes, const int& batch_size, const int& memory_size, const int& source_layer_size, const int& sink_layer_size, DeviceT& device) {
+      Eigen::TensorMap<Eigen::Tensor<TT, 4>> sink_error_tensor(sink_error, batch_size, memory_size, 1, sink_layer_size);
+      Eigen::TensorMap<Eigen::Tensor<TT, 4>> source_output_tensor(source_output, batch_size, memory_size, source_layer_size, 1);
+      Eigen::TensorMap<Eigen::Tensor<TT, 2>> weight_error_tensor(weight_error, source_layer_size, sink_layer_size);
       auto sink_error_bcast = sink_error_tensor.broadcast(Eigen::array<Eigen::Index, 4>({ 1, 1, source_layer_size, 1 }));
       auto source_output_bcast = source_output_tensor.broadcast(Eigen::array<Eigen::Index, 4>({ 1, 1, 1, sink_layer_size }));
       auto tmp = -(source_output_bcast * sink_error_bcast).sum(Eigen::array<int, 2>({ 0, 1 }));
-      weight_error_tensor.device(device) += tmp * tmp.constant(TensorT(1) / (TensorT)batch_size).eval();
-		};
+      weight_error_tensor.device(device) += tmp * tmp.constant(TT(1) / (TT)batch_size).eval();
+    }
+    template<typename TT = TensorT, std::enable_if_t<!std::is_same<TT, double>::value, int> = 0>
+    void operator_(TT* sink_error, TT* source_output, TT* weight, TT* source_input, TT* weight_error, const int& n_input_nodes, const int& batch_size, const int& memory_size, const int& source_layer_size, const int& sink_layer_size, DeviceT& device) {
+      Eigen::TensorMap<Eigen::Tensor<TT, 3>> sink_error_tensor(sink_error, batch_size, memory_size, sink_layer_size);
+      Eigen::TensorMap<Eigen::Tensor<TT, 3>> source_output_tensor(source_output, batch_size, memory_size, source_layer_size);
+      Eigen::TensorMap<Eigen::Tensor<TT, 2>> weight_error_tensor(weight_error, source_layer_size, sink_layer_size);
+      Eigen::array<Eigen::IndexPair<int>, 2> double_contraction_product_dims = { Eigen::IndexPair<int>(1,1), Eigen::IndexPair<int>(0,0) };
+      auto tmp = -source_output_tensor.contract(sink_error_tensor, double_contraction_product_dims);
+      // NOTE: Double contraction along the memory and batch (equivalent to a double sum along the products of the batch and memory dimensions)
+      weight_error_tensor.device(device) += tmp * tmp.constant(TT(1) / (TT)batch_size).eval();
+      // NOTE: Requires a correction by dividing by the batch size
+    }
 		std::string getName() const { return "MaxWeightGradTensorOp"; };
 	//private:
 	//	friend class cereal::access;
@@ -876,24 +883,29 @@ public:
     MinWeightGradTensorOp() {};
     ~MinWeightGradTensorOp() {};
     void operator()(TensorT* sink_error, TensorT* source_output, TensorT* weight, TensorT* source_input, TensorT* weight_error, const int& n_input_nodes, const int& batch_size, const int& memory_size, const int& source_layer_size, const int& sink_layer_size, DeviceT& device) {
-      //Eigen::TensorMap<Eigen::Tensor<TensorT, 3>> sink_error_tensor(sink_error, batch_size, memory_size, sink_layer_size);
-      //Eigen::TensorMap<Eigen::Tensor<TensorT, 3>> source_output_tensor(source_output, batch_size, memory_size, source_layer_size);
-      //Eigen::TensorMap<Eigen::Tensor<TensorT, 2>> weight_error_tensor(weight_error, source_layer_size, sink_layer_size);
-      //// NOTE : same as SumWeightGrad given the assumption that the errors for non min links have been zero'd out previously
-      //Eigen::array<Eigen::IndexPair<int>, 2> double_contraction_product_dims = { Eigen::IndexPair<int>(1,1), Eigen::IndexPair<int>(0,0) };
-      //auto tmp = -source_output_tensor.contract(sink_error_tensor, double_contraction_product_dims);
-      //// NOTE: Double contraction along the memory and batch (equivalent to a double sum along the products of the batch and memory dimensions)
-      //weight_error_tensor.device(device) += tmp * weight_error_tensor.constant(TensorT(1) / (TensorT)batch_size).eval();
-      //// NOTE: Requires a correction by dividing by the batch size
-
-      Eigen::TensorMap<Eigen::Tensor<TensorT, 4>> sink_error_tensor(sink_error, batch_size, memory_size, 1, sink_layer_size);
-      Eigen::TensorMap<Eigen::Tensor<TensorT, 4>> source_output_tensor(source_output, batch_size, memory_size, source_layer_size, 1);
-      Eigen::TensorMap<Eigen::Tensor<TensorT, 2>> weight_error_tensor(weight_error, source_layer_size, sink_layer_size);
+      operator_(sink_error, source_output, weight, source_input, weight_error, n_input_nodes, batch_size, memory_size, source_layer_size, sink_layer_size, device);
+    };
+    template<typename TT = TensorT, std::enable_if_t<std::is_same<TT, double>::value, int> = 0>
+    void operator_(TT* sink_error, TT* source_output, TT* weight, TT* source_input, TT* weight_error, const int& n_input_nodes, const int& batch_size, const int& memory_size, const int& source_layer_size, const int& sink_layer_size, DeviceT& device) {
+      Eigen::TensorMap<Eigen::Tensor<TT, 4>> sink_error_tensor(sink_error, batch_size, memory_size, 1, sink_layer_size);
+      Eigen::TensorMap<Eigen::Tensor<TT, 4>> source_output_tensor(source_output, batch_size, memory_size, source_layer_size, 1);
+      Eigen::TensorMap<Eigen::Tensor<TT, 2>> weight_error_tensor(weight_error, source_layer_size, sink_layer_size);
       auto sink_error_bcast = sink_error_tensor.broadcast(Eigen::array<Eigen::Index, 4>({ 1, 1, source_layer_size, 1 }));
       auto source_output_bcast = source_output_tensor.broadcast(Eigen::array<Eigen::Index, 4>({ 1, 1, 1, sink_layer_size }));
       auto tmp = -(source_output_bcast * sink_error_bcast).sum(Eigen::array<int, 2>({ 0, 1 }));
-      weight_error_tensor.device(device) += tmp * tmp.constant(TensorT(1) / (TensorT)batch_size).eval();
-    };
+      weight_error_tensor.device(device) += tmp * tmp.constant(TT(1) / (TT)batch_size).eval();
+    }
+    template<typename TT = TensorT, std::enable_if_t<!std::is_same<TT, double>::value, int> = 0>
+    void operator_(TT* sink_error, TT* source_output, TT* weight, TT* source_input, TT* weight_error, const int& n_input_nodes, const int& batch_size, const int& memory_size, const int& source_layer_size, const int& sink_layer_size, DeviceT& device) {
+      Eigen::TensorMap<Eigen::Tensor<TT, 3>> sink_error_tensor(sink_error, batch_size, memory_size, sink_layer_size);
+      Eigen::TensorMap<Eigen::Tensor<TT, 3>> source_output_tensor(source_output, batch_size, memory_size, source_layer_size);
+      Eigen::TensorMap<Eigen::Tensor<TT, 2>> weight_error_tensor(weight_error, source_layer_size, sink_layer_size);
+      Eigen::array<Eigen::IndexPair<int>, 2> double_contraction_product_dims = { Eigen::IndexPair<int>(1,1), Eigen::IndexPair<int>(0,0) };
+      auto tmp = -source_output_tensor.contract(sink_error_tensor, double_contraction_product_dims);
+      // NOTE: Double contraction along the memory and batch (equivalent to a double sum along the products of the batch and memory dimensions)
+      weight_error_tensor.device(device) += tmp * tmp.constant(TT(1) / (TT)batch_size).eval();
+      // NOTE: Requires a correction by dividing by the batch size
+    }
     std::string getName() const { return "MinWeightGradTensorOp"; };
     //private:
     //	friend class cereal::access;
@@ -934,25 +946,30 @@ public:
 	public:
 		MeanWeightGradTensorOp() {};
 		~MeanWeightGradTensorOp() {};
-		void operator()(TensorT* sink_error, TensorT* source_output, TensorT* weight, TensorT* source_input, TensorT* weight_error, const int& n_input_nodes, const int& batch_size, const int& memory_size, const int& source_layer_size, const int& sink_layer_size, DeviceT& device) {
-			//Eigen::TensorMap<Eigen::Tensor<TensorT, 3>> sink_error_tensor(sink_error, batch_size, memory_size, sink_layer_size);
-			//Eigen::TensorMap<Eigen::Tensor<TensorT, 3>> source_output_tensor(source_output, batch_size, memory_size, source_layer_size);
-			//Eigen::TensorMap<Eigen::Tensor<TensorT, 2>> weight_error_tensor(weight_error, source_layer_size, sink_layer_size);
-
-			//Eigen::array<Eigen::IndexPair<int>, 2> double_contraction_product_dims = { Eigen::IndexPair<int>(1,1), Eigen::IndexPair<int>(0,0) };
-			//auto tmp = -source_output_tensor.contract(sink_error_tensor, double_contraction_product_dims);
-			//// NOTE: Double contraction along the memory and batch (equivalent to a double sum along the products of the batch and memory dimensions)
-			//weight_error_tensor.device(device) += tmp * weight_error_tensor.constant(TensorT(1) / (TensorT)batch_size).eval() * weight_error_tensor.constant(TensorT(1) / (TensorT)n_input_nodes).eval();
-			//// NOTE: Requires a correction by dividing by the batch size
-
-      Eigen::TensorMap<Eigen::Tensor<TensorT, 4>> sink_error_tensor(sink_error, batch_size, memory_size, 1, sink_layer_size);
-      Eigen::TensorMap<Eigen::Tensor<TensorT, 4>> source_output_tensor(source_output, batch_size, memory_size, source_layer_size, 1);
-      Eigen::TensorMap<Eigen::Tensor<TensorT, 2>> weight_error_tensor(weight_error, source_layer_size, sink_layer_size);
+    void operator()(TensorT* sink_error, TensorT* source_output, TensorT* weight, TensorT* source_input, TensorT* weight_error, const int& n_input_nodes, const int& batch_size, const int& memory_size, const int& source_layer_size, const int& sink_layer_size, DeviceT& device) {
+      operator_(sink_error, source_output, weight, source_input, weight_error, n_input_nodes, batch_size, memory_size, source_layer_size, sink_layer_size, device);
+    };
+    template<typename TT = TensorT, std::enable_if_t<std::is_same<TT, double>::value, int> = 0>
+    void operator_(TT* sink_error, TT* source_output, TT* weight, TT* source_input, TT* weight_error, const int& n_input_nodes, const int& batch_size, const int& memory_size, const int& source_layer_size, const int& sink_layer_size, DeviceT& device) {
+      Eigen::TensorMap<Eigen::Tensor<TT, 4>> sink_error_tensor(sink_error, batch_size, memory_size, 1, sink_layer_size);
+      Eigen::TensorMap<Eigen::Tensor<TT, 4>> source_output_tensor(source_output, batch_size, memory_size, source_layer_size, 1);
+      Eigen::TensorMap<Eigen::Tensor<TT, 2>> weight_error_tensor(weight_error, source_layer_size, sink_layer_size);
       auto sink_error_bcast = sink_error_tensor.broadcast(Eigen::array<Eigen::Index, 4>({ 1, 1, source_layer_size, 1 }));
       auto source_output_bcast = source_output_tensor.broadcast(Eigen::array<Eigen::Index, 4>({ 1, 1, 1, sink_layer_size }));
       auto tmp = -(source_output_bcast * sink_error_bcast).sum(Eigen::array<int, 2>({ 0, 1 }));
-      weight_error_tensor.device(device) += tmp * weight_error_tensor.constant(TensorT(1) / (TensorT)batch_size).eval() * weight_error_tensor.constant(TensorT(1) / (TensorT)n_input_nodes).eval();
-		};
+      weight_error_tensor.device(device) += tmp * weight_error_tensor.constant(TT(1) / (TT)batch_size).eval() * weight_error_tensor.constant(TT(1) / (TT)n_input_nodes).eval();
+    }
+    template<typename TT = TensorT, std::enable_if_t<!std::is_same<TT, double>::value, int> = 0>
+    void operator_(TT* sink_error, TT* source_output, TT* weight, TT* source_input, TT* weight_error, const int& n_input_nodes, const int& batch_size, const int& memory_size, const int& source_layer_size, const int& sink_layer_size, DeviceT& device) {
+      Eigen::TensorMap<Eigen::Tensor<TT, 3>> sink_error_tensor(sink_error, batch_size, memory_size, sink_layer_size);
+      Eigen::TensorMap<Eigen::Tensor<TT, 3>> source_output_tensor(source_output, batch_size, memory_size, source_layer_size);
+      Eigen::TensorMap<Eigen::Tensor<TT, 2>> weight_error_tensor(weight_error, source_layer_size, sink_layer_size);
+      Eigen::array<Eigen::IndexPair<int>, 2> double_contraction_product_dims = { Eigen::IndexPair<int>(1,1), Eigen::IndexPair<int>(0,0) };
+      auto tmp = -source_output_tensor.contract(sink_error_tensor, double_contraction_product_dims);
+      // NOTE: Double contraction along the memory and batch (equivalent to a double sum along the products of the batch and memory dimensions)
+      weight_error_tensor.device(device) += tmp * weight_error_tensor.constant(TT(1) / (TT)batch_size).eval() * weight_error_tensor.constant(TT(1) / (TT)n_input_nodes).eval();
+      // NOTE: Requires a correction by dividing by the batch size
+    }
 		std::string getName() const { return "MeanWeightGradTensorOp"; };
 	//private:
 	//	friend class cereal::access;
@@ -971,27 +988,32 @@ public:
 	public:
 		VarModWeightGradTensorOp() {};
 		~VarModWeightGradTensorOp() {};
-		void operator()(TensorT* sink_error, TensorT* source_output, TensorT* weight, TensorT* source_input, TensorT* weight_error, const int& n_input_nodes, const int& batch_size, const int& memory_size, const int& source_layer_size, const int& sink_layer_size, DeviceT& device) {
-			//Eigen::TensorMap<Eigen::Tensor<TensorT, 3>> sink_error_tensor(sink_error, batch_size, memory_size, sink_layer_size);
-			//Eigen::TensorMap<Eigen::Tensor<TensorT, 3>> source_output_tensor(source_output, batch_size, memory_size, source_layer_size);
-			//Eigen::TensorMap<Eigen::Tensor<TensorT, 2>> weight_error_tensor(weight_error, source_layer_size, sink_layer_size);
-
-			//Eigen::array<Eigen::IndexPair<int>, 2> double_contraction_product_dims = { Eigen::IndexPair<int>(1,1), Eigen::IndexPair<int>(0,0) };
-			//auto tmp = -source_output_tensor.contract(sink_error_tensor, double_contraction_product_dims);
-			//// NOTE: Double contraction along the memory and batch (equivalent to a double sum along the products of the batch and memory dimensions)
-			//weight_error_tensor.device(device) += tmp * weight_error_tensor.constant(TensorT(1) / (TensorT)batch_size).eval()
-   //     * weight_error_tensor.constant(TensorT(1) / (TensorT)n_input_nodes).eval() * weight_error_tensor.constant((TensorT)2).eval();
-			//// NOTE: Requires a correction by dividing by the batch size
-
-      Eigen::TensorMap<Eigen::Tensor<TensorT, 4>> sink_error_tensor(sink_error, batch_size, memory_size, 1, sink_layer_size);
-      Eigen::TensorMap<Eigen::Tensor<TensorT, 4>> source_output_tensor(source_output, batch_size, memory_size, source_layer_size, 1);
-      Eigen::TensorMap<Eigen::Tensor<TensorT, 2>> weight_error_tensor(weight_error, source_layer_size, sink_layer_size);
+    void operator()(TensorT* sink_error, TensorT* source_output, TensorT* weight, TensorT* source_input, TensorT* weight_error, const int& n_input_nodes, const int& batch_size, const int& memory_size, const int& source_layer_size, const int& sink_layer_size, DeviceT& device) {
+      operator_(sink_error, source_output, weight, source_input, weight_error, n_input_nodes, batch_size, memory_size, source_layer_size, sink_layer_size, device);
+    };
+    template<typename TT = TensorT, std::enable_if_t<std::is_same<TT, double>::value, int> = 0>
+    void operator_(TT* sink_error, TT* source_output, TT* weight, TT* source_input, TT* weight_error, const int& n_input_nodes, const int& batch_size, const int& memory_size, const int& source_layer_size, const int& sink_layer_size, DeviceT& device) {
+      Eigen::TensorMap<Eigen::Tensor<TT, 4>> sink_error_tensor(sink_error, batch_size, memory_size, 1, sink_layer_size);
+      Eigen::TensorMap<Eigen::Tensor<TT, 4>> source_output_tensor(source_output, batch_size, memory_size, source_layer_size, 1);
+      Eigen::TensorMap<Eigen::Tensor<TT, 2>> weight_error_tensor(weight_error, source_layer_size, sink_layer_size);
       auto sink_error_bcast = sink_error_tensor.broadcast(Eigen::array<Eigen::Index, 4>({ 1, 1, source_layer_size, 1 }));
       auto source_output_bcast = source_output_tensor.broadcast(Eigen::array<Eigen::Index, 4>({ 1, 1, 1, sink_layer_size }));
       auto tmp = -(source_output_bcast * sink_error_bcast).sum(Eigen::array<int, 2>({ 0, 1 }));
-      weight_error_tensor.device(device) += tmp * weight_error_tensor.constant(TensorT(1) / (TensorT)batch_size).eval()
-             * weight_error_tensor.constant(TensorT(1) / (TensorT)n_input_nodes).eval() * weight_error_tensor.constant((TensorT)2).eval();
-		};
+      weight_error_tensor.device(device) += tmp * weight_error_tensor.constant(TT(1) / (TT)batch_size).eval()
+        * weight_error_tensor.constant(TT(1) / (TT)n_input_nodes).eval() * weight_error_tensor.constant((TT)2).eval();
+    }
+    template<typename TT = TensorT, std::enable_if_t<!std::is_same<TT, double>::value, int> = 0>
+    void operator_(TT* sink_error, TT* source_output, TT* weight, TT* source_input, TT* weight_error, const int& n_input_nodes, const int& batch_size, const int& memory_size, const int& source_layer_size, const int& sink_layer_size, DeviceT& device) {
+      Eigen::TensorMap<Eigen::Tensor<TT, 3>> sink_error_tensor(sink_error, batch_size, memory_size, sink_layer_size);
+      Eigen::TensorMap<Eigen::Tensor<TT, 3>> source_output_tensor(source_output, batch_size, memory_size, source_layer_size);
+      Eigen::TensorMap<Eigen::Tensor<TT, 2>> weight_error_tensor(weight_error, source_layer_size, sink_layer_size);
+      Eigen::array<Eigen::IndexPair<int>, 2> double_contraction_product_dims = { Eigen::IndexPair<int>(1,1), Eigen::IndexPair<int>(0,0) };
+      auto tmp = -source_output_tensor.contract(sink_error_tensor, double_contraction_product_dims);
+      // NOTE: Double contraction along the memory and batch (equivalent to a double sum along the products of the batch and memory dimensions)
+      weight_error_tensor.device(device) += tmp * weight_error_tensor.constant(TT(1) / (TT)batch_size).eval()
+        * weight_error_tensor.constant(TT(1) / (TT)n_input_nodes).eval() * weight_error_tensor.constant((TT)2).eval();
+      // NOTE: Requires a correction by dividing by the batch size
+    }
 		std::string getName() const { return "VarModWeightGradTensorOp"; };
 	//private:
 	//	friend class cereal::access;
