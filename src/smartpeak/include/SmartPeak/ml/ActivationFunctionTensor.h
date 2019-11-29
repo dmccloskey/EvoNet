@@ -34,8 +34,8 @@ namespace SmartPeak
     TensorT getMin() const { return min_; }
     TensorT getMax() const { return max_; }
   protected:
-    TensorT eps_ = (TensorT)1e-6; ///< threshold to clip between min and max
-    TensorT min_ =TensorT(-1e9);
+    TensorT eps_ = TensorT(1e-24); ///< threshold to clip between min and max
+    TensorT min_ = TensorT(-1e9);
     TensorT max_ = TensorT(1e9);
 	//private:
 	//	friend class cereal::access;

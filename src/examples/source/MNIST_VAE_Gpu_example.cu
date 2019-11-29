@@ -33,7 +33,9 @@ public:
 	@param[in] n_hidden The length of the hidden layers
 	@param[in] specify_layers Whether to give the `ModelInterpreter` "hints" as to the correct network structure during graph to tensor compilation
 	*/
-	void makeVAEFullyConn(Model<TensorT>& model, int n_inputs = 784, int n_encodings = 64, int n_hidden_0 = 512, int n_hidden_1 = 256, int n_hidden_2 = 64, bool add_norm = true, bool specify_layers = false) {
+	void makeVAEFullyConn(Model<TensorT>& model, 
+    const int& n_inputs = 784, const int& n_encodings = 64, const int& n_hidden_0 = 512, const int& n_hidden_1 = 256, const int& n_hidden_2 = 64, 
+    const bool& add_norm = true, const bool& add_bias = true, const bool& specify_layers = false) {
 		model.setId(0);
 		model.setName("VAE");
 
@@ -67,7 +69,7 @@ public:
       node_names = model_builder.addFullyConnected(model, "EN0", "EN0", node_names, n_hidden_0,
         activation, activation_grad, integration_op, integration_error_op, integration_weight_grad_op,
         std::make_shared<RandWeightInitOp<TensorT>>(RandWeightInitOp<TensorT>((TensorT)(node_names.size() + n_hidden_0) / 2, 1)),
-        solver_op, 0.0f, 0.0f, false, specify_layers);
+        solver_op, 0.0f, 0.0f, add_bias, specify_layers);
       if (add_norm) {
         node_names = model_builder.addNormalization(model, "EN0-Norm", "EN0-Norm", node_names, true);
         node_names = model_builder.addSinglyConnected(model, "EN0-Norm-gain", "EN0-Norm-gain", node_names, node_names.size(),
@@ -75,15 +77,15 @@ public:
           std::make_shared<LeakyReLUGradOp<TensorT>>(LeakyReLUGradOp<TensorT>()),
           integration_op, integration_error_op, integration_weight_grad_op,
           std::make_shared<ConstWeightInitOp<TensorT>>(ConstWeightInitOp<TensorT>(1)),
-          solver_op,
-          0.0, 0.0, true, specify_layers);
+          solver_op, 0.0, 0.0, true, specify_layers);
+          //std::make_shared<DummySolverOp<TensorT>>(DummySolverOp<TensorT>()), 0.0, 0.0, false, specify_layers);
       }
     }
     if (n_hidden_1 > 0) {
       node_names = model_builder.addFullyConnected(model, "EN1", "EN1", node_names, n_hidden_1,
         activation, activation_grad, integration_op, integration_error_op, integration_weight_grad_op,
         std::make_shared<RandWeightInitOp<TensorT>>(RandWeightInitOp<TensorT>((TensorT)(node_names.size() + n_hidden_1) / 2, 1)),
-        solver_op, 0.0f, 0.0f, false, specify_layers);
+        solver_op, 0.0f, 0.0f, add_bias, specify_layers);
       if (add_norm) {
         node_names = model_builder.addNormalization(model, "EN1-Norm", "EN1-Norm", node_names, true);
         node_names = model_builder.addSinglyConnected(model, "EN1-Norm-gain", "EN1-Norm-gain", node_names, node_names.size(),
@@ -91,15 +93,15 @@ public:
           std::make_shared<LeakyReLUGradOp<TensorT>>(LeakyReLUGradOp<TensorT>()),
           integration_op, integration_error_op, integration_weight_grad_op,
           std::make_shared<ConstWeightInitOp<TensorT>>(ConstWeightInitOp<TensorT>(1)),
-          solver_op,
-          0.0, 0.0, true, specify_layers);
+          solver_op, 0.0, 0.0, true, specify_layers);
+          //std::make_shared<DummySolverOp<TensorT>>(DummySolverOp<TensorT>()), 0.0, 0.0, false, specify_layers);
       }
     }
     if (n_hidden_2 > 0) {
       node_names = model_builder.addFullyConnected(model, "EN2", "EN2", node_names, n_hidden_2,
         activation, activation_grad, integration_op, integration_error_op, integration_weight_grad_op,
         std::make_shared<RandWeightInitOp<TensorT>>(RandWeightInitOp<TensorT>((TensorT)(node_names.size() + n_hidden_2) / 2, 1)),
-        solver_op, 0.0f, 0.0f, false, specify_layers);
+        solver_op, 0.0f, 0.0f, add_bias, specify_layers);
       if (add_norm) {
         node_names = model_builder.addNormalization(model, "EN2-Norm", "EN2-Norm", node_names, true);
         node_names = model_builder.addSinglyConnected(model, "EN2-Norm-gain", "EN2-Norm-gain", node_names, node_names.size(),
@@ -107,8 +109,8 @@ public:
           std::make_shared<LeakyReLUGradOp<TensorT>>(LeakyReLUGradOp<TensorT>()),
           integration_op, integration_error_op, integration_weight_grad_op,
           std::make_shared<ConstWeightInitOp<TensorT>>(ConstWeightInitOp<TensorT>(1)),
-          solver_op,
-          0.0, 0.0, true, specify_layers);
+          solver_op, 0.0, 0.0, true, specify_layers);
+          //std::make_shared<DummySolverOp<TensorT>>(DummySolverOp<TensorT>()), 0.0, 0.0, false, specify_layers);
       }
     }
 		node_names_mu = model_builder.addFullyConnected(model, "MuEnc", "MuEnc", node_names, n_encodings,
@@ -132,7 +134,7 @@ public:
       node_names = model_builder.addFullyConnected(model, "DE2", "DE2", node_names, n_hidden_2,
         activation, activation_grad, integration_op, integration_error_op, integration_weight_grad_op,
         std::make_shared<RandWeightInitOp<TensorT>>(RandWeightInitOp<TensorT>((TensorT)(node_names.size() + n_hidden_2) / 2, 1)),
-        solver_op, 0.0f, 0.0f, false, specify_layers);
+        solver_op, 0.0f, 0.0f, add_bias, specify_layers);
       if (add_norm) {
         node_names = model_builder.addNormalization(model, "DE2-Norm", "DE2-Norm", node_names, true);
         node_names = model_builder.addSinglyConnected(model, "DE2-Norm-gain", "DE2-Norm-gain", node_names, node_names.size(),
@@ -140,15 +142,15 @@ public:
           std::make_shared<LeakyReLUGradOp<TensorT>>(LeakyReLUGradOp<TensorT>()),
           integration_op, integration_error_op, integration_weight_grad_op,
           std::make_shared<ConstWeightInitOp<TensorT>>(ConstWeightInitOp<TensorT>(1)),
-          solver_op,
-          0.0, 0.0, true, specify_layers);
+          solver_op, 0.0, 0.0, true, specify_layers);
+          //std::make_shared<DummySolverOp<TensorT>>(DummySolverOp<TensorT>()), 0.0, 0.0, false, specify_layers);
       }
     }
     if (n_hidden_1 > 0) {
       node_names = model_builder.addFullyConnected(model, "DE1", "DE1", node_names, n_hidden_1,
         activation, activation_grad, integration_op, integration_error_op, integration_weight_grad_op,
         std::make_shared<RandWeightInitOp<TensorT>>(RandWeightInitOp<TensorT>((TensorT)(node_names.size() + n_hidden_1) / 2, 1)),
-        solver_op, 0.0f, 0.0f, false, specify_layers);
+        solver_op, 0.0f, 0.0f, add_bias, specify_layers);
       if (add_norm) {
         node_names = model_builder.addNormalization(model, "DE1-Norm", "DE1-Norm", node_names, true);
         node_names = model_builder.addSinglyConnected(model, "DE1-Norm-gain", "DE1-Norm-gain", node_names, node_names.size(),
@@ -156,15 +158,15 @@ public:
           std::make_shared<LeakyReLUGradOp<TensorT>>(LeakyReLUGradOp<TensorT>()),
           integration_op, integration_error_op, integration_weight_grad_op,
           std::make_shared<ConstWeightInitOp<TensorT>>(ConstWeightInitOp<TensorT>(1)),
-          solver_op,
-          0.0, 0.0, true, specify_layers);
+          solver_op, 0.0, 0.0, true, specify_layers);
+          //std::make_shared<DummySolverOp<TensorT>>(DummySolverOp<TensorT>()), 0.0, 0.0, false, specify_layers);
       }
     }
     if (n_hidden_0 > 0) {
       node_names = model_builder.addFullyConnected(model, "DE0", "DE0", node_names, n_hidden_0,
         activation, activation_grad, integration_op, integration_error_op, integration_weight_grad_op,
         std::make_shared<RandWeightInitOp<TensorT>>(RandWeightInitOp<TensorT>((TensorT)(node_names.size() + n_hidden_0) / 2, 1)),
-        solver_op, 0.0f, 0.0f, false, specify_layers);
+        solver_op, 0.0f, 0.0f, add_bias, specify_layers);
       if (add_norm) {
         node_names = model_builder.addNormalization(model, "DE0-Norm", "DE0-Norm", node_names, true);
         node_names = model_builder.addSinglyConnected(model, "DE0-Norm-gain", "DE0-Norm-gain", node_names, node_names.size(),
@@ -172,8 +174,8 @@ public:
           std::make_shared<LeakyReLUGradOp<TensorT>>(LeakyReLUGradOp<TensorT>()),
           integration_op, integration_error_op, integration_weight_grad_op,
           std::make_shared<ConstWeightInitOp<TensorT>>(ConstWeightInitOp<TensorT>(1)),
-          solver_op,
-          0.0, 0.0, true, specify_layers);
+          solver_op, 0.0, 0.0, true, specify_layers);
+          //std::make_shared<DummySolverOp<TensorT>>(DummySolverOp<TensorT>()), 0.0, 0.0, false, specify_layers);
       }
     }
 		node_names = model_builder.addFullyConnected(model, "DE-Output", "DE-Output", node_names, n_inputs,
@@ -183,7 +185,7 @@ public:
 			std::make_shared<LeakyReLUGradOp<TensorT>>(LeakyReLUGradOp<TensorT>()),
 			integration_op, integration_error_op, integration_weight_grad_op,
 			std::make_shared<RandWeightInitOp<TensorT>>(RandWeightInitOp<TensorT>(node_names.size(), 1)),
-			solver_op, 0.0f, 0.0f, false, true);
+			solver_op, 0.0f, 0.0f, add_bias, true);
 
 		// Add the actual output nodes
 		node_names_mu = model_builder.addSinglyConnected(model, "Mu", "Mu", node_names_mu, node_names_mu.size(),
@@ -891,7 +893,7 @@ void main_MNIST(const std::string& data_dir, const bool& make_model, const bool&
 	Model<float> model;
 	if (make_model) {
 		std::cout << "Making the model..." << std::endl;
-		ModelTrainerExt<float>().makeVAEFullyConn(model, input_size, encoding_size, 512, 256, 64, true, true);
+		ModelTrainerExt<float>().makeVAEFullyConn(model, input_size, encoding_size, 512, 256, 64, true, false, true);
 		//ModelTrainerExt<float>().makeVAECovNet(model, input_size, encoding_size, 32, 1, 0, 2, 1, 0, 128, 128, 7, 1, false, true);
 	}
 	else {

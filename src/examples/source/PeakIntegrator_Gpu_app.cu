@@ -558,7 +558,7 @@ void main_DenoisingAE(const std::string& data_dir, const bool& make_model, const
   const int n_threads = 1;
 
   // define the populatin trainer
-  PopulationTrainerExt<double> population_trainer;
+  PopulationTrainerExt<float> population_trainer;
   population_trainer.setNGenerations(1);
   population_trainer.setNTop(1);
   population_trainer.setNRandom(1);
@@ -566,15 +566,15 @@ void main_DenoisingAE(const std::string& data_dir, const bool& make_model, const
   population_trainer.setLogging(false);
 
   // define the population logger
-  PopulationLogger<double> population_logger(true, true);
+  PopulationLogger<float> population_logger(true, true);
 
   // define the model logger
-  ModelLogger<double> model_logger(true, true, true, false, false, false, false);
+  ModelLogger<float> model_logger(true, true, true, false, false, false, false);
 
   // define the data simulator
   const std::size_t input_size = 512;
   const std::size_t encoding_size = 16;
-  DataSimulatorExt<double> data_simulator;
+  DataSimulatorExt<float> data_simulator;
 
   // Hard
   //data_simulator.step_size_mu_ = std::make_pair(1, 1);
@@ -656,13 +656,13 @@ void main_DenoisingAE(const std::string& data_dir, const bool& make_model, const
   }
 
   // define the model trainers and resources for the trainers
-  std::vector<ModelInterpreterGpu<double>> model_interpreters;
+  std::vector<ModelInterpreterGpu<float>> model_interpreters;
   for (size_t i = 0; i < n_threads; ++i) {
     ModelResources model_resources = { ModelDevice(0, 1) };
-    ModelInterpreterGpu<double> model_interpreter(model_resources);
+    ModelInterpreterGpu<float> model_interpreter(model_resources);
     model_interpreters.push_back(model_interpreter);
   }
-  ModelTrainerExt<double> model_trainer;
+  ModelTrainerExt<float> model_trainer;
   model_trainer.setBatchSize(64);
   model_trainer.setNEpochsTraining(100001);
   model_trainer.setNEpochsValidation(25);
@@ -673,25 +673,25 @@ void main_DenoisingAE(const std::string& data_dir, const bool& make_model, const
   model_trainer.setFindCycles(false);
   model_trainer.setFastInterpreter(true);
   model_trainer.setPreserveOoO(true);
-  model_trainer.setLossFunctions({ std::make_shared<MSELossOp<double>>(MSELossOp<double>(1e-6, 1.0 / double(input_size))),
-    std::make_shared<BCEWithLogitsLossOp<double>>(BCEWithLogitsLossOp<double>(1e-6, 1.0 / double(input_size))),
-    std::make_shared<BCEWithLogitsLossOp<double>>(BCEWithLogitsLossOp<double>(1e-6, 1.0 / double(input_size))) });
-  model_trainer.setLossFunctionGrads({ std::make_shared<MSELossGradOp<double>>(MSELossGradOp<double>(1e-6, 1.0 / double(input_size))),
-    std::make_shared<BCEWithLogitsLossGradOp<double>>(BCEWithLogitsLossGradOp<double>(1e-6, 1.0 / double(input_size))),
-    std::make_shared<BCEWithLogitsLossGradOp<double>>(BCEWithLogitsLossGradOp<double>(1e-6, 1.0 / double(input_size))) });
+  model_trainer.setLossFunctions({ std::make_shared<MSELossOp<float>>(MSELossOp<float>(1e-6, 1.0 / float(input_size))),
+    std::make_shared<BCEWithLogitsLossOp<float>>(BCEWithLogitsLossOp<float>(1e-6, 1.0 / float(input_size))),
+    std::make_shared<BCEWithLogitsLossOp<float>>(BCEWithLogitsLossOp<float>(1e-6, 1.0 / float(input_size))) });
+  model_trainer.setLossFunctionGrads({ std::make_shared<MSELossGradOp<float>>(MSELossGradOp<float>(1e-6, 1.0 / float(input_size))),
+    std::make_shared<BCEWithLogitsLossGradOp<float>>(BCEWithLogitsLossGradOp<float>(1e-6, 1.0 / float(input_size))),
+    std::make_shared<BCEWithLogitsLossGradOp<float>>(BCEWithLogitsLossGradOp<float>(1e-6, 1.0 / float(input_size))) });
   model_trainer.setLossOutputNodes({ output_nodes_intensity, output_nodes_isPeakApex, output_nodes_isPeak });
-  model_trainer.setMetricFunctions({ std::make_shared<MAEOp<double>>(MAEOp<double>()),
-    std::shared_ptr<MetricFunctionOp<double>>(new PrecisionBCOp<double>()),
-    std::shared_ptr<MetricFunctionOp<double>>(new PrecisionBCOp<double>()) });
+  model_trainer.setMetricFunctions({ std::make_shared<MAEOp<float>>(MAEOp<float>()),
+    std::shared_ptr<MetricFunctionOp<float>>(new PrecisionBCOp<float>()),
+    std::shared_ptr<MetricFunctionOp<float>>(new PrecisionBCOp<float>()) });
   model_trainer.setMetricOutputNodes({ output_nodes_intensity, output_nodes_isPeakApex, output_nodes_isPeak });
   model_trainer.setMetricNames({ "Reconstruction-MAE", "IsPeakApex-PrecisionBC", "IsPeak-PrecisionBC" });
 
   // define the model replicator for growth mode
-  ModelReplicatorExt<double> model_replicator;
+  ModelReplicatorExt<float> model_replicator;
 
   // define the initial population
   std::cout << "Initializing the population..." << std::endl;
-  Model<double> model;
+  Model<float> model;
   if (make_model) {
     model_trainer.makeDenoisingAE(model, input_size, encoding_size, 512, 256, 64, 256, 64, 256, 64, true, true);
   }
@@ -701,30 +701,30 @@ void main_DenoisingAE(const std::string& data_dir, const bool& make_model, const
     const std::string interpreter_filename = data_dir + "DenoisingAE_interpreter.binary";
 
     // read in and modify the model
-    ModelFile<double> model_file;
+    ModelFile<float> model_file;
     model_file.loadModelBinary(model_filename, model);
     model.setId(1);
     model.setName("PeakInt-0");
 
     // read in the model interpreter data
-    ModelInterpreterFileGpu<double> model_interpreter_file;
+    ModelInterpreterFileGpu<float> model_interpreter_file;
     model_interpreter_file.loadModelInterpreterBinary(interpreter_filename, model_interpreters[0]); // FIX ME!
   }
-  //std::vector<Model<double>> population = { model };
+  //std::vector<Model<float>> population = { model };
 
   if (train_model) {
     // Train the model
-    std::pair<std::vector<double>, std::vector<double>> model_errors = model_trainer.trainModel(model, data_simulator,
+    std::pair<std::vector<float>, std::vector<float>> model_errors = model_trainer.trainModel(model, data_simulator,
       input_nodes, model_logger, model_interpreters.front());
 
-    //PopulationTrainerFile<double> population_trainer_file;
+    //PopulationTrainerFile<float> population_trainer_file;
     //population_trainer_file.storeModels(population, "PeakIntegrator");
 
     //// Evolve the population
-    //std::vector<std::vector<std::tuple<int, std::string, double>>> models_validation_errors_per_generation = population_trainer.evolveModels(
+    //std::vector<std::vector<std::tuple<int, std::string, float>>> models_validation_errors_per_generation = population_trainer.evolveModels(
     //  population, model_trainer, model_interpreters, model_replicator, data_simulator, model_logger, population_logger, input_nodes);
 
-    //PopulationTrainerFile<double> population_trainer_file;
+    //PopulationTrainerFile<float> population_trainer_file;
     //population_trainer_file.storeModels(population, "PeakIntegrator");
     //population_trainer_file.storeModelValidations("PeakIntegrator_Errors.csv", models_validation_errors_per_generation);
   }
