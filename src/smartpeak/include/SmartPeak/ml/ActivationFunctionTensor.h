@@ -525,11 +525,12 @@ namespace SmartPeak
 		PowTensorOp(const TensorT& base): base_(base){};
 		void operator()(TensorT* x_I, TensorT* x_O, const int& batch_size, const int& memory_size, const int& layer_size, const int& time_step, DeviceT& device) const {
 			Eigen::TensorMap<Eigen::Tensor<TensorT, 3>> x(x_I, batch_size, memory_size, layer_size);
-			Eigen::TensorMap<Eigen::Tensor<TensorT, 3>> out(x_O, batch_size, memory_size, layer_size);
-			//out.chip(time_step, 1).device(device) = x.chip(time_step, 1).unaryExpr(PowOp<TensorT>(base_));
-      const TensorT max_min = pow(this->getMax(), 1 / base_);
-			auto result = x.chip(time_step, 1).clip(-max_min, max_min).pow(base_);
-			out.chip(time_step, 1).device(device) = result;
+			Eigen::TensorMap<Eigen::Tensor<TensorT, 3>> out(x_O, batch_size, memory_size, layer_size);      
+      TensorT maxT = (base_ >= TensorT(1))? pow(this->getMax(), 1 / base_): this->getMax();
+      TensorT minT = ((base_ < TensorT(1) && base_ > TensorT(0)) || (base_ > TensorT(-1) && base_ < TensorT(0))) ? TensorT(0): this->getMin();
+			auto result = x.chip(time_step, 1).clip(minT, maxT).pow(base_);
+      // NOTE there is still the case where base_ < 0 and x == 0 to deal with
+			out.chip(time_step, 1).device(device) = (result == result).select(result, result.constant(TensorT(0)));
 		};
 		std::string getName() const { return "PowTensorOp"; };
 	private:
@@ -555,10 +556,11 @@ namespace SmartPeak
 		void operator()(TensorT* x_I, TensorT* x_O, const int& batch_size, const int& memory_size, const int& layer_size, const int& time_step, DeviceT& device) const {
 			Eigen::TensorMap<Eigen::Tensor<TensorT, 3>> x(x_I, batch_size, memory_size, layer_size);
 			Eigen::TensorMap<Eigen::Tensor<TensorT, 3>> out(x_O, batch_size, memory_size, layer_size);
-			//out.chip(time_step, 1).device(device) = x.chip(time_step, 1).unaryExpr(PowGradOp<TensorT>(base_));
-      const TensorT max_min = pow(this->getMax(), 1 / (base_ - 1));
-			auto result = x.chip(time_step, 1).constant(base_) * x.chip(time_step, 1).clip(-max_min, max_min).pow(base_ - TensorT(1));
-			out.chip(time_step, 1).device(device) = result.clip(this->getMin(), this->getMax());
+      TensorT maxT = (base_ >= TensorT(2)) ? pow(this->getMax(), 1 / (base_ - TensorT(1))) : this->getMax();
+      TensorT minT = ((base_ < TensorT(2) && base_ > TensorT(1)) || (base_ > TensorT(0) && base_ < TensorT(1))) ? TensorT(0) : this->getMin();
+			auto result = (x.chip(time_step, 1).constant(base_) * x.chip(time_step, 1).clip(minT, maxT).pow(base_ - TensorT(1))).clip(this->getMin(), this->getMax());
+      // NOTE there is still the case where base_ < 0 and x == 0 to deal with
+      out.chip(time_step, 1).device(device) = (result == result).select(result, result.constant(TensorT(0)));
 		};
 		std::string getName() const { return "PowGradTensorOp"; };
 	private:

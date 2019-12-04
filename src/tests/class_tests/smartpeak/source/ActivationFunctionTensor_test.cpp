@@ -1172,8 +1172,8 @@ BOOST_AUTO_TEST_CASE(operationfunctionPowTensorOp)
 		{{0,0}, {0,0}},
 		{{1,1}, {0,0}},
 		{{3.1622776601683795,3.1622776601683795}, {0,0}},
-		{{-1.0e9,-1.0e9}, {0,0}},  // TODO: Clip does not fix -nan(ind)
-		{{-1.0e9,-1.0e9}, {0,0}}});
+		{{0,0}, {0,0}},  // TODO: Clip does not fix -nan(ind)
+		{{0,0}, {0,0}}});
 
 	operation(input.data(), output.data(), batch_size, memory_size, layer_size, 0, device);
 
