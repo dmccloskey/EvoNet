@@ -377,9 +377,16 @@ namespace SmartPeak
 		void operator()(TensorT* x_I, TensorT* x_O, const int& batch_size, const int& memory_size, const int& layer_size, const int& time_step, DeviceT& device) const {
 			Eigen::TensorMap<Eigen::Tensor<TensorT, 3>> x(x_I, batch_size, memory_size, layer_size);
 			Eigen::TensorMap<Eigen::Tensor<TensorT, 3>> out(x_O, batch_size, memory_size, layer_size);
-			//out.chip(time_step, 1).device(device) = x.chip(time_step, 1).unaryExpr(InverseOp<TensorT>());
-			auto result = (x.chip(time_step, 1) != x.chip(time_step, 1).constant(TensorT(0))).select(
-				x.chip(time_step, 1).constant(TensorT(1))/ x.chip(time_step, 1), x.chip(time_step, 1).constant(TensorT(0)));
+      // Cap small values by selection
+      auto x_clipped_neg = (x.chip(time_step, 1) > x.chip(time_step, 1).constant(1/this->getMin()) &&
+        x.chip(time_step, 1) < x.chip(time_step, 1).constant(TensorT(0))).select(
+          x.chip(time_step, 1).constant(1/this->getMin()), x.chip(time_step, 1));
+      auto x_clipped_pos = (x_clipped_neg <= x_clipped_neg.constant(1/this->getMax()) &&
+        x_clipped_neg > x_clipped_neg.constant(TensorT(0))).select(
+          x_clipped_neg.constant(1/this->getMax()), x_clipped_neg);
+      // Remove 0 by selection
+      auto result = (x_clipped_pos != x_clipped_pos.constant(TensorT(0))).select(
+        x_clipped_pos.constant(TensorT(1)) / x_clipped_pos, x_clipped_pos.constant(TensorT(0)));
 			out.chip(time_step, 1).device(device) = result.clip(this->getMin(), this->getMax());
 		};
 		std::string getName() const { return "InverseTensorOp"; };
@@ -402,9 +409,16 @@ namespace SmartPeak
 		void operator()(TensorT* x_I, TensorT* x_O, const int& batch_size, const int& memory_size, const int& layer_size, const int& time_step, DeviceT& device) const {
 			Eigen::TensorMap<Eigen::Tensor<TensorT, 3>> x(x_I, batch_size, memory_size, layer_size);
 			Eigen::TensorMap<Eigen::Tensor<TensorT, 3>> out(x_O, batch_size, memory_size, layer_size);
-			//out.chip(time_step, 1).device(device) = x.chip(time_step, 1).unaryExpr(InverseGradOp<TensorT>());
-			auto result = (x.chip(time_step, 1) != x.chip(time_step, 1).constant(TensorT(0))).select(
-				x.chip(time_step, 1).constant((TensorT)-1) / x.chip(time_step, 1).pow((TensorT)2), x.chip(time_step, 1).constant(TensorT(0)));
+      // Cap small values by selection
+      auto x_clipped_neg = (x.chip(time_step, 1) > x.chip(time_step, 1).constant(pow(abs(1 / this->getMin()), 1/2)) &&
+        x.chip(time_step, 1) < x.chip(time_step, 1).constant(TensorT(0))).select(
+          x.chip(time_step, 1).constant(pow(abs(1 / this->getMin()), 1 / 2)), x.chip(time_step, 1));
+      auto x_clipped_pos = (x_clipped_neg <= x_clipped_neg.constant(pow(abs(1 / this->getMax()), 1 / 2)) &&
+        x_clipped_neg > x_clipped_neg.constant(TensorT(0))).select(
+          x_clipped_neg.constant(pow(abs(1 / this->getMax()), 1 / 2)), x_clipped_neg);
+      // Remove 0 by selection
+      auto result = (x_clipped_pos != x_clipped_pos.constant(TensorT(0))).select(
+        x_clipped_pos.constant(TensorT(-1)) / x_clipped_pos.pow(2), x_clipped_pos.constant(TensorT(0)));
 			out.chip(time_step, 1).device(device) = result.clip(this->getMin(), this->getMax());
 		};
 		std::string getName() const { return "InverseGradTensorOp"; };
@@ -428,7 +442,8 @@ namespace SmartPeak
 			Eigen::TensorMap<Eigen::Tensor<TensorT, 3>> x(x_I, batch_size, memory_size, layer_size);
 			Eigen::TensorMap<Eigen::Tensor<TensorT, 3>> out(x_O, batch_size, memory_size, layer_size);
 			//out.chip(time_step, 1).device(device) = x.chip(time_step, 1).unaryExpr(ExponentialOp<TensorT>());
-			auto result = x.chip(time_step, 1).exp(); 
+      TensorT maxT = log(this->getMax());
+			auto result = x.chip(time_step, 1).clip(this->getMin(), maxT).exp();
 			out.chip(time_step, 1).device(device) = result.clip(this->getMin(), this->getMax());
 		};
 		std::string getName() const { return "ExponentialTensorOp"; };
@@ -452,7 +467,8 @@ namespace SmartPeak
 			Eigen::TensorMap<Eigen::Tensor<TensorT, 3>> x(x_I, batch_size, memory_size, layer_size);
 			Eigen::TensorMap<Eigen::Tensor<TensorT, 3>> out(x_O, batch_size, memory_size, layer_size);
 			//out.chip(time_step, 1).device(device) = x.chip(time_step, 1).unaryExpr(ExponentialGradOp<TensorT>());
-			auto result = x.chip(time_step, 1).exp();
+      TensorT maxT = log(this->getMax());
+      auto result = x.chip(time_step, 1).clip(this->getMin(), maxT).exp();
 			out.chip(time_step, 1).device(device) = result.clip(this->getMin(), this->getMax());
 		};
 		std::string getName() const { return "ExponentialGradTensorOp"; };
@@ -476,7 +492,7 @@ namespace SmartPeak
 			Eigen::TensorMap<Eigen::Tensor<TensorT, 3>> x(x_I, batch_size, memory_size, layer_size);
 			Eigen::TensorMap<Eigen::Tensor<TensorT, 3>> out(x_O, batch_size, memory_size, layer_size);
 			//out.chip(time_step, 1).device(device) = x.chip(time_step, 1).unaryExpr(LogOp<TensorT>());
-			auto result = x.chip(time_step, 1).clip(1e-6, 1e6).log();
+			auto result = x.chip(time_step, 1).clip(this->getEps(), this->getMax()).log();
 			out.chip(time_step, 1).device(device) = result.clip(this->getMin(), this->getMax());
 		};
 		std::string getName() const { return "LogTensorOp"; };
@@ -499,8 +515,16 @@ namespace SmartPeak
 		void operator()(TensorT* x_I, TensorT* x_O, const int& batch_size, const int& memory_size, const int& layer_size, const int& time_step, DeviceT& device) const {
 			Eigen::TensorMap<Eigen::Tensor<TensorT, 3>> x(x_I, batch_size, memory_size, layer_size);
 			Eigen::TensorMap<Eigen::Tensor<TensorT, 3>> out(x_O, batch_size, memory_size, layer_size);
-			//out.chip(time_step, 1).device(device) = x.chip(time_step, 1).unaryExpr(LogGradOp<TensorT>());
-			auto result = x.chip(time_step, 1).constant(TensorT(1)) / x.chip(time_step, 1);
+      // Cap small values by selection
+      auto x_clipped_neg = (x.chip(time_step, 1) > x.chip(time_step, 1).constant(1/this->getMin()) &&
+        x.chip(time_step, 1) < x.chip(time_step, 1).constant(TensorT(0))).select(
+        x.chip(time_step, 1).constant(1/this->getMin()), x.chip(time_step, 1));
+      auto x_clipped_pos = (x_clipped_neg <= x_clipped_neg.constant(1/this->getMax()) &&
+        x_clipped_neg > x_clipped_neg.constant(TensorT(0))).select(
+        x_clipped_neg.constant(1/this->getMax()), x_clipped_neg);
+      // Remove 0 by selection
+      auto result = (x_clipped_pos != x_clipped_pos.constant(TensorT(0))).select(
+        x_clipped_pos.constant(TensorT(1)) / x_clipped_pos, x_clipped_pos.constant(TensorT(0)));
 			out.chip(time_step, 1).device(device) = result.clip(this->getMin(), this->getMax());
 		};
 		std::string getName() const { return "LogGradTensorOp"; };
@@ -528,7 +552,7 @@ namespace SmartPeak
 			Eigen::TensorMap<Eigen::Tensor<TensorT, 3>> out(x_O, batch_size, memory_size, layer_size);      
       TensorT maxT = (base_ >= TensorT(1))? pow(this->getMax(), 1 / base_): this->getMax();
       TensorT minT = ((base_ < TensorT(1) && base_ > TensorT(0)) || (base_ > TensorT(-1) && base_ < TensorT(0))) ? TensorT(0): this->getMin();
-			auto result = x.chip(time_step, 1).clip(minT, maxT).pow(base_);
+			auto result = x.chip(time_step, 1).clip(minT, maxT).eval().pow(base_).clip(this->getMin(), this->getMax()).eval();
       // NOTE there is still the case where base_ < 0 and x == 0 to deal with
 			out.chip(time_step, 1).device(device) = (result == result).select(result, result.constant(TensorT(0)));
 		};

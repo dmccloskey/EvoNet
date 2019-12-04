@@ -1048,11 +1048,11 @@ BOOST_AUTO_TEST_CASE(operationfunctionLogTensorOp)
 	output.setZero();
 	Eigen::Tensor<double, 3> test(batch_size, memory_size, layer_size);
 	test.setValues({
-		{{-13.815510557964274,-13.815510557964274}, {0,0}},
+		{{-55.262042231857095,-55.262042231857095}, {0,0}},
 		{{0,0}, {0,0}},
 		{{2.3025850929940459,2.3025850929940459}, {0,0}},
-		{{-13.815510557964274,-13.815510557964274}, {0,0}},
-		{{-13.815510557964274,-13.815510557964274}, {0,0}}
+		{{-55.262042231857095,-55.262042231857095}, {0,0}},
+		{{-55.262042231857095,-55.262042231857095}, {0,0}}
 		});
 
 	operation(input.data(), output.data(), batch_size, memory_size, layer_size, 0, device);
@@ -1109,7 +1109,7 @@ BOOST_AUTO_TEST_CASE(operationfunctionLogGradTensorOp)
 	output.setZero();
 	Eigen::Tensor<double, 3> test(batch_size, memory_size, layer_size);
 	test.setValues({
-		{{1000000000,1000000000}, {0,0}},
+		{{0,0}, {0,0}}, // was 1e9 prior to selection
 		{{1,1}, {0,0}},
 		{{0.1,0.1}, {0,0}},
 		{{-1,-1}, {0,0}},
@@ -1154,7 +1154,7 @@ BOOST_AUTO_TEST_CASE(destructorPowTensorOp)
 BOOST_AUTO_TEST_CASE(operationfunctionPowTensorOp)
 {
 	PowTensorOp<double, Eigen::DefaultDevice> operation(0.5);
-	const int batch_size = 5;
+	const int batch_size = 7;
 	const int memory_size = 2;
 	const int layer_size = 2;
 	Eigen::DefaultDevice device;
@@ -1163,8 +1163,10 @@ BOOST_AUTO_TEST_CASE(operationfunctionPowTensorOp)
 		{{0,0}, {0,0}},
 		{{1,1}, {0,0}},
 		{{10,10}, {0,0}},
+    {{1e12,1e12}, {0,0}},
 		{{-1,-1}, {0,0}},
-		{{-10,-10}, {0,0}} });
+		{{-10,-10}, {0,0}},
+    {{-1e12,-1e12}, {0,0}} });
 	Eigen::Tensor<double, 3> output(batch_size, memory_size, layer_size);
 	output.setZero();
 	Eigen::Tensor<double, 3> test(batch_size, memory_size, layer_size);
@@ -1172,8 +1174,10 @@ BOOST_AUTO_TEST_CASE(operationfunctionPowTensorOp)
 		{{0,0}, {0,0}},
 		{{1,1}, {0,0}},
 		{{3.1622776601683795,3.1622776601683795}, {0,0}},
-		{{0,0}, {0,0}},  // TODO: Clip does not fix -nan(ind)
-		{{0,0}, {0,0}}});
+    {{31622.776601683792,31622.776601683792}, {0,0}},
+		{{0,0}, {0,0}},
+		{{0,0}, {0,0}},
+    {{0,0}, {0,0}} });
 
 	operation(input.data(), output.data(), batch_size, memory_size, layer_size, 0, device);
 
@@ -1185,6 +1189,29 @@ BOOST_AUTO_TEST_CASE(operationfunctionPowTensorOp)
 			}
 		}
 	}
+
+  PowTensorOp<double, Eigen::DefaultDevice> operation2(2.0);
+
+  output.setZero();
+  test.setValues({
+    {{0,0}, {0,0}},
+    {{1,1}, {0,0}},
+    {{100,100}, {0,0}},
+    {{1e9,1e9}, {0,0}},
+    {{1,1}, {0,0}},  // TODO: Clip does not fix -nan(ind)
+    {{100,100}, {0,0}},  // TODO: Clip does not fix -nan(ind)
+    {{1e9,1e9}, {0,0}} });
+
+  operation2(input.data(), output.data(), batch_size, memory_size, layer_size, 0, device);
+
+  // Test
+  for (int i = 0; i < batch_size; ++i) {
+    for (int j = 0; j < memory_size; ++j) {
+      for (int k = 0; k < layer_size; ++k) {
+        BOOST_CHECK_CLOSE(output(i, j, k), test(i, j, k), 1e-4);
+      }
+    }
+  }
 }
 
 BOOST_AUTO_TEST_CASE(getNamePowTensorOp)
@@ -1214,17 +1241,19 @@ BOOST_AUTO_TEST_CASE(destructorPowGradTensorOp)
 BOOST_AUTO_TEST_CASE(operationfunctionPowGradTensorOp)
 {
 	PowGradTensorOp<double, Eigen::DefaultDevice> operation(0.5);
-	const int batch_size = 5;
+	const int batch_size = 7;
 	const int memory_size = 2;
 	const int layer_size = 2;
 	Eigen::DefaultDevice device;
 	Eigen::Tensor<double, 3> input(batch_size, memory_size, layer_size);
 	input.setValues({
-		{{0,0}, {0,0}},
-		{{1,1}, {0,0}},
-		{{10,10}, {0,0}},
-		{{-1,-1}, {0,0}},
-		{{-10,-10}, {0,0}} });
+    {{0,0}, {0,0}},
+    {{1,1}, {0,0}},
+    {{10,10}, {0,0}},
+    {{1e9,1e9}, {0,0}},
+    {{-1,-1}, {0,0}},
+    {{-10,-10}, {0,0}},
+    {{-1e9,-1e9}, {0,0}} });
 	Eigen::Tensor<double, 3> output(batch_size, memory_size, layer_size);
 	output.setZero();
 	Eigen::Tensor<double, 3> test(batch_size, memory_size, layer_size);
@@ -1232,8 +1261,10 @@ BOOST_AUTO_TEST_CASE(operationfunctionPowGradTensorOp)
 		{{1.0e9,1.0e9}, {0,0}},
 		{{0.5,0.5}, {0,0}},
 		{{0.15811388300841897,0.15811388300841897}, {0,0}},
-		{{-1.0e9,-1.0e9}, {0,0}},  // TODO: Clip does not fix -nan(ind)
-		{{-1.0e9,-1.0e9}, {0,0}} });
+    {{1.5811388300841898e-05,1.5811388300841898e-05}, {0,0}},
+		{{1.0e9,1.0e9}, {0,0}},  // TODO: why is this not zero?
+		{{1.0e9,1.0e9}, {0,0}},
+    {{1.0e9,1.0e9}, {0,0}} });
 
 	operation(input.data(), output.data(), batch_size, memory_size, layer_size, 0, device);
 
@@ -1245,6 +1276,36 @@ BOOST_AUTO_TEST_CASE(operationfunctionPowGradTensorOp)
 			}
 		}
 	}
+
+  PowGradTensorOp<double, Eigen::DefaultDevice> operation2(2);
+  input.setValues({
+    {{0,0}, {0,0}},
+    {{1,1}, {0,0}},
+    {{10,10}, {0,0}},
+    {{1e9,1e9}, {0,0}},
+    {{-1,-1}, {0,0}},
+    {{-10,-10}, {0,0}},
+    {{-1e9,-1e9}, {0,0}} });
+  output.setZero();
+  test.setValues({
+    {{0,0}, {0,0}},
+    {{2.0,2.0}, {0,0}},
+    {{20,20}, {0,0}},
+    {{1e9,1e9}, {0,0}},
+    {{-2,-2}, {0,0}},
+    {{-20,-20}, {0,0}},
+    {{-1e9,-1e9}, {0,0}} });
+
+  operation2(input.data(), output.data(), batch_size, memory_size, layer_size, 0, device);
+
+  // Test
+  for (int i = 0; i < batch_size; ++i) {
+    for (int j = 0; j < memory_size; ++j) {
+      for (int k = 0; k < layer_size; ++k) {
+        BOOST_CHECK_CLOSE(output(i, j, k), test(i, j, k), 1e-4);
+      }
+    }
+  }
 }
 
 BOOST_AUTO_TEST_CASE(getNamePowGradTensorOp)
