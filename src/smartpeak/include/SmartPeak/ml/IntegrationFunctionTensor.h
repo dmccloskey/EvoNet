@@ -490,48 +490,47 @@ public:
       // NOTE for numerical stability, we multiply by the comp_tensor in order to zero out non contributing elements,
       //      which otherwise would result in an very large error even though their contribution was 0,
       //      and then divide by the square of the comp_tensor plus a small constant to avoid division by 0
-//      TensorT* tmp_data;
-//      if (typeid(device).name() == typeid(Eigen::DefaultDevice).name()) {
-//        tmp_data = new TensorT[batch_size*sink_layer_size];
-//      }
-//#if COMPILE_WITH_CUDA
-//      else if (typeid(device).name() == typeid(Eigen::GpuDevice).name()) {
-//        size_t bytes = batch_size * sink_layer_size * sizeof(TensorT);
-//        assert(cudaMalloc((void**)(&tmp_data), bytes) == cudaSuccess);
-//      }
-//#endif
-//      Eigen::TensorMap<Eigen::Tensor<TensorT, 2>> tmp(tmp_data, batch_size, sink_layer_size);
-//			tmp.device(device) = (source_exp_input_tensor * source_error_tensor.chip(source_time_step, 1).broadcast(Eigen::array<int, 3>({ 1, sink_layer_size, 1 }))
-//        * comp_tensor / (comp_tensor * comp_tensor + comp_tensor.constant(this->eps_))).sum(Eigen::array<int, 1>({ 2 }));
-      auto tmp = (source_exp_input_tensor * source_error_tensor.chip(source_time_step, 1).broadcast(Eigen::array<int, 3>({ 1, sink_layer_size, 1 }))
-        * comp_tensor / (comp_tensor * comp_tensor + comp_tensor.constant(this->eps_))).sum(Eigen::array<int, 1>({ 2 }));
+      TensorT* tmp_data;
+      if (typeid(device).name() == typeid(Eigen::DefaultDevice).name()) {
+        tmp_data = new TensorT[batch_size*sink_layer_size*source_layer_size];
+      }
+#if COMPILE_WITH_CUDA
+      else if (typeid(device).name() == typeid(Eigen::GpuDevice).name()) {
+        size_t bytes = batch_size * sink_layer_size * source_layer_size * sizeof(TensorT);
+        assert(cudaMalloc((void**)(&tmp_data), bytes) == cudaSuccess);
+      }
+#endif
+      Eigen::TensorMap<Eigen::Tensor<TensorT, 3>> comp_tensor_clipped_neg(tmp_data, batch_size, sink_layer_size, source_layer_size);
+      // Step 2 Option 1
+      //auto tmp = (source_exp_input_tensor * source_error_tensor.chip(source_time_step, 1).broadcast(Eigen::array<int, 3>({ 1, sink_layer_size, 1 }))
+      //  * comp_tensor / (comp_tensor * comp_tensor + comp_tensor.constant(this->eps_))).sum(Eigen::array<int, 1>({ 2 }));
 
-      sink_error_tensor.chip(sink_time_step, 1).device(device) += (tmp * sink_derivative_tensor.chip(sink_time_step, 1)).clip(this->min_, this->max_);
+      // calculate numerator
+      auto tmp_numerator = source_exp_input_tensor * source_error_tensor.chip(source_time_step, 1).broadcast(Eigen::array<int, 3>({ 1, sink_layer_size, 1 }));
 
-      //// step 3: substitute 0s for 1s
-      //auto sink_error_1 = (sink_error_tensor.chip(sink_time_step, 1) > sink_error_tensor.chip(sink_time_step, 1).constant(-this->eps_) &&
-      //  sink_error_tensor.chip(sink_time_step, 1) < sink_error_tensor.chip(sink_time_step, 1).constant(TensorT(1e-24))).select(
-      //    sink_error_tensor.chip(sink_time_step, 1).constant(TensorT(1)), sink_error_tensor.chip(sink_time_step, 1));
-      //tmp.device(device) = sink_error_1 * tmp.clip(this->min_, this->max_) * sink_derivative_tensor.chip(sink_time_step, 1);
+      // remove small values (both positive and negative) from the intermediate tensor
+      comp_tensor_clipped_neg.device(device) = (comp_tensor > comp_tensor.constant(1 / this->min_) &&
+        comp_tensor < comp_tensor.constant(TensorT(0))).select(
+          comp_tensor.constant(1 / this->min_), comp_tensor);
+      auto comp_tensor_clipped_pos = (comp_tensor_clipped_neg <= comp_tensor_clipped_neg.constant(1 / this->max_) &&
+        comp_tensor > comp_tensor.constant(TensorT(0))).select(
+          comp_tensor_clipped_neg.constant(1 / this->max_), comp_tensor_clipped_neg);
 
-      //// step 4: swap back the original 0s
-      //auto sink_error_corrected = (
-      //  (sink_error_tensor.chip(sink_time_step, 1) > tmp.constant(-this->eps_) &&
-      //    sink_error_tensor.chip(sink_time_step, 1) < tmp.constant(TensorT(1e-24))) &&
-      //  (tmp > tmp.constant(TensorT(1) - this->eps_) &&
-      //    tmp < tmp.constant(TensorT(1) + this->eps_))).select(
-      //      tmp.constant(TensorT(0)), tmp);
-      //sink_error_tensor.chip(sink_time_step, 1).device(device) = sink_error_corrected;
+      // remove all 0's from the intermediate tensor and finish the calculation
+      auto tmp_non_zero = (comp_tensor_clipped_neg != comp_tensor_clipped_neg.constant(TensorT(0))).select(
+        tmp_numerator / comp_tensor_clipped_pos, comp_tensor_clipped_neg.constant(TensorT(0))).sum(Eigen::array<int, 1>({ 2 }));
 
-//      // Deallocate temporary memory
-//      if (typeid(device).name() == typeid(Eigen::DefaultDevice).name()) {
-//        delete[] tmp_data;
-//      }
-//#if COMPILE_WITH_CUDA
-//      else if (typeid(device).name() == typeid(Eigen::GpuDevice).name()) {
-//        assert(cudaFree(tmp_data) == cudaSuccess);
-//      }
-//#endif
+      sink_error_tensor.chip(sink_time_step, 1).device(device) += (tmp_non_zero * sink_derivative_tensor.chip(sink_time_step, 1)).clip(this->min_, this->max_);
+
+      // Deallocate temporary memory
+      if (typeid(device).name() == typeid(Eigen::DefaultDevice).name()) {
+        delete[] tmp_data;
+      }
+#if COMPILE_WITH_CUDA
+      else if (typeid(device).name() == typeid(Eigen::GpuDevice).name()) {
+        assert(cudaFree(tmp_data) == cudaSuccess);
+      }
+#endif
 
       //// DEBUG (only on CPU)
       //std::cout << "[ProdErrorTensorOp]comp_tensor: " << comp_tensor << std::endl;
@@ -828,13 +827,25 @@ public:
 			Eigen::TensorMap<Eigen::Tensor<TensorT, 3>> source_output_tensor(source_output, batch_size, memory_size, source_layer_size);
 			Eigen::TensorMap<Eigen::Tensor<TensorT, 4>> weight_tensor(weight, 1, 1, source_layer_size, sink_layer_size);
 			Eigen::TensorMap<Eigen::Tensor<TensorT, 2>> weight_error_tensor(weight_error, source_layer_size, sink_layer_size);
+      // step 0: remove small values and 0's from the weight_tensor for numerical stability
+      auto weight_tensor_exp = weight_tensor.broadcast(Eigen::array<int, 4>({ batch_size, memory_size, 1, 1 }));
+      auto weight_tensor_exp_clipped_neg = (weight_tensor_exp > weight_tensor_exp.constant(1 / this->min_) &&
+        weight_tensor_exp < weight_tensor_exp.constant(TensorT(0))).select(
+          weight_tensor_exp.constant(1 / this->min_), weight_tensor_exp);
+      auto weight_tensor_exp_clipped_pos = (weight_tensor_exp <= weight_tensor_exp.constant(1 / this->max_) &&
+        weight_tensor_exp > weight_tensor_exp.constant(TensorT(0))).select(
+          weight_tensor_exp_clipped_neg.constant(1 / this->max_), weight_tensor_exp_clipped_neg);
+      
 			// step 1: compute the weight-normalized source net input expanded across batch and memory
       // NOTE for numerical stability we multiply by the weight_tensor and then divide by the square of the weight tensor plus a small number to avoid dividing by 0
-      auto weight_tensor_exp = weight_tensor.broadcast(Eigen::array<int, 4>({ batch_size, memory_size, 1, 1 }));
-			auto input_normalized_tensor = source_input_tensor.broadcast(Eigen::array<int, 4>({ 1, 1, 1, sink_layer_size })) * weight_tensor_exp / (weight_tensor_exp*weight_tensor_exp + weight_tensor_exp.constant(this->eps_));
-			// step 2: scale to the sink error
+			//auto input_normalized_tensor = source_input_tensor.broadcast(Eigen::array<int, 4>({ 1, 1, 1, sink_layer_size })) * weight_tensor_exp / (weight_tensor_exp*weight_tensor_exp + weight_tensor_exp.constant(this->eps_));
+      auto input_normalized_tensor = (weight_tensor_exp != weight_tensor_exp.constant(TensorT(0))).select(
+        source_input_tensor.broadcast(Eigen::array<int, 4>({ 1, 1, 1, sink_layer_size })) / weight_tensor_exp_clipped_pos, weight_tensor_exp.constant(TensorT(0)));
+			
+      // step 2: scale to the sink error
 			auto scaled_error = -sink_error_tensor.broadcast(Eigen::array<int, 4>({ 1, 1, source_layer_size, 1 })) * input_normalized_tensor;
-			// step 3: sum along the memory and average along the batch dimensions
+			
+      // step 3: sum along the memory and average along the batch dimensions
 			weight_error_tensor.device(device) += (scaled_error.sum(Eigen::array<int, 2>({ 0, 1 })) * weight_error_tensor.constant(TensorT(1) / (TensorT)batch_size)).clip(this->min_, this->max_);
 		};
 		std::string getName() const { return "ProdWeightGradTensorOp"; };
