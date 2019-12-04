@@ -605,7 +605,6 @@ public:
 			Eigen::TensorMap<Eigen::Tensor<TensorT, 3>> predicted_tensor(predicted, batch_size, memory_size, layer_size);
 			Eigen::TensorMap<Eigen::Tensor<TensorT, 3>> error_tensor(error, batch_size, memory_size, layer_size);
 			auto predicted_chip = predicted_tensor.chip(time_step, 1);
-			//error_tensor.chip(time_step, 1).device(device) += -((expected_tensor - expected_tensor.constant(1))*predicted_chip.exp().unaryExpr(ClipTensorOp<TensorT>(1e-6, 0, 1e9)) + expected_tensor) / (predicted_chip.exp().unaryExpr(ClipTensorOp<TensorT>(1e-6, 0, 1e9)) + expected_tensor.constant(1));
 			// NOTE: removed -(( to (( to ensure negative gradients
       auto result = ((expected_tensor - expected_tensor.constant(TensorT(1))) * predicted_chip.exp() + expected_tensor) / (predicted_chip.exp() + expected_tensor.constant(TensorT(1))) * error_tensor.chip(time_step, 1).constant(this->scale_);
       error_tensor.chip(time_step, 1).device(device) += (result == result).select(result.clip(this->min_, this->max_), result.constant(TensorT(0)));
