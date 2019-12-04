@@ -907,12 +907,12 @@ void main_MNIST(const std::string& data_dir, const bool& make_model, const bool&
 		model.setName("VAE1");
 		ModelInterpreterFileGpu<float> model_interpreter_file;
 		model_interpreter_file.loadModelInterpreterBinary(interpreter_filename, model_interpreters[0]); // FIX ME!
-    std::cout << "Modifying the learning rate..." << std::endl;
-    for (auto& weight_map : model.weights_) {
-      if (weight_map.second->getSolverOp()->getName() == "AdamOp") {
-        weight_map.second->getSolverOpShared()->setLearningRate(5e-6);
-      }
-    }
+    //std::cout << "Modifying the learning rate..." << std::endl;
+    //for (auto& weight_map : model.weights_) {
+    //  if (weight_map.second->getSolverOp()->getName() == "AdamOp") {
+    //    weight_map.second->getSolverOpShared()->setLearningRate(5e-6);
+    //  }
+    //}
 	}
 	//std::vector<Model<float>> population = { model };
 
