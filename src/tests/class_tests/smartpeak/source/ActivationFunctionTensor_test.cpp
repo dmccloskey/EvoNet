@@ -32,7 +32,7 @@ BOOST_AUTO_TEST_CASE(gettersAndSettersReluTensorOp)
 {
   // Test defaults
   ReLUTensorOp<double, Eigen::DefaultDevice> operation_defaults;
-  BOOST_CHECK_CLOSE(operation_defaults.getEps(), 1e-6, 1e-6);
+  BOOST_CHECK_CLOSE(operation_defaults.getEps(), 1e-24, 1e-6);
   BOOST_CHECK_CLOSE(operation_defaults.getMin(), -1e9, 1e-6);
   BOOST_CHECK_CLOSE(operation_defaults.getMax(), 1e9, 1e-6);
 
