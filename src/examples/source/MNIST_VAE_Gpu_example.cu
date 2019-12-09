@@ -61,7 +61,7 @@ public:
 		auto integration_weight_grad_op = std::make_shared<SumWeightGradOp<TensorT>>(SumWeightGradOp<TensorT>());
 
 		// Define the solver
-		auto solver_op = std::make_shared<AdamOp<TensorT>>(AdamOp<TensorT>(5e-5, 0.9, 0.999, 1e-8, 10));
+		auto solver_op = std::make_shared<AdamOp<TensorT>>(AdamOp<TensorT>(5e-4, 0.9, 0.999, 1e-8, 1000));
 
 		// Add the Endocer FC layers
 		std::vector<std::string> node_names_mu, node_names_logvar;
@@ -715,7 +715,7 @@ public:
 					loss_output_data(batch_iter, memory_iter, nodes_iter) = this->training_data(sample_indices[batch_iter], nodes_iter);
 					metric_output_data(batch_iter, memory_iter, nodes_iter) = this->training_data(sample_indices[batch_iter], nodes_iter);
 					if (nodes_iter < n_encodings_) {
-            input_data(batch_iter, memory_iter, nodes_iter + n_input_pixels) = gaussian_samples(0, nodes_iter); // sample from a normal distribution
+            input_data(batch_iter, memory_iter, nodes_iter + n_input_pixels) = 0;// [FIXME] gaussian_samples(0, nodes_iter); // sample from a normal distribution
 						loss_output_data(batch_iter, memory_iter, nodes_iter + n_input_pixels) = 0; // Dummy data for KL divergence mu
 						loss_output_data(batch_iter, memory_iter, nodes_iter + n_input_pixels + n_encodings_) = 0; // Dummy data for KL divergence logvar
 					}
@@ -872,15 +872,15 @@ void main_MNIST(const std::string& data_dir, const bool& make_model, const bool&
 	model_trainer.setFindCycles(false);
 	model_trainer.setFastInterpreter(true);
 	model_trainer.setLossFunctions({
-		std::make_shared<MSELossOp<float>>(MSELossOp<float>(1e-6, 1.0 / float(input_size))),
-		//std::make_shared<BCEWithLogitsLossOp<float>>(BCEWithLogitsLossOp<float>(1e-6, 1.0 / float(input_size))),
-		std::make_shared<KLDivergenceMuLossOp<float>>(KLDivergenceMuLossOp<float>(1e-6, 1.0 / float(encoding_size), 0.0)), //30
-		std::make_shared<KLDivergenceLogVarLossOp<float>>(KLDivergenceLogVarLossOp<float>(1e-6, 1.0 / float(encoding_size), 0.0)) }); //30
+		//std::make_shared<MSELossOp<float>>(MSELossOp<float>(1e-6, 1.0 / float(input_size))),
+		std::make_shared<BCEWithLogitsLossOp<float>>(BCEWithLogitsLossOp<float>(1e-6, 1.0 / float(input_size))),
+		std::make_shared<KLDivergenceMuLossOp<float>>(KLDivergenceMuLossOp<float>(1e-6, 0.0 /*1.0 / float(encoding_size)*/, 0.0)), // [FIXME]
+		std::make_shared<KLDivergenceLogVarLossOp<float>>(KLDivergenceLogVarLossOp<float>(1e-6, 0.0 /*1.0 / float(encoding_size)*/, 0.0)) }); // [FIXME]
 	model_trainer.setLossFunctionGrads({
-		std::make_shared<MSELossGradOp<float>>(MSELossGradOp<float>(1e-6, 1.0 / float(input_size))),
-		//std::make_shared<BCEWithLogitsLossGradOp<float>>(BCEWithLogitsLossGradOp<float>(1e-6, 1.0 / float(input_size))),
-		std::make_shared<KLDivergenceMuLossGradOp<float>>(KLDivergenceMuLossGradOp<float>(1e-6, 1.0 / float(encoding_size), 0.0)),
-		std::make_shared<KLDivergenceLogVarLossGradOp<float>>(KLDivergenceLogVarLossGradOp<float>(1e-6, 1.0 / float(encoding_size), 0.0)) });
+		//std::make_shared<MSELossGradOp<float>>(MSELossGradOp<float>(1e-6, 1.0 / float(input_size))),
+		std::make_shared<BCEWithLogitsLossGradOp<float>>(BCEWithLogitsLossGradOp<float>(1e-6, 1.0 / float(input_size))),
+		std::make_shared<KLDivergenceMuLossGradOp<float>>(KLDivergenceMuLossGradOp<float>(1e-6, 0.0 /*1.0 / float(encoding_size)*/, 0.0)),
+		std::make_shared<KLDivergenceLogVarLossGradOp<float>>(KLDivergenceLogVarLossGradOp<float>(1e-6, 0.0 /*1.0 / float(encoding_size)*/, 0.0)) });
 	model_trainer.setLossOutputNodes({ output_nodes, encoding_nodes_mu, encoding_nodes_logvar });
 	model_trainer.setMetricFunctions({ std::make_shared<MAEOp<float>>(MAEOp<float>()) });
 	model_trainer.setMetricOutputNodes({ output_nodes });
@@ -893,7 +893,7 @@ void main_MNIST(const std::string& data_dir, const bool& make_model, const bool&
 	Model<float> model;
 	if (make_model) {
 		std::cout << "Making the model..." << std::endl;
-		ModelTrainerExt<float>().makeVAEFullyConn(model, input_size, encoding_size, 512, 256, 64, true, true, true);
+		ModelTrainerExt<float>().makeVAEFullyConn(model, input_size, encoding_size, 2048, 512, 512, true, false, true);
 		//ModelTrainerExt<float>().makeVAECovNet(model, input_size, encoding_size, 32, 1, 0, 2, 1, 0, 128, 128, 7, 1, false, true);
 	}
 	else {

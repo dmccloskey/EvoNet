@@ -347,7 +347,13 @@ public:
 		else {
 			activation = std::make_shared<LeakyReLUOp<TensorT>>(LeakyReLUOp<TensorT>());
 			activation_grad = std::make_shared<LeakyReLUGradOp<TensorT>>(LeakyReLUGradOp<TensorT>());
+      //activation = std::make_shared<TanHOp<TensorT>>(TanHOp<TensorT>());
+      //activation_grad = std::make_shared<TanHGradOp<TensorT>>(TanHGradOp<TensorT>());
 		}
+    std::shared_ptr<ActivationOp<TensorT>> activation_norm = std::make_shared<LeakyReLUOp<TensorT>>(LeakyReLUOp<TensorT>());
+    std::shared_ptr<ActivationOp<TensorT>> activation_norm_grad = std::make_shared<LeakyReLUGradOp<TensorT>>(LeakyReLUGradOp<TensorT>());
+    //std::shared_ptr<ActivationOp<TensorT>> activation_norm = std::make_shared<TanHOp<TensorT>>(TanHOp<TensorT>());
+    //std::shared_ptr<ActivationOp<TensorT>> activation_norm_grad = std::make_shared<TanHGradOp<TensorT>>(TanHGradOp<TensorT>());
 
 		// Define the node integration
 		auto integration_op = std::make_shared<SumOp<TensorT>>(SumOp<TensorT>());
@@ -355,7 +361,7 @@ public:
 		auto integration_weight_grad_op = std::make_shared<SumWeightGradOp<TensorT>>(SumWeightGradOp<TensorT>());
 
 		// Define the solver
-		auto solver_op = std::make_shared<AdamOp<TensorT>>(AdamOp<TensorT>(5e-4, 0.9, 0.999, 1e-8, 10));
+		auto solver_op = std::make_shared<AdamOp<TensorT>>(AdamOp<TensorT>(5e-4, 0.9, 0.999, 1e-8, 100));
 
 		// Add the 1st FC layer
 		if (n_hidden_0 > 0) {
@@ -366,8 +372,7 @@ public:
 			if (add_norm) {
 				node_names = model_builder.addNormalization(model, "EN0-Norm", "EN0-Norm", node_names, true);
 				node_names = model_builder.addSinglyConnected(model, "EN0-Norm-gain", "EN0-Norm-gain", node_names, node_names.size(),
-					std::make_shared<LeakyReLUOp<TensorT>>(LeakyReLUOp<TensorT>()),
-					std::make_shared<LeakyReLUGradOp<TensorT>>(LeakyReLUGradOp<TensorT>()),
+          activation_norm, activation_norm_grad,
 					integration_op, integration_error_op, integration_weight_grad_op,
 					std::make_shared<ConstWeightInitOp<TensorT>>(ConstWeightInitOp<TensorT>(1)),
 					solver_op,
@@ -384,8 +389,7 @@ public:
 			if (add_norm) {
 				node_names = model_builder.addNormalization(model, "EN1-Norm", "EN1-Norm", node_names, true);
 				node_names = model_builder.addSinglyConnected(model, "EN1-Norm-gain", "EN1-Norm-gain", node_names, node_names.size(),
-					std::make_shared<LeakyReLUOp<TensorT>>(LeakyReLUOp<TensorT>()),
-					std::make_shared<LeakyReLUGradOp<TensorT>>(LeakyReLUGradOp<TensorT>()),
+          activation_norm, activation_norm_grad,
 					integration_op, integration_error_op, integration_weight_grad_op,
 					std::make_shared<ConstWeightInitOp<TensorT>>(ConstWeightInitOp<TensorT>(1)),
 					solver_op,
@@ -402,8 +406,7 @@ public:
 			if (add_norm) {
 				node_names = model_builder.addNormalization(model, "EN2-Norm", "EN2-Norm", node_names, true);
 				node_names = model_builder.addSinglyConnected(model, "EN2-Norm-gain", "EN2-Norm-gain", node_names, node_names.size(),
-					std::make_shared<LeakyReLUOp<TensorT>>(LeakyReLUOp<TensorT>()),
-					std::make_shared<LeakyReLUGradOp<TensorT>>(LeakyReLUGradOp<TensorT>()),
+          activation_norm, activation_norm_grad,
 					integration_op, integration_error_op, integration_weight_grad_op,
 					std::make_shared<ConstWeightInitOp<TensorT>>(ConstWeightInitOp<TensorT>(1)),
 					solver_op,
@@ -414,8 +417,7 @@ public:
 		node_names = model_builder.addFullyConnected(model, "DE-Output", "DE-Output", node_names, n_outputs,
 			//std::make_shared<SigmoidOp<TensorT>>(SigmoidOp<TensorT>()),
 			//std::make_shared<SigmoidGradOp<TensorT>>(SigmoidGradOp<TensorT>()),
-			std::make_shared<LeakyReLUOp<TensorT>>(LeakyReLUOp<TensorT>()),
-			std::make_shared<LeakyReLUGradOp<TensorT>>(LeakyReLUGradOp<TensorT>()),
+      activation_norm, activation_norm_grad,
 			integration_op, integration_error_op, integration_weight_grad_op,
 			std::make_shared<RandWeightInitOp<TensorT>>(RandWeightInitOp<TensorT>(node_names.size(), 1)),
 			solver_op, 0.0f, 0.0f, false, true);
@@ -714,11 +716,11 @@ void main_MNIST(const std::string& data_dir, const bool& make_model, const bool&
 	model_trainer.setFindCycles(false);
 	model_trainer.setFastInterpreter(true);
 	model_trainer.setLossFunctions({
-		std::make_shared<CrossEntropyWithLogitsLossOp<float>>(CrossEntropyWithLogitsLossOp<float>(1e-6, 1.0)),
-		std::make_shared<MSELossOp<float>>(MSELossOp<float>(1e-6, 1.0)) });
+		std::make_shared<CrossEntropyWithLogitsLossOp<float>>(CrossEntropyWithLogitsLossOp<float>(1e-24, 1.0)),
+		std::make_shared<MSELossOp<float>>(MSELossOp<float>(1e-24, 0.0)) });
 	model_trainer.setLossFunctionGrads({
-		std::make_shared<CrossEntropyWithLogitsLossGradOp<float>>(CrossEntropyWithLogitsLossGradOp<float>(1e-6, 1.0)),
-		std::make_shared<MSELossGradOp<float>>(MSELossGradOp<float>(1e-6, 1.0)) });
+		std::make_shared<CrossEntropyWithLogitsLossGradOp<float>>(CrossEntropyWithLogitsLossGradOp<float>(1e-24, 1.0)),
+		std::make_shared<MSELossGradOp<float>>(MSELossGradOp<float>(1e-24, 0.0)) });
 	model_trainer.setLossOutputNodes({
 		output_nodes,
 		output_nodes });
@@ -733,11 +735,11 @@ void main_MNIST(const std::string& data_dir, const bool& make_model, const bool&
 	Model<float> model;
 	if (make_model) {
 		std::cout << "Making the model..." << std::endl;
-		model_trainer.makeFullyConn(model, input_nodes.size(), output_nodes.size(), 512, 256, 64, true, true);  // Baseline
+		model_trainer.makeFullyConn(model, input_nodes.size(), output_nodes.size(), 2048, 512, 256, true, true);  // Baseline
 		//model_trainer.makeCovNet(model, input_nodes.size(), output_nodes.size(), 2, 2, 0, 32, 4, 7, 1, 2, 2, false, true, true);  // Sanity test
 		//model_trainer.makeCovNet(model, input_nodes.size(), output_nodes.size(), 8, 2, 128, 32, 5, 2, false, true);  // Minimal solving model
 		//model_trainer.makeCovNet(model, input_nodes.size(), output_nodes.size(), 32, 2, 0, 512, 32, 5, 1, 2, 2, true, true, true); // Recommended model
-		//model_trainer.makeCovNet(model, input_nodes.size(), output_nodes.size(), 32, 2, 0, 256, 32, 7, 1, 2, 2, false, true, true, false); // Recommended model
+		//model_trainer.makeCovNet(model, input_nodes.size(), output_nodes.size(), 32, 2, 0, 256, 32, 7, 1, 2, 2, false, true, true, true); // Recommended model
 	}
 	else {
 		// read in the trained model

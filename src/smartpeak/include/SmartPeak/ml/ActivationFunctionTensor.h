@@ -3,10 +3,16 @@
 #ifndef SMARTPEAK_ACTIVATIONTENSORFUNCTION_H
 #define SMARTPEAK_ACTIVATIONTENSORFUNCTION_H
 
+#if COMPILE_WITH_CUDA
+#define EIGEN_DEFAULT_DENSE_INDEX_TYPE int
+#define EIGEN_USE_GPU
+#include <cuda.h>
+#include <cuda_runtime.h>
+#endif
+
 #include <SmartPeak/ml/ActivationFunction.h>
 #include <unsupported/Eigen/CXX11/Tensor>
 #include <unsupported/Eigen/MatrixFunctions>
-
 
 //#include <cereal/access.hpp>  // serialiation of private members
 //#undef min // clashes with std::limit on windows in polymorphic.hpp
@@ -366,17 +372,38 @@ namespace SmartPeak
 		void operator()(TensorT* x_I, TensorT* x_O, const int& batch_size, const int& memory_size, const int& layer_size, const int& time_step, DeviceT& device) const {
 			Eigen::TensorMap<Eigen::Tensor<TensorT, 3>> x(x_I, batch_size, memory_size, layer_size);
 			Eigen::TensorMap<Eigen::Tensor<TensorT, 3>> out(x_O, batch_size, memory_size, layer_size);
-   //   // Cap small values by selection
-   //   auto x_clipped_neg = (x.chip(time_step, 1) > x.chip(time_step, 1).constant(1/this->getMin()) &&
-   //     x.chip(time_step, 1) < x.chip(time_step, 1).constant(TensorT(0))).select(
-   //       x.chip(time_step, 1).constant(1/this->getMin()), x.chip(time_step, 1));
-   //   auto x_clipped_pos = (x_clipped_neg <= x_clipped_neg.constant(1/this->getMax()) &&
-   //     x_clipped_neg > x_clipped_neg.constant(TensorT(0))).select(
-   //       x_clipped_neg.constant(1/this->getMax()), x_clipped_neg);
-   //   // Remove 0 by selection
-   //   auto result = (x_clipped_pos != x_clipped_pos.constant(TensorT(0))).select(
-   //     x_clipped_pos.constant(TensorT(1)) / x_clipped_pos, x_clipped_pos.constant(TensorT(0)));
-			//out.chip(time_step, 1).device(device) = result.clip(this->getMin(), this->getMax());
+      // Temporary memory for computation
+      TensorT* tmp_data;
+      if (typeid(device).name() == typeid(Eigen::DefaultDevice).name()) {
+        tmp_data = new TensorT[batch_size * layer_size];
+      }
+#if COMPILE_WITH_CUDA
+      else if (typeid(device).name() == typeid(Eigen::GpuDevice).name()) {
+        size_t bytes = batch_size * layer_size * sizeof(TensorT);
+        assert(cudaMalloc((void**)(&tmp_data), bytes) == cudaSuccess);
+      }
+#endif
+      // Cap small values by selection
+      auto x_clipped_neg = (x.chip(time_step, 1) > x.chip(time_step, 1).constant(1 / this->getMin()) &&
+        x.chip(time_step, 1) < x.chip(time_step, 1).constant(TensorT(0))).select(
+          x.chip(time_step, 1).constant(1 / this->getMin()), x.chip(time_step, 1));
+      Eigen::TensorMap<Eigen::Tensor<TensorT, 2>> x_clipped_pos(tmp_data, batch_size, layer_size);
+      x_clipped_pos.device(device) = (x_clipped_neg <= x_clipped_neg.constant(1 / this->getMax()) &&
+        x_clipped_neg > x_clipped_neg.constant(TensorT(0))).select(
+          x_clipped_neg.constant(1 / this->getMax()), x_clipped_neg);
+      // Remove 0 by selection
+      auto result = (x_clipped_pos != x_clipped_pos.constant(TensorT(0))).select(
+        x_clipped_pos.constant(TensorT(1)) / x_clipped_pos, x_clipped_pos.constant(TensorT(0)));
+      out.chip(time_step, 1).device(device) = result.clip(this->getMin(), this->getMax());
+      // Deallocate temporary memory
+      if (typeid(device).name() == typeid(Eigen::DefaultDevice).name()) {
+        delete[] tmp_data;
+      }
+#if COMPILE_WITH_CUDA
+      else if (typeid(device).name() == typeid(Eigen::GpuDevice).name()) {
+        assert(cudaFree(tmp_data) == cudaSuccess);
+      }
+#endif
 		};
 		std::string getName() const { return "InverseTensorOp"; };
 	//private:
@@ -398,17 +425,38 @@ namespace SmartPeak
 		void operator()(TensorT* x_I, TensorT* x_O, const int& batch_size, const int& memory_size, const int& layer_size, const int& time_step, DeviceT& device) const {
 			Eigen::TensorMap<Eigen::Tensor<TensorT, 3>> x(x_I, batch_size, memory_size, layer_size);
 			Eigen::TensorMap<Eigen::Tensor<TensorT, 3>> out(x_O, batch_size, memory_size, layer_size);
-   //   // Cap small values by selection
-   //   auto x_clipped_neg = (x.chip(time_step, 1) > x.chip(time_step, 1).constant(pow(abs(1 / this->getMin()), 1/2)) &&
-   //     x.chip(time_step, 1) < x.chip(time_step, 1).constant(TensorT(0))).select(
-   //       x.chip(time_step, 1).constant(pow(abs(1 / this->getMin()), 1 / 2)), x.chip(time_step, 1));
-   //   auto x_clipped_pos = (x_clipped_neg <= x_clipped_neg.constant(pow(abs(1 / this->getMax()), 1 / 2)) &&
-   //     x_clipped_neg > x_clipped_neg.constant(TensorT(0))).select(
-   //       x_clipped_neg.constant(pow(abs(1 / this->getMax()), 1 / 2)), x_clipped_neg);
-   //   // Remove 0 by selection
-   //   auto result = (x_clipped_pos != x_clipped_pos.constant(TensorT(0))).select(
-   //     x_clipped_pos.constant(TensorT(-1)) / x_clipped_pos.pow(2), x_clipped_pos.constant(TensorT(0)));
-			//out.chip(time_step, 1).device(device) = result.clip(this->getMin(), this->getMax());
+      // Temporary memory for computation
+      TensorT* tmp_data;
+      if (typeid(device).name() == typeid(Eigen::DefaultDevice).name()) {
+        tmp_data = new TensorT[batch_size * layer_size];
+      }
+#if COMPILE_WITH_CUDA
+      else if (typeid(device).name() == typeid(Eigen::GpuDevice).name()) {
+        size_t bytes = batch_size * layer_size * sizeof(TensorT);
+        assert(cudaMalloc((void**)(&tmp_data), bytes) == cudaSuccess);
+      }
+#endif
+      // Cap small values by selection
+      auto x_clipped_neg = (x.chip(time_step, 1) > x.chip(time_step, 1).constant(1 / this->getMin()) &&
+        x.chip(time_step, 1) < x.chip(time_step, 1).constant(TensorT(0))).select(
+          x.chip(time_step, 1).constant(1 / this->getMin()), x.chip(time_step, 1));
+      Eigen::TensorMap<Eigen::Tensor<TensorT, 2>> x_clipped_pos(tmp_data, batch_size, layer_size);
+      x_clipped_pos.device(device) = (x_clipped_neg <= x_clipped_neg.constant(1 / this->getMax()) &&
+        x_clipped_neg > x_clipped_neg.constant(TensorT(0))).select(
+          x_clipped_neg.constant(1 / this->getMax()), x_clipped_neg);
+      // Remove 0 by selection
+      auto result = (x_clipped_pos != x_clipped_pos.constant(TensorT(0))).select(
+        x_clipped_pos.constant(TensorT(-1)) / x_clipped_pos.pow(2), x_clipped_pos.constant(TensorT(0)));
+			out.chip(time_step, 1).device(device) = result.clip(this->getMin(), this->getMax());
+      // Deallocate temporary memory
+      if (typeid(device).name() == typeid(Eigen::DefaultDevice).name()) {
+        delete[] tmp_data;
+      }
+#if COMPILE_WITH_CUDA
+      else if (typeid(device).name() == typeid(Eigen::GpuDevice).name()) {
+        assert(cudaFree(tmp_data) == cudaSuccess);
+      }
+#endif
 		};
 		std::string getName() const { return "InverseGradTensorOp"; };
 	//private:
@@ -501,17 +549,38 @@ namespace SmartPeak
 		void operator()(TensorT* x_I, TensorT* x_O, const int& batch_size, const int& memory_size, const int& layer_size, const int& time_step, DeviceT& device) const {
 			Eigen::TensorMap<Eigen::Tensor<TensorT, 3>> x(x_I, batch_size, memory_size, layer_size);
 			Eigen::TensorMap<Eigen::Tensor<TensorT, 3>> out(x_O, batch_size, memory_size, layer_size);
-   //   // Cap small values by selection
-   //   auto x_clipped_neg = (x.chip(time_step, 1) > x.chip(time_step, 1).constant(1/this->getMin()) &&
-   //     x.chip(time_step, 1) < x.chip(time_step, 1).constant(TensorT(0))).select(
-   //     x.chip(time_step, 1).constant(1/this->getMin()), x.chip(time_step, 1));
-   //   auto x_clipped_pos = (x_clipped_neg <= x_clipped_neg.constant(1/this->getMax()) &&
-   //     x_clipped_neg > x_clipped_neg.constant(TensorT(0))).select(
-   //     x_clipped_neg.constant(1/this->getMax()), x_clipped_neg);
-   //   // Remove 0 by selection
-   //   auto result = (x_clipped_pos != x_clipped_pos.constant(TensorT(0))).select(
-   //     x_clipped_pos.constant(TensorT(1)) / x_clipped_pos, x_clipped_pos.constant(TensorT(0)));
-			//out.chip(time_step, 1).device(device) = result.clip(this->getMin(), this->getMax());
+      // Temporary memory for computation
+      TensorT* tmp_data;
+      if (typeid(device).name() == typeid(Eigen::DefaultDevice).name()) {
+        tmp_data = new TensorT[batch_size* layer_size];
+      }
+#if COMPILE_WITH_CUDA
+      else if (typeid(device).name() == typeid(Eigen::GpuDevice).name()) {
+        size_t bytes = batch_size * layer_size * sizeof(TensorT);
+        assert(cudaMalloc((void**)(&tmp_data), bytes) == cudaSuccess);
+      }
+#endif
+      // Cap small values by selection
+      auto x_clipped_neg = (x.chip(time_step, 1) > x.chip(time_step, 1).constant(1/this->getMin()) &&
+        x.chip(time_step, 1) < x.chip(time_step, 1).constant(TensorT(0))).select(
+        x.chip(time_step, 1).constant(1/this->getMin()), x.chip(time_step, 1));
+      Eigen::TensorMap<Eigen::Tensor<TensorT, 2>> x_clipped_pos(tmp_data, batch_size, layer_size);
+      x_clipped_pos.device(device) = (x_clipped_neg <= x_clipped_neg.constant(1/this->getMax()) &&
+        x_clipped_neg > x_clipped_neg.constant(TensorT(0))).select(
+        x_clipped_neg.constant(1/this->getMax()), x_clipped_neg);
+      // Remove 0 by selection
+      auto result = (x_clipped_pos != x_clipped_pos.constant(TensorT(0))).select(
+        x_clipped_pos.constant(TensorT(1)) / x_clipped_pos, x_clipped_pos.constant(TensorT(0)));
+			out.chip(time_step, 1).device(device) = result.clip(this->getMin(), this->getMax());
+      // Deallocate temporary memory
+      if (typeid(device).name() == typeid(Eigen::DefaultDevice).name()) {
+        delete[] tmp_data;
+      }
+#if COMPILE_WITH_CUDA
+      else if (typeid(device).name() == typeid(Eigen::GpuDevice).name()) {
+        assert(cudaFree(tmp_data) == cudaSuccess);
+      }
+#endif
 		};
 		std::string getName() const { return "LogGradTensorOp"; };
 	//private:

@@ -35,9 +35,9 @@ public:
 	@param[in] n_cells The number of cells in each LSTM block
 	@param[in] specify_layers Whether to give the `ModelInterpreter` "hints" as to the correct network structure during graph to tensor compilation
 	*/
-	void makeLSTM(Model<TensorT>& model, const int& n_inputs = 784, const int& n_outputs = 10,
-		const int& n_blocks_1 = 128, const int& n_cells_1 = 1, const int& n_blocks_2 = 0, const int& n_cells_2 = 1,
-		const int& n_hidden = 32, const bool& add_forget_gate = true, const bool& specify_layers = true) {
+  void makeLSTM(Model<TensorT>& model, const int& n_inputs = 784, const int& n_outputs = 10,
+    const int& n_blocks_1 = 128, const int& n_cells_1 = 1, const int& n_blocks_2 = 0, const int& n_cells_2 = 1,
+    const int& n_hidden = 32, const bool& add_forget_gate = true, const bool& add_norm = true, const bool& specify_layers = true) {
 		model.setId(0);
 		model.setName("LSTM");
 
@@ -46,56 +46,89 @@ public:
 		// Add the inputs
 		std::vector<std::string> node_names_input = model_builder.addInputNodes(model, "Input", "Input", n_inputs, specify_layers);
 
+    // Define the activation based on `add_norm`
+    std::shared_ptr<ActivationOp<TensorT>> activation, activation_grad, activation_fc, activation_fc_grad;
+    if (add_norm) {
+      activation = std::make_shared<LinearOp<TensorT>>(LinearOp<TensorT>());
+      activation_grad = std::make_shared<LinearGradOp<TensorT>>(LinearGradOp<TensorT>());
+      activation_fc = std::make_shared<LinearOp<TensorT>>(LinearOp<TensorT>());
+      activation_fc_grad = std::make_shared<LinearGradOp<TensorT>>(LeakLinearGradOpyReLUGradOp<TensorT>());
+    }
+    else {
+      activation = std::make_shared<TanHOp<TensorT>>(TanHOp<TensorT>());
+      activation_grad = std::make_shared<TanHGradOp<TensorT>>(TanHGradOp<TensorT>());
+      activation_fc = std::make_shared<LeakyReLUOp<TensorT>>(LeakyReLUOp<TensorT>());
+      activation_fc_grad = std::make_shared<LeakyReLUGradOp<TensorT>>(LeakyReLUGradOp<TensorT>());
+    }
+    std::shared_ptr<ActivationOp<TensorT>> activation_norm = std::make_shared<TanHOp<TensorT>>(TanHOp<TensorT>());
+    std::shared_ptr<ActivationOp<TensorT>> activation_norm_grad = std::make_shared<TanHGradOp<TensorT>>(TanHGradOp<TensorT>());
+    std::shared_ptr<ActivationOp<TensorT>> activation_output = std::make_shared<LeakyReLUOp<TensorT>>(LeakyReLUOp<TensorT>());
+    std::shared_ptr<ActivationOp<TensorT>> activation_output_grad = std::make_shared<LeakyReLUGradOp<TensorT>>(LeakyReLUGradOp<TensorT>());
+
+    // Define the node integration
+    auto integration_op = std::make_shared<SumOp<TensorT>>(SumOp<TensorT>());
+    auto integration_error_op = std::make_shared<SumErrorOp<TensorT>>(SumErrorOp<TensorT>());
+    auto integration_weight_grad_op = std::make_shared<SumWeightGradOp<TensorT>>(SumWeightGradOp<TensorT>());
+
+    // Define the solver
+    auto solver_op = std::make_shared<AdamOp<TensorT>>(AdamOp<TensorT>(5e-4, 0.9, 0.999, 1e-8, 10));
+
 		// Add the LSTM layer(s)
 		std::vector<std::string> node_names = model_builder.addLSTM(model, "LSTM-01", "LSTM-01", node_names_input, n_blocks_1, n_cells_1,
-			std::make_shared<TanHOp<TensorT>>(TanHOp<float>()),
-			std::make_shared<TanHGradOp<TensorT>>(TanHGradOp<float>()),
-			std::make_shared<SumOp<TensorT>>(SumOp<TensorT>()),
-			std::make_shared<SumErrorOp<TensorT>>(SumErrorOp<TensorT>()),
-			std::make_shared<SumWeightGradOp<TensorT>>(SumWeightGradOp<TensorT>()),
+      activation, activation_grad, integration_op, integration_error_op, integration_weight_grad_op,
 			std::make_shared<RandWeightInitOp<TensorT>>(RandWeightInitOp<TensorT>((TensorT)(node_names_input.size() + n_blocks_1) / 2, 1)),
-			std::make_shared<AdamOp<TensorT>>(AdamOp<TensorT>(1e-3, 0.9, 0.999, 1e-3, 1.0)),
+			solver_op,
 			0.0f, 0.0f, true, add_forget_gate, 1, specify_layers);
+    if (add_norm) {
+      node_names = model_builder.addNormalization(model, "LSTM-01-Norm", "LSTM-01-Norm", node_names, true);
+      node_names = model_builder.addSinglyConnected(model, "LSTM-01-Norm-gain", "LSTM-01-Norm-gain", node_names, node_names.size(),
+        activation_norm, activation_norm_grad, integration_op, integration_error_op, integration_weight_grad_op,
+        std::make_shared<ConstWeightInitOp<TensorT>>(ConstWeightInitOp<TensorT>(1)),
+        solver_op,
+        0.0, 0.0, true, specify_layers);
+    }
 
 		if (n_blocks_2 > 0) {
 			node_names = model_builder.addLSTM(model, "LSTM-02", "LSTM-02", node_names, n_blocks_2, n_cells_2,
-				std::make_shared<TanHOp<TensorT>>(TanHOp<float>()),
-				std::make_shared<TanHGradOp<TensorT>>(TanHGradOp<float>()),
-				std::make_shared<SumOp<TensorT>>(SumOp<TensorT>()),
-				std::make_shared<SumErrorOp<TensorT>>(SumErrorOp<TensorT>()),
-				std::make_shared<SumWeightGradOp<TensorT>>(SumWeightGradOp<TensorT>()),
+        activation, activation_grad, integration_op, integration_error_op, integration_weight_grad_op,
 				std::make_shared<RandWeightInitOp<TensorT>>(RandWeightInitOp<TensorT>((TensorT)(node_names.size() + n_blocks_2) / 2, 1)),
-				std::make_shared<AdamOp<TensorT>>(AdamOp<TensorT>(1e-3, 0.9, 0.999, 1e-3, 1.0)),
+				solver_op,
 				0.0f, 0.0f, true, add_forget_gate, 1, specify_layers);
 		}
+    if (add_norm) {
+      node_names = model_builder.addNormalization(model, "LSTM-02-Norm", "LSTM-02-Norm", node_names, true);
+      node_names = model_builder.addSinglyConnected(model, "LSTM-02-Norm-gain", "LSTM-02-Norm-gain", node_names, node_names.size(),
+        activation_norm, activation_norm_grad, integration_op, integration_error_op, integration_weight_grad_op,
+        std::make_shared<ConstWeightInitOp<TensorT>>(ConstWeightInitOp<TensorT>(1)),
+        solver_op,
+        0.0, 0.0, true, specify_layers);
+    }
 
 		// Add a fully connected layer
 		if (n_hidden > 0) {
 			node_names = model_builder.addFullyConnected(model, "FC-01", "FC-01", node_names, n_hidden,
-				std::make_shared<TanHOp<TensorT>>(TanHOp<TensorT>()),
-				std::make_shared<TanHGradOp<TensorT>>(TanHGradOp<TensorT>()),
-				std::make_shared<SumOp<TensorT>>(SumOp<TensorT>()),
-				std::make_shared<SumErrorOp<TensorT>>(SumErrorOp<TensorT>()),
-				std::make_shared<SumWeightGradOp<TensorT>>(SumWeightGradOp<TensorT>()),
+        activation_fc, activation_fc_grad, integration_op, integration_error_op, integration_weight_grad_op,
 				std::make_shared<RandWeightInitOp<TensorT>>(RandWeightInitOp<TensorT>((TensorT)(node_names.size() + n_hidden) / 2, 1)),
-				std::make_shared<AdamOp<TensorT>>(AdamOp<TensorT>(1e-3, 0.9, 0.999, 1e-3, 1.0)), 0.0f, 0.0f, false, specify_layers);
+				solver_op, 0.0f, 0.0f, false, specify_layers);
 		}
+    if (add_norm) {
+      node_names = model_builder.addNormalization(model, "FC-01-Norm", "FC-01-Norm", node_names, true);
+      node_names = model_builder.addSinglyConnected(model, "FC-01-Norm-gain", "FC-01-Norm-gain", node_names, node_names.size(),
+        activation_norm, activation_norm_grad, integration_op, integration_error_op, integration_weight_grad_op,
+        std::make_shared<ConstWeightInitOp<TensorT>>(ConstWeightInitOp<TensorT>(1)),
+        solver_op,
+        0.0, 0.0, true, specify_layers);
+    }
 
 		// Add a final output layer
 		node_names = model_builder.addFullyConnected(model, "FC-Out", "FC-Out", node_names, n_outputs,
-			std::make_shared<TanHOp<TensorT>>(TanHOp<TensorT>()),
-			std::make_shared<TanHGradOp<TensorT>>(TanHGradOp<TensorT>()),
-			std::make_shared<SumOp<TensorT>>(SumOp<TensorT>()),
-			std::make_shared<SumErrorOp<TensorT>>(SumErrorOp<TensorT>()),
-			std::make_shared<SumWeightGradOp<TensorT>>(SumWeightGradOp<TensorT>()),
+      activation_output, activation_output_grad, integration_op, integration_error_op, integration_weight_grad_op,
 			std::make_shared<RandWeightInitOp<TensorT>>(RandWeightInitOp<TensorT>(node_names.size(), 2)),
-			std::make_shared<AdamOp<TensorT>>(AdamOp<TensorT>(1e-3, 0.9, 0.999, 1e-3, 1.0)), 0.0f, 0.0f, false, true);
+			solver_op, 0.0f, 0.0f, false, true);
 		node_names = model_builder.addSinglyConnected(model, "Output", "Output", node_names, n_outputs,
 			std::make_shared<LinearOp<TensorT>>(LinearOp<TensorT>()),
 			std::make_shared<LinearGradOp<TensorT>>(LinearGradOp<TensorT>()),
-			std::make_shared<SumOp<TensorT>>(SumOp<TensorT>()),
-			std::make_shared<SumErrorOp<TensorT>>(SumErrorOp<TensorT>()),
-			std::make_shared<SumWeightGradOp<TensorT>>(SumWeightGradOp<TensorT>()),
+      integration_op, integration_error_op, integration_weight_grad_op,
 			std::make_shared<ConstWeightInitOp<TensorT>>(ConstWeightInitOp<TensorT>(1)),
 			std::make_shared<DummySolverOp<TensorT>>(DummySolverOp<TensorT>()), 0.0f, 0.0f, false, true);
 
@@ -137,6 +170,8 @@ public:
 			activation = std::make_shared<LeakyReLUOp<TensorT>>(LeakyReLUOp<TensorT>());
 			activation_grad = std::make_shared<LeakyReLUGradOp<TensorT>>(LeakyReLUGradOp<TensorT>());
 		}
+    std::shared_ptr<ActivationOp<TensorT>> activation_norm = std::make_shared<LeakyReLUOp<TensorT>>(LeakyReLUOp<TensorT>());
+    std::shared_ptr<ActivationOp<TensorT>> activation_norm_grad = std::make_shared<LeakyReLUGradOp<TensorT>>(LeakyReLUGradOp<TensorT>());
 
 		// Define the node integration
 		auto integration_op = std::make_shared<SumOp<TensorT>>(SumOp<TensorT>());
@@ -144,7 +179,7 @@ public:
 		auto integration_weight_grad_op = std::make_shared<SumWeightGradOp<TensorT>>(SumWeightGradOp<TensorT>());
 
 		// Define the solver
-		auto solver_op = std::make_shared<AdamOp<TensorT>>(AdamOp<TensorT>(1e-3, 0.9, 0.999, 1e-8, 10));
+		auto solver_op = std::make_shared<AdamOp<TensorT>>(AdamOp<TensorT>(5e-4, 0.9, 0.999, 1e-8, 10));
 
 		// Add the 1st RNN layer
 		if (n_hidden_0 > 0) {
@@ -167,8 +202,7 @@ public:
 			if (add_norm) {
 				node_names = model_builder.addNormalization(model, "EN0-Norm", "EN0-Norm", node_names, true);
 				node_names = model_builder.addSinglyConnected(model, "EN0-Norm-gain", "EN0-Norm-gain", node_names, node_names.size(),
-					std::make_shared<LeakyReLUOp<TensorT>>(LeakyReLUOp<TensorT>()),
-					std::make_shared<LeakyReLUGradOp<TensorT>>(LeakyReLUGradOp<TensorT>()),
+          activation_norm, activation_norm_grad,
 					integration_op, integration_error_op, integration_weight_grad_op,
 					std::make_shared<ConstWeightInitOp<TensorT>>(ConstWeightInitOp<TensorT>(1)),
 					solver_op,
@@ -197,8 +231,7 @@ public:
 			if (add_norm) {
 				node_names = model_builder.addNormalization(model, "EN1-Norm", "EN1-Norm", node_names, true);
 				node_names = model_builder.addSinglyConnected(model, "EN1-Norm-gain", "EN1-Norm-gain", node_names, node_names.size(),
-					std::make_shared<LeakyReLUOp<TensorT>>(LeakyReLUOp<TensorT>()),
-					std::make_shared<LeakyReLUGradOp<TensorT>>(LeakyReLUGradOp<TensorT>()),
+          activation_norm, activation_norm_grad,
 					integration_op, integration_error_op, integration_weight_grad_op,
 					std::make_shared<ConstWeightInitOp<TensorT>>(ConstWeightInitOp<TensorT>(1)),
 					solver_op,
@@ -474,11 +507,11 @@ void main_MNIST(const std::string& data_dir, const bool& make_model, const bool&
 	model_trainer.setFindCycles(true);
 	model_trainer.setFastInterpreter(true);
 	model_trainer.setLossFunctions({
-		std::make_shared<CrossEntropyWithLogitsLossOp<float>>(CrossEntropyWithLogitsLossOp<float>()),
-		std::make_shared<MSELossOp<float>>(MSELossOp<float>()) });
+		std::make_shared<CrossEntropyWithLogitsLossOp<float>>(CrossEntropyWithLogitsLossOp<float>(1e-24, 1.0)),
+		std::make_shared<MSELossOp<float>>(MSELossOp<float>(1e-24, 0.0)) });
 	model_trainer.setLossFunctionGrads({
-		std::make_shared<CrossEntropyWithLogitsLossGradOp<float>>(CrossEntropyWithLogitsLossGradOp<float>()),
-		std::make_shared<MSELossGradOp<float>>(MSELossGradOp<float>()) });
+		std::make_shared<CrossEntropyWithLogitsLossGradOp<float>>(CrossEntropyWithLogitsLossGradOp<float>(1e-24, 1.0)),
+		std::make_shared<MSELossGradOp<float>>(MSELossGradOp<float>(1e-24, 0.0)) });
 	model_trainer.setLossOutputNodes({
 		output_nodes,
 		output_nodes });
@@ -493,8 +526,8 @@ void main_MNIST(const std::string& data_dir, const bool& make_model, const bool&
 	std::cout << "Initializing the population..." << std::endl;
 	Model<float> model;
 	if (make_model) {
-		model_trainer.makeRNN(model, input_nodes.size(), output_nodes.size(), 128, 128, true, true, true);
-		//model_trainer.makeLSTM(model, input_nodes.size(), output_nodes.size(), n_blocks_1, n_cells_1, n_blocks_2, n_cells_2, n_hidden, add_forget_gate, true);
+		//model_trainer.makeRNN(model, input_nodes.size(), output_nodes.size(), 128, 128, true, true, true);
+		model_trainer.makeLSTM(model, input_nodes.size(), output_nodes.size(), n_blocks_1, n_cells_1, n_blocks_2, n_cells_2, n_hidden, add_forget_gate, true);
 	}
 	else {
 		// read in the trained model

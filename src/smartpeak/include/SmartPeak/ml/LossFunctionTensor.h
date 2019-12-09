@@ -29,7 +29,7 @@ namespace SmartPeak
 		virtual std::string getName() = 0;
 		virtual void operator()(TensorT* predicted, TensorT* expected, TensorT* error, const int& batch_size, const int& memory_size, const int& layer_size, const int& time_step, DeviceT& device) const = 0;
 	protected:
-		TensorT eps_ = TensorT(1e-6);
+		TensorT eps_ = TensorT(1e-24);
 		TensorT scale_ = TensorT(1.0);
     TensorT reward_ = TensorT(10.0);
     TensorT min_ = TensorT(-1e9);
@@ -49,7 +49,7 @@ namespace SmartPeak
 		virtual std::string getName() = 0;
 		virtual void operator()(TensorT* predicted, TensorT* expected, TensorT* error, const int& batch_size, const int& memory_size, const int& layer_size, const int& time_step, DeviceT& device) const = 0;
 	protected:
-    TensorT eps_ = TensorT(1e-6);
+    TensorT eps_ = TensorT(1e-24);
     TensorT scale_ = TensorT(1.0);
     TensorT reward_ = TensorT(10.0);
     TensorT min_ = TensorT(-1e9);
@@ -657,7 +657,7 @@ public:
       }
 #endif
       Eigen::TensorMap<Eigen::Tensor<TensorT, 1>> result(tmp_data, batch_size);
-      result.device(device) = ((-expected_tensor * (stable_softmax.clip(1/this->max_, TensorT(1)).log())) * expected_tensor.constant(TensorT(1) / TensorT(layer_size))).sum(Eigen::array<int, 1>({ 1 })) * error_tensor.chip(time_step, 1).constant(this->scale_);
+      result.device(device) = ((-expected_tensor * (stable_softmax.clip(this->eps_, TensorT(1)).log())) * expected_tensor.constant(TensorT(1) / TensorT(layer_size))).sum(Eigen::array<int, 1>({ 1 })) * error_tensor.chip(time_step, 1).constant(this->scale_);
 			error_tensor.chip(time_step, 1).device(device) += (result == result).select(result.clip(this->min_, this->max_), result.constant(TensorT(0)));
 
       // Deallocate temporary memory
