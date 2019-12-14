@@ -47,28 +47,36 @@ public:
 		// Add the inputs
 		std::vector<std::string> node_names_input = model_builder.addInputNodes(model, "Input", "Input", n_inputs, specify_layers);
 
+    // Define the activation based on `add_norm`
+    std::shared_ptr<ActivationOp<TensorT>> activation, activation_grad;
+    if (add_norm) {
+      activation = std::make_shared<LinearOp<TensorT>>(LinearOp<TensorT>());
+      activation_grad = std::make_shared<LinearGradOp<TensorT>>(LinearGradOp<TensorT>());
+    }
+    else {
+      activation = std::make_shared<LeakyReLUOp<TensorT>>(LeakyReLUOp<TensorT>());
+      activation_grad = std::make_shared<LeakyReLUGradOp<TensorT>>(LeakyReLUGradOp<TensorT>());
+    }
+
+    // Define the node integration
+    auto integration_op = std::make_shared<SumOp<TensorT>>(SumOp<TensorT>());
+    auto integration_error_op = std::make_shared<SumErrorOp<TensorT>>(SumErrorOp<TensorT>());
+    auto integration_weight_grad_op = std::make_shared<SumWeightGradOp<TensorT>>(SumWeightGradOp<TensorT>());
+
+    // Define the solver
+    auto solver_op = std::make_shared<AdamOp<TensorT>>(AdamOp<TensorT>(1e-3, 0.9, 0.999, 1e-8, 10));
+
 		// Add the first convolution -> max pool -> ReLU layers
 		std::vector<std::vector<std::string>> node_names_l0;
 		for (size_t d = 0; d < n_depth_1; ++d) {
 			std::vector<std::string> node_names;
 			std::string conv_name = "Conv0-" + std::to_string(d);
-			std::shared_ptr<ActivationOp<TensorT>> activation, activation_grad;
-			if (add_norm) {
-				activation = std::make_shared<LinearOp<TensorT>>(LinearOp<TensorT>());
-				activation_grad = std::make_shared<LinearGradOp<TensorT>>(LinearGradOp<TensorT>());
-			}
-			else {
-				activation = std::make_shared<LeakyReLUOp<TensorT>>(LeakyReLUOp<TensorT>());
-				activation_grad = std::make_shared<LeakyReLUGradOp<TensorT>>(LeakyReLUGradOp<TensorT>());
-			}
 			node_names = model_builder.addConvolution(model, conv_name, conv_name, node_names_input,
 				sqrt(node_names_input.size()), sqrt(node_names_input.size()), 0, 0,
-				filter_size, filter_size, filter_stride, 0, 0, activation, activation_grad,
-				std::make_shared<SumOp<TensorT>>(SumOp<TensorT>()),
-				std::make_shared<SumErrorOp<TensorT>>(SumErrorOp<TensorT>()),
-				std::make_shared<SumWeightGradOp<TensorT>>(SumWeightGradOp<TensorT>()),
+				filter_size, filter_size, filter_stride, 0, 0,
+        activation, activation_grad, integration_op, integration_error_op, integration_weight_grad_op,
 				std::make_shared<RandWeightInitOp<TensorT>>(RandWeightInitOp<TensorT>(filter_size * filter_size, 2)),
-				std::make_shared<AdamOp<TensorT>>(AdamOp<TensorT>(1e-3, 0.9, 0.999, 1e-8, 10)), 0.0f, 0.0f, false, specify_layers, share_weights);
+				solver_op, 0.0f, 0.0f, false, specify_layers, share_weights);
 			if (add_norm) {
 				std::string norm_name = "Norm0-" + std::to_string(d);
 				node_names = model_builder.addNormalization(model, norm_name, norm_name, node_names, specify_layers);
@@ -76,11 +84,9 @@ public:
 				node_names = model_builder.addSinglyConnected(model, gain_name, gain_name, node_names, node_names.size(),
 					std::make_shared<LeakyReLUOp<TensorT>>(LeakyReLUOp<TensorT>()), // Nonlinearity occures after the normalization
 					std::make_shared<LeakyReLUGradOp<TensorT>>(LeakyReLUGradOp<TensorT>()),
-					std::make_shared<SumOp<TensorT>>(SumOp<TensorT>()),
-					std::make_shared<SumErrorOp<TensorT>>(SumErrorOp<TensorT>()),
-					std::make_shared<SumWeightGradOp<TensorT>>(SumWeightGradOp<TensorT>()),
+          integration_op, integration_error_op, integration_weight_grad_op,
 					std::make_shared<ConstWeightInitOp<TensorT>>(ConstWeightInitOp<TensorT>(1)),
-					std::make_shared<AdamOp<TensorT>>(AdamOp<TensorT>(1e-3, 0.9, 0.999, 1e-8, 10)),
+					solver_op,
 					0.0, 0.0, true, specify_layers);
 			}
 			if (add_pool) {
@@ -90,7 +96,7 @@ public:
 					pool_size, pool_size, pool_stride, 0, 0,
 					std::make_shared<LeakyReLUOp<TensorT>>(LeakyReLUOp<TensorT>()),
 					std::make_shared<LeakyReLUGradOp<TensorT>>(LeakyReLUGradOp<TensorT>()),
-					std::make_shared<MaxOp<TensorT>>(MaxOp<float>()),
+					std::make_shared<MaxOp<TensorT>>(MaxOp<TensorT>()),
 					std::make_shared<MaxErrorOp<TensorT>>(MaxErrorOp<TensorT>()),
 					std::make_shared<MaxWeightGradOp<TensorT>>(MaxWeightGradOp<TensorT>()),
 					std::make_shared<ConstWeightInitOp<TensorT>>(ConstWeightInitOp<TensorT>(1.0)),
@@ -106,23 +112,12 @@ public:
 			for (size_t d = 0; d < n_depth_2; ++d) {
 				std::vector<std::string> node_names;
 				std::string conv_name = "Conv1-" + std::to_string(l_cnt) + "-" + std::to_string(d);
-				std::shared_ptr<ActivationOp<TensorT>> activation, activation_grad;
-				if (add_norm) {
-					activation = std::make_shared<LinearOp<TensorT>>(LinearOp<TensorT>());
-					activation_grad = std::make_shared<LinearGradOp<TensorT>>(LinearGradOp<TensorT>());
-				}
-				else {
-					activation = std::make_shared<LeakyReLUOp<TensorT>>(LeakyReLUOp<TensorT>());
-					activation_grad = std::make_shared<LeakyReLUGradOp<TensorT>>(LeakyReLUGradOp<TensorT>());
-				}
 				node_names = model_builder.addConvolution(model, conv_name, conv_name, node_names_l,
 					sqrt(node_names_l.size()), sqrt(node_names_l.size()), 0, 0,
-					filter_size, filter_size, filter_stride, 0, 0, activation, activation_grad,
-					std::make_shared<SumOp<TensorT>>(SumOp<TensorT>()),
-					std::make_shared<SumErrorOp<TensorT>>(SumErrorOp<TensorT>()),
-					std::make_shared<SumWeightGradOp<TensorT>>(SumWeightGradOp<TensorT>()),
+					filter_size, filter_size, filter_stride, 0, 0,
+          activation, activation_grad, integration_op, integration_error_op, integration_weight_grad_op,
 					std::make_shared<RandWeightInitOp<TensorT>>(RandWeightInitOp<TensorT>(filter_size * filter_size, 2)),
-					std::make_shared<AdamOp<TensorT>>(AdamOp<TensorT>(1e-3, 0.9, 0.999, 1e-8, 10)), 0.0f, 0.0f, false, specify_layers, share_weights);
+					solver_op, 0.0f, 0.0f, false, specify_layers, share_weights);
 				if (add_norm) {
 					std::string norm_name = "Norm1-" + std::to_string(l_cnt) + "-" + std::to_string(d);
 					node_names = model_builder.addNormalization(model, norm_name, norm_name, node_names, specify_layers);
@@ -130,11 +125,9 @@ public:
 					node_names = model_builder.addSinglyConnected(model, gain_name, gain_name, node_names, node_names.size(),
 						std::make_shared<LeakyReLUOp<TensorT>>(LeakyReLUOp<TensorT>()), // Nonlinearity occures after the normalization
 						std::make_shared<LeakyReLUGradOp<TensorT>>(LeakyReLUGradOp<TensorT>()),
-						std::make_shared<SumOp<TensorT>>(SumOp<TensorT>()),
-						std::make_shared<SumErrorOp<TensorT>>(SumErrorOp<TensorT>()),
-						std::make_shared<SumWeightGradOp<TensorT>>(SumWeightGradOp<TensorT>()),
+            integration_op, integration_error_op, integration_weight_grad_op,
 						std::make_shared<ConstWeightInitOp<TensorT>>(ConstWeightInitOp<TensorT>(1)),
-						std::make_shared<AdamOp<TensorT>>(AdamOp<TensorT>(1e-3, 0.9, 0.999, 1e-8, 10)),
+						solver_op,
 						0.0, 0.0, true, specify_layers);
 				}
 				if (add_pool) {
@@ -144,7 +137,7 @@ public:
 						pool_size, pool_size, pool_stride, 0, 0,
 						std::make_shared<LeakyReLUOp<TensorT>>(LeakyReLUOp<TensorT>()),
 						std::make_shared<LeakyReLUGradOp<TensorT>>(LeakyReLUGradOp<TensorT>()),
-						std::make_shared<MaxOp<TensorT>>(MaxOp<float>()),
+						std::make_shared<MaxOp<TensorT>>(MaxOp<TensorT>()),
 						std::make_shared<MaxErrorOp<TensorT>>(MaxErrorOp<TensorT>()),
 						std::make_shared<MaxWeightGradOp<TensorT>>(MaxWeightGradOp<TensorT>()),
 						std::make_shared<ConstWeightInitOp<TensorT>>(ConstWeightInitOp<TensorT>(1.0)),
@@ -162,23 +155,12 @@ public:
 			for (size_t d = 0; d < n_depth_3; ++d) {
 				std::vector<std::string> node_names;
 				std::string conv_name = "Conv2-" + std::to_string(l_cnt) + "-" + std::to_string(d);
-				std::shared_ptr<ActivationOp<TensorT>> activation, activation_grad;
-				if (add_norm) {
-					activation = std::make_shared<LinearOp<TensorT>>(LinearOp<TensorT>());
-					activation_grad = std::make_shared<LinearGradOp<TensorT>>(LinearGradOp<TensorT>());
-				}
-				else {
-					activation = std::make_shared<LeakyReLUOp<TensorT>>(LeakyReLUOp<TensorT>());
-					activation_grad = std::make_shared<LeakyReLUGradOp<TensorT>>(LeakyReLUGradOp<TensorT>());
-				}
 				node_names = model_builder.addConvolution(model, conv_name, conv_name, node_names_l,
 					sqrt(node_names_l.size()), sqrt(node_names_l.size()), 0, 0,
-					filter_size, filter_size, filter_stride, 0, 0, activation, activation_grad,
-					std::make_shared<SumOp<TensorT>>(SumOp<TensorT>()),
-					std::make_shared<SumErrorOp<TensorT>>(SumErrorOp<TensorT>()),
-					std::make_shared<SumWeightGradOp<TensorT>>(SumWeightGradOp<TensorT>()),
+					filter_size, filter_size, filter_stride, 0, 0,
+          activation, activation_grad, integration_op, integration_error_op, integration_weight_grad_op,
 					std::make_shared<RandWeightInitOp<TensorT>>(RandWeightInitOp<TensorT>(filter_size * filter_size, 2)),
-					std::make_shared<AdamOp<TensorT>>(AdamOp<TensorT>(1e-3, 0.9, 0.999, 1e-8, 10)), 0.0f, 0.0f, false, specify_layers, share_weights);
+					solver_op, 0.0f, 0.0f, false, specify_layers, share_weights);
 				if (add_norm) {
 					std::string norm_name = "Norm2-" + std::to_string(l_cnt) + "-" + std::to_string(d);
 					node_names = model_builder.addNormalization(model, norm_name, norm_name, node_names, specify_layers);
@@ -186,11 +168,9 @@ public:
 					node_names = model_builder.addSinglyConnected(model, gain_name, gain_name, node_names, node_names.size(),
 						std::make_shared<LeakyReLUOp<TensorT>>(LeakyReLUOp<TensorT>()), // Nonlinearity occures after the normalization
 						std::make_shared<LeakyReLUGradOp<TensorT>>(LeakyReLUGradOp<TensorT>()),
-						std::make_shared<SumOp<TensorT>>(SumOp<TensorT>()),
-						std::make_shared<SumErrorOp<TensorT>>(SumErrorOp<TensorT>()),
-						std::make_shared<SumWeightGradOp<TensorT>>(SumWeightGradOp<TensorT>()),
+            integration_op, integration_error_op, integration_weight_grad_op,
 						std::make_shared<ConstWeightInitOp<TensorT>>(ConstWeightInitOp<TensorT>(1)),
-						std::make_shared<AdamOp<TensorT>>(AdamOp<TensorT>(1e-3, 0.9, 0.999, 1e-8, 10)),
+						solver_op,
 						0.0, 0.0, true, specify_layers);
 				}
 				if (add_pool) {
@@ -200,7 +180,7 @@ public:
 						pool_size, pool_size, pool_stride, 0, 0,
 						std::make_shared<LeakyReLUOp<TensorT>>(LeakyReLUOp<TensorT>()),
 						std::make_shared<LeakyReLUGradOp<TensorT>>(LeakyReLUGradOp<TensorT>()),
-						std::make_shared<MaxOp<TensorT>>(MaxOp<float>()),
+						std::make_shared<MaxOp<TensorT>>(MaxOp<TensorT>()),
 						std::make_shared<MaxErrorOp<TensorT>>(MaxErrorOp<TensorT>()),
 						std::make_shared<MaxWeightGradOp<TensorT>>(MaxWeightGradOp<TensorT>()),
 						std::make_shared<ConstWeightInitOp<TensorT>>(ConstWeightInitOp<TensorT>(1.0)),
@@ -236,81 +216,48 @@ public:
 		}
 
 		// Add the first FC layer
-		std::shared_ptr<ActivationOp<TensorT>> activation, activation_grad;
-		if (add_norm) {
-			activation = std::make_shared<LinearOp<TensorT>>(LinearOp<TensorT>());
-			activation_grad = std::make_shared<LinearGradOp<TensorT>>(LinearGradOp<TensorT>());
-		}
-		else {
-			activation = std::make_shared<LeakyReLUOp<TensorT>>(LeakyReLUOp<TensorT>());
-			activation_grad = std::make_shared<LeakyReLUGradOp<TensorT>>(LeakyReLUGradOp<TensorT>());
-		}
 		node_names = model_builder.addFullyConnected(model, "FC0", "FC0", node_names, n_fc_1,
-			activation, activation_grad,
-			std::make_shared<SumOp<TensorT>>(SumOp<TensorT>()),
-			std::make_shared<SumErrorOp<TensorT>>(SumErrorOp<TensorT>()),
-			std::make_shared<SumWeightGradOp<TensorT>>(SumWeightGradOp<TensorT>()),
+      activation, activation_grad, integration_op, integration_error_op, integration_weight_grad_op,
 			std::make_shared<RandWeightInitOp<TensorT>>(RandWeightInitOp<TensorT>(node_names.size() + n_fc_1, 2)),
-			std::make_shared<AdamOp<TensorT>>(AdamOp<TensorT>(1e-3, 0.9, 0.999, 1e-8, 10)), 0.0f, 0.0f, false, specify_layers);
+			solver_op, 0.0f, 0.0f, false, specify_layers);
 		if (add_norm) {
 			node_names = model_builder.addNormalization(model, "FC0-Norm", "FC0-Norm", node_names, true);
 			node_names = model_builder.addSinglyConnected(model, "FC0-Norm-gain", "FC0-Norm-gain", node_names, node_names.size(),
 				std::make_shared<LeakyReLUOp<TensorT>>(LeakyReLUOp<TensorT>()), // Nonlinearity occures after the normalization
 				std::make_shared<LeakyReLUGradOp<TensorT>>(LeakyReLUGradOp<TensorT>()),
-				std::make_shared<SumOp<TensorT>>(SumOp<TensorT>()),
-				std::make_shared<SumErrorOp<TensorT>>(SumErrorOp<TensorT>()),
-				std::make_shared<SumWeightGradOp<TensorT>>(SumWeightGradOp<TensorT>()),
+        integration_op, integration_error_op, integration_weight_grad_op,
 				std::make_shared<ConstWeightInitOp<TensorT>>(ConstWeightInitOp<TensorT>(1)),
-				std::make_shared<AdamOp<TensorT>>(AdamOp<TensorT>(1e-3, 0.9, 0.999, 1e-8, 10)),
+				solver_op,
 				0.0, 0.0, true, specify_layers);
 		}
 
 		// Add the second FC layer
-		if (add_norm) {
-			activation = std::make_shared<LinearOp<TensorT>>(LinearOp<TensorT>());
-			activation_grad = std::make_shared<LinearGradOp<TensorT>>(LinearGradOp<TensorT>());
-		}
-		else {
-			activation = std::make_shared<LeakyReLUOp<TensorT>>(LeakyReLUOp<TensorT>());
-			activation_grad = std::make_shared<LeakyReLUGradOp<TensorT>>(LeakyReLUGradOp<TensorT>());
-		}
 		node_names = model_builder.addFullyConnected(model, "FC1", "FC1", node_names, n_fc_2,
-			activation, activation_grad,
-			std::make_shared<SumOp<TensorT>>(SumOp<TensorT>()),
-			std::make_shared<SumErrorOp<TensorT>>(SumErrorOp<TensorT>()),
-			std::make_shared<SumWeightGradOp<TensorT>>(SumWeightGradOp<TensorT>()),
+      activation, activation_grad, integration_op, integration_error_op, integration_weight_grad_op,
 			std::make_shared<RandWeightInitOp<TensorT>>(RandWeightInitOp<TensorT>(node_names.size() + n_fc_2, 2)),
-			std::make_shared<AdamOp<TensorT>>(AdamOp<TensorT>(1e-3, 0.9, 0.999, 1e-8, 10)), 0.0f, 0.0f, false, specify_layers);
+			solver_op, 0.0f, 0.0f, false, specify_layers);
 		if (add_norm) {
 			node_names = model_builder.addNormalization(model, "FC1-Norm", "FC1-Norm", node_names, true);
 			node_names = model_builder.addSinglyConnected(model, "FC1-Norm-gain", "FC1-Norm-gain", node_names, node_names.size(),
 				std::make_shared<LeakyReLUOp<TensorT>>(LeakyReLUOp<TensorT>()), // Nonlinearity occures after the normalization
 				std::make_shared<LeakyReLUGradOp<TensorT>>(LeakyReLUGradOp<TensorT>()),
-				std::make_shared<SumOp<TensorT>>(SumOp<TensorT>()),
-				std::make_shared<SumErrorOp<TensorT>>(SumErrorOp<TensorT>()),
-				std::make_shared<SumWeightGradOp<TensorT>>(SumWeightGradOp<TensorT>()),
+        integration_op, integration_error_op, integration_weight_grad_op,
 				std::make_shared<ConstWeightInitOp<TensorT>>(ConstWeightInitOp<TensorT>(1)),
-				std::make_shared<AdamOp<TensorT>>(AdamOp<TensorT>(1e-3, 0.9, 0.999, 1e-8, 10)),
+				solver_op,
 				0.0, 0.0, true, specify_layers);
 		}
 
 		// Add the final output layer
 		node_names = model_builder.addFullyConnected(model, "FC1-Output", "FC1-Output", node_names, n_outputs,
-			std::make_shared<LeakyReLUOp<TensorT>>(LeakyReLUOp<TensorT>()),
-			std::make_shared<LeakyReLUGradOp<TensorT>>(LeakyReLUGradOp<TensorT>()),
-			std::make_shared<SumOp<TensorT>>(SumOp<TensorT>()),
-			std::make_shared<SumErrorOp<TensorT>>(SumErrorOp<TensorT>()),
-			std::make_shared<SumWeightGradOp<TensorT>>(SumWeightGradOp<TensorT>()),
+      activation, activation_grad, integration_op, integration_error_op, integration_weight_grad_op,
 			std::make_shared<RandWeightInitOp<TensorT>>(RandWeightInitOp<TensorT>(node_names.size(), 2)),
-			std::make_shared<AdamOp<TensorT>>(AdamOp<TensorT>(1e-3, 0.9, 0.999, 1e-8, 10)), 0.0f, 0.0f, false, true);
+			solver_op, 0.0f, 0.0f, false, true);
 
 		// Add the dummy output layer
 		node_names = model_builder.addSinglyConnected(model, "Output", "Output", node_names, n_outputs,
 			std::make_shared<LinearOp<TensorT>>(LinearOp<TensorT>()),
 			std::make_shared<LinearGradOp<TensorT>>(LinearGradOp<TensorT>()),
-			std::make_shared<SumOp<TensorT>>(SumOp<TensorT>()),
-			std::make_shared<SumErrorOp<TensorT>>(SumErrorOp<TensorT>()),
-			std::make_shared<SumWeightGradOp<TensorT>>(SumWeightGradOp<TensorT>()),
+      integration_op, integration_error_op, integration_weight_grad_op,
 			std::make_shared<ConstWeightInitOp<TensorT>>(ConstWeightInitOp<TensorT>(1)),
 			std::make_shared<DummySolverOp<TensorT>>(DummySolverOp<TensorT>()), 0.0f, 0.0f, false, true);
 
@@ -361,7 +308,7 @@ public:
 		auto integration_weight_grad_op = std::make_shared<SumWeightGradOp<TensorT>>(SumWeightGradOp<TensorT>());
 
 		// Define the solver
-		auto solver_op = std::make_shared<AdamOp<TensorT>>(AdamOp<TensorT>(5e-4, 0.9, 0.999, 1e-8, 100));
+		auto solver_op = std::make_shared<AdamOp<TensorT>>(AdamOp<TensorT>(5e-5, 0.9, 0.999, 1e-8, 100));
 
 		// Add the 1st FC layer
 		if (n_hidden_0 > 0) {
@@ -752,6 +699,14 @@ void main_MNIST(const std::string& data_dir, const bool& make_model, const bool&
 		model.setName("CovNet1");
 		ModelInterpreterFileGpu<float> model_interpreter_file;
 		model_interpreter_file.loadModelInterpreterBinary(interpreter_filename, model_interpreters[0]);
+
+    // Modify the learning rate
+    std::cout << "Modifying the learning rate..." << std::endl;
+    for (auto& weight_map : model.weights_) {
+      if (weight_map.second->getSolverOp()->getName() == "AdamOp") {
+        weight_map.second->getSolverOpShared()->setLearningRate(5e-4);
+      }
+    }
 	}
 	//std::vector<Model<float>> population = { model };
 

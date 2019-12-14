@@ -52,16 +52,22 @@ public:
       activation = std::make_shared<LinearOp<TensorT>>(LinearOp<TensorT>());
       activation_grad = std::make_shared<LinearGradOp<TensorT>>(LinearGradOp<TensorT>());
       activation_fc = std::make_shared<LinearOp<TensorT>>(LinearOp<TensorT>());
-      activation_fc_grad = std::make_shared<LinearGradOp<TensorT>>(LeakLinearGradOpyReLUGradOp<TensorT>());
+      activation_fc_grad = std::make_shared<LinearGradOp<TensorT>>(LinearGradOp<TensorT>());
     }
     else {
-      activation = std::make_shared<TanHOp<TensorT>>(TanHOp<TensorT>());
-      activation_grad = std::make_shared<TanHGradOp<TensorT>>(TanHGradOp<TensorT>());
+      //activation = std::make_shared<TanHOp<TensorT>>(TanHOp<TensorT>());
+      //activation_grad = std::make_shared<TanHGradOp<TensorT>>(TanHGradOp<TensorT>());
+      activation = std::make_shared<LeakyReLUOp<TensorT>>(LeakyReLUOp<TensorT>());
+      activation_grad = std::make_shared<LeakyReLUOp<TensorT>>(LeakyReLUOp<TensorT>());
       activation_fc = std::make_shared<LeakyReLUOp<TensorT>>(LeakyReLUOp<TensorT>());
       activation_fc_grad = std::make_shared<LeakyReLUGradOp<TensorT>>(LeakyReLUGradOp<TensorT>());
     }
-    std::shared_ptr<ActivationOp<TensorT>> activation_norm = std::make_shared<TanHOp<TensorT>>(TanHOp<TensorT>());
-    std::shared_ptr<ActivationOp<TensorT>> activation_norm_grad = std::make_shared<TanHGradOp<TensorT>>(TanHGradOp<TensorT>());
+    //std::shared_ptr<ActivationOp<TensorT>> activation_norm = std::make_shared<TanHOp<TensorT>>(TanHOp<TensorT>());
+    //std::shared_ptr<ActivationOp<TensorT>> activation_norm_grad = std::make_shared<TanHGradOp<TensorT>>(TanHGradOp<TensorT>());
+    std::shared_ptr<ActivationOp<TensorT>> activation_norm = std::make_shared<LeakyReLUOp<TensorT>>(LeakyReLUOp<TensorT>());
+    std::shared_ptr<ActivationOp<TensorT>> activation_norm_grad = std::make_shared<LeakyReLUOp<TensorT>>(LeakyReLUOp<TensorT>());
+    std::shared_ptr<ActivationOp<TensorT>> activation_fc_norm = std::make_shared<LeakyReLUOp<TensorT>>(LeakyReLUOp<TensorT>());
+    std::shared_ptr<ActivationOp<TensorT>> activation_fc_norm_grad = std::make_shared<LeakyReLUGradOp<TensorT>>(LeakyReLUGradOp<TensorT>());
     std::shared_ptr<ActivationOp<TensorT>> activation_output = std::make_shared<LeakyReLUOp<TensorT>>(LeakyReLUOp<TensorT>());
     std::shared_ptr<ActivationOp<TensorT>> activation_output_grad = std::make_shared<LeakyReLUGradOp<TensorT>>(LeakyReLUGradOp<TensorT>());
 
@@ -114,7 +120,7 @@ public:
     if (add_norm) {
       node_names = model_builder.addNormalization(model, "FC-01-Norm", "FC-01-Norm", node_names, true);
       node_names = model_builder.addSinglyConnected(model, "FC-01-Norm-gain", "FC-01-Norm-gain", node_names, node_names.size(),
-        activation_norm, activation_norm_grad, integration_op, integration_error_op, integration_weight_grad_op,
+        activation_fc_norm, activation_fc_norm_grad, integration_op, integration_error_op, integration_weight_grad_op,
         std::make_shared<ConstWeightInitOp<TensorT>>(ConstWeightInitOp<TensorT>(1)),
         solver_op,
         0.0, 0.0, true, specify_layers);
@@ -527,7 +533,7 @@ void main_MNIST(const std::string& data_dir, const bool& make_model, const bool&
 	Model<float> model;
 	if (make_model) {
 		//model_trainer.makeRNN(model, input_nodes.size(), output_nodes.size(), 128, 128, true, true, true);
-		model_trainer.makeLSTM(model, input_nodes.size(), output_nodes.size(), n_blocks_1, n_cells_1, n_blocks_2, n_cells_2, n_hidden, add_forget_gate, true);
+		model_trainer.makeLSTM(model, input_nodes.size(), output_nodes.size(), n_blocks_1, n_cells_1, n_blocks_2, n_cells_2, n_hidden, add_forget_gate, true, true);
 	}
 	else {
 		// read in the trained model

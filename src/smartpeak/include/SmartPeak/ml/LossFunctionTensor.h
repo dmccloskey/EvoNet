@@ -151,8 +151,8 @@ public:
 			auto predicted_chip = predicted_tensor.chip(time_step, 1);
 			
 			error_tensor.chip(time_step, 1).device(device) += ((-(
-				expected_tensor * (predicted_chip + expected_tensor.constant(this->eps_)).log() + // check if .clip((TensorT)1e-6,TensorT(1)) should be used instead
-				(expected_tensor.constant(TensorT(1)) - expected_tensor) * (expected_tensor.constant(TensorT(1)) - (predicted_chip - expected_tensor.constant(this->eps_))).log())).sum(Eigen::array<int, 1>({ 1 }))
+				expected_tensor * predicted_chip.clip(this->eps_, TensorT(1)).log() +
+				(expected_tensor.constant(TensorT(1)) - expected_tensor) * (expected_tensor.constant(TensorT(1)) - predicted_chip).clip(this->eps_, TensorT(1)).log())).sum(Eigen::array<int, 1>({ 1 }))
 				* error_tensor.chip(time_step, 1).constant(this->scale_)).clip(this->min_, this->max_);
 		};
   };
@@ -178,8 +178,8 @@ public:
 			auto predicted_chip = predicted_tensor.chip(time_step, 1);
 			
       // NOTE: change `(predicted_chip - expected_tensor)` to `-(predicted_chip - expected_tensor)`
-			error_tensor.chip(time_step, 1).device(device) += ((-(predicted_chip - expected_tensor) / (((predicted_chip - expected_tensor.constant(TensorT(1))) * predicted_chip) + expected_tensor.constant(this->eps_)))
-				*error_tensor.chip(time_step, 1).constant(this->scale_)).clip(this->min_, this->max_);
+			error_tensor.chip(time_step, 1).device(device) += ((-(predicted_chip - expected_tensor) / ((predicted_chip - expected_tensor.constant(TensorT(1))) * predicted_chip)))
+				*error_tensor.chip(time_step, 1).constant(this->scale_).clip(this->min_, this->max_);
 
 		};
   };

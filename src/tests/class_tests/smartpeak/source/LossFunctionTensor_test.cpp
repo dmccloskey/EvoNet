@@ -243,10 +243,10 @@ BOOST_AUTO_TEST_CASE(operationfunctionCrossEntropyOp)
 
   operation(y_pred.data(), y_true.data(), error_ptr, batch_size, memory_size, layer_size, time_step, device);
   Eigen::TensorMap<Eigen::Tensor<float, 2>> error(error_ptr, batch_size, memory_size);
-  BOOST_CHECK_CLOSE(error(0, 0), 4.60514975, 1e-6);
-  BOOST_CHECK_CLOSE(error(1, 0), 0.21071884, 1e-6);
-  BOOST_CHECK_CLOSE(error(0, 1), 0, 1e-6);
-  BOOST_CHECK_CLOSE(error(1, 1), 0, 1e-6);
+  BOOST_CHECK_CLOSE(error(0, 0), 4.60517025, 1e-4);
+  BOOST_CHECK_CLOSE(error(1, 0), 0.21072109, 1e-4);
+  BOOST_CHECK_CLOSE(error(0, 1), 0, 1e-4);
+  BOOST_CHECK_CLOSE(error(1, 1), 0, 1e-4);
 }
 
 /**
@@ -289,14 +289,14 @@ BOOST_AUTO_TEST_CASE(operationfunctionCrossEntropyGradOp)
 
   operation(y_pred.data(), y_true.data(), error_ptr, batch_size, memory_size, layer_size, time_step, device);
   Eigen::TensorMap<Eigen::Tensor<float, 3>> error(error_ptr, batch_size, memory_size, layer_size);
-  BOOST_CHECK_CLOSE(error(0, 0, 0), -10.0001106, 1e-6);
-  BOOST_CHECK_CLOSE(error(0, 1, 0), 0.0, 1e-6);
-  BOOST_CHECK_CLOSE(error(1, 0, 0), -1.11112344, 1e-6);
-  BOOST_CHECK_CLOSE(error(1, 1, 0), 0.0, 1e-6);
-  BOOST_CHECK_CLOSE(error(0, 0, 1), 10.0001087, 1e-6);
-  BOOST_CHECK_CLOSE(error(0, 1, 1), 0, 1e-6);
-  BOOST_CHECK_CLOSE(error(1, 0, 1), 1.11112344, 1e-6);
-  BOOST_CHECK_CLOSE(error(1, 1, 1), 0.0, 1e-6);
+  BOOST_CHECK_CLOSE(error(0, 0, 0), -10.0000, 1e-4);
+  BOOST_CHECK_CLOSE(error(0, 1, 0), 0.0, 1e-4);
+  BOOST_CHECK_CLOSE(error(1, 0, 0), -1.11111116, 1e-4);
+  BOOST_CHECK_CLOSE(error(1, 1, 0), 0.0, 1e-4);
+  BOOST_CHECK_CLOSE(error(0, 0, 1), 10.0000, 1e-4);
+  BOOST_CHECK_CLOSE(error(0, 1, 1), 0, 1e-4);
+  BOOST_CHECK_CLOSE(error(1, 0, 1), 1.11111116, 1e-4);
+  BOOST_CHECK_CLOSE(error(1, 1, 1), 0.0, 1e-4);
 }
 
 /**
