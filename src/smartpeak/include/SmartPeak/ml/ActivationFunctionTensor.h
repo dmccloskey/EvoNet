@@ -804,6 +804,86 @@ namespace SmartPeak
 		//		archive(cereal::base_class<ActivationTensorOp<TensorT, DeviceT>>(this));
 		//	}
 	};
+
+  /**
+  @brief BatchNorm activation function
+  */
+  template<typename TensorT, typename DeviceT>
+  class BatchNormTensorOp : public ActivationTensorOp<TensorT, DeviceT>
+  {
+  public:
+    using ActivationTensorOp<TensorT, DeviceT>::ActivationTensorOp;
+    void operator()(TensorT* x_I, TensorT* x_O, const int& batch_size, const int& memory_size, const int& layer_size, const int& time_step, DeviceT& device) const {
+      Eigen::TensorMap<Eigen::Tensor<TensorT, 4>> x(x_I, batch_size, 1, memory_size, layer_size);
+      Eigen::TensorMap<Eigen::Tensor<TensorT, 3>> out(x_O, batch_size, memory_size, layer_size);
+      auto mean = x.chip(time_step, 1).mean(0).broadcast(Eigen::array<Eigen::Index, 2>({batch_size, layer_size}));
+      auto var = (mean - x.chip(time_step, 1)).pow(TensorT(2)) / mean.constant(TensorT(batch_size));
+      auto result = (var <= var.constant(TensorT(0))).select(var.constant(TensorT(0)), (x.chip(time_step, 1) - mean) / var);
+      out.chip(time_step, 1).device(device) = result.clip(this->getMin(), this->getMax());
+    };
+    std::string getName() const { return "BatchNormTensorOp"; };
+    //private:
+    //	friend class cereal::access;
+    //	template<class Archive>
+    //	void serialize(Archive& archive) {
+    //		archive(cereal::base_class<ActivationTensorOp<TensorT, DeviceT>>(this));
+    //	}
+  };
+
+  /**
+  @brief BatchNorm gradient
+  */
+  template<typename TensorT, typename DeviceT>
+  class BatchNormGradTensorOp : public ActivationTensorOp<TensorT, DeviceT>
+  {
+  public:
+    using ActivationTensorOp<TensorT, DeviceT>::ActivationTensorOp;
+    void operator()(TensorT* x_I, TensorT* x_O, const int& batch_size, const int& memory_size, const int& layer_size, const int& time_step, DeviceT& device) const {
+      Eigen::TensorMap<Eigen::Tensor<TensorT, 3>> x(x_I, batch_size, memory_size, layer_size);
+      Eigen::TensorMap<Eigen::Tensor<TensorT, 3>> out(x_O, batch_size, memory_size, layer_size);
+      auto x_chip = x.chip(time_step, 1);
+      auto result = -x_chip.constant(TensorT(batch_size)).pow(2) / (x_chip.constant(TensorT(batch_size)) - x_chip.constant(TensorT(1))) / x_chip.pow(2)
+      out.chip(time_step, 1).device(device) = result.clip(this->getMin(), this->getMax());
+    };
+    std::string getName() const { return "BatchNormGradTensorOp"; };
+    //private:
+    //	friend class cereal::access;
+    //	template<class Archive>
+    //	void serialize(Archive& archive) {
+    //		archive(cereal::base_class<ActivationTensorOp<TensorT, DeviceT>>(this));
+    //	}
+  };
+
+  template<typename TensorT, typename DeviceT>
+  struct GradientCheckTensorOp {
+    void operator()(TensorT* x_I, TensorT* x_f_plus, TensorT* x_f_neg, TensorT* x_b, TensorT* diff,
+      const int& batch_size, const int& memory_size, const int& layer_size, const int& time_step, DeviceT& device) const {
+      // create the forward propogation offsets
+      Eigen::TensorMap<Eigen::Tensor<TensorT, 3>> x_I_values(x_I, batch_size, memory_size, layer_size);
+      Eigen::TensorMap<Eigen::Tensor<TensorT, 3>> x_f_plus_values(x_f_plus, batch_size, memory_size, layer_size);
+      Eigen::TensorMap<Eigen::Tensor<TensorT, 3>> x_f_neg_values(x_f_neg, batch_size, memory_size, layer_size);
+      x_f_plus_values.device(device) = x_I_values + x_I_values.constant(eps_);
+      x_f_neg_values.device(device) = x_I_values - x_I_values.constant(eps_);
+
+      // calculate the approximate gradient
+      forward_->operator()(x_f_plus, x_f_plus, batch_size, memory_size, layer_size, time_step, device);
+      forward_->operator()(x_f_neg, x_f_neg, batch_size, memory_size, layer_size, time_step, device);
+      auto gradapprox = (x_f_plus_values.chip(time_step, 1) - x_f_neg_values.chip(time_step, 1)) / x_f_plus_values.chip(time_step, 1).constant(TensorT(2) * eps_);
+
+      // calculate the true gradient
+      reverse_->operator()(x_I, x_b, batch_size, memory_size, layer_size, time_step, device);
+
+      // calculate the normalized difference across each batch
+      Eigen::TensorMap<Eigen::Tensor<TensorT, 3>> x_b_values(x_b, batch_size, memory_size, layer_size);
+      auto numerator = (x_b_values.chip(time_step, 1) - gradapprox).pow(2).sum().sqrt();
+      auto denominator = x_b_values.chip(time_step, 1).pow(2).sum().sqrt() + gradapprox .pow(2).sum().sqrt();
+      Eigen::TensorMap<Eigen::Tensor<TensorT, 0>> diff_value(diff);
+      diff_value.device(device) = numerator / denominator;
+    }
+    TensorT eps_ = TensorT(1e-2);
+    std::shared_ptr<ActivationTensorOp<TensorT, DeviceT>> forward_ = nullptr;
+    std::shared_ptr<ActivationTensorOp<TensorT, DeviceT>> reverse_ = nullptr;
+  };
 }
 //CEREAL_REGISTER_TYPE(SmartPeak::ReLUTensorOp<float, Eigen::DefaultDevice>);
 //CEREAL_REGISTER_TYPE(SmartPeak::ReLUGradTensorOp<float, Eigen::DefaultDevice>);
@@ -831,6 +911,8 @@ namespace SmartPeak
 //CEREAL_REGISTER_TYPE(SmartPeak::SinGradTensorOp<float, Eigen::DefaultDevice>);
 //CEREAL_REGISTER_TYPE(SmartPeak::CosTensorOp<float, Eigen::DefaultDevice>);
 //CEREAL_REGISTER_TYPE(SmartPeak::CosGradTensorOp<float, Eigen::DefaultDevice>);
+//CEREAL_REGISTER_TYPE(SmartPeak::BatchNormTensorOp<float, Eigen::DefaultDevice>);
+//CEREAL_REGISTER_TYPE(SmartPeak::BatchNormGradTensorOp<float, Eigen::DefaultDevice>);
 //
 //#if COMPILE_WITH_CUDA
 //CEREAL_REGISTER_TYPE(SmartPeak::ReLUTensorOp<float, Eigen::GpuDevice>);
@@ -859,6 +941,8 @@ namespace SmartPeak
 //CEREAL_REGISTER_TYPE(SmartPeak::SinGradTensorOp<float, Eigen::GpuDevice>);
 //CEREAL_REGISTER_TYPE(SmartPeak::CosTensorOp<float, Eigen::GpuDevice>);
 //CEREAL_REGISTER_TYPE(SmartPeak::CosGradTensorOp<float, Eigen::GpuDevice>);
+//CEREAL_REGISTER_TYPE(SmartPeak::BatchNormTensorOp<float, Eigen::GpuDevice>);
+//CEREAL_REGISTER_TYPE(SmartPeak::BatchNormGradTensorOp<float, Eigen::GpuDevice>);
 //#endif
 //
 //// TODO: double, int, etc.,

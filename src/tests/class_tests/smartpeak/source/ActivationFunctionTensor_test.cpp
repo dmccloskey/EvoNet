@@ -1691,4 +1691,38 @@ BOOST_AUTO_TEST_CASE(getNameCosGradTensorOp)
 	BOOST_CHECK_EQUAL(operation.getName(), "CosGradTensorOp");
 }
 
+
+BOOST_AUTO_TEST_CASE(operatorGradientCheckTensorOp)
+{
+  // Define the gradient checker
+  GradientCheckTensorOp<double, Eigen::DefaultDevice> operation;
+  operation.eps_ = 1e-7;
+  operation.forward_ = std::make_shared<SigmoidTensorOp<double, Eigen::DefaultDevice>>(SigmoidTensorOp<double, Eigen::DefaultDevice>());
+  operation.reverse_ = std::make_shared<SigmoidGradTensorOp<double, Eigen::DefaultDevice>>(SigmoidGradTensorOp<double, Eigen::DefaultDevice>());
+
+  const int batch_size = 5;
+  const int memory_size = 2;
+  const int layer_size = 2;
+  Eigen::DefaultDevice device;
+  Eigen::Tensor<double, 3> input(batch_size, memory_size, layer_size);
+  input.setValues({
+    {{0,0}, {0,0}},
+    {{1,1}, {0,0}},
+    {{10,10}, {0,0}},
+    {{-1,-1}, {0,0}},
+    {{-10,-10}, {0,0}} });
+  Eigen::Tensor<double, 3> input_f_plus(batch_size, memory_size, layer_size);
+  input_f_plus.setZero();
+  Eigen::Tensor<double, 3> input_f_min(batch_size, memory_size, layer_size);
+  input_f_min.setZero();
+  Eigen::Tensor<double, 3> input_b(batch_size, memory_size, layer_size);
+  input_b.setZero();
+  Eigen::Tensor<double, 0> output;
+  output.setZero();
+
+  operation(input.data(), input_f_plus.data(), input_f_min.data(), input_b.data(), output.data(), batch_size, memory_size, layer_size, 0, device);
+
+  BOOST_CHECK(output(0) < operation.eps_);
+}
+
 BOOST_AUTO_TEST_SUITE_END()

@@ -985,4 +985,52 @@ BOOST_AUTO_TEST_CASE(getNameCosGradOp)
 	BOOST_CHECK_EQUAL(operation.getName(), "CosGradOp");
 }
 
+/**
+BatchNormOp Tests
+*/
+BOOST_AUTO_TEST_CASE(constructorBatchNormOp)
+{
+  BatchNormOp<double>* ptrBatchNorm = nullptr;
+  BatchNormOp<double>* nullPointerBatchNorm = nullptr;
+  BOOST_CHECK_EQUAL(ptrBatchNorm, nullPointerBatchNorm);
+}
+
+BOOST_AUTO_TEST_CASE(destructorBatchNormOp)
+{
+  BatchNormOp<double>* ptrBatchNorm = nullptr;
+  ptrBatchNorm = new BatchNormOp<double>();
+  delete ptrBatchNorm;
+}
+
+BOOST_AUTO_TEST_CASE(getNameBatchNormOp)
+{
+  BatchNormOp<double> operation;
+
+  BOOST_CHECK_EQUAL(operation.getName(), "BatchNormOp");
+}
+
+/**
+BatchNormGradOp Tests
+*/
+BOOST_AUTO_TEST_CASE(constructorBatchNormGradOp)
+{
+  BatchNormGradOp<double>* ptrBatchNormGrad = nullptr;
+  BatchNormGradOp<double>* nullPointerBatchNormGrad = nullptr;
+  BOOST_CHECK_EQUAL(ptrBatchNormGrad, nullPointerBatchNormGrad);
+}
+
+BOOST_AUTO_TEST_CASE(destructorBatchNormGradOp)
+{
+  BatchNormGradOp<double>* ptrBatchNormGrad = nullptr;
+  ptrBatchNormGrad = new BatchNormGradOp<double>();
+  delete ptrBatchNormGrad;
+}
+
+BOOST_AUTO_TEST_CASE(getNameBatchNormGradOp)
+{
+  BatchNormGradOp<double> operation;
+
+  BOOST_CHECK_EQUAL(operation.getName(), "BatchNormGradOp");
+}
+
 BOOST_AUTO_TEST_SUITE_END()

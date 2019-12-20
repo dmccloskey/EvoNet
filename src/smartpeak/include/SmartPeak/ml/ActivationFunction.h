@@ -725,6 +725,50 @@ public:
 			archive(cereal::base_class<ActivationOp<TensorT>>(this));
 		}
 	};
+
+  /**
+  @brief BatchNorm activation function
+  */
+  template<typename TensorT>
+  class BatchNormOp : public ActivationOp<TensorT>
+  {
+  public:
+    using ActivationOp<TensorT>::ActivationOp;
+    TensorT operator()(const TensorT& x_I) const {
+      return x_I;
+    };
+    std::string getName() const { return "BatchNormOp"; };
+    std::vector<TensorT> getParameters() const { return std::vector<TensorT>({ this->getEps(), this->getMin(), this->getMax() }); }
+    ActivationOp<TensorT>* copy() const { return new BatchNormOp<TensorT>(*this); }
+  private:
+    friend class cereal::access;
+    template<class Archive>
+    void serialize(Archive& archive) {
+      archive(cereal::base_class<ActivationOp<TensorT>>(this));
+    }
+  };
+
+  /**
+  @brief BatchNorm gradient
+  */
+  template<typename TensorT>
+  class BatchNormGradOp : public ActivationOp<TensorT>
+  {
+  public:
+    using ActivationOp<TensorT>::ActivationOp;
+    TensorT operator()(const TensorT& x_I) const {
+      return x_I;
+    };
+    std::string getName() const { return "BatchNormGradOp"; };
+    std::vector<TensorT> getParameters() const { return std::vector<TensorT>({ this->getEps(), this->getMin(), this->getMax() }); }
+    ActivationOp<TensorT>* copy() const { return new BatchNormGradOp<TensorT>(*this); }
+  private:
+    friend class cereal::access;
+    template<class Archive>
+    void serialize(Archive& archive) {
+      archive(cereal::base_class<ActivationOp<TensorT>>(this));
+    }
+  };
 }
 
 CEREAL_REGISTER_TYPE(SmartPeak::ReLUOp<float>);
@@ -753,6 +797,8 @@ CEREAL_REGISTER_TYPE(SmartPeak::SinOp<float>);
 CEREAL_REGISTER_TYPE(SmartPeak::SinGradOp<float>);
 CEREAL_REGISTER_TYPE(SmartPeak::CosOp<float>);
 CEREAL_REGISTER_TYPE(SmartPeak::CosGradOp<float>);
+CEREAL_REGISTER_TYPE(SmartPeak::BatchNormOp<float>);
+CEREAL_REGISTER_TYPE(SmartPeak::BatchNormGradOp<float>);
 
 //CEREAL_REGISTER_TYPE(SmartPeak::ReLUOp<double>);
 //CEREAL_REGISTER_TYPE(SmartPeak::ReLUGradOp<double>);
@@ -780,6 +826,8 @@ CEREAL_REGISTER_TYPE(SmartPeak::CosGradOp<float>);
 //CEREAL_REGISTER_TYPE(SmartPeak::SinGradOp<double>);
 //CEREAL_REGISTER_TYPE(SmartPeak::CosOp<double>);
 //CEREAL_REGISTER_TYPE(SmartPeak::CosGradOp<double>);
+//CEREAL_REGISTER_TYPE(SmartPeak::BatchNormOp<double>);
+//CEREAL_REGISTER_TYPE(SmartPeak::BatchNormGradOp<double>);
 //
 //CEREAL_REGISTER_TYPE(SmartPeak::ReLUOp<int>);
 //CEREAL_REGISTER_TYPE(SmartPeak::ReLUGradOp<int>);
@@ -807,5 +855,7 @@ CEREAL_REGISTER_TYPE(SmartPeak::CosGradOp<float>);
 //CEREAL_REGISTER_TYPE(SmartPeak::SinGradOp<int>);
 //CEREAL_REGISTER_TYPE(SmartPeak::CosOp<int>);
 //CEREAL_REGISTER_TYPE(SmartPeak::CosGradOp<int>);
+//CEREAL_REGISTER_TYPE(SmartPeak::BatchNormOp<int>);
+//CEREAL_REGISTER_TYPE(SmartPeak::BatchNormGradOp<int>);
 
 #endif //SMARTPEAK_ACTIVATIONFUNCTION_H
