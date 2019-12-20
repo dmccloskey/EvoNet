@@ -1691,15 +1691,116 @@ BOOST_AUTO_TEST_CASE(getNameCosGradTensorOp)
 	BOOST_CHECK_EQUAL(operation.getName(), "CosGradTensorOp");
 }
 
+BOOST_AUTO_TEST_CASE(operationfunctionBatchNormTensorOp)
+{
+  BatchNormTensorOp<double, Eigen::DefaultDevice> operation;
+  const int batch_size = 5;
+  const int memory_size = 2;
+  const int layer_size = 2;
+  Eigen::DefaultDevice device;
+  Eigen::Tensor<double, 3> input(batch_size, memory_size, layer_size);
+  input.setValues({
+    {{0,0}, {0,0}},
+    {{1,1}, {0,0}},
+    {{10,10}, {0,0}},
+    {{-1,-1}, {0,0}},
+    {{-10,-10}, {0,0}} });
+  Eigen::Tensor<double, 3> output(batch_size, memory_size, layer_size);
+  output.setZero();
+  Eigen::Tensor<double, 3> test(batch_size, memory_size, layer_size);
+  test.setValues({
+    {{0,0}, {0,0}},
+    {{5,5}, {0,0}},
+    {{0.5,0.5}, {0,0}},
+    {{-5,-5}, {0,0}},
+    {{-0.5,-0.5}, {0,0}} });
+
+  operation(input.data(), output.data(), batch_size, memory_size, layer_size, 0, device);
+
+  // Test
+  for (int i = 0; i < batch_size; ++i) {
+    for (int j = 0; j < memory_size; ++j) {
+      for (int k = 0; k < layer_size; ++k) {
+        BOOST_CHECK_CLOSE(output(i, j, k), test(i, j, k), 1e-4); //TODO: fixme
+      }
+    }
+  }
+}
+
+BOOST_AUTO_TEST_CASE(getNameBatchNormTensorOp)
+{
+  BatchNormTensorOp<double, Eigen::DefaultDevice> operation;
+
+  BOOST_CHECK_EQUAL(operation.getName(), "BatchNormTensorOp");
+}
+
+/**
+BatchNormGradTensorOp Tests
+*/
+BOOST_AUTO_TEST_CASE(constructorBatchNormGradTensorOp)
+{
+  BatchNormGradTensorOp<double, Eigen::DefaultDevice>* ptrBatchNormGrad = nullptr;
+  BatchNormGradTensorOp<double, Eigen::DefaultDevice>* nullPointerBatchNormGrad = nullptr;
+  BOOST_CHECK_EQUAL(ptrBatchNormGrad, nullPointerBatchNormGrad);
+}
+
+BOOST_AUTO_TEST_CASE(destructorBatchNormGradTensorOp)
+{
+  BatchNormGradTensorOp<double, Eigen::DefaultDevice>* ptrBatchNormGrad = nullptr;
+  ptrBatchNormGrad = new BatchNormGradTensorOp<double, Eigen::DefaultDevice>();
+  delete ptrBatchNormGrad;
+}
+
+BOOST_AUTO_TEST_CASE(operationfunctionBatchNormGradTensorOp)
+{
+  BatchNormGradTensorOp<double, Eigen::DefaultDevice> operation;
+  const int batch_size = 5;
+  const int memory_size = 2;
+  const int layer_size = 2;
+  Eigen::DefaultDevice device;
+  Eigen::Tensor<double, 3> input(batch_size, memory_size, layer_size);
+  input.setValues({
+    {{0,0}, {0,0}},
+    {{1,1}, {0,0}},
+    {{10,10}, {0,0}},
+    {{-1,-1}, {0,0}},
+    {{-10,-10}, {0,0}} });
+  Eigen::Tensor<double, 3> output(batch_size, memory_size, layer_size);
+  output.setZero();
+  Eigen::Tensor<double, 3> test(batch_size, memory_size, layer_size);
+  test.setValues({
+    {{1,1}, {0,0}},
+    {{2.718281828,2.718281828}, {0,0}},
+    {{22026.46579,22026.46579}, {0,0}},
+    {{0.367879441,0.367879441}, {0,0}},
+    {{4.53999E-05,4.53999E-05}, {0,0}} });
+
+  operation(input.data(), output.data(), batch_size, memory_size, layer_size, 0, device);
+
+  // Test
+  for (int i = 0; i < batch_size; ++i) {
+    for (int j = 0; j < memory_size; ++j) {
+      for (int k = 0; k < layer_size; ++k) {
+        BOOST_CHECK_CLOSE(output(i, j, k), test(i, j, k), 1e-4); //TODO: fixme
+      }
+    }
+  }
+}
+
+BOOST_AUTO_TEST_CASE(getNameBatchNormGradTensorOp)
+{
+  BatchNormGradTensorOp<double, Eigen::DefaultDevice> operation;
+
+  BOOST_CHECK_EQUAL(operation.getName(), "BatchNormGradTensorOp");
+}
 
 BOOST_AUTO_TEST_CASE(operatorGradientCheckTensorOp)
 {
   // Define the gradient checker
   GradientCheckTensorOp<double, Eigen::DefaultDevice> operation;
   operation.eps_ = 1e-7;
-  operation.forward_ = std::make_shared<SigmoidTensorOp<double, Eigen::DefaultDevice>>(SigmoidTensorOp<double, Eigen::DefaultDevice>());
-  operation.reverse_ = std::make_shared<SigmoidGradTensorOp<double, Eigen::DefaultDevice>>(SigmoidGradTensorOp<double, Eigen::DefaultDevice>());
 
+  // Setup the input
   const int batch_size = 5;
   const int memory_size = 2;
   const int layer_size = 2;
@@ -1720,9 +1821,30 @@ BOOST_AUTO_TEST_CASE(operatorGradientCheckTensorOp)
   Eigen::Tensor<double, 0> output;
   output.setZero();
 
+  // Check Sigmoid
+  operation.forward_ = std::make_shared<SigmoidTensorOp<double, Eigen::DefaultDevice>>(SigmoidTensorOp<double, Eigen::DefaultDevice>());
+  operation.reverse_ = std::make_shared<SigmoidGradTensorOp<double, Eigen::DefaultDevice>>(SigmoidGradTensorOp<double, Eigen::DefaultDevice>());
   operation(input.data(), input_f_plus.data(), input_f_min.data(), input_b.data(), output.data(), batch_size, memory_size, layer_size, 0, device);
-
   BOOST_CHECK(output(0) < operation.eps_);
+
+  // TODO...
+
+  // Check BatchNorm
+  input.setValues({
+    {{0,0}, {0,0}},
+    {{1,1}, {0,0}},
+    {{10,10}, {0,0}},
+    {{-1,-1}, {0,0}},
+    {{-10,-10}, {0,0}} });
+  input_f_plus.setZero();
+  input_f_min.setZero();
+  input_b.setZero();
+  output.setZero();
+  operation.forward_ = std::make_shared<BatchNormTensorOp<double, Eigen::DefaultDevice>>(BatchNormTensorOp<double, Eigen::DefaultDevice>());
+  operation.reverse_ = std::make_shared<BatchNormGradTensorOp<double, Eigen::DefaultDevice>>(BatchNormGradTensorOp<double, Eigen::DefaultDevice>());
+  operation(input.data(), input_f_plus.data(), input_f_min.data(), input_b.data(), output.data(), batch_size, memory_size, layer_size, 0, device);
+  BOOST_CHECK(output(0) < operation.eps_);
+  std::cout << "Gradient Check BatchNorm: " << output(0) << std::endl;
 }
 
 BOOST_AUTO_TEST_SUITE_END()
