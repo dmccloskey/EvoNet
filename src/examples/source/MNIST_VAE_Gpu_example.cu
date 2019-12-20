@@ -53,7 +53,13 @@ public:
 		else {
 			activation = std::make_shared<LeakyReLUOp<TensorT>>(LeakyReLUOp<TensorT>());
 			activation_grad = std::make_shared<LeakyReLUGradOp<TensorT>>(LeakyReLUGradOp<TensorT>());
+      //activation = std::make_shared<LinearOp<TensorT>>(LinearOp<TensorT>(1e-24, 0, 1));
+      //activation_grad = std::make_shared<LinearGradOp<TensorT>>(LinearGradOp<TensorT>());
 		}
+    std::shared_ptr<ActivationOp<TensorT>> activation_norm = std::make_shared<LeakyReLUOp<TensorT>>(LeakyReLUOp<TensorT>());
+    std::shared_ptr<ActivationOp<TensorT>> activation_norm_grad = std::make_shared<LeakyReLUGradOp<TensorT>>(LeakyReLUGradOp<TensorT>());
+    //std::shared_ptr<ActivationOp<TensorT>> activation_norm = std::make_shared<LinearOp<TensorT>>(LinearOp<TensorT>(1e-24, 0, 1));
+    //std::shared_ptr<ActivationOp<TensorT>> activation_norm_grad = std::make_shared<LinearGradOp<TensorT>>(LinearGradOp<TensorT>());
 
 		// Define the node integration
 		auto integration_op = std::make_shared<SumOp<TensorT>>(SumOp<TensorT>());
@@ -61,7 +67,7 @@ public:
 		auto integration_weight_grad_op = std::make_shared<SumWeightGradOp<TensorT>>(SumWeightGradOp<TensorT>());
 
 		// Define the solver
-		auto solver_op = std::make_shared<AdamOp<TensorT>>(AdamOp<TensorT>(1e-5, 0.9, 0.999, 1e-8, 10));
+		auto solver_op = std::make_shared<AdamOp<TensorT>>(AdamOp<TensorT>(5e-5, 0.9, 0.999, 1e-8, 10));
 
 		// Add the Endocer FC layers
 		std::vector<std::string> node_names_mu, node_names_logvar;
@@ -73,8 +79,7 @@ public:
       if (add_norm) {
         node_names = model_builder.addNormalization(model, "EN0-Norm", "EN0-Norm", node_names, true);
         node_names = model_builder.addSinglyConnected(model, "EN0-Norm-gain", "EN0-Norm-gain", node_names, node_names.size(),
-          std::make_shared<LeakyReLUOp<TensorT>>(LeakyReLUOp<TensorT>()),
-          std::make_shared<LeakyReLUGradOp<TensorT>>(LeakyReLUGradOp<TensorT>()),
+          activation_norm, activation_norm_grad,
           integration_op, integration_error_op, integration_weight_grad_op,
           std::make_shared<ConstWeightInitOp<TensorT>>(ConstWeightInitOp<TensorT>(1)),
           solver_op, 0.0, 0.0, true, specify_layers);
@@ -89,8 +94,7 @@ public:
       if (add_norm) {
         node_names = model_builder.addNormalization(model, "EN1-Norm", "EN1-Norm", node_names, true);
         node_names = model_builder.addSinglyConnected(model, "EN1-Norm-gain", "EN1-Norm-gain", node_names, node_names.size(),
-          std::make_shared<LeakyReLUOp<TensorT>>(LeakyReLUOp<TensorT>()),
-          std::make_shared<LeakyReLUGradOp<TensorT>>(LeakyReLUGradOp<TensorT>()),
+          activation_norm, activation_norm_grad,
           integration_op, integration_error_op, integration_weight_grad_op,
           std::make_shared<ConstWeightInitOp<TensorT>>(ConstWeightInitOp<TensorT>(1)),
           solver_op, 0.0, 0.0, true, specify_layers);
@@ -105,8 +109,7 @@ public:
       if (add_norm) {
         node_names = model_builder.addNormalization(model, "EN2-Norm", "EN2-Norm", node_names, true);
         node_names = model_builder.addSinglyConnected(model, "EN2-Norm-gain", "EN2-Norm-gain", node_names, node_names.size(),
-          std::make_shared<LeakyReLUOp<TensorT>>(LeakyReLUOp<TensorT>()),
-          std::make_shared<LeakyReLUGradOp<TensorT>>(LeakyReLUGradOp<TensorT>()),
+          activation_norm, activation_norm_grad,
           integration_op, integration_error_op, integration_weight_grad_op,
           std::make_shared<ConstWeightInitOp<TensorT>>(ConstWeightInitOp<TensorT>(1)),
           solver_op, 0.0, 0.0, true, specify_layers);
@@ -128,7 +131,7 @@ public:
 
 		// Add the Encoding layers
 		node_names = model_builder.addGaussianEncoding(model, "Encoding", "Encoding", node_names_mu, node_names_logvar, specify_layers);
-    node_names = node_names_mu;
+    node_names = node_names_mu; // FIXME
 
 		// Add the Decoder FC layers
     if (n_hidden_2 > 0) {
@@ -139,8 +142,7 @@ public:
       if (add_norm) {
         node_names = model_builder.addNormalization(model, "DE2-Norm", "DE2-Norm", node_names, true);
         node_names = model_builder.addSinglyConnected(model, "DE2-Norm-gain", "DE2-Norm-gain", node_names, node_names.size(),
-          std::make_shared<LeakyReLUOp<TensorT>>(LeakyReLUOp<TensorT>()), // Nonlinearity occures after the normalization
-          std::make_shared<LeakyReLUGradOp<TensorT>>(LeakyReLUGradOp<TensorT>()),
+          activation_norm, activation_norm_grad,
           integration_op, integration_error_op, integration_weight_grad_op,
           std::make_shared<ConstWeightInitOp<TensorT>>(ConstWeightInitOp<TensorT>(1)),
           solver_op, 0.0, 0.0, true, specify_layers);
@@ -155,8 +157,7 @@ public:
       if (add_norm) {
         node_names = model_builder.addNormalization(model, "DE1-Norm", "DE1-Norm", node_names, true);
         node_names = model_builder.addSinglyConnected(model, "DE1-Norm-gain", "DE1-Norm-gain", node_names, node_names.size(),
-          std::make_shared<LeakyReLUOp<TensorT>>(LeakyReLUOp<TensorT>()), // Nonlinearity occures after the normalization
-          std::make_shared<LeakyReLUGradOp<TensorT>>(LeakyReLUGradOp<TensorT>()),
+          activation_norm, activation_norm_grad,
           integration_op, integration_error_op, integration_weight_grad_op,
           std::make_shared<ConstWeightInitOp<TensorT>>(ConstWeightInitOp<TensorT>(1)),
           solver_op, 0.0, 0.0, true, specify_layers);
@@ -171,8 +172,7 @@ public:
       if (add_norm) {
         node_names = model_builder.addNormalization(model, "DE0-Norm", "DE0-Norm", node_names, true);
         node_names = model_builder.addSinglyConnected(model, "DE0-Norm-gain", "DE0-Norm-gain", node_names, node_names.size(),
-          std::make_shared<LeakyReLUOp<TensorT>>(LeakyReLUOp<TensorT>()), // Nonlinearity occures after the normalization
-          std::make_shared<LeakyReLUGradOp<TensorT>>(LeakyReLUGradOp<TensorT>()),
+          activation_norm, activation_norm_grad,
           integration_op, integration_error_op, integration_weight_grad_op,
           std::make_shared<ConstWeightInitOp<TensorT>>(ConstWeightInitOp<TensorT>(1)),
           solver_op, 0.0, 0.0, true, specify_layers);
@@ -182,8 +182,7 @@ public:
 		node_names = model_builder.addFullyConnected(model, "DE-Output", "DE-Output", node_names, n_inputs,
 			//std::make_shared<SigmoidOp<TensorT>>(SigmoidOp<TensorT>()),
 			//std::make_shared<SigmoidGradOp<TensorT>>(SigmoidGradOp<TensorT>()),
-			std::make_shared<LeakyReLUOp<TensorT>>(LeakyReLUOp<TensorT>()),
-			std::make_shared<LeakyReLUGradOp<TensorT>>(LeakyReLUGradOp<TensorT>()),
+      activation_norm, activation_norm_grad,
 			integration_op, integration_error_op, integration_weight_grad_op,
 			std::make_shared<RandWeightInitOp<TensorT>>(RandWeightInitOp<TensorT>(node_names.size(), 1)),
 			solver_op, 0.0f, 0.0f, add_bias, true);
@@ -687,6 +686,7 @@ class DataSimulatorExt : public MNISTSimulator<TensorT>
 {
 public:
 	int n_encodings_;
+  int perc_corruption_ = 0;
 	void simulateTrainingData(Eigen::Tensor<TensorT, 3>& input_data, Eigen::Tensor<TensorT, 3>& loss_output_data, Eigen::Tensor<TensorT, 3>& metric_output_data, Eigen::Tensor<TensorT, 2>& time_steps)
 	{
 		// infer data dimensions based on the input tensors
@@ -712,11 +712,15 @@ public:
 				Eigen::Tensor<TensorT, 2> gaussian_samples = GaussianSampler<TensorT>(1, n_encodings_);
 
 				for (int nodes_iter = 0; nodes_iter < n_input_pixels; ++nodes_iter) {
-					input_data(batch_iter, memory_iter, nodes_iter) = this->training_data(sample_indices[batch_iter], nodes_iter);
+          std::random_device rd;
+          std::uniform_int_distribution<int> distribution(1, 100);
+          std::mt19937 engine(rd());
+          if (distribution(engine) > perc_corruption_) input_data(batch_iter, memory_iter, nodes_iter) = this->training_data(sample_indices[batch_iter], nodes_iter);
+          else  input_data(batch_iter, memory_iter, nodes_iter) = TensorT(0);
 					loss_output_data(batch_iter, memory_iter, nodes_iter) = this->training_data(sample_indices[batch_iter], nodes_iter);
 					metric_output_data(batch_iter, memory_iter, nodes_iter) = this->training_data(sample_indices[batch_iter], nodes_iter);
 					if (nodes_iter < n_encodings_) {
-            input_data(batch_iter, memory_iter, nodes_iter + n_input_pixels) = 0;//FIXME gaussian_samples(0, nodes_iter); // sample from a normal distribution
+            input_data(batch_iter, memory_iter, nodes_iter + n_input_pixels) = gaussian_samples(0, nodes_iter); // sample from a normal distribution
 						loss_output_data(batch_iter, memory_iter, nodes_iter + n_input_pixels) = 0; // Dummy data for KL divergence mu
 						loss_output_data(batch_iter, memory_iter, nodes_iter + n_input_pixels + n_encodings_) = 0; // Dummy data for KL divergence logvar
 					}
@@ -793,7 +797,7 @@ void main_MNIST(const std::string& data_dir, const bool& make_model, const bool&
 
 	// define the data simulator
 	const std::size_t input_size = 784;
-	const std::size_t encoding_size = 16;
+  const std::size_t encoding_size = 16;
 	const std::size_t training_data_size = 60000; //60000;
 	const std::size_t validation_data_size = 10000; //10000;
 	DataSimulatorExt<float> data_simulator;
@@ -809,6 +813,7 @@ void main_MNIST(const std::string& data_dir, const bool& make_model, const bool&
 	data_simulator.readData(validation_data_filename, validation_labels_filename, false, validation_data_size, input_size);
 	data_simulator.unitScaleData();
 	data_simulator.n_encodings_ = encoding_size;
+  data_simulator.perc_corruption_ = 50;
 
 	// Make the input nodes
 	std::vector<std::string> input_nodes;
@@ -876,8 +881,8 @@ void main_MNIST(const std::string& data_dir, const bool& make_model, const bool&
 		//std::make_shared<MSELossOp<float>>(MSELossOp<float>(1e-6, 1.0 / float(input_size))),
 		std::make_shared<BCEWithLogitsLossOp<float>>(BCEWithLogitsLossOp<float>(1e-6, 1.0 / float(input_size))),
     //std::make_shared<BCELossOp<float>>(BCELossOp<float>(1e-6, 1.0 / float(input_size))),
-		std::make_shared<KLDivergenceMuLossOp<float>>(KLDivergenceMuLossOp<float>(1e-6, 1.0 / float(encoding_size), 0.0)),
-		std::make_shared<KLDivergenceLogVarLossOp<float>>(KLDivergenceLogVarLossOp<float>(1e-6, 1.0 / float(encoding_size), 0.0)) });
+		std::make_shared<KLDivergenceMuLossOp<float>>(KLDivergenceMuLossOp<float>(1e-6, 0.0, 0.0)), //1.0 / float(encoding_size)
+		std::make_shared<KLDivergenceLogVarLossOp<float>>(KLDivergenceLogVarLossOp<float>(1e-6, 0.0, 0.0)) });
 	model_trainer.setLossFunctionGrads({
 		//std::make_shared<MSELossGradOp<float>>(MSELossGradOp<float>(1e-6, 1.0 / float(input_size))),
 		std::make_shared<BCEWithLogitsLossGradOp<float>>(BCEWithLogitsLossGradOp<float>(1e-6, 1.0 / float(input_size))),
@@ -896,7 +901,7 @@ void main_MNIST(const std::string& data_dir, const bool& make_model, const bool&
 	Model<float> model;
 	if (make_model) {
 		std::cout << "Making the model..." << std::endl;
-		ModelTrainerExt<float>().makeVAEFullyConn(model, input_size, encoding_size, 512, 512, 256, false, true, true);
+		ModelTrainerExt<float>().makeVAEFullyConn(model, input_size, encoding_size, 512, 256, 0, true, false, true);
 		//ModelTrainerExt<float>().makeVAECovNet(model, input_size, encoding_size, 32, 1, 0, 2, 1, 0, 128, 128, 7, 1, false, true);
 	}
 	else {
