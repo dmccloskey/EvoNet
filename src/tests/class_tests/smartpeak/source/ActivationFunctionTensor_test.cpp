@@ -1798,7 +1798,7 @@ BOOST_AUTO_TEST_CASE(operatorGradientCheckTensorOp)
 {
   // Define the gradient checker
   GradientCheckTensorOp<double, Eigen::DefaultDevice> operation;
-  operation.eps_ = 1e-7;
+  operation.eps_ = 1e-4;
 
   // Setup the input
   const int batch_size = 5;
@@ -1830,12 +1830,6 @@ BOOST_AUTO_TEST_CASE(operatorGradientCheckTensorOp)
   // TODO...
 
   // Check BatchNorm
-  input.setValues({
-    {{0,0}, {0,0}},
-    {{1,1}, {0,0}},
-    {{10,10}, {0,0}},
-    {{-1,-1}, {0,0}},
-    {{-10,-10}, {0,0}} });
   input_f_plus.setZero();
   input_f_min.setZero();
   input_b.setZero();
