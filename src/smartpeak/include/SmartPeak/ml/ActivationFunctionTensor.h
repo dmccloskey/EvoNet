@@ -833,6 +833,8 @@ namespace SmartPeak
   /**
   @brief BatchNorm gradient
 
+  (I - 1)/n_x*(1 - x_mu)*(x - x_mu)*x_var.pow(-3/2)
+
   Derivation 1: 
   N, D = dout.shape
 	x_mu, inv_var, x_hat, gamma = cache
@@ -866,10 +868,11 @@ namespace SmartPeak
     void operator()(TensorT* x_I, TensorT* x_O, const int& batch_size, const int& memory_size, const int& layer_size, const int& time_step, DeviceT& device) const {
       Eigen::TensorMap<Eigen::Tensor<TensorT, 4>> x(x_I, batch_size, 1, memory_size, layer_size);
       Eigen::TensorMap<Eigen::Tensor<TensorT, 3>> out(x_O, batch_size, memory_size, layer_size);
+      auto x_chip = x.chip(time_step, 2).chip(0, 1);
       auto mean = x.chip(time_step, 2).mean(Eigen::array<Eigen::Index, 1>({ 0 })).broadcast(Eigen::array<Eigen::Index, 2>({ batch_size, 1 }));  // 2 dims
       auto var = (x.chip(time_step, 2).chip(0, 1) - mean).pow(TensorT(2)) / mean.constant(TensorT(batch_size));
-      auto prev = (var <= var.constant(TensorT(0))).select(var.constant(TensorT(0)), (x.chip(time_step, 2).chip(0, 1) - mean) / var.sqrt());
-      auto result = (var == var.constant(TensorT(0))).select(var.constant(TensorT(0)), 1 / var.sqrt());
+      auto tmp = x_chip.constant(TensorT(batch_size - 1) / TensorT(batch_size)) * (x_chip.constant(TensorT(1)) - mean) * (x_chip - mean) * var.pow(-3/2);
+      auto result = (var <= var.constant(TensorT(0))).select(var.constant(TensorT(0)), tmp);
       //auto x_chip = x.chip(time_step, 1);
       //auto result = -x_chip.constant(TensorT(batch_size)).pow(2) / (x_chip.constant(TensorT(batch_size)) - x_chip.constant(TensorT(1))) / x_chip.pow(2);
       //std::cout << "x.chip(time_step, 4).chip(0, 3).chip(0, 1).chip(0, 0)\n" << x.chip(time_step, 4).chip(0, 3).chip(0, 1).chip(0, 0) << std::endl;
