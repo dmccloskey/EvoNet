@@ -848,7 +848,7 @@ namespace SmartPeak
     using ActivationTensorOp<TensorT, DeviceT>::ActivationTensorOp;
     void operator()(TensorT* x_I, TensorT* x_O, const int& batch_size, const int& memory_size, const int& layer_size, const int& time_step, DeviceT& device) const {
       //Eigen::TensorMap<Eigen::Tensor<TensorT, 5>> x(x_I, 1, batch_size, 1, memory_size, layer_size);
-      //Eigen::TensorMap<Eigen::Tensor<TensorT, 3>> out(x_O, batch_size, memory_size, layer_size);
+      Eigen::TensorMap<Eigen::Tensor<TensorT, 3>> out(x_O, batch_size, memory_size, layer_size);
       //auto mean = x.chip(time_step, 3).mean(Eigen::array<Eigen::Index, 1>({ 1 })).broadcast(Eigen::array<Eigen::Index, 3>({ 1, batch_size, 1 }));
       //auto var = ((x.chip(time_step, 3).chip(0, 2) - mean).pow(TensorT(2)) / mean.constant(TensorT(batch_size)));
       //auto x_mu = (x.chip(time_step, 3).chip(0, 2) - mean).sum(Eigen::array<Eigen::Index, 1>({ 1 })).broadcast(Eigen::array<Eigen::Index, 2>({ batch_size, 1 }));

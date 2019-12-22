@@ -143,7 +143,7 @@ namespace SmartPeak
 				ActivationTensorOp<TensorT, DeviceT>* op_tensor_class = new CosGradTensorOp<TensorT, DeviceT>(op_class->getParameters()[0], op_class->getParameters()[1], op_class->getParameters()[2]);
 				return op_tensor_class;
 			}
-      else if (op_class->getName() == "BatchGradOp") {
+      else if (op_class->getName() == "BatchNormOp") {
       ActivationTensorOp<TensorT, DeviceT>* op_tensor_class = new BatchNormTensorOp<TensorT, DeviceT>(op_class->getParameters()[0], op_class->getParameters()[1], op_class->getParameters()[2]);
       return op_tensor_class;
       }

@@ -3,16 +3,6 @@
 #ifndef SMARTPEAK_ACTIVATIONFUNCTION_H
 #define SMARTPEAK_ACTIVATIONFUNCTION_H
 
-#if COMPILE_WITH_CUDA
-#include <math.h>
-#else
-#include <cmath>
-using std::exp;
-using std::pow;
-using std::log;
-using std::tanh;
-#endif
-
 #include <SmartPeak/core/Preprocessing.h>
 #include <unsupported/Eigen/CXX11/Tensor>
 #include <random>
@@ -42,13 +32,7 @@ namespace SmartPeak
     TensorT getEps() const { return eps_; }
     TensorT getMin() const { return min_; }
     TensorT getMax() const { return max_; }
-//#if COMPILE_WITH_CUDA
-//		std::string getName() const { return ""; }; // No Virtual Functions Allowed when using Cuda!
-//		TensorT operator()(const TensorT& x_I) const { return 0; }; // No Virtual Functions Allowed when using Cuda!
-//		std::vector<TensorT> getParameters() const { return std::vector<TensorT>(); }; // No Virtual Functions Allowed when using Cuda!
-//#else
 		virtual std::string getName() const = 0;
-		virtual TensorT operator()(const TensorT& x_I) const = 0;
 		virtual std::vector<TensorT> getParameters() const = 0;
     virtual ActivationOp<TensorT>* copy() const = 0;
 //#endif // !EVONET_CUDA
@@ -77,12 +61,6 @@ namespace SmartPeak
   {
 public: 
 		using ActivationOp<TensorT>::ActivationOp;
-    TensorT operator()(const TensorT& x_I) const {
-			TensorT result = (x_I > (TensorT)0.0) ? x_I : (TensorT)0.0;
-			return result;
-			//ClipOp<TensorT> clip(this->eps_, this->min_, this->max_); // not compatible with CUDA
-			//return clip(result); 
-		};
     std::string getName() const{return "ReLUOp";};
     std::vector<TensorT> getParameters() const { return std::vector<TensorT>({this->getEps(), this->getMin(), this->getMax()}); }
     ActivationOp<TensorT>* copy() const { return new ReLUOp<TensorT>(*this); }
@@ -107,7 +85,6 @@ public:
   {
 public:
 		using ActivationOp<TensorT>::ActivationOp;
-    TensorT operator()(const TensorT& x_I) const { return (x_I > (TensorT)0) ? (TensorT)1: (TensorT)0; };
     std::string getName() const{return "ReLUGradOp";};
     std::vector<TensorT> getParameters() const { return std::vector<TensorT>({ this->getEps(), this->getMin(), this->getMax() }); }
     ActivationOp<TensorT>* copy() const { return new ReLUGradOp<TensorT>(*this); }
@@ -134,14 +111,6 @@ public:
 		ELUOp() = default;
 		~ELUOp() = default;
     ELUOp(const TensorT& eps, const TensorT& min, const TensorT& max, const TensorT& alpha) : ActivationOp(eps, min, max), alpha_(alpha) {};
-    ELUOp(const TensorT& alpha): alpha_(alpha){}; 
-    TensorT operator()(const TensorT& x_I) const {
-			TensorT result = (x_I > (TensorT)0) ? x_I : alpha_ * (exp(x_I) - 1);
-			return result;
-			//ClipOp<TensorT> clip(this->eps_, this->min_, this->max_); // Not compatible with CUDA
-			//return clip(result); 
-
-		};
     void setAlpha(const TensorT& alpha) { alpha_ = alpha; };
     TensorT getAlpha() const { return alpha_; };
     std::string getName() const{return "ELUOp";};
@@ -172,10 +141,6 @@ public:
 		~ELUGradOp() = default;
     ELUGradOp(const TensorT& eps, const TensorT& min, const TensorT& max, const TensorT& alpha) : ActivationOp(eps, min, max), alpha_(alpha) {};
     ELUGradOp(const TensorT& alpha): alpha_(alpha){}; 
-    TensorT operator()(const TensorT& x_I) const {
-      SmartPeak::ELUOp<TensorT> eluop(alpha_);
-      return (x_I > (TensorT)0) ? (TensorT)1: eluop(x_I) + alpha_;
-    };
     void setAlpha(const TensorT& alpha) { alpha_ = alpha; };
     TensorT getAlpha() const { return alpha_; };
     std::string getName() const{return "ELUGradOp";};
@@ -198,12 +163,6 @@ private:
   {
 public:
 		using ActivationOp<TensorT>::ActivationOp;
-    TensorT operator()(const TensorT& x_I) const {
-			TensorT result = 1 / (1 + exp(-x_I));
-			return result;
-			//ClipOp<TensorT> clip(this->eps_, this->min_, this->max_); // Not compatible with CUDA
-			//return clip(result); 
-		};
     std::string getName() const{return "SigmoidOp";};
     std::vector<TensorT> getParameters() const { return std::vector<TensorT>({ this->getEps(), this->getMin(), this->getMax() }); }
     ActivationOp<TensorT>* copy() const { return new SigmoidOp<TensorT>(*this); }
@@ -223,10 +182,6 @@ public:
   {
 public:
 		using ActivationOp<TensorT>::ActivationOp;
-    TensorT operator()(const TensorT& x_I) const {
-      SmartPeak::SigmoidOp<TensorT> sigmoidop;
-      return sigmoidop(x_I) * (1 - sigmoidop(x_I));
-    };
     std::string getName() const{return "SigmoidGradOp";};
     std::vector<TensorT> getParameters() const { return std::vector<TensorT>({ this->getEps(), this->getMin(), this->getMax() }); }
     ActivationOp<TensorT>* copy() const { return new SigmoidGradOp<TensorT>(*this); }
@@ -246,7 +201,6 @@ public:
   {
 public:
 		using ActivationOp<TensorT>::ActivationOp;
-    TensorT operator()(const TensorT& x_I) const { return tanh(x_I); };
     std::string getName() const{return "TanHOp";};
     std::vector<TensorT> getParameters() const { return std::vector<TensorT>({ this->getEps(), this->getMin(), this->getMax() }); }
     ActivationOp<TensorT>* copy() const { return new TanHOp<TensorT>(*this); }
@@ -266,12 +220,6 @@ public:
   {
 public:
 		using ActivationOp<TensorT>::ActivationOp;
-    TensorT operator()(const TensorT& x_I) const    {
-			const TensorT x_new = 1 - pow(tanh(x_I), 2);
-			return x_new;
-			//ClipOp<TensorT> clip(this->eps_, this->min_, this->max_); // Not compatible with CUDA
-   //   return clip(x_new);
-    };
     std::string getName() const{return "TanHGradOp";};
     std::vector<TensorT> getParameters() const { return std::vector<TensorT>({ this->getEps(), this->getMin(), this->getMax() }); }
     ActivationOp<TensorT>* copy() const { return new TanHGradOp<TensorT>(*this); }
@@ -291,12 +239,6 @@ public:
   {
 public:
 		using ActivationOp<TensorT>::ActivationOp;
-    TensorT operator()(const TensorT& x_I) const { 
-			const TensorT result = (x_I > 0.0) ? (exp(x_I) - exp(-x_I)) / (exp(x_I) + exp(-x_I)) : (TensorT)0;
-			return result;
-			//ClipOp<TensorT> clip(this->eps_, this->min_, this->max_);  // Not compatible with CUDA
-   //   return clip(result);
-    };
     std::string getName() const{return "ReTanHOp";};
     std::vector<TensorT> getParameters() const { return std::vector<TensorT>({ this->getEps(), this->getMin(), this->getMax() }); }
     ActivationOp<TensorT>* copy() const { return new ReTanHOp<TensorT>(*this); }
@@ -316,13 +258,6 @@ public:
   {
 public:
 		using ActivationOp<TensorT>::ActivationOp;
-    TensorT operator()(const TensorT& x_I) const {
-      ReTanHOp<TensorT> tanhop;
-			TensorT x_new = (x_I > 0.0) ? 1 - pow(tanhop(x_I), 2) : 0.0;
-			return x_new;
-			//ClipOp<TensorT> clip(this->eps_, this->min_, this->max_); // Not compatible with CUDA
-   //   return clip(x_new);
-    };
     std::string getName() const{return "ReTanHGradOp";};
     std::vector<TensorT> getParameters() const { return std::vector<TensorT>({ this->getEps(), this->getMin(), this->getMax() }); }
     ActivationOp<TensorT>* copy() const { return new ReTanHGradOp<TensorT>(*this); }
@@ -342,7 +277,6 @@ public:
 	{
 	public:
 		using ActivationOp<TensorT>::ActivationOp;
-		TensorT operator()(const TensorT& x_I) const { return x_I; };
 		std::string getName() const { return "LinearOp"; };
     std::vector<TensorT> getParameters() const { return std::vector<TensorT>({ this->getEps(), this->getMin(), this->getMax() }); }
     ActivationOp<TensorT>* copy() const { return new LinearOp<TensorT>(*this); }
@@ -362,7 +296,6 @@ public:
 	{
 	public:
 		using ActivationOp<TensorT>::ActivationOp;
-		TensorT operator()(const TensorT& x_I) const { return (TensorT)1; };
 		std::string getName() const { return "LinearGradOp"; };
     std::vector<TensorT> getParameters() const { return std::vector<TensorT>({ this->getEps(), this->getMin(), this->getMax() }); }
     ActivationOp<TensorT>* copy() const { return new LinearGradOp<TensorT>(*this); }
@@ -382,12 +315,6 @@ public:
 	{
 	public:
 		using ActivationOp<TensorT>::ActivationOp;
-		TensorT operator()(const TensorT& x_I) const {
-			const TensorT result = x_I != 0.0 ? 1 / x_I : 0.0;
-			//return result;
-			ClipOp<TensorT> clip(this->eps_, this->min_, this->max_);  // Not compatible with CUDA
-			return clip(result);
-		};
 		std::string getName() const { return "InverseOp"; };
     std::vector<TensorT> getParameters() const { return std::vector<TensorT>({ this->getEps(), this->getMin(), this->getMax() }); }
     ActivationOp<TensorT>* copy() const { return new InverseOp<TensorT>(*this); }
@@ -407,12 +334,6 @@ public:
 	{
 	public:
 		using ActivationOp<TensorT>::ActivationOp;
-		TensorT operator()(const TensorT& x_I) const {
-			const TensorT result = x_I != 0.0 ? -1 / pow(x_I, 2) : 0.0;
-			//return result;
-			ClipOp<TensorT> clip(this->eps_, this->min_, this->max_); // Not compatible with CUDA
-			return clip(result);
-		};
 		std::string getName() const { return "InverseGradOp"; };
     std::vector<TensorT> getParameters() const { return std::vector<TensorT>({ this->getEps(), this->getMin(), this->getMax() }); }
     ActivationOp<TensorT>* copy() const { return new InverseGradOp<TensorT>(*this); }
@@ -432,11 +353,6 @@ public:
 	{
 	public:
 		using ActivationOp<TensorT>::ActivationOp;
-		TensorT operator()(const TensorT& x_I) const {
-			//return exp(x_I);
-			ClipOp<TensorT> clip(this->eps_, this->min_, this->max_);  // Not compatible with CUDA
-			return clip(exp(x_I));
-		};
 		std::string getName() const { return "ExponentialOp"; };
     std::vector<TensorT> getParameters() const { return std::vector<TensorT>({ this->getEps(), this->getMin(), this->getMax() }); }
     ActivationOp<TensorT>* copy() const { return new ExponentialOp<TensorT>(*this); }
@@ -456,11 +372,6 @@ public:
 	{
 	public:
 		using ActivationOp<TensorT>::ActivationOp;
-		TensorT operator()(const TensorT& x_I) const {
-			//return exp(x_I);
-			ClipOp<TensorT> clip(this->eps_, this->min_, this->max_);  // Not compatible with CUDA
-			return clip(exp(x_I));
-		};
 		std::string getName() const { return "ExponentialGradOp"; };
     std::vector<TensorT> getParameters() const { return std::vector<TensorT>({ this->getEps(), this->getMin(), this->getMax() }); }
     ActivationOp<TensorT>* copy() const { return new ExponentialGradOp<TensorT>(*this); }
@@ -480,11 +391,6 @@ public:
 	{
 	public:
 		using ActivationOp<TensorT>::ActivationOp;
-		TensorT operator()(const TensorT& x_I) const {
-			return log(x_I);
-			//ClipOp<TensorT> clip(this->eps_, this->min_, this->max_);  // Not compatible with CUDA
-			//return clip(log(x_I));
-		};
 		std::string getName() const { return "LogOp"; };
     std::vector<TensorT> getParameters() const { return std::vector<TensorT>({ this->getEps(), this->getMin(), this->getMax() }); }
     ActivationOp<TensorT>* copy() const { return new LogOp<TensorT>(*this); }
@@ -504,11 +410,6 @@ public:
 	{
 	public:
 		using ActivationOp<TensorT>::ActivationOp;
-		TensorT operator()(const TensorT& x_I) const {
-			return 1 / x_I; 
-			//ClipOp<TensorT> clip(this->eps_, this->min_, this->max_); // Not compatible with CUDA
-			//return clip(1/x_I);
-		};
 		std::string getName() const { return "LogGradOp"; };
     std::vector<TensorT> getParameters() const { return std::vector<TensorT>({ this->getEps(), this->getMin(), this->getMax() }); }
     ActivationOp<TensorT>* copy() const { return new LogGradOp<TensorT>(*this); }
@@ -530,12 +431,7 @@ public:
 		PowOp() = default;
 		~PowOp() = default;
     PowOp(const TensorT& eps, const TensorT& min, const TensorT& max, const TensorT& base) : ActivationOp(eps, min, max), base_(base) {};
-		PowOp(const TensorT& base): base_(base){};
-		TensorT operator()(const TensorT& x_I) const {
-			return pow(x_I, base_);
-			//ClipOp<TensorT> clip(this->eps_, this->min_, this->max_); // Not compatible with CUDA
-			//return clip(pow(x_I, base_));
-		};
+    PowOp(const TensorT& base) : base_(base) {};
 		std::string getName() const { return "PowOp"; };
 		std::vector<TensorT> getParameters() const { return std::vector<TensorT>({ this->getEps(), this->getMin(), this->getMax(), base_ }); }
     ActivationOp<TensorT>* copy() const { return new PowOp<TensorT>(*this); }
@@ -559,12 +455,6 @@ public:
 		~PowGradOp() = default;
     PowGradOp(const TensorT& eps, const TensorT& min, const TensorT& max, const TensorT& base) : ActivationOp(eps, min, max), base_(base) {};
 		PowGradOp(const TensorT& base) : base_(base) {};
-		TensorT operator()(const TensorT& x_I) const {
-			const TensorT result = base_ * pow(x_I, base_ - 1);
-			return result;
-			//ClipOp<TensorT> clip(this->eps_, this->min_, this->max_);  // Not compatible with CUDA
-			//return clip(result);
-		};
 		std::string getName() const { return "PowGradOp"; };
 		std::vector<TensorT> getParameters() const { return std::vector<TensorT>({ this->getEps(), this->getMin(), this->getMax(), base_ }); }
     ActivationOp<TensorT>* copy() const { return new PowGradOp<TensorT>(*this); }
@@ -590,12 +480,6 @@ public:
 		~LeakyReLUOp() = default;
     LeakyReLUOp(const TensorT& eps, const TensorT& min, const TensorT& max, const TensorT& alpha) : ActivationOp(eps, min, max), alpha_(alpha) {};
 		LeakyReLUOp(const TensorT& alpha) : alpha_(alpha) {};
-		TensorT operator()(const TensorT& x_I) const {
-			const TensorT result = (x_I >= 0.0) ? x_I : alpha_ * x_I;
-			return result;
-			//ClipOp<TensorT> clip(this->eps_, this->min_, this->max_);  // Not compatible with CUDA
-			//return clip(result);
-		};
 		void setAlpha(const TensorT& alpha) { alpha_ = alpha; };
 		TensorT getAlpha() const { return alpha_; };
 		std::string getName() const { return "LeakyReLUOp"; };
@@ -620,10 +504,6 @@ public:
 		LeakyReLUGradOp() = default;
 		~LeakyReLUGradOp() = default;
     LeakyReLUGradOp(const TensorT& eps, const TensorT& min, const TensorT& max, const TensorT& alpha) : ActivationOp(eps, min, max), alpha_(alpha) {};
-		LeakyReLUGradOp(const TensorT& alpha) : alpha_(alpha) {};
-		TensorT operator()(const TensorT& x_I) const {
-			return (x_I >= 0.0) ? 1.0 : alpha_;
-		};
 		void setAlpha(const TensorT& alpha) { alpha_ = alpha; };
 		TensorT getAlpha() const { return alpha_; };
 		std::string getName() const { return "LeakyReLUGradOp"; };
@@ -646,9 +526,6 @@ public:
 	{
 	public:
 		using ActivationOp<TensorT>::ActivationOp;
-		TensorT operator()(const TensorT& x_I) const {
-			return std::sin(x_I);
-		};
 		std::string getName() const { return "SinOp"; };
     std::vector<TensorT> getParameters() const { return std::vector<TensorT>({ this->getEps(), this->getMin(), this->getMax() }); }
     ActivationOp<TensorT>* copy() const { return new SinOp<TensorT>(*this); }
@@ -668,9 +545,6 @@ public:
 	{
 	public:
 		using ActivationOp<TensorT>::ActivationOp;
-		TensorT operator()(const TensorT& x_I) const {
-			return std::cos(x_I);
-		};
 		std::string getName() const { return "SinGradOp"; };
     std::vector<TensorT> getParameters() const { return std::vector<TensorT>({ this->getEps(), this->getMin(), this->getMax() }); }
     ActivationOp<TensorT>* copy() const { return new SinGradOp<TensorT>(*this); }
@@ -690,9 +564,6 @@ public:
 	{
 	public:
 		using ActivationOp<TensorT>::ActivationOp;
-		TensorT operator()(const TensorT& x_I) const {
-			return std::cos(x_I);
-		};
 		std::string getName() const { return "CosOp"; };
     std::vector<TensorT> getParameters() const { return std::vector<TensorT>({ this->getEps(), this->getMin(), this->getMax() }); }
     ActivationOp<TensorT>* copy() const { return new CosOp<TensorT>(*this); }
@@ -712,9 +583,6 @@ public:
 	{
 	public:
 		using ActivationOp<TensorT>::ActivationOp;
-		TensorT operator()(const TensorT& x_I) const {
-			return -std::sin(x_I);
-		};
 		std::string getName() const { return "CosGradOp"; };
     std::vector<TensorT> getParameters() const { return std::vector<TensorT>({ this->getEps(), this->getMin(), this->getMax() }); }
     ActivationOp<TensorT>* copy() const { return new CosGradOp<TensorT>(*this); }
@@ -734,9 +602,6 @@ public:
   {
   public:
     using ActivationOp<TensorT>::ActivationOp;
-    TensorT operator()(const TensorT& x_I) const {
-      return x_I;
-    };
     std::string getName() const { return "BatchNormOp"; };
     std::vector<TensorT> getParameters() const { return std::vector<TensorT>({ this->getEps(), this->getMin(), this->getMax() }); }
     ActivationOp<TensorT>* copy() const { return new BatchNormOp<TensorT>(*this); }
@@ -756,9 +621,6 @@ public:
   {
   public:
     using ActivationOp<TensorT>::ActivationOp;
-    TensorT operator()(const TensorT& x_I) const {
-      return x_I;
-    };
     std::string getName() const { return "BatchNormGradOp"; };
     std::vector<TensorT> getParameters() const { return std::vector<TensorT>({ this->getEps(), this->getMin(), this->getMax() }); }
     ActivationOp<TensorT>* copy() const { return new BatchNormGradOp<TensorT>(*this); }
