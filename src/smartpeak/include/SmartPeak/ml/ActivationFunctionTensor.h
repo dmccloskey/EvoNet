@@ -856,27 +856,8 @@ namespace SmartPeak
       //auto result = x_mu * var.chip(0, 0).pow(-1 / 2) -
       //  x_mu.constant(1 / TensorT(2*batch_size)) * (x.chip(time_step, 4).chip(0, 2).chip(0, 0) - mean.chip(0, 0)) * var.chip(0, 0).pow(-3/2) * x_mu;
       ////std::cout << "result\n" << result << std::endl;
-
-      //Eigen::TensorMap<Eigen::Tensor<TensorT, 3>> x(x_I, batch_size, memory_size, layer_size);
-      //Eigen::TensorMap<Eigen::Tensor<TensorT, 3>> out(x_O, batch_size, memory_size, layer_size);
-      //auto x_chip = x.chip(time_step, 1);
-      //auto result = -x_chip.constant(TensorT(batch_size)).pow(2) / (x_chip.constant(TensorT(batch_size)) - x_chip.constant(TensorT(1))) / x_chip.pow(2);
-      ////std::cout << "x.chip(time_step, 4).chip(0, 3).chip(0, 1).chip(0, 0)\n" << x.chip(time_step, 4).chip(0, 3).chip(0, 1).chip(0, 0) << std::endl;
-
-      //Eigen::TensorMap<Eigen::Tensor<TensorT, 6>> x(x_I, 1, 1, batch_size, 1, memory_size, layer_size);
-      //Eigen::TensorMap<Eigen::Tensor<TensorT, 3>> out(x_O, batch_size, memory_size, layer_size);
-      //auto mean = x.chip(time_step, 4).mean(Eigen::array<Eigen::Index, 1>({ 2 })).broadcast(Eigen::array<Eigen::Index, 4>({1, 1, batch_size, 1 })); 
-      //auto var = ((x.chip(time_step, 4).chip(0, 3) - mean).pow(TensorT(2)) / mean.constant(TensorT(batch_size))).chip(0, 1).chip(0, 0);
-      //auto x_mu = (x.chip(time_step, 4).chip(0, 3) - mean).sum(Eigen::array<Eigen::Index, 2>({ 2, 3 })).broadcast(Eigen::array<Eigen::Index, 2>({ batch_size, layer_size }));
-      //std::cout << "x_mu\n" << x_mu << std::endl;
-      //auto dvar = x_mu * var.constant(TensorT(-0.5)) * var.pow(TensorT(-3 / 2));
-      //std::cout << "dvar\n" << dvar << std::endl;
-      //auto dmu = - 1 / var.sqrt() +  dvar * dvar.constant(TensorT(-2) / TensorT(batch_size)) * x_mu;
-      //std::cout << "dmu\n" << dmu << std::endl;
-      //auto result = 1 / var.sqrt() + dmu / dvar.constant(TensorT(batch_size)) +
-      //  dvar * dvar.constant(TensorT(2) / TensorT(batch_size)) * (x.chip(time_step, 4).chip(0, 3).chip(0, 1).chip(0, 0) - mean.chip(0, 1).chip(0, 0));
-
-      out.chip(time_step, 1).device(device) = (result == result).select(result.clip(this->getMin(), this->getMax()), result.constant(TensorT(0))).eval();
+      //out.chip(time_step, 1).device(device) = (result == result).select(result.clip(this->getMin(), this->getMax()), result.constant(TensorT(0))).eval();
+      out.chip(time_step, 1).device(device) = out.chip(time_step, 1).constant(TensorT(1)); // Set this to 1 instead of zero to maintain gradient flow
     };
     std::string getName() const { return "BatchNormGradTensorOp"; };
     //private:

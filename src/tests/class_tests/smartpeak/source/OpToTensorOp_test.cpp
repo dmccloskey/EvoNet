@@ -211,6 +211,20 @@ BOOST_AUTO_TEST_CASE(convertOpToTensorOpActivationOpToActivationTensorOp)
   BOOST_CHECK_EQUAL(op_tensor_class->getEps(), 1);
   BOOST_CHECK_EQUAL(op_tensor_class->getMin(), 2);
   BOOST_CHECK_EQUAL(op_tensor_class->getMax(), 3);
+
+  op_class = new BatchNormOp<float>(1.0f, 2.0f, 3.0f);
+  op_tensor_class = op_to_tensor_op.convertOpToTensorOp(op_class);
+  BOOST_CHECK_EQUAL(op_tensor_class->getName(), "BatchNormTensorOp");
+  BOOST_CHECK_EQUAL(op_tensor_class->getEps(), 1);
+  BOOST_CHECK_EQUAL(op_tensor_class->getMin(), 2);
+  BOOST_CHECK_EQUAL(op_tensor_class->getMax(), 3);
+
+  op_class = new BatchNormGradOp<float>(1.0f, 2.0f, 3.0f);
+  op_tensor_class = op_to_tensor_op.convertOpToTensorOp(op_class);
+  BOOST_CHECK_EQUAL(op_tensor_class->getName(), "BatchNormGradTensorOp");
+  BOOST_CHECK_EQUAL(op_tensor_class->getEps(), 1);
+  BOOST_CHECK_EQUAL(op_tensor_class->getMin(), 2);
+  BOOST_CHECK_EQUAL(op_tensor_class->getMax(), 3);
 }
 
 BOOST_AUTO_TEST_CASE(getTensorParamsActivationOpToActivationTensorOp)
@@ -319,6 +333,14 @@ BOOST_AUTO_TEST_CASE(getTensorParamsActivationOpToActivationTensorOp)
 	op_class = new CosGradOp<float>();
 	params = op_to_tensor_op.getTensorParams(op_class);
 	BOOST_CHECK_EQUAL(params.size(), 0);
+
+  op_class = new BatchNormOp<float>();
+  params = op_to_tensor_op.getTensorParams(op_class);
+  BOOST_CHECK_EQUAL(params.size(), 0);
+
+  op_class = new BatchNormGradOp<float>();
+  params = op_to_tensor_op.getTensorParams(op_class);
+  BOOST_CHECK_EQUAL(params.size(), 0);
 }
 
 BOOST_AUTO_TEST_CASE(constructorSolverOpToSolverTensorOp)

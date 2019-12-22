@@ -31,13 +31,13 @@ public:
   @param n_depth_2 The number of filters to create from each individual filter in the first Cov layer
     e.g., n_depth_1 = 32 and n_depth_2 = 2 the first Cov layer will have 32 filters and the second will have 64 layers
   @param n_fc The length of each fully connected layer
-  @param add_norm Optional normalization layer after each convolution
+  @param add_feature_norm Optional normalization layer after each convolution
   */
   void makeCovNet(Model<TensorT>& model, const int& n_inputs, const int& n_outputs,
     const int& n_depth_1 = 32, const int& n_depth_2 = 2, const int& n_depth_3 = 2,
     const int& n_fc_1 = 128, const int& n_fc_2 = 32, const int& filter_size = 5, const int& filter_stride = 1,
     const int& pool_size = 2, const int& pool_stride = 2,
-    const bool& add_pool = true, const bool& add_norm = false, const bool& specify_layers = false,
+    const bool& add_pool = true, const bool& add_feature_norm = false, const bool& specify_layers = false,
     const bool& share_weights = true) {
     model.setId(0);
     model.setName("CovNet");
@@ -47,9 +47,9 @@ public:
     // Add the inputs
     std::vector<std::string> node_names_input = model_builder.addInputNodes(model, "Input", "Input", n_inputs, specify_layers);
 
-    // Define the activation based on `add_norm`
+    // Define the activation based on `add_feature_norm`
     std::shared_ptr<ActivationOp<TensorT>> activation, activation_grad;
-    if (add_norm) {
+    if (add_feature_norm) {
       activation = std::make_shared<LinearOp<TensorT>>(LinearOp<TensorT>());
       activation_grad = std::make_shared<LinearGradOp<TensorT>>(LinearGradOp<TensorT>());
     }
@@ -77,7 +77,7 @@ public:
         activation, activation_grad, integration_op, integration_error_op, integration_weight_grad_op,
         std::make_shared<RandWeightInitOp<TensorT>>(RandWeightInitOp<TensorT>(filter_size * filter_size, 2)),
         solver_op, 0.0f, 0.0f, false, specify_layers, share_weights);
-      if (add_norm) {
+      if (add_feature_norm) {
         std::string norm_name = "Norm0-" + std::to_string(d);
         node_names = model_builder.addNormalization(model, norm_name, norm_name, node_names, specify_layers);
         std::string gain_name = "Gain0-" + std::to_string(d);
@@ -118,7 +118,7 @@ public:
           activation, activation_grad, integration_op, integration_error_op, integration_weight_grad_op,
           std::make_shared<RandWeightInitOp<TensorT>>(RandWeightInitOp<TensorT>(filter_size * filter_size, 2)),
           solver_op, 0.0f, 0.0f, false, specify_layers, share_weights);
-        if (add_norm) {
+        if (add_feature_norm) {
           std::string norm_name = "Norm1-" + std::to_string(l_cnt) + "-" + std::to_string(d);
           node_names = model_builder.addNormalization(model, norm_name, norm_name, node_names, specify_layers);
           std::string gain_name = "Gain1-" + std::to_string(l_cnt) + "-" + std::to_string(d);
@@ -161,7 +161,7 @@ public:
           activation, activation_grad, integration_op, integration_error_op, integration_weight_grad_op,
           std::make_shared<RandWeightInitOp<TensorT>>(RandWeightInitOp<TensorT>(filter_size * filter_size, 2)),
           solver_op, 0.0f, 0.0f, false, specify_layers, share_weights);
-        if (add_norm) {
+        if (add_feature_norm) {
           std::string norm_name = "Norm2-" + std::to_string(l_cnt) + "-" + std::to_string(d);
           node_names = model_builder.addNormalization(model, norm_name, norm_name, node_names, specify_layers);
           std::string gain_name = "Gain2-" + std::to_string(l_cnt) + "-" + std::to_string(d);
@@ -220,9 +220,9 @@ public:
       activation, activation_grad, integration_op, integration_error_op, integration_weight_grad_op,
       std::make_shared<RandWeightInitOp<TensorT>>(RandWeightInitOp<TensorT>(node_names.size() + n_fc_1, 2)),
       solver_op, 0.0f, 0.0f, false, specify_layers);
-    if (add_norm) {
-      node_names = model_builder.addNormalization(model, "FC0-Norm", "FC0-Norm", node_names, true);
-      node_names = model_builder.addSinglyConnected(model, "FC0-Norm-gain", "FC0-Norm-gain", node_names, node_names.size(),
+    if (add_feature_norm) {
+      node_names = model_builder.addNormalization(model, "FC0-FeatureNorm", "FC0-FeatureNorm", node_names, true);
+      node_names = model_builder.addSinglyConnected(model, "FC0-FeatureNorm-gain", "FC0-FeatureNorm-gain", node_names, node_names.size(),
         std::make_shared<LeakyReLUOp<TensorT>>(LeakyReLUOp<TensorT>()), // Nonlinearity occures after the normalization
         std::make_shared<LeakyReLUGradOp<TensorT>>(LeakyReLUGradOp<TensorT>()),
         integration_op, integration_error_op, integration_weight_grad_op,
@@ -236,9 +236,9 @@ public:
       activation, activation_grad, integration_op, integration_error_op, integration_weight_grad_op,
       std::make_shared<RandWeightInitOp<TensorT>>(RandWeightInitOp<TensorT>(node_names.size() + n_fc_2, 2)),
       solver_op, 0.0f, 0.0f, false, specify_layers);
-    if (add_norm) {
-      node_names = model_builder.addNormalization(model, "FC1-Norm", "FC1-Norm", node_names, true);
-      node_names = model_builder.addSinglyConnected(model, "FC1-Norm-gain", "FC1-Norm-gain", node_names, node_names.size(),
+    if (add_feature_norm) {
+      node_names = model_builder.addNormalization(model, "FC1-FeatureNorm", "FC1-FeatureNorm", node_names, true);
+      node_names = model_builder.addSinglyConnected(model, "FC1-FeatureNorm-gain", "FC1-FeatureNorm-gain", node_names, node_names.size(),
         std::make_shared<LeakyReLUOp<TensorT>>(LeakyReLUOp<TensorT>()), // Nonlinearity occures after the normalization
         std::make_shared<LeakyReLUGradOp<TensorT>>(LeakyReLUGradOp<TensorT>()),
         integration_op, integration_error_op, integration_weight_grad_op,
@@ -276,7 +276,7 @@ public:
   @param[in] n_hidden The length of the hidden layers
   @param[in] specify_layers Whether to give the `ModelInterpreter` "hints" as to the correct network structure during graph to tensor compilation
   */
-  void makeFullyConn(Model<TensorT>& model, const int& n_inputs = 784, const int& n_outputs = 10, const int& n_hidden_0 = 512, const int& n_hidden_1 = 512, const int& n_hidden_2 = 512, const bool& add_norm = true, const bool& specify_layers = false) {
+  void makeFullyConn(Model<TensorT>& model, const int& n_inputs = 784, const int& n_outputs = 10, const int& n_hidden_0 = 512, const int& n_hidden_1 = 512, const int& n_hidden_2 = 512, const bool& add_feature_norm = false, const bool& add_batch_norm = false, const bool& specify_layers = false) {
     model.setId(0);
     model.setName("FullyConnectedClassifier");
 
@@ -285,9 +285,9 @@ public:
     // Add the inputs
     std::vector<std::string> node_names = model_builder.addInputNodes(model, "Input", "Input", n_inputs, specify_layers);
 
-    // Define the activation based on `add_norm`
+    // Define the activation based on `add_feature_norm`
     std::shared_ptr<ActivationOp<TensorT>> activation, activation_grad;
-    if (add_norm) {
+    if (add_feature_norm || add_batch_norm) {
       activation = std::make_shared<LinearOp<TensorT>>(LinearOp<TensorT>());
       activation_grad = std::make_shared<LinearGradOp<TensorT>>(LinearGradOp<TensorT>());
     }
@@ -316,9 +316,21 @@ public:
         activation, activation_grad, integration_op, integration_error_op, integration_weight_grad_op,
         std::make_shared<RandWeightInitOp<TensorT>>(RandWeightInitOp<TensorT>((TensorT)(node_names.size() + n_hidden_0) / 2, 1)),
         solver_op, 0.0f, 0.0f, false, specify_layers);
-      if (add_norm) {
-        node_names = model_builder.addNormalization(model, "EN0-Norm", "EN0-Norm", node_names, true);
-        node_names = model_builder.addSinglyConnected(model, "EN0-Norm-gain", "EN0-Norm-gain", node_names, node_names.size(),
+      if (add_batch_norm) {
+        node_names = model_builder.addSinglyConnected(model, "EN0-BatchNorm", "EN0-BatchNorm", node_names, node_names.size(),
+          std::make_shared<BatchNormOp<TensorT>>(BatchNormOp<TensorT>()), std::make_shared<BatchNormGradOp<TensorT>>(BatchNormGradOp<TensorT>()),
+          integration_op, integration_error_op, integration_weight_grad_op,
+          std::make_shared<ConstWeightInitOp<TensorT>>(ConstWeightInitOp<TensorT>(1)),
+          solver_op, 0.0, 0.0, true, specify_layers);
+        node_names = model_builder.addSinglyConnected(model, "EN0-BatchNorm-gain", "EN0-BatchNorm-gain", node_names, node_names.size(),
+          activation_norm, activation_norm_grad,
+          integration_op, integration_error_op, integration_weight_grad_op,
+          std::make_shared<ConstWeightInitOp<TensorT>>(ConstWeightInitOp<TensorT>(1)),
+          solver_op, 0.0, 0.0, true, specify_layers);
+      }
+      if (add_feature_norm) {
+        node_names = model_builder.addNormalization(model, "EN0-FeatureNorm", "EN0-FeatureNorm", node_names, true);
+        node_names = model_builder.addSinglyConnected(model, "EN0-FeatureNorm-gain", "EN0-FeatureNorm-gain", node_names, node_names.size(),
           activation_norm, activation_norm_grad,
           integration_op, integration_error_op, integration_weight_grad_op,
           std::make_shared<ConstWeightInitOp<TensorT>>(ConstWeightInitOp<TensorT>(1)),
@@ -333,9 +345,21 @@ public:
         activation, activation_grad, integration_op, integration_error_op, integration_weight_grad_op,
         std::make_shared<RandWeightInitOp<TensorT>>(RandWeightInitOp<TensorT>((TensorT)(node_names.size() + n_hidden_1) / 2, 1)),
         solver_op, 0.0f, 0.0f, false, specify_layers);
-      if (add_norm) {
-        node_names = model_builder.addNormalization(model, "EN1-Norm", "EN1-Norm", node_names, true);
-        node_names = model_builder.addSinglyConnected(model, "EN1-Norm-gain", "EN1-Norm-gain", node_names, node_names.size(),
+      if (add_batch_norm) {
+        node_names = model_builder.addSinglyConnected(model, "EN1-BatchNorm", "EN1-BatchNorm", node_names, node_names.size(),
+          std::make_shared<BatchNormOp<TensorT>>(BatchNormOp<TensorT>()), std::make_shared<BatchNormGradOp<TensorT>>(BatchNormGradOp<TensorT>()),
+          integration_op, integration_error_op, integration_weight_grad_op,
+          std::make_shared<ConstWeightInitOp<TensorT>>(ConstWeightInitOp<TensorT>(1)),
+          solver_op, 0.0, 0.0, true, specify_layers);
+        node_names = model_builder.addSinglyConnected(model, "EN1-BatchNorm-gain", "EN1-BatchNorm-gain", node_names, node_names.size(),
+          activation_norm, activation_norm_grad,
+          integration_op, integration_error_op, integration_weight_grad_op,
+          std::make_shared<ConstWeightInitOp<TensorT>>(ConstWeightInitOp<TensorT>(1)),
+          solver_op, 0.0, 0.0, true, specify_layers);
+      }
+      if (add_feature_norm) {
+        node_names = model_builder.addNormalization(model, "EN1-FeatureNorm", "EN1-FeatureNorm", node_names, true);
+        node_names = model_builder.addSinglyConnected(model, "EN1-FeatureNorm-gain", "EN1-FeatureNorm-gain", node_names, node_names.size(),
           activation_norm, activation_norm_grad,
           integration_op, integration_error_op, integration_weight_grad_op,
           std::make_shared<ConstWeightInitOp<TensorT>>(ConstWeightInitOp<TensorT>(1)),
@@ -350,9 +374,21 @@ public:
         activation, activation_grad, integration_op, integration_error_op, integration_weight_grad_op,
         std::make_shared<RandWeightInitOp<TensorT>>(RandWeightInitOp<TensorT>((TensorT)(node_names.size() + n_hidden_2) / 2, 1)),
         solver_op, 0.0f, 0.0f, false, specify_layers);
-      if (add_norm) {
-        node_names = model_builder.addNormalization(model, "EN2-Norm", "EN2-Norm", node_names, true);
-        node_names = model_builder.addSinglyConnected(model, "EN2-Norm-gain", "EN2-Norm-gain", node_names, node_names.size(),
+      if (add_batch_norm) {
+        node_names = model_builder.addSinglyConnected(model, "EN2-BatchNorm", "EN2-BatchNorm", node_names, node_names.size(),
+          std::make_shared<BatchNormOp<TensorT>>(BatchNormOp<TensorT>()), std::make_shared<BatchNormGradOp<TensorT>>(BatchNormGradOp<TensorT>()),
+          integration_op, integration_error_op, integration_weight_grad_op,
+          std::make_shared<ConstWeightInitOp<TensorT>>(ConstWeightInitOp<TensorT>(1)),
+          solver_op, 0.0, 0.0, true, specify_layers);
+        node_names = model_builder.addSinglyConnected(model, "EN2-BatchNorm-gain", "EN2-BatchNorm-gain", node_names, node_names.size(),
+          activation_norm, activation_norm_grad,
+          integration_op, integration_error_op, integration_weight_grad_op,
+          std::make_shared<ConstWeightInitOp<TensorT>>(ConstWeightInitOp<TensorT>(1)),
+          solver_op, 0.0, 0.0, true, specify_layers);
+      }
+      if (add_feature_norm) {
+        node_names = model_builder.addNormalization(model, "EN2-FeatureNorm", "EN2-FeatureNorm", node_names, true);
+        node_names = model_builder.addSinglyConnected(model, "EN2-FeatureNorm-gain", "EN2-FeatureNorm-gain", node_names, node_names.size(),
           activation_norm, activation_norm_grad,
           integration_op, integration_error_op, integration_weight_grad_op,
           std::make_shared<ConstWeightInitOp<TensorT>>(ConstWeightInitOp<TensorT>(1)),
@@ -682,7 +718,7 @@ void main_MNIST(const std::string& data_dir, const bool& make_model, const bool&
   Model<float> model;
   if (make_model) {
     std::cout << "Making the model..." << std::endl;
-    model_trainer.makeFullyConn(model, input_nodes.size(), output_nodes.size(), 2048, 512, 256, true, true);  // Baseline
+    model_trainer.makeFullyConn(model, input_nodes.size(), output_nodes.size(), 64, 0, 0, true, true, true);  // Baseline
     //model_trainer.makeCovNet(model, input_nodes.size(), output_nodes.size(), 2, 2, 0, 32, 4, 7, 1, 2, 2, false, true, true);  // Sanity test
     //model_trainer.makeCovNet(model, input_nodes.size(), output_nodes.size(), 8, 2, 128, 32, 5, 2, false, true);  // Minimal solving model
     //model_trainer.makeCovNet(model, input_nodes.size(), output_nodes.size(), 32, 2, 0, 512, 32, 5, 1, 2, 2, true, true, true); // Recommended model
