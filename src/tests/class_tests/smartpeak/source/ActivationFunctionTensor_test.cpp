@@ -129,7 +129,7 @@ BOOST_AUTO_TEST_CASE(operationfunctionReluGradTensorOp)
 	output.setZero();
 	Eigen::Tensor<double, 3> test(batch_size, memory_size, layer_size);
 	test.setValues({
-		{{0,0}, {0,0}},
+		{{1,1}, {0,0}},
 		{{1,1}, {0,0}},
 		{{1,1}, {0,0}},
 		{{0,0}, {0,0}},
@@ -1700,7 +1700,7 @@ BOOST_AUTO_TEST_CASE(operationfunctionBatchNormTensorOp)
   Eigen::DefaultDevice device;
   Eigen::Tensor<double, 3> input(batch_size, memory_size, layer_size);
   input.setValues({
-    {{0,0}, {0,0}},
+    {{0,0.1}, {0,0}},
     {{1,1}, {0,0}},
     {{10,10}, {0,0}},
     {{-1,-1}, {0,0}},
@@ -1709,11 +1709,11 @@ BOOST_AUTO_TEST_CASE(operationfunctionBatchNormTensorOp)
   output.setZero();
   Eigen::Tensor<double, 3> test(batch_size, memory_size, layer_size);
   test.setValues({
-    {{0,0}, {0,0}},
-    {{5,5}, {0,0}},
-    {{0.5,0.5}, {0,0}},
-    {{-5,-5}, {0,0}},
-    {{-0.5,-0.5}, {0,0}} });
+    {{0,2.2360679774997898}, {0,0}},
+    {{2.2360679774997898,2.2360679774997898}, {0,0}},
+    {{2.2360679774997898,2.2360679774997898}, {0,0}},
+    {{-2.2360679774997898,-2.2360679774997898}, {0,0}},
+    {{-2.2360679774997898,-2.2360679774997898}, {0,0}} });
 
   operation(input.data(), output.data(), batch_size, memory_size, layer_size, 0, device);
 
@@ -1760,7 +1760,7 @@ BOOST_AUTO_TEST_CASE(operationfunctionBatchNormGradTensorOp)
   Eigen::DefaultDevice device;
   Eigen::Tensor<double, 3> input(batch_size, memory_size, layer_size);
   input.setValues({
-    {{0,0}, {0,0}},
+    {{0,0.1}, {0,0}},
     {{1,1}, {0,0}},
     {{10,10}, {0,0}},
     {{-1,-1}, {0,0}},
@@ -1769,11 +1769,11 @@ BOOST_AUTO_TEST_CASE(operationfunctionBatchNormGradTensorOp)
   output.setZero();
   Eigen::Tensor<double, 3> test(batch_size, memory_size, layer_size);
   test.setValues({
-    {{1,1}, {0,0}},
-    {{2.718281828,2.718281828}, {0,0}},
-    {{22026.46579,22026.46579}, {0,0}},
-    {{0.367879441,0.367879441}, {0,0}},
-    {{4.53999E-05,4.53999E-05}, {0,0}} });
+    {{0,4.5519144009631268e-15}, {0,0}},
+    {{0,1.7948528498063337e-15}, {0,0}},
+    {{0,1.776535187764253e-15}, {0,0}},
+    {{0,1.7934306267839513e-15}, {0,0}},
+    {{0,1.7765337666674127e-15}, {0,0}} });
 
   operation(input.data(), output.data(), batch_size, memory_size, layer_size, 0, device);
 
@@ -1798,7 +1798,7 @@ BOOST_AUTO_TEST_CASE(operatorGradientCheckTensorOp)
 {
   // Define the gradient checker
   GradientCheckTensorOp<double, Eigen::DefaultDevice> operation;
-  operation.eps_ = 1e-4;
+  operation.eps_ = 1e-7;
 
   // Setup the input
   const int batch_size = 5;
@@ -1821,15 +1821,125 @@ BOOST_AUTO_TEST_CASE(operatorGradientCheckTensorOp)
   Eigen::Tensor<double, 0> output;
   output.setZero();
 
-  // Check Sigmoid
-  operation.forward_ = std::make_shared<SigmoidTensorOp<double, Eigen::DefaultDevice>>(SigmoidTensorOp<double, Eigen::DefaultDevice>());
-  operation.reverse_ = std::make_shared<SigmoidGradTensorOp<double, Eigen::DefaultDevice>>(SigmoidGradTensorOp<double, Eigen::DefaultDevice>());
-  operation(input.data(), input_f_plus.data(), input_f_min.data(), input_b.data(), output.data(), batch_size, memory_size, layer_size, 0, device);
-  BOOST_CHECK(output(0) < operation.eps_);
+  //// Check Sigmoid
+  //operation.forward_ = std::make_shared<SigmoidTensorOp<double, Eigen::DefaultDevice>>(SigmoidTensorOp<double, Eigen::DefaultDevice>());
+  //operation.reverse_ = std::make_shared<SigmoidGradTensorOp<double, Eigen::DefaultDevice>>(SigmoidGradTensorOp<double, Eigen::DefaultDevice>());
+  //operation(input.data(), input_f_plus.data(), input_f_min.data(), input_b.data(), output.data(), batch_size, memory_size, layer_size, 0, device);
+  //BOOST_CHECK(output(0) < operation.eps_);
 
-  // TODO...
+  //// Check ReLU
+  //input.setValues({ {{0.1,0.1}, {0,0}}, {{1,1}, {0,0}}, {{10,10}, {0,0}}, {{-1,-1}, {0,0}}, {{-10,-10}, {0,0}} });
+  //input_f_plus.setZero();
+  //input_f_min.setZero();
+  //input_b.setZero();
+  //output.setZero();
+  //operation.forward_ = std::make_shared<ReLUTensorOp<double, Eigen::DefaultDevice>>(ReLUTensorOp<double, Eigen::DefaultDevice>());
+  //operation.reverse_ = std::make_shared<ReLUGradTensorOp<double, Eigen::DefaultDevice>>(ReLUGradTensorOp<double, Eigen::DefaultDevice>());
+  //operation(input.data(), input_f_plus.data(), input_f_min.data(), input_b.data(), output.data(), batch_size, memory_size, layer_size, 0, device);
+  //BOOST_CHECK(output(0) < operation.eps_);
+
+  //// Check ELU
+  //input.setValues({ {{0,0}, {0,0}}, {{1,1}, {0,0}}, {{10,10}, {0,0}}, {{-1,-1}, {0,0}}, {{-10,-10}, {0,0}} });
+  //input_f_plus.setZero();
+  //input_f_min.setZero();
+  //input_b.setZero();
+  //output.setZero();
+  //operation.forward_ = std::make_shared<ELUTensorOp<double, Eigen::DefaultDevice>>(ELUTensorOp<double, Eigen::DefaultDevice>());
+  //operation.reverse_ = std::make_shared<ELUGradTensorOp<double, Eigen::DefaultDevice>>(ELUGradTensorOp<double, Eigen::DefaultDevice>());
+  //operation(input.data(), input_f_plus.data(), input_f_min.data(), input_b.data(), output.data(), batch_size, memory_size, layer_size, 0, device);
+  //BOOST_CHECK(output(0) < operation.eps_);
+
+  //// Check LeakyReLU
+  //input.setValues({ {{0.1,0.1}, {0,0}}, {{1,1}, {0,0}}, {{10,10}, {0,0}}, {{-1,-1}, {0,0}}, {{-10,-10}, {0,0}} });
+  //input_f_plus.setZero();
+  //input_f_min.setZero();
+  //input_b.setZero();
+  //output.setZero();
+  //operation.forward_ = std::make_shared<LeakyReLUTensorOp<double, Eigen::DefaultDevice>>(LeakyReLUTensorOp<double, Eigen::DefaultDevice>());
+  //operation.reverse_ = std::make_shared<LeakyReLUGradTensorOp<double, Eigen::DefaultDevice>>(LeakyReLUGradTensorOp<double, Eigen::DefaultDevice>());
+  //operation(input.data(), input_f_plus.data(), input_f_min.data(), input_b.data(), output.data(), batch_size, memory_size, layer_size, 0, device);
+  //BOOST_CHECK(output(0) < operation.eps_);
+
+  //// Check TanH
+  //input.setValues({ {{0,0}, {0,0}}, {{1,1}, {0,0}}, {{10,10}, {0,0}}, {{-1,-1}, {0,0}}, {{-10,-10}, {0,0}} });
+  //input_f_plus.setZero();
+  //input_f_min.setZero();
+  //input_b.setZero();
+  //output.setZero();
+  //operation.forward_ = std::make_shared<TanHTensorOp<double, Eigen::DefaultDevice>>(TanHTensorOp<double, Eigen::DefaultDevice>());
+  //operation.reverse_ = std::make_shared<TanHGradTensorOp<double, Eigen::DefaultDevice>>(TanHGradTensorOp<double, Eigen::DefaultDevice>());
+  //operation(input.data(), input_f_plus.data(), input_f_min.data(), input_b.data(), output.data(), batch_size, memory_size, layer_size, 0, device);
+  //BOOST_CHECK(output(0) < operation.eps_);
+
+  //// Check Linear
+  //input.setValues({ {{0,0}, {0,0}}, {{1,1}, {0,0}}, {{10,10}, {0,0}}, {{-1,-1}, {0,0}}, {{-10,-10}, {0,0}} });
+  //input_f_plus.setZero();
+  //input_f_min.setZero();
+  //input_b.setZero();
+  //output.setZero();
+  //operation.forward_ = std::make_shared<LinearTensorOp<double, Eigen::DefaultDevice>>(LinearTensorOp<double, Eigen::DefaultDevice>());
+  //operation.reverse_ = std::make_shared<LinearGradTensorOp<double, Eigen::DefaultDevice>>(LinearGradTensorOp<double, Eigen::DefaultDevice>());
+  //operation(input.data(), input_f_plus.data(), input_f_min.data(), input_b.data(), output.data(), batch_size, memory_size, layer_size, 0, device);
+  //BOOST_CHECK(output(0) < operation.eps_);
+
+  //// Check Pow
+  //input.setValues({ {{0,0}, {0,0}}, {{1,1}, {0,0}}, {{10,10}, {0,0}}, {{-1,-1}, {0,0}}, {{-10,-10}, {0,0}} });
+  //input_f_plus.setZero();
+  //input_f_min.setZero();
+  //input_b.setZero();
+  //output.setZero();
+  //operation.forward_ = std::make_shared<PowTensorOp<double, Eigen::DefaultDevice>>(PowTensorOp<double, Eigen::DefaultDevice>());
+  //operation.reverse_ = std::make_shared<PowGradTensorOp<double, Eigen::DefaultDevice>>(PowGradTensorOp<double, Eigen::DefaultDevice>());
+  //operation(input.data(), input_f_plus.data(), input_f_min.data(), input_b.data(), output.data(), batch_size, memory_size, layer_size, 0, device);
+  //BOOST_CHECK(output(0) < operation.eps_);
+
+  //// Check Inverse
+  //input.setValues({ {{0.1,0.1}, {0,0}}, {{1,1}, {0,0}}, {{10,10}, {0,0}}, {{-1,-1}, {0,0}}, {{-10,-10}, {0,0}} });
+  //input_f_plus.setZero();
+  //input_f_min.setZero();
+  //input_b.setZero();
+  //output.setZero();
+  //operation.forward_ = std::make_shared<InverseTensorOp<double, Eigen::DefaultDevice>>(InverseTensorOp<double, Eigen::DefaultDevice>());
+  //operation.reverse_ = std::make_shared<InverseGradTensorOp<double, Eigen::DefaultDevice>>(InverseGradTensorOp<double, Eigen::DefaultDevice>());
+  //operation(input.data(), input_f_plus.data(), input_f_min.data(), input_b.data(), output.data(), batch_size, memory_size, layer_size, 0, device);
+  //BOOST_CHECK(output(0) < operation.eps_);
+
+  //// Check Log
+  //input.setValues({ {{0.1,0.1}, {0,0}}, {{1,1}, {0,0}}, {{10,10}, {0,0}}, {{100,100}, {0,0}}, {{1000,1000}, {0,0}} });
+  //input_f_plus.setZero();
+  //input_f_min.setZero();
+  //input_b.setZero();
+  //output.setZero();
+  //operation.forward_ = std::make_shared<LogTensorOp<double, Eigen::DefaultDevice>>(LogTensorOp<double, Eigen::DefaultDevice>());
+  //operation.reverse_ = std::make_shared<LogGradTensorOp<double, Eigen::DefaultDevice>>(LogGradTensorOp<double, Eigen::DefaultDevice>());
+  //operation(input.data(), input_f_plus.data(), input_f_min.data(), input_b.data(), output.data(), batch_size, memory_size, layer_size, 0, device);
+  //BOOST_CHECK(output(0) < operation.eps_);
+
+  //// Check Exponential
+  //input.setValues({ {{0,0}, {0,0}}, {{1,1}, {0,0}}, {{10,10}, {0,0}}, {{-1,-1}, {0,0}}, {{-10,-10}, {0,0}} });
+  //input_f_plus.setZero();
+  //input_f_min.setZero();
+  //input_b.setZero();
+  //output.setZero();
+  //operation.forward_ = std::make_shared<ExponentialTensorOp<double, Eigen::DefaultDevice>>(ExponentialTensorOp<double, Eigen::DefaultDevice>());
+  //operation.reverse_ = std::make_shared<ExponentialGradTensorOp<double, Eigen::DefaultDevice>>(ExponentialGradTensorOp<double, Eigen::DefaultDevice>());
+  //operation(input.data(), input_f_plus.data(), input_f_min.data(), input_b.data(), output.data(), batch_size, memory_size, layer_size, 0, device);
+  //BOOST_CHECK(output(0) < operation.eps_);
 
   // Check BatchNorm
+  input.setValues({ {{0.1,0.1}, {0,0}}, {{1,1}, {0,0}}, {{10,10}, {0,0}}, {{-1,-1}, {0,0}}, {{-10,-10}, {0,0}} });
+  input_f_plus.setZero();
+  input_f_min.setZero();
+  input_b.setZero();
+  output.setZero();
+  operation.forward_ = std::make_shared<BatchNormMuTensorOp<double, Eigen::DefaultDevice>>(BatchNormMuTensorOp<double, Eigen::DefaultDevice>());
+  operation.reverse_ = std::make_shared<BatchNormMuGradTensorOp<double, Eigen::DefaultDevice>>(BatchNormMuGradTensorOp<double, Eigen::DefaultDevice>());
+  operation(input.data(), input_f_plus.data(), input_f_min.data(), input_b.data(), output.data(), batch_size, memory_size, layer_size, 0, device);
+  BOOST_CHECK(output(0) < operation.eps_);
+  std::cout << "Gradient Check BatchNormMu: " << output(0) << std::endl;
+
+  // Check BatchNorm
+  input.setValues({ {{10,0.1}, {0,0}}, {{1,1}, {0,0}}, {{10,10}, {0,0}}, {{-1,-1}, {0,0}}, {{-10,-10}, {0,0}} });
   input_f_plus.setZero();
   input_f_min.setZero();
   input_b.setZero();

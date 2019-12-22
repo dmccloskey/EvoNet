@@ -65,7 +65,7 @@ namespace SmartPeak
     void operator()(TensorT* x_I, TensorT* x_O, const int& batch_size, const int& memory_size, const int& layer_size, const int& time_step, DeviceT& device) const {
 			Eigen::TensorMap<Eigen::Tensor<TensorT, 3>> x(x_I, batch_size, memory_size, layer_size);
 			Eigen::TensorMap<Eigen::Tensor<TensorT, 3>> out(x_O, batch_size, memory_size, layer_size);
-			auto result = (x.chip(time_step, 1) > x.chip(time_step, 1).constant(TensorT(0))).select(x.chip(time_step, 1), x.chip(time_step, 1).constant(TensorT(0)));
+			auto result = (x.chip(time_step, 1) >= x.chip(time_step, 1).constant(TensorT(0))).select(x.chip(time_step, 1), x.chip(time_step, 1).constant(TensorT(0)));
 			out.chip(time_step, 1).device(device) = result.clip(this->getMin(), this->getMax());
       //std::cout << "[ReLUTensorOp] Time step " << time_step << " : " << out.chip(time_step, 1) << std::endl;  // DEBUGGING...
 		};
@@ -94,7 +94,7 @@ namespace SmartPeak
     void operator()(TensorT* x_I, TensorT* x_O, const int& batch_size, const int& memory_size, const int& layer_size, const int& time_step, DeviceT& device) const {
 			Eigen::TensorMap<Eigen::Tensor<TensorT, 3>> x(x_I, batch_size, memory_size, layer_size);
 			Eigen::TensorMap<Eigen::Tensor<TensorT, 3>> out(x_O, batch_size, memory_size, layer_size);
-			auto result = (x.chip(time_step, 1) > x.chip(time_step, 1).constant(TensorT(0))).select(x.chip(time_step, 1).constant(TensorT(1)), x.chip(time_step, 1).constant(TensorT(0)));
+			auto result = (x.chip(time_step, 1) >= x.chip(time_step, 1).constant(TensorT(0))).select(x.chip(time_step, 1).constant(TensorT(1)), x.chip(time_step, 1).constant(TensorT(0)));
 			out.chip(time_step, 1).device(device) = result.clip(this->getMin(), this->getMax());
 		};
     std::string getName() const{return "ReLUGradTensorOp";};
@@ -819,7 +819,7 @@ namespace SmartPeak
       auto mean = x.chip(time_step, 2).mean(Eigen::array<Eigen::Index, 1>({ 0 })).broadcast(Eigen::array<Eigen::Index, 2>({batch_size, 1}));  // 2 dims
       auto var = (x.chip(time_step, 2).chip(0, 1) - mean).pow(TensorT(2)) / mean.constant(TensorT(batch_size));
       auto result = (var <= var.constant(TensorT(0))).select(var.constant(TensorT(0)), (x.chip(time_step, 2).chip(0, 1) - mean) / var.sqrt());
-      out.chip(time_step, 1).device(device) = result.clip(this->getMin(), this->getMax());
+      out.chip(time_step, 1).device(device) = result.clip(this->getMin(), this->getMax()).eval();
     };
     std::string getName() const { return "BatchNormTensorOp"; };
     //private:
@@ -833,32 +833,13 @@ namespace SmartPeak
   /**
   @brief BatchNorm gradient
 
-  (I - 1)/n_x*(1 - x_mu)*(x - x_mu)*x_var.pow(-3/2)
+  d/dx((xi-mu)/var.sqrt())
+  = ddx(xi-mu)/var.sqrt() + (xi-mu)*ddx(var.pow(-1/2))
+  = ddx(xi-mu)/var.sqrt() + (xi-mu)*(-0.5*var.pow(-3/2))*ddx(var)
+  = ddx(xi-mu)/var.sqrt() + (xi-mu)*(-0.5*var.pow(-3/2))*ddx(SUM(xi-mu)/m)
+  = ddx(xi-mu)/var.sqrt() - (xi-mu)*(1/2m)*var.pow(-3/2)*ddx(SUM(xi-mu))
+  = 0 - 0
 
-  Derivation 1: 
-  N, D = dout.shape
-	x_mu, inv_var, x_hat, gamma = cache
-
-	# intermediate partial derivatives
-	dxhat = dout * gamma
-
-  dx = (1. / N) * inv_var * (N*dxhat - np.sum(dxhat, axis=0) - x_hat*np.sum(dxhat*x_hat, axis=0))
-    = 1/N * inv_var * N - x_hat
-    = inv_var - x_hat
-
-  derivation 2:
-  # flatten the inputs and dout
-  X_flat = X.reshape(n_X,c_X*h_X*w_X)
-  dout = dout.reshape(n_X,c_X*h_X*w_X)
-
-  X_mu = X_flat - mu
-  var_inv = 1./np.sqrt(var + 1e-8)
-
-  dX_norm = dout * gamma
-  dvar = np.sum(dX_norm * X_mu,axis=0) * -0.5 * (var + 1e-8)**(-3/2)
-  dmu = np.sum(dX_norm * -var_inv ,axis=0) + dvar * 1/n_X * np.sum(-2.* X_mu, axis=0)
-
-  dX = (dX_norm * var_inv) + (dmu / n_X) + (dvar * 2/n_X * X_mu)
   */
   template<typename TensorT, typename DeviceT>
   class BatchNormGradTensorOp : public ActivationTensorOp<TensorT, DeviceT>
@@ -866,35 +847,36 @@ namespace SmartPeak
   public:
     using ActivationTensorOp<TensorT, DeviceT>::ActivationTensorOp;
     void operator()(TensorT* x_I, TensorT* x_O, const int& batch_size, const int& memory_size, const int& layer_size, const int& time_step, DeviceT& device) const {
-      Eigen::TensorMap<Eigen::Tensor<TensorT, 4>> x(x_I, batch_size, 1, memory_size, layer_size);
-      Eigen::TensorMap<Eigen::Tensor<TensorT, 3>> out(x_O, batch_size, memory_size, layer_size);
-      auto x_chip = x.chip(time_step, 2).chip(0, 1);
-      auto mean = x.chip(time_step, 2).mean(Eigen::array<Eigen::Index, 1>({ 0 })).broadcast(Eigen::array<Eigen::Index, 2>({ batch_size, 1 }));  // 2 dims
-      auto var = (x.chip(time_step, 2).chip(0, 1) - mean).pow(TensorT(2)) / mean.constant(TensorT(batch_size));
-      auto tmp = x_chip.constant(TensorT(batch_size - 1) / TensorT(batch_size)) * (x_chip.constant(TensorT(1)) - mean) * (x_chip - mean) * var.pow(-3/2);
-      auto result = (var <= var.constant(TensorT(0))).select(var.constant(TensorT(0)), tmp);
+      //Eigen::TensorMap<Eigen::Tensor<TensorT, 5>> x(x_I, 1, batch_size, 1, memory_size, layer_size);
+      //Eigen::TensorMap<Eigen::Tensor<TensorT, 3>> out(x_O, batch_size, memory_size, layer_size);
+      //auto mean = x.chip(time_step, 3).mean(Eigen::array<Eigen::Index, 1>({ 1 })).broadcast(Eigen::array<Eigen::Index, 3>({ 1, batch_size, 1 }));
+      //auto var = ((x.chip(time_step, 3).chip(0, 2) - mean).pow(TensorT(2)) / mean.constant(TensorT(batch_size)));
+      //auto x_mu = (x.chip(time_step, 3).chip(0, 2) - mean).sum(Eigen::array<Eigen::Index, 1>({ 1 })).broadcast(Eigen::array<Eigen::Index, 2>({ batch_size, 1 }));
+      ////std::cout << "x_mu\n" << x_mu << std::endl;
+      //auto result = x_mu * var.chip(0, 0).pow(-1 / 2) -
+      //  x_mu.constant(1 / TensorT(2*batch_size)) * (x.chip(time_step, 4).chip(0, 2).chip(0, 0) - mean.chip(0, 0)) * var.chip(0, 0).pow(-3/2) * x_mu;
+      ////std::cout << "result\n" << result << std::endl;
+
+      //Eigen::TensorMap<Eigen::Tensor<TensorT, 3>> x(x_I, batch_size, memory_size, layer_size);
+      //Eigen::TensorMap<Eigen::Tensor<TensorT, 3>> out(x_O, batch_size, memory_size, layer_size);
       //auto x_chip = x.chip(time_step, 1);
       //auto result = -x_chip.constant(TensorT(batch_size)).pow(2) / (x_chip.constant(TensorT(batch_size)) - x_chip.constant(TensorT(1))) / x_chip.pow(2);
-      //std::cout << "x.chip(time_step, 4).chip(0, 3).chip(0, 1).chip(0, 0)\n" << x.chip(time_step, 4).chip(0, 3).chip(0, 1).chip(0, 0) << std::endl;
+      ////std::cout << "x.chip(time_step, 4).chip(0, 3).chip(0, 1).chip(0, 0)\n" << x.chip(time_step, 4).chip(0, 3).chip(0, 1).chip(0, 0) << std::endl;
 
       //Eigen::TensorMap<Eigen::Tensor<TensorT, 6>> x(x_I, 1, 1, batch_size, 1, memory_size, layer_size);
       //Eigen::TensorMap<Eigen::Tensor<TensorT, 3>> out(x_O, batch_size, memory_size, layer_size);
       //auto mean = x.chip(time_step, 4).mean(Eigen::array<Eigen::Index, 1>({ 2 })).broadcast(Eigen::array<Eigen::Index, 4>({1, 1, batch_size, 1 })); 
-      //auto var = (x.chip(time_step, 4).chip(0, 3) - mean).pow(TensorT(2)) / mean.constant(TensorT(batch_size));
-      //auto dvar = (var <= var.constant(TensorT(0))).select(var.constant(TensorT(0)), var.constant(TensorT(-0.5)) * var.pow(TensorT(-3 / 2)));
-      ////std::cout << "dvar\n" << dvar.chip(0, 1).chip(0, 0) << std::endl;
-      //auto dmu = (x.chip(time_step, 4).chip(0, 3).chip(0, 1).chip(0, 0) == x.chip(time_step, 4).chip(0, 3).chip(0, 1).chip(0, 0).constant(TensorT(0))).select(
-      //  x.chip(time_step, 4).chip(0, 3).chip(0, 1).chip(0, 0).constant(TensorT(0)),
-      //  dvar.chip(0, 1).chip(0, 0) / x.chip(time_step, 4).chip(0, 3).chip(0, 1).chip(0, 0) * dvar.chip(0, 1).chip(0, 0).constant(TensorT(-2)) * mean.sum(Eigen::array<Eigen::Index, 2>({ 2, 3 })).broadcast(Eigen::array<Eigen::Index, 2>({ batch_size, layer_size }))
-      //  );
-      ////std::cout << "dmu\n" << dmu << std::endl;
-      //auto result = (x.chip(time_step, 4).chip(0, 3).chip(0, 1).chip(0, 0) == x.chip(time_step, 4).chip(0, 3).chip(0, 1).chip(0, 0).constant(TensorT(0))).select(
-      //  x.chip(time_step, 4).chip(0, 3).chip(0, 1).chip(0, 0).constant(TensorT(0)), 
-      //  dmu / x.chip(time_step, 4).chip(0, 3).chip(0, 1).chip(0, 0) + dvar.chip(0, 1).chip(0, 0) * dvar.chip(0, 1).chip(0, 0).constant(TensorT(2)) / dvar.chip(0, 1).chip(0, 0).constant(TensorT(batch_size)) * mean.chip(0, 1).chip(0, 0)
-      //  );
-      ////std::cout << "result\n" << result << std::endl;
+      //auto var = ((x.chip(time_step, 4).chip(0, 3) - mean).pow(TensorT(2)) / mean.constant(TensorT(batch_size))).chip(0, 1).chip(0, 0);
+      //auto x_mu = (x.chip(time_step, 4).chip(0, 3) - mean).sum(Eigen::array<Eigen::Index, 2>({ 2, 3 })).broadcast(Eigen::array<Eigen::Index, 2>({ batch_size, layer_size }));
+      //std::cout << "x_mu\n" << x_mu << std::endl;
+      //auto dvar = x_mu * var.constant(TensorT(-0.5)) * var.pow(TensorT(-3 / 2));
+      //std::cout << "dvar\n" << dvar << std::endl;
+      //auto dmu = - 1 / var.sqrt() +  dvar * dvar.constant(TensorT(-2) / TensorT(batch_size)) * x_mu;
+      //std::cout << "dmu\n" << dmu << std::endl;
+      //auto result = 1 / var.sqrt() + dmu / dvar.constant(TensorT(batch_size)) +
+      //  dvar * dvar.constant(TensorT(2) / TensorT(batch_size)) * (x.chip(time_step, 4).chip(0, 3).chip(0, 1).chip(0, 0) - mean.chip(0, 1).chip(0, 0));
 
-      out.chip(time_step, 1).device(device) = result.clip(this->getMin(), this->getMax());
+      out.chip(time_step, 1).device(device) = (result == result).select(result.clip(this->getMin(), this->getMax()), result.constant(TensorT(0))).eval();
     };
     std::string getName() const { return "BatchNormGradTensorOp"; };
     //private:
@@ -931,9 +913,10 @@ namespace SmartPeak
       auto numerator = (x_b_values.chip(time_step, 1) - gradapprox).pow(2).sum().sqrt();
       auto denominator = x_b_values.chip(time_step, 1).pow(2).sum().sqrt() + gradapprox .pow(2).sum().sqrt();
       Eigen::TensorMap<Eigen::Tensor<TensorT, 0>> diff_value(diff);
-      diff_value.device(device) = numerator / denominator;
+      auto result = (denominator == denominator.constant(0)).select(denominator.constant(0), numerator / denominator);
+      diff_value.device(device) = result;
     }
-    TensorT eps_ = TensorT(1e-2);
+    TensorT eps_ = TensorT(1e-7);
     std::shared_ptr<ActivationTensorOp<TensorT, DeviceT>> forward_ = nullptr;
     std::shared_ptr<ActivationTensorOp<TensorT, DeviceT>> reverse_ = nullptr;
   };
