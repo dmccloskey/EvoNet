@@ -864,11 +864,33 @@ namespace SmartPeak
       Eigen::TensorMap<Eigen::Tensor<TensorT, 3>> out(x_O, batch_size, memory_size, layer_size);
       auto mean = x.chip(time_step, 2).mean(Eigen::array<Eigen::Index, 1>({ 0 })).broadcast(Eigen::array<Eigen::Index, 2>({ batch_size, 1 }));  // 2 dims
       auto var = (x.chip(time_step, 2).chip(0, 1) - mean).pow(TensorT(2)) / mean.constant(TensorT(batch_size));
-      auto result = var.constant(TensorT(batch_size - 1)/TensorT(batch_size)) * var.pow(-1 / 2) -
+      // Temporary memory for computation
+      TensorT* tmp_data;
+      if (typeid(device).name() == typeid(Eigen::DefaultDevice).name()) {
+        tmp_data = new TensorT[batch_size* layer_size];
+      }
+#if COMPILE_WITH_CUDA
+      else if (typeid(device).name() == typeid(Eigen::GpuDevice).name()) {
+        size_t bytes = batch_size * layer_size * sizeof(TensorT);
+        assert(cudaMalloc((void**)(&tmp_data), bytes) == cudaSuccess);
+      }
+#endif
+      Eigen::TensorMap<Eigen::Tensor<TensorT, 2>> result(tmp_data, batch_size, layer_size);
+      result.device(device) = var.constant(TensorT(batch_size - 1)/TensorT(batch_size)) * var.pow(-1 / 2) -
         var.constant(TensorT(2) / TensorT(batch_size)) * (x.chip(time_step, 2).chip(0, 1) - mean) * var.pow(-3/2);
       //auto result = var.pow(-1 / 2) -
       //  var.constant(1 / TensorT(batch_size)) * x.chip(time_step, 2).chip(0, 1) * (x.chip(time_step, 2).chip(0, 1) - mean) * var.pow(-3 / 2);
       out.chip(time_step, 1).device(device) = (result == result).select(result.clip(this->getMin(), this->getMax()), result.constant(TensorT(0))).eval();
+
+      // Deallocate temporary memory
+      if (typeid(device).name() == typeid(Eigen::DefaultDevice).name()) {
+        delete[] tmp_data;
+      }
+#if COMPILE_WITH_CUDA
+      else if (typeid(device).name() == typeid(Eigen::GpuDevice).name()) {
+        assert(cudaFree(tmp_data) == cudaSuccess);
+      }
+#endif
     };
     std::string getName() const { return "BatchNormGradTensorOp"; };
     //private:
