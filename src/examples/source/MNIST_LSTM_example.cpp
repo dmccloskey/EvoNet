@@ -77,7 +77,7 @@ public:
     auto integration_weight_grad_op = std::make_shared<SumWeightGradOp<TensorT>>(SumWeightGradOp<TensorT>());
 
     // Define the solver
-    auto solver_op = std::make_shared<AdamOp<TensorT>>(AdamOp<TensorT>(5e-4, 0.9, 0.999, 1e-8, 10));
+    auto solver_op = std::make_shared<AdamOp<TensorT>>(AdamOp<TensorT>(1e-3, 0.9, 0.999, 1e-8, 10));
 
     // Add the LSTM layer(s)
     std::vector<std::string> node_names = model_builder.addLSTM(model, "LSTM-01", "LSTM-01", node_names_input, n_blocks_1, n_cells_1,
@@ -185,7 +185,7 @@ public:
     auto integration_weight_grad_op = std::make_shared<SumWeightGradOp<TensorT>>(SumWeightGradOp<TensorT>());
 
     // Define the solver
-    auto solver_op = std::make_shared<AdamOp<TensorT>>(AdamOp<TensorT>(5e-4, 0.9, 0.999, 1e-8, 10));
+    auto solver_op = std::make_shared<AdamOp<TensorT>>(AdamOp<TensorT>(1e-3, 0.9, 0.999, 1e-8, 10));
 
     // Add the 1st RNN layer
     if (n_hidden_0 > 0) {
@@ -446,7 +446,7 @@ void main_MNIST(const std::string& data_dir, const bool& make_model, const bool&
   const std::size_t n_cells_1 = 1;
   const std::size_t n_blocks_2 = 0;
   const std::size_t n_cells_2 = 1;
-  const bool add_forget_gate = true;
+  const bool add_forget_gate = false;
   const std::size_t n_hidden = 0;
   //// Model architecture config 1
   //const std::size_t n_blocks_1 = 128;
@@ -513,11 +513,13 @@ void main_MNIST(const std::string& data_dir, const bool& make_model, const bool&
   model_trainer.setFindCycles(true);
   model_trainer.setFastInterpreter(true);
   model_trainer.setLossFunctions({
-    std::make_shared<CrossEntropyWithLogitsLossOp<float>>(CrossEntropyWithLogitsLossOp<float>(1e-24, 1.0)),
-    std::make_shared<MSELossOp<float>>(MSELossOp<float>(1e-24, 0.0)) });
+    std::make_shared<MSELossOp<float>>(MSELossOp<float>(1e-24, 0.0)),
+    std::make_shared<CrossEntropyWithLogitsLossOp<float>>(CrossEntropyWithLogitsLossOp<float>(1e-24, 1.0))
+     });
   model_trainer.setLossFunctionGrads({
-    std::make_shared<CrossEntropyWithLogitsLossGradOp<float>>(CrossEntropyWithLogitsLossGradOp<float>(1e-24, 1.0)),
-    std::make_shared<MSELossGradOp<float>>(MSELossGradOp<float>(1e-24, 0.0)) });
+    std::make_shared<MSELossGradOp<float>>(MSELossGradOp<float>(1e-24, 0.0)),
+    std::make_shared<CrossEntropyWithLogitsLossGradOp<float>>(CrossEntropyWithLogitsLossGradOp<float>(1e-24, 1.0))
+     });
   model_trainer.setLossOutputNodes({
     output_nodes,
     output_nodes });
