@@ -1927,18 +1927,6 @@ BOOST_AUTO_TEST_CASE(operatorGradientCheckTensorOp)
   BOOST_CHECK(output(0) < operation.eps_);
 
   // Check BatchNorm
-  input.setValues({ {{0.1,0.1}, {0,0}}, {{1,1}, {0,0}}, {{10,10}, {0,0}}, {{-1,-1}, {0,0}}, {{-10,-10}, {0,0}} });
-  input_f_plus.setZero();
-  input_f_min.setZero();
-  input_b.setZero();
-  output.setZero();
-  operation.forward_ = std::make_shared<BatchNormMuTensorOp<double, Eigen::DefaultDevice>>(BatchNormMuTensorOp<double, Eigen::DefaultDevice>());
-  operation.reverse_ = std::make_shared<BatchNormMuGradTensorOp<double, Eigen::DefaultDevice>>(BatchNormMuGradTensorOp<double, Eigen::DefaultDevice>());
-  operation(input.data(), input_f_plus.data(), input_f_min.data(), input_b.data(), output.data(), batch_size, memory_size, layer_size, 0, device);
-  BOOST_CHECK(output(0) < operation.eps_);
-  std::cout << "Gradient Check BatchNormMu: " << output(0) << std::endl;
-
-  // Check BatchNorm
   input.setValues({ {{10,0.1}, {0,0}}, {{1,1}, {0,0}}, {{10,10}, {0,0}}, {{-1,-1}, {0,0}}, {{-10,-10}, {0,0}} });
   input_f_plus.setZero();
   input_f_min.setZero();
