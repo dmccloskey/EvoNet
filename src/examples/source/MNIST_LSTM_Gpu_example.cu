@@ -331,6 +331,8 @@ template<typename TensorT>
 class DataSimulatorExt : public MNISTSimulator<TensorT>
 {
 public:
+  int n_input_nodes_ = 1;
+  int memory_size_ = 784;
   void simulateTrainingData(Eigen::Tensor<TensorT, 3>& input_data, Eigen::Tensor<TensorT, 3>& loss_output_data, Eigen::Tensor<TensorT, 3>& metric_output_data, Eigen::Tensor<TensorT, 2>& time_steps)override
   {
     // infer data dimensions based on the input tensors
@@ -342,8 +344,8 @@ public:
 
     assert(n_output_nodes == 2 * this->training_labels.dimension(1));
     assert(n_metric_output_nodes == this->training_labels.dimension(1));
-    assert(n_input_nodes == 1);
-    assert(memory_size == 784);
+    assert(n_input_nodes == n_input_nodes_);
+    assert(memory_size == memory_size_);
 
     // make the start and end sample indices
     Eigen::Tensor<int, 1> sample_indices = this->getTrainingIndices(batch_size, 1);
@@ -361,7 +363,8 @@ public:
       // Assign the input data
       for (int memory_iter = 0; memory_iter < memory_size; ++memory_iter) {
         for (int nodes_iter = 0; nodes_iter < n_input_nodes; ++nodes_iter) {
-          input_data(batch_iter, memory_iter, nodes_iter) = this->training_data(sample_indices[batch_iter], memory_iter);
+          int iter = memory_size * memory_iter + nodes_iter;
+          input_data(batch_iter, memory_iter, nodes_iter) = this->training_data(sample_indices[batch_iter], iter);
         }
       }
     }
@@ -377,8 +380,8 @@ public:
 
     assert(n_output_nodes == 2 * this->validation_labels.dimension(1));
     assert(n_metric_output_nodes == this->validation_labels.dimension(1));
-    assert(n_input_nodes == 1);
-    assert(memory_size == 784);
+    assert(n_input_nodes == n_input_nodes_);
+    assert(memory_size == memory_size_);
 
     // make the start and end sample indices
     Eigen::Tensor<int, 1> sample_indices = this->getValidationIndices(batch_size, 1);
@@ -394,7 +397,8 @@ public:
       // Assign the input data
       for (int memory_iter = 0; memory_iter < memory_size; ++memory_iter) {
         for (int nodes_iter = 0; nodes_iter < n_input_nodes; ++nodes_iter) {
-          input_data(batch_iter, memory_iter, nodes_iter) = this->validation_data(sample_indices[batch_iter], memory_iter);
+          int iter = memory_size * memory_iter + nodes_iter;
+          input_data(batch_iter, memory_iter, nodes_iter) = this->validation_data(sample_indices[batch_iter], iter);
         }
       }
     }
@@ -436,10 +440,15 @@ void main_MNIST(const std::string& data_dir, const bool& make_model, const bool&
 
   // define the data simulator
   const std::size_t input_size = 784;
+  const std::size_t n_input_nodes = 28; // per column)
+  const std::size_t memory_size = input_size / n_input_nodes;
+  const std::size_t n_tbptt = (memory_size > 256) ? 256 : memory_size;
   const std::size_t n_labels = 10;
   const std::size_t training_data_size = 60000; //60000;
   const std::size_t validation_data_size = 10000; //10000;
   DataSimulatorExt<float> data_simulator;
+  data_simulator.memory_size_ = memory_size;
+  data_simulator.n_input_nodes_ = n_input_nodes;
 
   // Model architecture config 0
   const std::size_t n_blocks_1 = 128;
@@ -476,7 +485,7 @@ void main_MNIST(const std::string& data_dir, const bool& make_model, const bool&
 
   // Make the input nodes
   std::vector<std::string> input_nodes;
-  for (int i = 0; i < 1; ++i) {
+  for (int i = 0; i < n_input_nodes; ++i) {
     char name_char[512];
     sprintf(name_char, "Input_%012d", i);
     std::string name(name_char);
@@ -501,14 +510,13 @@ void main_MNIST(const std::string& data_dir, const bool& make_model, const bool&
   }
   ModelTrainerExt<float> model_trainer;
   model_trainer.setBatchSize(32);
-  model_trainer.setMemorySize(input_size);
+  model_trainer.setMemorySize(memory_size);
   model_trainer.setNEpochsTraining(100001);
   model_trainer.setNEpochsValidation(25);
   model_trainer.setVerbosityLevel(1);
   model_trainer.setLogging(true, false, false);
   model_trainer.setNTETTSteps(1);
-  model_trainer.setNTBPTTSteps(256);
-  //model_trainer.setNTBPTTSteps(input_size);
+  model_trainer.setNTBPTTSteps(n_tbptt);
   model_trainer.setPreserveOoO(true);
   model_trainer.setFindCycles(true);
   model_trainer.setFastInterpreter(true);
