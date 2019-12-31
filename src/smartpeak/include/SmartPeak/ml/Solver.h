@@ -316,12 +316,15 @@ private:
   */
 }
 CEREAL_REGISTER_TYPE(SmartPeak::SGDOp<float>);
+CEREAL_REGISTER_TYPE(SmartPeak::SSDOp<float>);
 CEREAL_REGISTER_TYPE(SmartPeak::AdamOp<float>);
 CEREAL_REGISTER_TYPE(SmartPeak::DummySolverOp<float>);
 //CEREAL_REGISTER_TYPE(SmartPeak::SGDOp<double>);
+//CEREAL_REGISTER_TYPE(SmartPeak::SSDOp<double>);
 //CEREAL_REGISTER_TYPE(SmartPeak::AdamOp<double>);
 //CEREAL_REGISTER_TYPE(SmartPeak::DummySolverOp<double>);
 //CEREAL_REGISTER_TYPE(SmartPeak::SGDOp<int>);
+//CEREAL_REGISTER_TYPE(SmartPeak::SSDOp<int>);
 //CEREAL_REGISTER_TYPE(SmartPeak::AdamOp<int>);
 //CEREAL_REGISTER_TYPE(SmartPeak::DummySolverOp<int>);
 #endif //SMARTPEAK_SOLVER_H

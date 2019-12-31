@@ -62,6 +62,8 @@ public:
     // gradient noise with annealed variance parameters
     TensorT gradient_noise_sigma_ = TensorT(0.0); ///< variance before annealing (0.0 = none, 1.0 = normal distribution with mean = 0 and var = 1.0)
     TensorT gradient_noise_gamma_ = TensorT(0.55); ///< time-dependend annealing factor
+    
+    TensorT eps_ = TensorT(1e-24);
   };
 
   /**
@@ -246,6 +248,19 @@ public:
 
       // Gradient noise
       auto noise = weights_tensor.random()*weights_tensor.constant(this->getGradientNoiseSigma());
+
+      // Calculate Rho
+      auto rho = (
+        (weights_tensor.constant(TensorT(1)) - solver_params_tensor.chip(1, 2)).pow(0.5) * (weights_tensor.constant(TensorT(1)) - solver_params_tensor.chip(4, 2).pow(0.5))) / (
+          (weights_tensor.constant(TensorT(1)) - solver_params_tensor.chip(1, 2).pow(0.5)) * (weights_tensor.constant(TensorT(1)) - solver_params_tensor.chip(4, 2)).pow(0.5)
+          ).cwiseMin(weights_tensor.constant(TensorT(1) - this->eps_));
+
+      // Calculate momentum and variance estimates
+      //mt_update = mt.assign(self._beta_t*mt + (1.0 - self._beta_t)*grad,
+      //  use_locking = self._use_locking)
+      solver_params_tensor.chip(2, 2).device(device) = solver_params_tensor.chip(1, 2) * solver_params_tensor.chip(2, 2) + (weights_tensor.constant((TensorT)1) - solver_params_tensor.chip(1, 2)) * weights_tensor * errors_clipped;
+        //vt_update = vt.assign(self._beta_t*vt + (1.0 - self._beta_t)*tf.square(grad),
+        //  use_locking = self._use_locking)
 
       // Weight updates
       solver_params_tensor.chip(4, 2).device(device) = solver_params_tensor.chip(1, 2) * solver_params_tensor.chip(4, 2) + (weights_tensor.constant((TensorT)1) - solver_params_tensor.chip(1, 2)) * weights_tensor * errors_clipped;
