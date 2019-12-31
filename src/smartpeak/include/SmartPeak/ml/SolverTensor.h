@@ -174,7 +174,7 @@ public:
 
 		@params weights Data for the weight tensor
 		@params errorr Data for the weight tensor errors
-		@params solver_params Data for the solver params (Dim 2, size 6: learning rate, momentum, momentum_prev, variance_prev)
+    @params solver_params Data for the solver params (Dim 2, size 6: learning rate, momentum, mementum2, delta, momentum_prev, momentum2_prev)
 		@param source_layer_size Dim 0
 		@param sink_layer_size Dim 1
 		*/
@@ -227,7 +227,7 @@ public:
 
     @params weights Data for the weight tensor
     @params errorr Data for the weight tensor errors
-    @params solver_params Data for the solver params (Dim 2, size 6: learning rate, momentum, mementum2, delta, momentum_prev, momentum2_prev)
+		@params solver_params Data for the solver params (Dim 2, size 5: learning rate, momentum, momentum_prev, variance_prev, beta_power)
     @param source_layer_size Dim 0
     @param sink_layer_size Dim 1
     */

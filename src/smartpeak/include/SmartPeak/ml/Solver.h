@@ -135,6 +135,62 @@ private:
   };
 
   /**
+    @brief SSD Stochastic Sign Descent Solver.
+  */
+  template<typename TensorT>
+  class SSDOp : public SolverOp<TensorT>
+  {
+  public:
+    SSDOp() = default;
+    virtual ~SSDOp() = default;
+    SSDOp(const TensorT& learning_rate, const TensorT& momentum) :
+      learning_rate_(learning_rate), momentum_(momentum) {}
+    SSDOp(const TensorT& learning_rate, const TensorT& momentum, const TensorT& gradient_threshold) :
+      SolverOp(gradient_threshold), learning_rate_(learning_rate), momentum_(momentum) {}
+    SSDOp(const TensorT& learning_rate, const TensorT& momentum, const TensorT& gradient_threshold, const TensorT& gradient_noise_sigma) :
+      SolverOp(gradient_threshold, gradient_noise_sigma), learning_rate_(learning_rate), momentum_(momentum) {}
+    void setLearningRate(const TensorT& learning_rate) { learning_rate_ = learning_rate; };
+    TensorT getLearningRate() const { return learning_rate_; };
+    void setMomentum(const TensorT& momentum) { momentum_ = momentum; };
+    TensorT getMomentum() const { return momentum_; };
+    void setMomentumPrev(const TensorT& momentum_prev) { momentum_prev_ = momentum_prev; };
+    TensorT getMomentumPrev() const { return momentum_prev_; };
+    std::string getName() const { return "SSDOp"; };
+    std::string getParamsAsStr() const
+    {
+      std::string params = "";
+      params += "gradient_threshold:" +
+        std::to_string(this->getGradientThreshold()) +
+        ";gradient_noise_sigma:" +
+        std::to_string(this->getGradientNoiseSigma()) +
+        ";gradient_noise_gamma:" +
+        std::to_string(this->getGradientNoiseGamma()) +
+        ";learning_rate:" +
+        std::to_string(getLearningRate()) +
+        ";momentum:" +
+        std::to_string(getMomentum()) +
+        ";momentum_prev:" +
+        std::to_string(getMomentumPrev());
+      return params;
+    }
+    SolverOp<TensorT>* copy() const { return new SSDOp<TensorT>(*this); }
+    std::vector<TensorT> getParameters() const {
+      std::vector<TensorT> parameters = { learning_rate_, momentum_, momentum_prev_ };
+      return parameters;
+    }
+    int getNParameters() const { return 3; };
+  private:
+    friend class cereal::access;
+    template<class Archive>
+    void serialize(Archive& archive) {
+      archive(cereal::base_class<SolverOp<TensorT>>(this), learning_rate_, momentum_, momentum_prev_);
+    }
+    TensorT learning_rate_ = 0.01; ///< Learning rate
+    TensorT momentum_ = 0.9; ///< Momentum
+    TensorT momentum_prev_ = 0.0;
+  };
+
+  /**
     @brief Adam Solver.
 
     References:

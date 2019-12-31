@@ -370,6 +370,12 @@ BOOST_AUTO_TEST_CASE(convertOpToTensorOpSolverOpToSolverTensorOp)
   BOOST_CHECK_EQUAL(op_tensor_class->getGradientThreshold(), 10);
   BOOST_CHECK_EQUAL(op_tensor_class->getGradientNoiseSigma(), 1);
 
+  op_class = new SSDOp<float>(0.1, 0.9, 10.0, 1.0);
+  op_tensor_class = op_to_tensor_op.convertOpToTensorOp(op_class);
+  BOOST_CHECK_EQUAL(op_tensor_class->getName(), "SSDTensorOp");
+  BOOST_CHECK_EQUAL(op_tensor_class->getGradientThreshold(), 10);
+  BOOST_CHECK_EQUAL(op_tensor_class->getGradientNoiseSigma(), 1);
+
 	op_class = new AdamOp<float>(0.001, 0.9, 0.999, 1e-8, 10.0, 1.0);
   op_class->setGradientThreshold(10);
 	op_tensor_class = op_to_tensor_op.convertOpToTensorOp(op_class);
@@ -394,6 +400,11 @@ BOOST_AUTO_TEST_CASE(getTensorParamsSolverOpToSolverTensorOp)
 	std::vector<float> params = op_to_tensor_op.getTensorParams(op_class);
 	BOOST_CHECK_EQUAL(params.size(), 3);
 	BOOST_CHECK_EQUAL(params[0], 1); BOOST_CHECK_EQUAL(params[1], 2); BOOST_CHECK_EQUAL(params[2], 0);
+
+  op_class = new SSDOp<float>(1, 2);
+  params = op_to_tensor_op.getTensorParams(op_class);
+  BOOST_CHECK_EQUAL(params.size(), 3);
+  BOOST_CHECK_EQUAL(params[0], 1); BOOST_CHECK_EQUAL(params[1], 2); BOOST_CHECK_EQUAL(params[2], 0);
 
 	op_class = new AdamOp<float>(1, 2, 3, 4);
 	params = op_to_tensor_op.getTensorParams(op_class);
