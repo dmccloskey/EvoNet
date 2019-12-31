@@ -384,13 +384,6 @@ BOOST_AUTO_TEST_CASE(convertOpToTensorOpSolverOpToSolverTensorOp)
 	BOOST_CHECK_EQUAL(op_tensor_class->getName(), "DummySolverTensorOp");
   BOOST_CHECK_EQUAL(op_tensor_class->getGradientThreshold(), 10);
   BOOST_CHECK_EQUAL(op_tensor_class->getGradientNoiseSigma(), 1);
-
-	op_class = new SGDNoiseOp<float>(0.1, 0.9, 1);
-  op_class->setGradientThreshold(10);
-	op_tensor_class = op_to_tensor_op.convertOpToTensorOp(op_class);
-	BOOST_CHECK_EQUAL(op_tensor_class->getName(), "SGDNoiseTensorOp");
-  BOOST_CHECK_EQUAL(op_tensor_class->getGradientThreshold(), 10);
-  BOOST_CHECK_EQUAL(op_tensor_class->getGradientNoiseSigma(), 1);
 }
 
 BOOST_AUTO_TEST_CASE(getTensorParamsSolverOpToSolverTensorOp)
@@ -411,12 +404,6 @@ BOOST_AUTO_TEST_CASE(getTensorParamsSolverOpToSolverTensorOp)
 	op_class = new DummySolverOp<float>();
 	params = op_to_tensor_op.getTensorParams(op_class);
 	BOOST_CHECK_EQUAL(params.size(), 0);
-
-	op_class = new SGDNoiseOp<float>(1, 2, 3);
-	params = op_to_tensor_op.getTensorParams(op_class);
-	BOOST_CHECK_EQUAL(params.size(), 4);
-	BOOST_CHECK_EQUAL(params[0], 1); BOOST_CHECK_EQUAL(params[1], 2); BOOST_CHECK_EQUAL(params[2], 0);
-	BOOST_CHECK_EQUAL(params[3], 3); 
 }
 
 BOOST_AUTO_TEST_CASE(constructorIntegrationOpToIntegrationTensorOp)

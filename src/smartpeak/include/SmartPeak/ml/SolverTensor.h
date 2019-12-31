@@ -3,16 +3,6 @@
 #ifndef SMARTPEAK_SOLVERTENSOR_H
 #define SMARTPEAK_SOLVERTENSOR_H
 
-#if COMPILE_WITH_CUDA
-#include <math.h>
-#else
-#include <cmath>
-using std::exp;
-using std::pow;
-using std::log;
-using std::tanh;
-#endif
-
 #include <unsupported/Eigen/CXX11/Tensor>
 #include <random>
 #include <iostream>
@@ -67,11 +57,11 @@ public:
 		//	archive(gradient_threshold_, gradient_noise_sigma_, gradient_noise_gamma_);
 		//}
     // clipping parameters
-    TensorT gradient_threshold_ = (TensorT)1e6; ///< maximum gradient magnitude
+    TensorT gradient_threshold_ = TensorT(1e6); ///< maximum gradient magnitude
 
     // gradient noise with annealed variance parameters
-    TensorT gradient_noise_sigma_ = (TensorT)0.0; ///< variance before annealing (0.0 = none, 1.0 = normal distribution with mean = 0 and var = 1.0)
-    TensorT gradient_noise_gamma_ = (TensorT)0.55; ///< time-dependend annealing factor
+    TensorT gradient_noise_sigma_ = TensorT(0.0); ///< variance before annealing (0.0 = none, 1.0 = normal distribution with mean = 0 and var = 1.0)
+    TensorT gradient_noise_gamma_ = TensorT(0.55); ///< time-dependend annealing factor
   };
 
   /**
@@ -121,6 +111,53 @@ public:
   };
 
   /**
+    @brief SSD Stochastic Gradient Descent Solver.
+
+    References:
+      Lukas Balles, Philipp Hennig. Dissecting Adam: The Sign, Magnitude and Variance of Stochastic Gradients. 
+      	arXiv:1705.07774, 2017.
+  */
+  template<typename TensorT, typename DeviceT>
+  class SSDTensorOp : public SolverTensorOp<TensorT, DeviceT>
+  {
+  public:
+    using SolverTensorOp<TensorT, DeviceT>::SolverTensorOp;
+
+    /*
+    @brief Stochastic sign descent (SSD) solver operator
+
+    @params weights Data for the weight tensor
+    @params error Data for the weight tensor errors
+    @params solver_params Data for the solver params (Dim 2, size 3: learning rate, momentum, momentum_prev)
+    @param source_layer_size Dim 0
+    @param sink_layer_size Dim 1
+    */
+    void operator()(TensorT* weights, TensorT* errors, TensorT* solver_params, const int& source_layer_size, const int& sink_layer_size, DeviceT& device)
+    {
+      Eigen::TensorMap<Eigen::Tensor<TensorT, 2>> weights_tensor(weights, source_layer_size, sink_layer_size);
+      Eigen::TensorMap<Eigen::Tensor<TensorT, 2>> errors_tensor(errors, source_layer_size, sink_layer_size);
+      Eigen::TensorMap<Eigen::Tensor<TensorT, 3>> solver_params_tensor(solver_params, source_layer_size, sink_layer_size, 3);
+
+      // Remove Nans and return the sign of the gradient
+      auto errors_sign = (errors_tensor == errors_tensor).select(errors_tensor/errors_tensor.abs(), errors_tensor.constant(TensorT(0)));
+
+      // Gradient noise
+      auto noise = weights_tensor.random()*weights_tensor.constant(this->getGradientNoiseSigma());
+
+      // Weight updates
+      solver_params_tensor.chip(2, 2).device(device) = solver_params_tensor.chip(1, 2) * solver_params_tensor.chip(2, 2) - solver_params_tensor.chip(0, 2) * weights_tensor * errors_sign + noise;
+      weights_tensor.device(device) += solver_params_tensor.chip(2, 2);
+    };
+    std::string getName() const { return "SSDTensorOp"; };
+    //private:
+    //	friend class cereal::access;
+    //	template<class Archive>
+    //	void serialize(Archive& archive) {
+    //		archive(cereal::base_class<SolverTensorOp<TensorT, DeviceT>>(this));
+    //	}
+  };
+
+  /**
     @brief Adam Solver.
 
     References:
@@ -133,11 +170,11 @@ public:
 public:
    using SolverTensorOp<TensorT, DeviceT>::SolverTensorOp;
 		/*
-		@brief SGD solver operator
+		@brief ADAM solver operator
 
 		@params weights Data for the weight tensor
 		@params errorr Data for the weight tensor errors
-		@params solver_params Data for the solver params (Dim 2, size 6: learning rate, momentum, mementum2, delta, momentum_prev, momentum2_prev)
+		@params solver_params Data for the solver params (Dim 2, size 6: learning rate, momentum, momentum_prev, variance_prev)
 		@param source_layer_size Dim 0
 		@param sink_layer_size Dim 1
 		*/
@@ -173,6 +210,59 @@ public:
 	//	}
   };
 
+  /**
+    @brief Stochastic Variance-Adapted Gradient (SVAG) Solver.
+
+    References:
+      Lukas Balles, Philipp Hennig. Dissecting Adam: The Sign, Magnitude and Variance of Stochastic Gradients. 
+      	arXiv:1705.07774, 2017.
+  */
+  template<typename TensorT, typename DeviceT>
+  class SVAGTensorOp : public SolverTensorOp<TensorT, DeviceT>
+  {
+  public:
+    using SolverTensorOp<TensorT, DeviceT>::SolverTensorOp;
+    /*
+    @brief SVAG solver operator
+
+    @params weights Data for the weight tensor
+    @params errorr Data for the weight tensor errors
+    @params solver_params Data for the solver params (Dim 2, size 6: learning rate, momentum, mementum2, delta, momentum_prev, momentum2_prev)
+    @param source_layer_size Dim 0
+    @param sink_layer_size Dim 1
+    */
+    void operator()(TensorT* weights, TensorT* errors, TensorT* solver_params, const int& source_layer_size, const int& sink_layer_size, DeviceT& device)
+    {
+      Eigen::TensorMap<Eigen::Tensor<TensorT, 2>> weights_tensor(weights, source_layer_size, sink_layer_size);
+      Eigen::TensorMap<Eigen::Tensor<TensorT, 2>> errors_tensor(errors, source_layer_size, sink_layer_size);
+      Eigen::TensorMap<Eigen::Tensor<TensorT, 3>> solver_params_tensor(solver_params, source_layer_size, sink_layer_size, 6);
+
+      // Remove Nans
+      auto errors_no_nans = (errors_tensor == errors_tensor).select(errors_tensor, errors_tensor.constant(TensorT(0)));
+
+      // Gradient clipping
+      auto clip = errors_no_nans.abs() > errors_no_nans.constant(this->getGradientThreshold());
+      auto errors_clipped = clip.select(errors_no_nans * errors_no_nans.constant(this->getGradientThreshold()) / errors_no_nans.abs(), errors_no_nans);
+
+      // Gradient noise
+      auto noise = weights_tensor.random()*weights_tensor.constant(this->getGradientNoiseSigma());
+
+      // Weight updates
+      solver_params_tensor.chip(4, 2).device(device) = solver_params_tensor.chip(1, 2) * solver_params_tensor.chip(4, 2) + (weights_tensor.constant((TensorT)1) - solver_params_tensor.chip(1, 2)) * weights_tensor * errors_clipped;
+      solver_params_tensor.chip(5, 2).device(device) = solver_params_tensor.chip(2, 2) * solver_params_tensor.chip(5, 2) + (weights_tensor.constant((TensorT)1) - solver_params_tensor.chip(2, 2)) * weights_tensor * errors_clipped * weights_tensor * errors_clipped;
+      auto unbiased_adam1 = solver_params_tensor.chip(4, 2) / (weights_tensor.constant((TensorT)1) - solver_params_tensor.chip(1, 2));
+      auto unbiased_adam2 = solver_params_tensor.chip(5, 2) / (weights_tensor.constant((TensorT)1) - solver_params_tensor.chip(2, 2));
+      weights_tensor.device(device) -= solver_params_tensor.chip(0, 2) * unbiased_adam1 / (unbiased_adam2.sqrt() + solver_params_tensor.chip(3, 2)) + noise;
+    };
+    std::string getName() const { return "AdamTensorOp"; };
+    //private:
+    //	friend class cereal::access;
+    //	template<class Archive>
+    //	void serialize(Archive& archive) {
+    //		archive(cereal::base_class<SolverTensorOp<TensorT, DeviceT>>(this));
+    //	}
+  };
+
 	/**
 	@brief Dummy solver that prevents weight update.
 	*/
@@ -183,31 +273,6 @@ public:
     using SolverTensorOp<TensorT, DeviceT>::SolverTensorOp;
 		void operator()(TensorT* weights, TensorT* errors, TensorT* solver_params, const int& source_layer_size, const int& sink_layer_size, DeviceT& device)	{	};
 		std::string getName() const { return "DummySolverTensorOp"; };
-	//private:
-	//	friend class cereal::access;
-	//	template<class Archive>
-	//	void serialize(Archive& archive) {
-	//		archive(cereal::base_class<SolverTensorOp<TensorT, DeviceT>>(this));
-	//	}
-	};
-
-	/**
-	@brief SGD Stochastic Gradient Descent with Noise Solver.
-	*/
-	template<typename TensorT, typename DeviceT>
-	class SGDNoiseTensorOp : public SolverTensorOp<TensorT, DeviceT>
-	{
-	public:
-    using SolverTensorOp<TensorT, DeviceT>::SolverTensorOp;
-		void operator()(TensorT* weights, TensorT* errors, TensorT* solver_params, const int& source_layer_size, const int& sink_layer_size, DeviceT& device)
-		{
-			// [TODO]
-			//const TensorT weight_update = momentum_ * momentum_prev_ - learning_rate_ * weight * error;
-			//momentum_prev_ = weight_update;
-			//const TensorT new_weight = weight + weight_update;
-			//return addGradientNoise(new_weight);
-		};
-		std::string getName() const { return "SGDNoiseTensorOp"; };
 	//private:
 	//	friend class cereal::access;
 	//	template<class Archive>

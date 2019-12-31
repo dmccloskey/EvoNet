@@ -177,10 +177,6 @@ namespace SmartPeak
 				SolverTensorOp<TensorT, DeviceT>* op_tensor_class = new DummySolverTensorOp<TensorT, DeviceT>(op_class->getGradientThreshold(), op_class->getGradientNoiseSigma());
 				return op_tensor_class;
 			}
-			else if (op_class->getName() == "SGDNoiseOp") {
-				SolverTensorOp<TensorT, DeviceT>* op_tensor_class = new SGDNoiseTensorOp<TensorT, DeviceT>(op_class->getGradientThreshold(), op_class->getGradientNoiseSigma());
-				return op_tensor_class;
-			}
 			else {
 				std::cout << "No conversion available for " << op_class->getName() << "." << std::endl;
 				SolverTensorOp<TensorT, DeviceT>* op_tensor_class = new DummySolverTensorOp<TensorT, DeviceT>();

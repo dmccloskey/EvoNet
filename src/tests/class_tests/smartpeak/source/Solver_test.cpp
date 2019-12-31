@@ -78,42 +78,4 @@ BOOST_AUTO_TEST_CASE(settersAndGetters)
 	BOOST_CHECK_EQUAL(dummy_solver_op.getParamsAsStr(), "");
 }
 
-BOOST_AUTO_TEST_CASE(operationfunctionSGDOp) 
-{
-  SGDOp<float> operation(0.01, 0.9);
-  BOOST_CHECK_CLOSE(operation(1.0, 1.0), 0.99, 1e-3);  // weight update = -0.01
-  BOOST_CHECK_CLOSE(operation(0.99, 1.0), 0.971100032, 1e-3);
-}
-
-BOOST_AUTO_TEST_CASE(operationfunctionAdamOp)
-{
-	AdamOp<float> operation(0.01, 0.9, 0.999, 1e-8);
-	BOOST_CHECK_CLOSE(operation(1.0, 1.0), 0.99, 1e-3);  // weight update = -0.01
-	BOOST_CHECK_CLOSE(operation(0.99, 1.0), 0.976565301, 1e-3);
-}
-
-BOOST_AUTO_TEST_CASE(operationfunctionDummySolverOp)
-{
-	DummySolverOp<float> operation;
-	BOOST_CHECK_CLOSE(operation(1.0, 1.0), 1.0, 1e-3);
-	BOOST_CHECK_CLOSE(operation(0.99, 1.0), 0.99, 1e-3);
-}
-
-BOOST_AUTO_TEST_CASE(operationfunctionSGDNoiseOp)
-{
-	SGDNoiseOp<float> operation(0.01, 0.9, 1.0);
-	BOOST_CHECK_NE(operation(1.0, 1.0), 0.99);  // weight update = -0.01
-	BOOST_CHECK_NE(operation(0.99, 1.0), 0.971100032);
-}
-
-BOOST_AUTO_TEST_CASE(clipGradient) 
-{
-  SGDOp<float> operation(0.01, 0.9);
-  operation.setGradientThreshold(1000);
-  BOOST_CHECK_CLOSE(operation.clipGradient(1.0), 1.0, 1e-3);
-  BOOST_CHECK_CLOSE(operation.clipGradient(1000.0), 1000.0, 1e-3);
-  BOOST_CHECK_CLOSE(operation.clipGradient(100000.0), 1000.0, 1e-3);
-	BOOST_CHECK_CLOSE(operation.clipGradient(0.0), 0.0, 1e-3);
-}
-
 BOOST_AUTO_TEST_SUITE_END()
