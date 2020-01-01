@@ -177,6 +177,10 @@ namespace SmartPeak
 				SolverTensorOp<TensorT, DeviceT>* op_tensor_class = new AdamTensorOp<TensorT, DeviceT>(op_class->getGradientThreshold(), op_class->getGradientNoiseSigma(), op_class->getGradientNoiseGamma());
 				return op_tensor_class;
 			}
+      else if (op_class->getName() == "SVAGOp") {
+        SolverTensorOp<TensorT, DeviceT>* op_tensor_class = new SVAGTensorOp<TensorT, DeviceT>(op_class->getGradientThreshold(), op_class->getGradientNoiseSigma(), op_class->getGradientNoiseGamma());
+        return op_tensor_class;
+      }
 			else if (op_class->getName() == "DummySolverOp") {
 				SolverTensorOp<TensorT, DeviceT>* op_tensor_class = new DummySolverTensorOp<TensorT, DeviceT>(op_class->getGradientThreshold(), op_class->getGradientNoiseSigma(), op_class->getGradientNoiseGamma());
 				return op_tensor_class;

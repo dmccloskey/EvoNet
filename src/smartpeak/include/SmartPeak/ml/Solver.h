@@ -248,6 +248,70 @@ private:
     TensorT momentum2_prev_ = (TensorT)0.0;
   };
 
+  /**
+    @brief SVAG Solver.
+  */
+  template<typename TensorT>
+  class SVAGOp : public SolverOp<TensorT>
+  {
+  public:
+    SVAGOp() = default;
+    virtual ~SVAGOp() = default;
+    SVAGOp(const TensorT& learning_rate, const TensorT& momentum) :
+      momentum_(momentum) {
+      this->setLearningRate(learning_rate);
+    };
+    SVAGOp(const TensorT& learning_rate, const TensorT& momentum, const TensorT& gradient_threshold) :
+      SolverOp(gradient_threshold), momentum_(momentum) {
+      this->setLearningRate(learning_rate);
+    }
+    SVAGOp(const TensorT& learning_rate, const TensorT& momentum, const TensorT& gradient_threshold, const TensorT& gradient_noise_sigma, const TensorT& gradient_noise_gamma) :
+      SolverOp(gradient_threshold, gradient_noise_sigma, gradient_noise_gamma), momentum_(momentum) {
+      this->setLearningRate(learning_rate);
+    }
+    void setMomentum(const TensorT& momentum) { momentum_ = momentum; };
+    TensorT getMomentum() const { return momentum_; };
+    void setMomentumPrev(const TensorT& momentum_prev) { momentum_prev_ = momentum_prev; };
+    TensorT getMomentumPrev() const { return momentum_prev_; };
+    void setVariancePrev(const TensorT& variance_prev) { variance_prev_ = variance_prev; };
+    TensorT getVariancePrev() const { return variance_prev_; };
+    std::string getName() const { return "SVAGOp"; };
+    std::string getParamsAsStr() const
+    {
+      std::string params = "";
+      params += "gradient_threshold:" +
+        std::to_string(this->getGradientThreshold()) +
+        ";gradient_noise_sigma:" +
+        std::to_string(this->getGradientNoiseSigma()) +
+        ";gradient_noise_gamma:" +
+        std::to_string(this->getGradientNoiseGamma()) +
+        ";learning_rate:" +
+        std::to_string(getLearningRate()) +
+        ";momentum:" +
+        std::to_string(getMomentum()) +
+        ";momentum_prev:" +
+        std::to_string(getMomentumPrev()) +
+        ";variance_prev:" +
+        std::to_string(getVariancePrev());
+      return params;
+    }
+    int getNParameters() const { return 4; };
+    std::vector<TensorT> getParameters() const {
+      std::vector<TensorT> parameters = { this->getLearningRate(), momentum_, momentum_prev_, variance_prev_ };
+      return parameters;
+    }
+    SolverOp<TensorT>* copy() const { return new SVAGOp<TensorT>(*this); }
+  private:
+    friend class cereal::access;
+    template<class Archive>
+    void serialize(Archive& archive) {
+      archive(cereal::base_class<SolverOp<TensorT>>(this), momentum_, momentum_prev_, variance_prev_);
+    }
+    TensorT momentum_ = (TensorT)0.9; ///< Momentum
+    TensorT momentum_prev_ = (TensorT)0.0;
+    TensorT variance_prev_ = (TensorT)0.0;
+  };
+
 	/**
 	@brief Dummy solver that prevents weight update.
 	*/
@@ -301,13 +365,16 @@ private:
 CEREAL_REGISTER_TYPE(SmartPeak::SGDOp<float>);
 CEREAL_REGISTER_TYPE(SmartPeak::SSDOp<float>);
 CEREAL_REGISTER_TYPE(SmartPeak::AdamOp<float>);
+CEREAL_REGISTER_TYPE(SmartPeak::SVAGOp<float>);
 CEREAL_REGISTER_TYPE(SmartPeak::DummySolverOp<float>);
 //CEREAL_REGISTER_TYPE(SmartPeak::SGDOp<double>);
 //CEREAL_REGISTER_TYPE(SmartPeak::SSDOp<double>);
 //CEREAL_REGISTER_TYPE(SmartPeak::AdamOp<double>);
+//CEREAL_REGISTER_TYPE(SmartPeak::SVAGOp<double>);
 //CEREAL_REGISTER_TYPE(SmartPeak::DummySolverOp<double>);
 //CEREAL_REGISTER_TYPE(SmartPeak::SGDOp<int>);
 //CEREAL_REGISTER_TYPE(SmartPeak::SSDOp<int>);
 //CEREAL_REGISTER_TYPE(SmartPeak::AdamOp<int>);
+//CEREAL_REGISTER_TYPE(SmartPeak::SVAGOp<int>);
 //CEREAL_REGISTER_TYPE(SmartPeak::DummySolverOp<int>);
 #endif //SMARTPEAK_SOLVER_H

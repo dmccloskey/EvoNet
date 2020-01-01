@@ -390,6 +390,13 @@ BOOST_AUTO_TEST_CASE(convertOpToTensorOpSolverOpToSolverTensorOp)
   BOOST_CHECK_EQUAL(op_tensor_class->getGradientNoiseSigma(), 1);
   BOOST_CHECK_CLOSE(op_tensor_class->getGradientNoiseGamma(), 0.55, 1e-4);
 
+  op_class = new SVAGOp<float>(0.001, 0.9,10.0, 1.0, 0.55);
+  op_tensor_class = op_to_tensor_op.convertOpToTensorOp(op_class);
+  BOOST_CHECK_EQUAL(op_tensor_class->getName(), "SVAGTensorOp");
+  BOOST_CHECK_EQUAL(op_tensor_class->getGradientThreshold(), 10);
+  BOOST_CHECK_EQUAL(op_tensor_class->getGradientNoiseSigma(), 1);
+  BOOST_CHECK_CLOSE(op_tensor_class->getGradientNoiseGamma(), 0.55, 1e-4);
+
 	op_class = new DummySolverOp<float>();
   op_class->setGradientThreshold(10);
   op_class->setGradientNoiseSigma(1);
@@ -423,6 +430,12 @@ BOOST_AUTO_TEST_CASE(getTensorParamsSolverOpToSolverTensorOp)
 	BOOST_CHECK_EQUAL(params.size(), 6);
 	BOOST_CHECK_EQUAL(params[0], 1); BOOST_CHECK_EQUAL(params[1], 2); BOOST_CHECK_EQUAL(params[2], 3); 
 	BOOST_CHECK_EQUAL(params[3], 4); BOOST_CHECK_EQUAL(params[4], 0); BOOST_CHECK_EQUAL(params[5], 0);
+
+  op_class = new SVAGOp<float>(1, 2);
+  params = op_to_tensor_op.getTensorParams(op_class);
+  BOOST_CHECK_EQUAL(params.size(), 4);
+  BOOST_CHECK_EQUAL(params[0], 1); BOOST_CHECK_EQUAL(params[1], 2); BOOST_CHECK_EQUAL(params[2], 0);
+  BOOST_CHECK_EQUAL(params[3], 0);
 
 	op_class = new DummySolverOp<float>();
 	params = op_to_tensor_op.getTensorParams(op_class);

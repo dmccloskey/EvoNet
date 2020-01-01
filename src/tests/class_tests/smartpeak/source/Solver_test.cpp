@@ -97,6 +97,21 @@ BOOST_AUTO_TEST_CASE(settersAndGetters)
   BOOST_CHECK_CLOSE(adam_op2.getGradientNoiseSigma(), 1.0, 1e-3);
   BOOST_CHECK_CLOSE(adam_op2.getGradientNoiseGamma(), 0.55, 1e-3);
 
+  // Check the default SVAG constructor
+  SVAGOp<float> svag_op;
+  BOOST_CHECK_EQUAL(svag_op.getName(), "SVAGOp");
+  BOOST_CHECK_EQUAL(svag_op.getParamsAsStr(), "gradient_threshold:1000000.000000;gradient_noise_sigma:0.000000;gradient_noise_gamma:0.550000;learning_rate:0.001000;momentum:0.900000;momentum_prev:0.000000;variance_prev:0.000000");
+
+  // Check the SVAG constructor
+  SVAGOp<float> svag_op2(0.1, 0.9, 10.0, 1.0, 0.55);
+  BOOST_CHECK_CLOSE(svag_op2.getLearningRate(), 0.1, 1e-3);
+  BOOST_CHECK_CLOSE(svag_op2.getMomentum(), 0.9, 1e-3);
+  BOOST_CHECK_CLOSE(svag_op2.getMomentumPrev(), 0.0, 1e-3);
+  BOOST_CHECK_CLOSE(svag_op2.getVariancePrev(), 0.0, 1e-3);
+  BOOST_CHECK_CLOSE(svag_op2.getGradientThreshold(), 10.0f, 1e-3);
+  BOOST_CHECK_CLOSE(svag_op2.getGradientNoiseSigma(), 1.0, 1e-3);
+  BOOST_CHECK_CLOSE(svag_op2.getGradientNoiseGamma(), 0.55, 1e-3);
+
   // Check the default Dummy constructor
 	DummySolverOp<float> dummy_solver_op;
 	BOOST_CHECK_EQUAL(dummy_solver_op.getName(), "DummySolverOp");
