@@ -248,7 +248,18 @@ public:
       auto errors_noise = errors_clipped + noise;
 
       // Calculate Rho
-      auto rho = ((
+      TensorT* tmp_data;
+      if (typeid(device).name() == typeid(Eigen::DefaultDevice).name()) {
+        tmp_data = new TensorT[source_layer_size*sink_layer_size];
+      }
+#if COMPILE_WITH_CUDA
+      else if (typeid(device).name() == typeid(Eigen::GpuDevice).name()) {
+        size_t bytes = source_layer_size*sink_layer_size * sizeof(TensorT);
+        assert(cudaMalloc((void**)(&tmp_data), bytes) == cudaSuccess);
+      }
+#endif
+      Eigen::TensorMap<Eigen::Tensor<TensorT, 2>> rho(tmp_data, source_layer_size, sink_layer_size);
+      rho.device(device) = ((
         (weights_tensor.constant(TensorT(1)) - solver_params_tensor.chip(1, 2)) * (weights_tensor.constant(TensorT(1)) + solver_params_tensor.chip(1, 2).pow(iter + 1))) / (
           (weights_tensor.constant(TensorT(1)) + solver_params_tensor.chip(1, 2)) * (weights_tensor.constant(TensorT(1)) - solver_params_tensor.chip(1, 2)).pow(iter + 1))
         ).clip(TensorT(0), TensorT(1));
@@ -265,6 +276,16 @@ public:
 
       // Weight updates
       weights_tensor.device(device) -= solver_params_tensor.chip(0, 2) * gamma * unbiased_mean;
+
+      // Deallocate temporary memory
+      if (typeid(device).name() == typeid(Eigen::DefaultDevice).name()) {
+        delete[] tmp_data;
+      }
+#if COMPILE_WITH_CUDA
+      else if (typeid(device).name() == typeid(Eigen::GpuDevice).name()) {
+        assert(cudaFree(tmp_data) == cudaSuccess);
+      }
+#endif
     };
     std::string getName() const { return "SVAGTensorOp"; };
   };
