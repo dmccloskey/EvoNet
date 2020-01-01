@@ -103,7 +103,7 @@ public:
 
       // Weight updates (omitting the bias correction step)
 			solver_params_tensor.chip(2, 2).device(device) = solver_params_tensor.chip(1, 2) * solver_params_tensor.chip(2,2) + (errors_tensor.constant(TensorT(1)) - solver_params_tensor.chip(1, 2)) * errors_clipped;
-			weights_tensor.device(device) = weights_tensor - solver_params_tensor.chip(0, 2) * solver_params_tensor.chip(2, 2) + noise;
+			weights_tensor.device(device) -= solver_params_tensor.chip(0, 2) * solver_params_tensor.chip(2, 2) + noise;
     };
     std::string getName() const{return "SGDTensorOp";};
 	//private:
@@ -150,7 +150,7 @@ public:
 
       // Weight updates (omitting the bias correction step)
       solver_params_tensor.chip(2, 2).device(device) = solver_params_tensor.chip(1, 2) * solver_params_tensor.chip(2, 2) + (errors_tensor.constant(TensorT(1)) - solver_params_tensor.chip(1, 2)) * errors_sign;
-      weights_tensor.device(device) = weights_tensor - solver_params_tensor.chip(0, 2) * solver_params_tensor.chip(2, 2) + noise;
+      weights_tensor.device(device) -= solver_params_tensor.chip(0, 2) * solver_params_tensor.chip(2, 2) + noise;
     };
     std::string getName() const { return "SSDTensorOp"; };
     //private:
@@ -198,12 +198,12 @@ public:
       // Gradient noise
       auto noise = weights_tensor.random()*weights_tensor.constant(this->getGradientNoiseSigma());
 
-      // Weight updates
-			solver_params_tensor.chip(4, 2).device(device) = solver_params_tensor.chip(1, 2) * solver_params_tensor.chip(4, 2) + (weights_tensor.constant((TensorT)1) - solver_params_tensor.chip(1, 2)) * weights_tensor * errors_clipped;
-			solver_params_tensor.chip(5, 2).device(device) = solver_params_tensor.chip(2, 2) * solver_params_tensor.chip(5, 2) + (weights_tensor.constant((TensorT)1) - solver_params_tensor.chip(2, 2)) * weights_tensor * errors_clipped * weights_tensor * errors_clipped;
-      auto unbiased_adam1 = solver_params_tensor.chip(4, 2) / (weights_tensor.constant((TensorT)1) - solver_params_tensor.chip(1, 2));
-      auto unbiased_adam2 = solver_params_tensor.chip(5, 2) / (weights_tensor.constant((TensorT)1) - solver_params_tensor.chip(2, 2));
-			weights_tensor.device(device) -= solver_params_tensor.chip(0, 2) * unbiased_adam1 / (unbiased_adam2.sqrt() + solver_params_tensor.chip(3, 2)) + noise;
+      // Weight updates (omitting the bias correction step)
+			solver_params_tensor.chip(4, 2).device(device) = solver_params_tensor.chip(1, 2) * solver_params_tensor.chip(4, 2) + (weights_tensor.constant((TensorT)1) - solver_params_tensor.chip(1, 2)) * errors_clipped;
+			solver_params_tensor.chip(5, 2).device(device) = solver_params_tensor.chip(2, 2) * solver_params_tensor.chip(5, 2) + (weights_tensor.constant((TensorT)1) - solver_params_tensor.chip(2, 2)) * errors_clipped.pow(2);
+      //auto unbiased_adam1 = solver_params_tensor.chip(4, 2) / (weights_tensor.constant((TensorT)1) - solver_params_tensor.chip(1, 2));
+      //auto unbiased_adam2 = solver_params_tensor.chip(5, 2) / (weights_tensor.constant((TensorT)1) - solver_params_tensor.chip(2, 2));
+			weights_tensor.device(device) -= solver_params_tensor.chip(0, 2) * solver_params_tensor.chip(4, 2) / (solver_params_tensor.chip(5, 2).sqrt() + solver_params_tensor.chip(3, 2)) + noise;
     };
     std::string getName() const{return "AdamTensorOp";};
 	//private:
