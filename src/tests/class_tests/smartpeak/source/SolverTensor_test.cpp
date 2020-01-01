@@ -30,28 +30,32 @@ BOOST_AUTO_TEST_CASE(destructorSGDOp)
 
 BOOST_AUTO_TEST_CASE(settersAndGetters) 
 {
-  SGDTensorOp<float, Eigen::DefaultDevice> operation(10.0f, 1.0f);
+  SGDTensorOp<float, Eigen::DefaultDevice> operation(10.0f, 1.0f, 0.55f);
   BOOST_CHECK_EQUAL(operation.getName(), "SGDTensorOp");
   BOOST_CHECK_CLOSE(operation.getGradientThreshold(), 10.0, 1e4);
   BOOST_CHECK_CLOSE(operation.getGradientNoiseSigma(), 1.0, 1e4);
+  BOOST_CHECK_CLOSE(operation.getGradientNoiseGamma(), 0.55, 1e4);
   //BOOST_CHECK_EQUAL(operation.getParameters(), "gradient_threshold:1000000.000000;gradient_noise_sigma:1.000000;gradient_noise_gamma:0.550000;learning_rate:0.900000;momentum:0.100000;momentum_prev:0.000000");
 
-  SSDTensorOp<float, Eigen::DefaultDevice> ssd_op(10.0f, 1.0f);
+  SSDTensorOp<float, Eigen::DefaultDevice> ssd_op(10.0f, 1.0f, 0.55f);
   BOOST_CHECK_EQUAL(ssd_op.getName(), "SSDTensorOp");
   BOOST_CHECK_CLOSE(ssd_op.getGradientThreshold(), 10.0, 1e4);
   BOOST_CHECK_CLOSE(ssd_op.getGradientNoiseSigma(), 1.0, 1e4);
+  BOOST_CHECK_CLOSE(ssd_op.getGradientNoiseGamma(), 0.55, 1e4);
   //BOOST_CHECK_EQUAL(ssd_op.getParameters(), "gradient_threshold:1000000.000000;gradient_noise_sigma:1.000000;gradient_noise_gamma:0.550000;learning_rate:0.900000;momentum:0.100000;momentum_prev:0.000000");
 
-  AdamTensorOp<float, Eigen::DefaultDevice> adam_op(10.0f, 1.0f);
+  AdamTensorOp<float, Eigen::DefaultDevice> adam_op(10.0f, 1.0f, 0.55f);
   BOOST_CHECK_EQUAL(adam_op.getName(), "AdamTensorOp");
   BOOST_CHECK_CLOSE(adam_op.getGradientThreshold(), 10.0, 1e4);
   BOOST_CHECK_CLOSE(adam_op.getGradientNoiseSigma(), 1.0, 1e4);
+  BOOST_CHECK_CLOSE(adam_op.getGradientNoiseGamma(), 0.55, 1e4);
   //BOOST_CHECK_EQUAL(adam_op.getParameters(), "gradient_threshold:1000000.000000;gradient_noise_sigma:1.000000;gradient_noise_gamma:0.550000;learning_rate:0.010000;momentum:0.900000;momentum2:0.999000;delta:0.000000;momentum_prev:0.000000;momentum2_prev:0.000000");
 
-	DummySolverTensorOp<float, Eigen::DefaultDevice> dummy_solver_op(10.0f, 1.0f);
+	DummySolverTensorOp<float, Eigen::DefaultDevice> dummy_solver_op(10.0f, 1.0f, 0.55f);
 	BOOST_CHECK_EQUAL(dummy_solver_op.getName(), "DummySolverTensorOp");
   BOOST_CHECK_CLOSE(dummy_solver_op.getGradientThreshold(), 10.0, 1e4);
   BOOST_CHECK_CLOSE(dummy_solver_op.getGradientNoiseSigma(), 1.0, 1e4);
+  BOOST_CHECK_CLOSE(dummy_solver_op.getGradientNoiseGamma(), 0.55, 1e4);
 	//BOOST_CHECK_EQUAL(dummy_solver_op.getParameters(), "");
 }
 
