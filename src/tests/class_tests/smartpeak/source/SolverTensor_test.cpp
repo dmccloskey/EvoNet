@@ -11,9 +11,6 @@ using namespace std;
 
 BOOST_AUTO_TEST_SUITE(solver3)
 
-/**
-  SGDOp Tests
-*/ 
 BOOST_AUTO_TEST_CASE(constructorSGDOp) 
 {
   SGDTensorOp<float, Eigen::DefaultDevice>* ptrSGD = nullptr;
@@ -59,12 +56,20 @@ BOOST_AUTO_TEST_CASE(settersAndGetters)
 	//BOOST_CHECK_EQUAL(dummy_solver_op.getParameters(), "");
 }
 
+BOOST_AUTO_TEST_CASE(annealGradientNoiseSigma)
+{
+  SGDTensorOp<float, Eigen::DefaultDevice> operation(10.0f, 1.0f, 0.55f);
+  BOOST_CHECK_CLOSE(operation.annealGradientNoiseSigma(1), 0, 1e-4);
+  BOOST_CHECK_CLOSE(operation.annealGradientNoiseSigma(100), 0, 1e-4);
+}
+
 BOOST_AUTO_TEST_CASE(operationfunctionSGDOp) 
 {
   SGDTensorOp<float, Eigen::DefaultDevice> operation;
 
 	const int sink_layer_size = 1;
 	const int source_layer_size = 2;
+  const int iter = 0;
 	Eigen::Tensor<float, 2> weights(source_layer_size, sink_layer_size);
 	weights.setConstant(1);
 	Eigen::Tensor<float, 2> errors(source_layer_size, sink_layer_size);
@@ -76,7 +81,7 @@ BOOST_AUTO_TEST_CASE(operationfunctionSGDOp)
 	Eigen::DefaultDevice device;
 
   // Test operator
-	operation(weights.data(), errors.data(), solver_params.data(), source_layer_size, sink_layer_size, device);
+	operation(weights.data(), errors.data(), solver_params.data(), source_layer_size, sink_layer_size, iter, device);
 	BOOST_CHECK_CLOSE(weights(0, 0), 0.999899983, 1e-4);
 	BOOST_CHECK_CLOSE(weights(1, 0), 0.99000001, 1e-4);
 	BOOST_CHECK_CLOSE(errors(0, 0), 0.1, 1e-4);
@@ -96,7 +101,7 @@ BOOST_AUTO_TEST_CASE(operationfunctionSGDOp)
   operation.setGradientThreshold(1.0);
 
   // Test second operator call
-  operation(weights1.data(), errors.data(), solver_params1.data(), source_layer_size, sink_layer_size, device);
+  operation(weights1.data(), errors.data(), solver_params1.data(), source_layer_size, sink_layer_size, iter, device);
   BOOST_CHECK_CLOSE(weights1(0, 0), 0.999899983, 1e-4);
   BOOST_CHECK_CLOSE(weights1(1, 0), 0.999000013, 1e-4);
   BOOST_CHECK_CLOSE(errors(0, 0), 0.1, 1e-4);
@@ -114,7 +119,7 @@ BOOST_AUTO_TEST_CASE(operationfunctionSGDOp)
   errors.setValues({ {0.1},	{10} });
   solver_params.setValues({ {{0.01, 0.9, 0.0}},
     {{0.01, 0.9, 0.0}} });
-  operation(weights.data(), errors.data(), solver_params.data(), source_layer_size, sink_layer_size, device);
+  operation(weights.data(), errors.data(), solver_params.data(), source_layer_size, sink_layer_size, iter, device);
   BOOST_CHECK(weights(0, 0) != 0.999899983, 1e-4);
   BOOST_CHECK(weights(1, 0)!= 0.99000001, 1e-4);
   BOOST_CHECK_CLOSE(errors(0, 0), 0.1, 1e-4);
@@ -133,6 +138,7 @@ BOOST_AUTO_TEST_CASE(operationfunctionSSDOp)
 
   const int sink_layer_size = 1;
   const int source_layer_size = 2;
+  const int iter = 0;
   Eigen::Tensor<float, 2> weights(source_layer_size, sink_layer_size);
   weights.setConstant(1);
   Eigen::Tensor<float, 2> errors(source_layer_size, sink_layer_size);
@@ -144,7 +150,7 @@ BOOST_AUTO_TEST_CASE(operationfunctionSSDOp)
   Eigen::DefaultDevice device;
 
   // Test operator
-  operation(weights.data(), errors.data(), solver_params.data(), source_layer_size, sink_layer_size, device);
+  operation(weights.data(), errors.data(), solver_params.data(), source_layer_size, sink_layer_size, iter, device);
   BOOST_CHECK_CLOSE(weights(0, 0), 0.999000013, 1e-4);
   BOOST_CHECK_CLOSE(weights(1, 0), 0.999000013, 1e-4);
   BOOST_CHECK_CLOSE(errors(0, 0), 0.1, 1e-4);
@@ -164,7 +170,7 @@ BOOST_AUTO_TEST_CASE(operationfunctionSSDOp)
   operation.setGradientThreshold(1.0);
 
   // Test second operator call
-  operation(weights1.data(), errors.data(), solver_params1.data(), source_layer_size, sink_layer_size, device);
+  operation(weights1.data(), errors.data(), solver_params1.data(), source_layer_size, sink_layer_size, iter, device);
   BOOST_CHECK_CLOSE(weights1(0, 0), 0.999000013, 1e-4);
   BOOST_CHECK_CLOSE(weights1(1, 0), 0.999000013, 1e-4);
   BOOST_CHECK_CLOSE(errors(0, 0), 0.1, 1e-4);
@@ -182,7 +188,7 @@ BOOST_AUTO_TEST_CASE(operationfunctionSSDOp)
   errors.setValues({ {0.1},	{10} });
   solver_params.setValues({ {{0.01, 0.9, 0.0}},
     {{0.01, 0.9, 0.0}} });
-  operation(weights.data(), errors.data(), solver_params.data(), source_layer_size, sink_layer_size, device);
+  operation(weights.data(), errors.data(), solver_params.data(), source_layer_size, sink_layer_size, iter, device);
   BOOST_CHECK(weights(0, 0) != 0.999000013, 1e-4);
   BOOST_CHECK(weights(1, 0) != 0.999000013, 1e-4);
   BOOST_CHECK_CLOSE(errors(0, 0), 0.1, 1e-4);
@@ -201,6 +207,7 @@ BOOST_AUTO_TEST_CASE(operationfunctionAdamOp)
 
 	const int sink_layer_size = 1;
 	const int source_layer_size = 2;
+  const int iter = 0;
 	Eigen::Tensor<float, 2> weights(source_layer_size, sink_layer_size);
 	weights.setConstant(1);
 	Eigen::Tensor<float, 2> errors(source_layer_size, sink_layer_size);
@@ -212,7 +219,7 @@ BOOST_AUTO_TEST_CASE(operationfunctionAdamOp)
 	Eigen::DefaultDevice device;
 
   // Test operator call
-	operation(weights.data(), errors.data(), solver_params.data(), source_layer_size, sink_layer_size, device);
+	operation(weights.data(), errors.data(), solver_params.data(), source_layer_size, sink_layer_size, iter, device);
 	BOOST_CHECK_CLOSE(weights(0, 0), 0.968377113, 1e-4);
 	BOOST_CHECK_CLOSE(weights(1, 0), 0.968377113, 1e-4);
 	BOOST_CHECK_CLOSE(errors(0, 0), 0.1, 1e-4);
@@ -238,7 +245,7 @@ BOOST_AUTO_TEST_CASE(operationfunctionAdamOp)
     {{0.01, 0.9, 0.999, 1e-8, 0.0, 0.0}} });
   operation.setGradientThreshold(1.0);
 
-  operation(weights1.data(), errors.data(), solver_params1.data(), source_layer_size, sink_layer_size, device);
+  operation(weights1.data(), errors.data(), solver_params1.data(), source_layer_size, sink_layer_size, iter, device);
   BOOST_CHECK_CLOSE(weights1(0, 0), 0.968377113, 1e-4);
   BOOST_CHECK_CLOSE(weights1(1, 0), 0.968377113, 1e-4);
   BOOST_CHECK_CLOSE(errors(0, 0), 0.1, 1e-4);
@@ -263,7 +270,7 @@ BOOST_AUTO_TEST_CASE(operationfunctionAdamOp)
   solver_params.setValues({ {{0.01, 0.9, 0.999, 1e-8, 0.0, 0.0}},
     {{0.01, 0.9, 0.999, 1e-8, 0.0, 0.0}} });
 
-  operation(weights.data(), errors.data(), solver_params.data(), source_layer_size, sink_layer_size, device);
+  operation(weights.data(), errors.data(), solver_params.data(), source_layer_size, sink_layer_size, iter, device);
   BOOST_CHECK(weights(0, 0) != 0.968377113, 1e-4);
   BOOST_CHECK(weights(1, 0) != 0.968377113, 1e-4);
   BOOST_CHECK_CLOSE(errors(0, 0), 0.1, 1e-4);
@@ -288,6 +295,7 @@ BOOST_AUTO_TEST_CASE(operationfunctionDummySolverOp)
 
 	const int sink_layer_size = 1;
 	const int source_layer_size = 2;
+  const int iter = 0;
 	Eigen::Tensor<float, 2> weights(source_layer_size, sink_layer_size);
 	weights.setConstant(1);
 	Eigen::Tensor<float, 2> errors(source_layer_size, sink_layer_size);
@@ -298,7 +306,7 @@ BOOST_AUTO_TEST_CASE(operationfunctionDummySolverOp)
 
 	Eigen::DefaultDevice device;
 
-	operation(weights.data(), errors.data(), solver_params.data(), source_layer_size, sink_layer_size, device);
+	operation(weights.data(), errors.data(), solver_params.data(), source_layer_size, sink_layer_size, iter, device);
 	BOOST_CHECK_CLOSE(weights(0, 0), 1, 1e-4);
 	BOOST_CHECK_CLOSE(weights(1, 0), 1, 1e-4);
 	BOOST_CHECK_CLOSE(errors(0, 0), 0.1, 1e-4);

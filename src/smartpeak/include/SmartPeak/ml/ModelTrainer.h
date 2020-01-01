@@ -923,7 +923,7 @@ private:
 			// update the weights
 			if (this->getVerbosityLevel() >= 2)
 				std::cout << "Weight Update..." << std::endl;
-			model_interpreter.updateWeights();
+			model_interpreter.updateWeights(iter);
 
 			model_interpreter.getModelResults(model, false, false, true, false);
 			const Eigen::Tensor<TensorT, 0> total_error = model.getError().sum();
@@ -1156,7 +1156,7 @@ private:
       // update the weights
       if (this->getVerbosityLevel() >= 2)
         std::cout << "Weight Update..." << std::endl;
-      model_interpreter.updateWeights();
+      model_interpreter.updateWeights(iter);
 
       // log epoch
       if (this->getLogTraining()) {

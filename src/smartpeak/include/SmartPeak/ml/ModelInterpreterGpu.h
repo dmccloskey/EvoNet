@@ -40,7 +40,7 @@ namespace SmartPeak
     void executeModelMetricOperations(Eigen::Tensor<TensorT, 2>& expected, const int& layer_id, MetricFunctionTensorOp<TensorT, Eigen::GpuDevice>* metric_function, const int& time_step, const int& metric_index) override;
 		void executeBackwardPropogationOperations(const int& time_step) override;
 		void executeWeightErrorOperations() override;
-		void executeWeightUpdateOperations() override;
+		void executeWeightUpdateOperations(const int& iter) override;
 		void allocateModelErrorTensor(const int& batch_size, const int& memory_size, const int& n_metrics) override;
 		void getModelResults(Model<TensorT>& model, const bool& output_nodes, const bool& weights, const bool& model_error, const bool& input_nodes) override;
 		void checkMemory(const Model<TensorT>& model, const int& batch_size, const int& memory_size) override;
@@ -492,7 +492,7 @@ namespace SmartPeak
 	}
 
 	template<typename TensorT>
-	inline void ModelInterpreterGpu<TensorT>::executeWeightUpdateOperations()
+	inline void ModelInterpreterGpu<TensorT>::executeWeightUpdateOperations(const int& iter)
 	{
 		for (std::vector<OperationTensorStep<TensorT, Eigen::GpuDevice>>& operations_list : this->operation_steps_) {
 
@@ -529,6 +529,7 @@ namespace SmartPeak
 					operation.weight.solver.get(),
 					this->layer_tensors_.at(operation.source_layer.tensor_index)->getLayerSize(),
 					this->layer_tensors_.at(operation.sink_layer.tensor_index)->getLayerSize(),
+          iter,
 					device);
 				++device_iter;
 			}

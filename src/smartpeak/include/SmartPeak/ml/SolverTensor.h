@@ -39,7 +39,7 @@ public:
     TensorT getLearningRate() const { return learning_rate_; };
     void setGradientThreshold(const TensorT& gradient_threshold){gradient_threshold_ = gradient_threshold;};
     TensorT getGradientThreshold() const{return gradient_threshold_;};
-    virtual void operator()(TensorT* weights, TensorT* errors, TensorT* solver_params, const int& source_layer_size, const int& sink_layer_size, DeviceT& device) = 0;
+    virtual void operator()(TensorT* weights, TensorT* errors, TensorT* solver_params, const int& source_layer_size, const int& sink_layer_size, const int& iter, DeviceT& device) = 0;
     void setGradientNoiseSigma(const TensorT& gradient_noise_sigma){gradient_noise_sigma_ = gradient_noise_sigma;};
     TensorT getGradientNoiseSigma() const{return gradient_noise_sigma_;};
     void setGradientNoiseGamma(const TensorT& gradient_noise_gamma){gradient_noise_gamma_ = gradient_noise_gamma;};
@@ -78,7 +78,7 @@ public:
 		@param source_layer_size Dim 0
 		@param sink_layer_size Dim 1
 		*/
-    void operator()(TensorT* weights, TensorT* errors, TensorT* solver_params, const int& source_layer_size, const int& sink_layer_size, DeviceT& device) 
+    void operator()(TensorT* weights, TensorT* errors, TensorT* solver_params, const int& source_layer_size, const int& sink_layer_size, const int& iter, DeviceT& device) 
     {
 			Eigen::TensorMap<Eigen::Tensor<TensorT, 2>> weights_tensor(weights, source_layer_size, sink_layer_size);
 			Eigen::TensorMap<Eigen::Tensor<TensorT, 2>> errors_tensor(errors, source_layer_size, sink_layer_size);
@@ -91,9 +91,9 @@ public:
       auto clip = errors_no_nans.abs() > errors_no_nans.constant(this->getGradientThreshold());
       auto errors_clipped = clip.select(errors_no_nans * errors_no_nans.constant(this->getGradientThreshold()) / errors_no_nans.abs(), errors_no_nans);
 
-      //// Gradient noise
-      //auto noise = weights_tensor.random()*weights_tensor.constant(this->annealGradientNoiseSigma(iter));
-      //auto errors_noise = errors_clipped + noise;
+      // Gradient noise
+      auto noise = weights_tensor.random()*weights_tensor.constant(this->annealGradientNoiseSigma(iter + 1));
+      auto errors_noise = errors_clipped + noise;
 
       // Weight updates (omitting the bias correction step)
 			solver_params_tensor.chip(2, 2).device(device) = solver_params_tensor.chip(1, 2) * solver_params_tensor.chip(2,2) + (errors_tensor.constant(TensorT(1)) - solver_params_tensor.chip(1, 2)) * errors_clipped;
@@ -128,18 +128,18 @@ public:
     @param source_layer_size Dim 0
     @param sink_layer_size Dim 1
     */
-    void operator()(TensorT* weights, TensorT* errors, TensorT* solver_params, const int& source_layer_size, const int& sink_layer_size, DeviceT& device)
+    void operator()(TensorT* weights, TensorT* errors, TensorT* solver_params, const int& source_layer_size, const int& sink_layer_size, const int& iter, DeviceT& device)
     {
       Eigen::TensorMap<Eigen::Tensor<TensorT, 2>> weights_tensor(weights, source_layer_size, sink_layer_size);
       Eigen::TensorMap<Eigen::Tensor<TensorT, 2>> errors_tensor(errors, source_layer_size, sink_layer_size);
       Eigen::TensorMap<Eigen::Tensor<TensorT, 3>> solver_params_tensor(solver_params, source_layer_size, sink_layer_size, 3);
 
-      // Remove Nans and return the sign of the gradient
-      auto errors_sign = (errors_tensor == errors_tensor).select(errors_tensor/errors_tensor.abs(), errors_tensor.constant(TensorT(0)));
+      // Gradient noise
+      auto noise = weights_tensor.random()*weights_tensor.constant(this->annealGradientNoiseSigma(iter + 1));
+      auto errors_noise = errors_tensor + noise;
 
-      //// Gradient noise
-      //auto noise = weights_tensor.random()*weights_tensor.constant(this->annealGradientNoiseSigma(iter));
-      //auto errors_noise = errors_clipped + noise;
+      // Remove Nans and return the sign of the gradient
+      auto errors_sign = (errors_noise == errors_noise).select(errors_noise / errors_noise.abs(), errors_noise.constant(TensorT(0)));
 
       // Weight updates (omitting the bias correction step)
       solver_params_tensor.chip(2, 2).device(device) = solver_params_tensor.chip(1, 2) * solver_params_tensor.chip(2, 2) + (errors_tensor.constant(TensorT(1)) - solver_params_tensor.chip(1, 2)) * errors_sign;
@@ -173,7 +173,7 @@ public:
 		@param source_layer_size Dim 0
 		@param sink_layer_size Dim 1
 		*/
-    void operator()(TensorT* weights, TensorT* errors, TensorT* solver_params, const int& source_layer_size, const int& sink_layer_size, DeviceT& device) 
+    void operator()(TensorT* weights, TensorT* errors, TensorT* solver_params, const int& source_layer_size, const int& sink_layer_size, const int& iter, DeviceT& device) 
     {
 			Eigen::TensorMap<Eigen::Tensor<TensorT, 2>> weights_tensor(weights, source_layer_size, sink_layer_size);
 			Eigen::TensorMap<Eigen::Tensor<TensorT, 2>> errors_tensor(errors, source_layer_size, sink_layer_size);
@@ -186,9 +186,9 @@ public:
       auto clip = errors_no_nans.abs() > errors_no_nans.constant(this->getGradientThreshold());
       auto errors_clipped = clip.select(errors_no_nans * errors_no_nans.constant(this->getGradientThreshold()) / errors_no_nans.abs(), errors_no_nans);
 
-      //// Gradient noise
-      //auto noise = weights_tensor.random()*weights_tensor.constant(this->annealGradientNoiseSigma(iter));
-      //auto errors_noise = errors_clipped + noise;
+      // Gradient noise
+      auto noise = weights_tensor.random()*weights_tensor.constant(this->annealGradientNoiseSigma(iter + 1));
+      auto errors_noise = errors_clipped + noise;
 
       // Weight updates (omitting the bias correction step)
 			solver_params_tensor.chip(4, 2).device(device) = solver_params_tensor.chip(1, 2) * solver_params_tensor.chip(4, 2) + (weights_tensor.constant((TensorT)1) - solver_params_tensor.chip(1, 2)) * errors_clipped;
@@ -231,7 +231,7 @@ public:
     @param source_layer_size Dim 0
     @param sink_layer_size Dim 1
     */
-    void operator()(TensorT* weights, TensorT* errors, TensorT* solver_params, const int& source_layer_size, const int& sink_layer_size, DeviceT& device)
+    void operator()(TensorT* weights, TensorT* errors, TensorT* solver_params, const int& source_layer_size, const int& sink_layer_size, const int& iter, DeviceT& device)
     {
       Eigen::TensorMap<Eigen::Tensor<TensorT, 2>> weights_tensor(weights, source_layer_size, sink_layer_size);
       Eigen::TensorMap<Eigen::Tensor<TensorT, 2>> errors_tensor(errors, source_layer_size, sink_layer_size);
@@ -244,9 +244,9 @@ public:
       auto clip = errors_no_nans.abs() > errors_no_nans.constant(this->getGradientThreshold());
       auto errors_clipped = clip.select(errors_no_nans * errors_no_nans.constant(this->getGradientThreshold()) / errors_no_nans.abs(), errors_no_nans);
 
-      //// Gradient noise
-      //auto noise = weights_tensor.random()*weights_tensor.constant(this->annealGradientNoiseSigma(iter));
-      //auto errors_noise = errors_clipped + noise;
+      // Gradient noise
+      auto noise = weights_tensor.random()*weights_tensor.constant(this->annealGradientNoiseSigma(iter + 1));
+      auto errors_noise = errors_clipped + noise;
 
       // Calculate Rho
       auto rho = (
@@ -279,7 +279,7 @@ public:
 	{
 	public:
     using SolverTensorOp<TensorT, DeviceT>::SolverTensorOp;
-		void operator()(TensorT* weights, TensorT* errors, TensorT* solver_params, const int& source_layer_size, const int& sink_layer_size, DeviceT& device)	{	};
+		void operator()(TensorT* weights, TensorT* errors, TensorT* solver_params, const int& source_layer_size, const int& sink_layer_size, const int& iter, DeviceT& device)	{	};
 		std::string getName() const { return "DummySolverTensorOp"; };
 	};
 

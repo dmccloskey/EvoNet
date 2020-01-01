@@ -472,8 +472,10 @@ namespace SmartPeak
 		/**
 		@brief Execute model kernal methods required for weight update calculations
 
+		@param[in] iter The number of training iterations
+
 		*/
-		virtual void executeWeightUpdateOperations() = 0;
+		virtual void executeWeightUpdateOperations(const int& iter) = 0;
 		
 		void addLayerTensor(std::shared_ptr<NodeTensorData<TensorT, DeviceT>>& layer); ///< add a layer to the cache
 		void clearLayerTensors(); ///< clear all layers from the cache
@@ -548,8 +550,10 @@ namespace SmartPeak
 		/**
 		@brief Update the weights
 
+		@param[in] iter The number of training iterations
+
 		*/
-		void updateWeights();
+		void updateWeights(const int& iter);
 
 		/**
 		@brief Transfer Model error, weights, and output node values
@@ -2129,10 +2133,10 @@ namespace SmartPeak
 	}
 
 	template<typename TensorT, typename DeviceT>
-	inline void ModelInterpreter<TensorT, DeviceT>::updateWeights()
+	inline void ModelInterpreter<TensorT, DeviceT>::updateWeights(const int& iter)
 	{
 		executeWeightErrorOperations();
-		executeWeightUpdateOperations();
+		executeWeightUpdateOperations(iter);
 	}
 
 	template<typename TensorT, typename DeviceT>

@@ -1091,7 +1091,7 @@ void makeCovNet(Model<TensorT>& model, const int& n_inputs, const int& n_outputs
       std::make_shared<SumErrorOp<TensorT>>(SumErrorOp<TensorT>()),
       std::make_shared<SumWeightGradOp<TensorT>>(SumWeightGradOp<TensorT>()),
       std::make_shared<ConstWeightInitOp<TensorT>>(ConstWeightInitOp<TensorT>(1)),
-      std::make_shared<AdamOp<TensorT>>(AdamOp<TensorT>(1e-4, 0.9, 0.999, 1e-8, 1e3, 0.0)), 0.0, 0.0, true, specify_layers);
+      std::make_shared<AdamOp<TensorT>>(AdamOp<TensorT>(1e-4, 0.9, 0.999, 1e-8)), 0.0, 0.0, true, specify_layers);
   }
   node_names = model_builder.addFullyConnected(model, "FC1", "FC1", node_names, n_outputs,
     std::shared_ptr<ActivationOp<TensorT>>(new ReLUOp<TensorT>()),

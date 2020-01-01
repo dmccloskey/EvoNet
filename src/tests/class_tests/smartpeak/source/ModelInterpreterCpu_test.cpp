@@ -696,7 +696,7 @@ BOOST_AUTO_TEST_CASE(executeWeightUpdateOperations)
 
 	model_interpreter.executeBackwardPropogationOperations(0); // BP
 	model_interpreter.executeWeightErrorOperations(); // Weight error
-	model_interpreter.executeWeightUpdateOperations(); // Weight update
+	model_interpreter.executeWeightUpdateOperations(0); // Weight update
 
   // test values of input and hidden layers
 	const std::vector<std::string> weight_ids = { "0", "1", "2", "3", "4", "5", "6", "7", "8", "9", "10", "11" };
@@ -768,7 +768,7 @@ BOOST_AUTO_TEST_CASE(modelTrainer1)
 
 		model_interpreter.executeBackwardPropogationOperations(0); // BP
 		model_interpreter.executeWeightErrorOperations(); // Weight error
-		model_interpreter.executeWeightUpdateOperations(); // Weight update
+		model_interpreter.executeWeightUpdateOperations(iter); // Weight update
 
 		// reinitialize the model
 		if (iter != max_iter - 1) {
@@ -1146,7 +1146,7 @@ BOOST_AUTO_TEST_CASE(updateWeights)
 	model_interpreter.CETT(model_updateWeights, expected, output_nodes, loss_function, loss_function_grad, 4);
 
 	model_interpreter.TBPTT(4);
-	model_interpreter.updateWeights();
+	model_interpreter.updateWeights(0);
 
 	auto weights_map = model_TBPTT.getWeightsMap();
 	// test values of output nodes
@@ -1218,7 +1218,7 @@ BOOST_AUTO_TEST_CASE(modelTrainer2)
 		std::cout << "Error at iteration: " << iter << " is " << model_interpreter.getModelError()->getError().sum() << std::endl;
 
 		model_interpreter.TBPTT(4); // BP
-		model_interpreter.updateWeights(); // Weight update
+		model_interpreter.updateWeights(iter); // Weight update
 
 		// reinitialize the model
 		if (iter != max_iter - 1) {
@@ -1277,7 +1277,7 @@ BOOST_AUTO_TEST_CASE(getModelResults)
   model_interpreter.CMTT(model_getModelResults, expected, output_nodes, metric_function, 4, 0);
 
 	model_interpreter.TBPTT(4);
-	model_interpreter.updateWeights();
+	model_interpreter.updateWeights(0);
 
 	model_interpreter.getModelResults(model_getModelResults, true, true, true, true);
 
@@ -1454,7 +1454,7 @@ BOOST_AUTO_TEST_CASE(modelTrainer3)
 
 	// iterate until we find the optimal values
 	const int max_iter = 50;
-	for (int epoch = 0; epoch < max_iter; ++epoch)
+	for (int iter = 0; iter < max_iter; ++iter)
 	{
 		// assign the input data
 		model_interpreter.initBiases(model_modelTrainer3); // create the bias	
@@ -1465,13 +1465,13 @@ BOOST_AUTO_TEST_CASE(modelTrainer3)
 
 		// calculate the model error and node output error
 		model_interpreter.CETT(model_modelTrainer3, expected, output_nodes, loss_function, loss_function_grad, memory_size);
-		std::cout << "Error at iteration: " << epoch << " is " << model_interpreter.getModelError()->getError().sum() << std::endl;
+		std::cout << "Error at iteration: " << iter << " is " << model_interpreter.getModelError()->getError().sum() << std::endl;
 
 		model_interpreter.TBPTT(memory_size); // BP
-		model_interpreter.updateWeights(); // Weight update
+		model_interpreter.updateWeights(iter); // Weight update
 
 		// reinitialize the model
-		if (epoch != max_iter - 1) {
+		if (iter != max_iter - 1) {
 			model_interpreter.reInitNodes();
 			model_interpreter.reInitModelError();
 		}

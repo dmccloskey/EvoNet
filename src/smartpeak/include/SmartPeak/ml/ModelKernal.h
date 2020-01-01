@@ -172,6 +172,7 @@ namespace SmartPeak
 			SolverTensorOp<TensorT, DeviceT>* solver_function,
 			const int& source_layer_size,
 			const int& sink_layer_size,
+      const int& iter,
 			DeviceT& device,
 			bool copyHostToDevice = false,
 			bool copyDeviceToHost = false) = 0;
@@ -391,11 +392,12 @@ namespace SmartPeak
 			SolverTensorOp<TensorT, Eigen::DefaultDevice>* solver_function,
 			const int& source_layer_size,
 			const int& sink_layer_size,
+      const int& iter,
 			Eigen::DefaultDevice& device,
 			bool copyHostToDevice = false,
 			bool copyDeviceToHost = false) override {
 			// Update the weights
-			solver_function->operator()(h_weight, h_weight_error, h_solver_params, source_layer_size, sink_layer_size, device);//getDrop()*error);
+			solver_function->operator()(h_weight, h_weight_error, h_solver_params, source_layer_size, sink_layer_size, iter, device);//getDrop()*error);
 
 			return true;
 		}

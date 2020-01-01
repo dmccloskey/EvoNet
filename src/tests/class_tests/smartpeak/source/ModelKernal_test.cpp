@@ -732,6 +732,7 @@ BOOST_AUTO_TEST_CASE(weightUpdateDefaultDevice)
 	SolverTensorOp<float, Eigen::DefaultDevice>* solver_function = new SGDTensorOp<float, Eigen::DefaultDevice>();
 	const int source_layer_size = 2;
 	const int sink_layer_size = 1;
+  const int iter = 0;
 
 	float* h_solver_params = new float[source_layer_size * sink_layer_size * 3];
 	float* d_solver_params = new float[source_layer_size * sink_layer_size * 3];
@@ -761,6 +762,7 @@ BOOST_AUTO_TEST_CASE(weightUpdateDefaultDevice)
 		solver_function,
 		source_layer_size,
 		sink_layer_size,
+    iter,
 		device,
 		true,
 		true);

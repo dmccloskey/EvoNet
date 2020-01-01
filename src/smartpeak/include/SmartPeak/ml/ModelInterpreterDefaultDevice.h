@@ -36,7 +36,7 @@ namespace SmartPeak
 		void executeModelErrorOperations(Eigen::Tensor<TensorT, 2>& expected, const int& layer_id, LossFunctionTensorOp<TensorT, Eigen::DefaultDevice>* loss_function, LossFunctionGradTensorOp<TensorT, Eigen::DefaultDevice>* loss_function_grad, const int& time_step) override;
     void executeModelMetricOperations(Eigen::Tensor<TensorT, 2>& expected, const int& layer_id, MetricFunctionTensorOp<TensorT, Eigen::DefaultDevice>* metric_function, const int& time_step, const int& metric_index) override;
 		void executeWeightErrorOperations() override;
-		void executeWeightUpdateOperations() override;
+		void executeWeightUpdateOperations(const int& iter) override;
 		void allocateModelErrorTensor(const int& batch_size, const int& memory_size, const int& n_metrics) override;
 	  void getModelResults(Model<TensorT>& model, const bool& output_nodes, const bool& weights, const bool& model_error, const bool& input_nodes) override;
 		void checkMemory(const Model<TensorT>& model, const int& batch_size, const int& memory_size) override;
@@ -358,7 +358,7 @@ namespace SmartPeak
 	}
 
 	template<typename TensorT>
-	inline void ModelInterpreterDefaultDevice<TensorT>::executeWeightUpdateOperations()
+	inline void ModelInterpreterDefaultDevice<TensorT>::executeWeightUpdateOperations(const int& iter)
 	{
 		for (std::vector<OperationTensorStep<TensorT, Eigen::DefaultDevice>>& operations_list : this->operation_steps_) {
 			ModelKernalDefaultDevice<TensorT> model_kernal;
@@ -377,6 +377,7 @@ namespace SmartPeak
 					operation.weight.solver.get(),
 					this->layer_tensors_.at(operation.source_layer.tensor_index)->getLayerSize(),
 					this->layer_tensors_.at(operation.sink_layer.tensor_index)->getLayerSize(),
+          iter,
 					device);
 			}
 		}

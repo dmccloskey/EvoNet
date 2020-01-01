@@ -731,7 +731,7 @@ void test_executeWeightUpdateOperations()
 
 	model_interpreter.executeBackwardPropogationOperations(0); // BP
 	model_interpreter.executeWeightErrorOperations(); // Weight error
-	model_interpreter.executeWeightUpdateOperations(); // Weight update
+	model_interpreter.executeWeightUpdateOperations(0); // Weight update
 
 	// Retreive the weight values
 	const std::vector<std::string> weight_ids = { "0", "1", "2", "3", "4", "5", "6", "7", "8", "9", "10", "11" };
@@ -814,7 +814,7 @@ void test_modelTrainer1()
 
 		model_interpreter.executeBackwardPropogationOperations(0); // BP
 		model_interpreter.executeWeightErrorOperations(); // Weight error
-		model_interpreter.executeWeightUpdateOperations(); // Weight update
+		model_interpreter.executeWeightUpdateOperations(iter); // Weight update
 
 		// reinitialize the model
 		if (iter != max_iter - 1) {
@@ -1254,7 +1254,7 @@ void test_updateWeights()
 	model_interpreter.CETT(model_updateWeights, expected, output_nodes, loss_function, loss_function_grad, 4);
 
 	model_interpreter.TBPTT(4);
-	model_interpreter.updateWeights();
+	model_interpreter.updateWeights(0);
 
 	// Retreive the weight values
 	cudaStream_t stream;
@@ -1340,7 +1340,7 @@ void test_modelTrainer2()
 		model_interpreter.CETT(model_modelTrainer2, expected, output_nodes, loss_function, loss_function_grad, 4);
 
 		model_interpreter.TBPTT(4); // BP
-		model_interpreter.updateWeights(); // Weight update
+		model_interpreter.updateWeights(iter); // Weight update
 
 		// reinitialize the model
 		if (iter != max_iter - 1) {
@@ -1410,7 +1410,7 @@ void test_getModelResults()
   model_interpreter.CMTT(model_getModelResults, expected, output_nodes, metric_function, 4, 0);
 
 	model_interpreter.TBPTT(4);
-	model_interpreter.updateWeights();
+	model_interpreter.updateWeights(0);
 
   model_interpreter.getModelResults(model_getModelResults, true, true, true, true);
 

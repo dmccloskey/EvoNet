@@ -231,12 +231,12 @@ BOOST_AUTO_TEST_CASE(checkLossFunctions)
 
   model_trainer.setLossFunctions({
     std::make_shared<MSELossOp<float>>(MSELossOp<float>(1e-6, 1.0)),
-    std::make_shared<KLDivergenceMuLossOp<float>>(KLDivergenceMuLossOp<float>(1e-6, 0.1)),
-    std::make_shared<KLDivergenceLogVarLossOp<float>>(KLDivergenceLogVarLossOp<float>(1e-6, 0.1)) });
+    std::make_shared<KLDivergenceMuLossOp<float>>(KLDivergenceMuLossOp<float>(1e-6, 0.1, 0.0)),
+    std::make_shared<KLDivergenceLogVarLossOp<float>>(KLDivergenceLogVarLossOp<float>(1e-6, 0.1, 0.0)) });
   model_trainer.setLossFunctionGrads({
     std::make_shared<MSELossGradOp<float>>(MSELossGradOp<float>(1e-6, 1.0)),
-    std::make_shared<KLDivergenceMuLossGradOp<float>>(KLDivergenceMuLossGradOp<float>(1e-6, 0.1)),
-    std::make_shared<KLDivergenceLogVarLossGradOp<float>>(KLDivergenceLogVarLossGradOp<float>(1e-6, 0.1)) });
+    std::make_shared<KLDivergenceMuLossGradOp<float>>(KLDivergenceMuLossGradOp<float>(1e-6, 0.1, 0.0)),
+    std::make_shared<KLDivergenceLogVarLossGradOp<float>>(KLDivergenceLogVarLossGradOp<float>(1e-6, 0.1, 0.0)) });
   std::vector<std::string> output_nodes, encoding_nodes_mu, encoding_nodes_logvar;
   model_trainer.setLossOutputNodes({ output_nodes, encoding_nodes_mu, encoding_nodes_logvar });
   BOOST_CHECK(model_trainer.checkLossFunctions());
@@ -245,8 +245,8 @@ BOOST_AUTO_TEST_CASE(checkLossFunctions)
     std::make_shared<MSELossOp<float>>(MSELossOp<float>(1e-6, 1.0)) });
   model_trainer.setLossFunctionGrads({
     std::make_shared<MSELossGradOp<float>>(MSELossGradOp<float>(1e-6, 1.0)),
-    std::make_shared<KLDivergenceMuLossGradOp<float>>(KLDivergenceMuLossGradOp<float>(1e-6, 0.1)),
-    std::make_shared<KLDivergenceLogVarLossGradOp<float>>(KLDivergenceLogVarLossGradOp<float>(1e-6, 0.1)) });
+    std::make_shared<KLDivergenceMuLossGradOp<float>>(KLDivergenceMuLossGradOp<float>(1e-6, 0.1, 0.0)),
+    std::make_shared<KLDivergenceLogVarLossGradOp<float>>(KLDivergenceLogVarLossGradOp<float>(1e-6, 0.1, 0.0)) });
   model_trainer.setLossOutputNodes({ output_nodes, encoding_nodes_mu });
   BOOST_CHECK(!model_trainer.checkLossFunctions());
 }
