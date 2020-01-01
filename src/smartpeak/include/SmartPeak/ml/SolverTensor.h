@@ -250,16 +250,18 @@ public:
       // Calculate Rho
       auto rho = (
         (weights_tensor.constant(TensorT(1)) - solver_params_tensor.chip(1, 2)) * (weights_tensor.constant(TensorT(1)) + solver_params_tensor.chip(1, 2).pow(iter + 1))) / (
-          (weights_tensor.constant(TensorT(1)) + solver_params_tensor.chip(1, 2)) * (weights_tensor.constant(TensorT(1)) - solver_params_tensor.chip(1, 2)).pow(iter + 1)
-          ).cwiseMin(weights_tensor.constant(TensorT(1) - this->getEps()));
+          (weights_tensor.constant(TensorT(1)) + solver_params_tensor.chip(1, 2)) * (weights_tensor.constant(TensorT(1)) - solver_params_tensor.chip(1, 2)).pow(iter + 1));
+      auto rho_selected = (rho == rho).select(rho.clip(TensorT(0), TensorT(1)), rho.constant(TensorT(0)));
 
       // Calculate momentum and variance estimates
       solver_params_tensor.chip(2, 2).device(device) = solver_params_tensor.chip(1, 2) * solver_params_tensor.chip(2, 2) + (weights_tensor.constant(TensorT(1)) - solver_params_tensor.chip(1, 2)) * errors_noise;
       solver_params_tensor.chip(3, 2).device(device) = solver_params_tensor.chip(1, 2) * solver_params_tensor.chip(3, 2) + (weights_tensor.constant(TensorT(1)) - solver_params_tensor.chip(1, 2)) * errors_noise.pow(2);
-      auto unbiased_mean = solver_params_tensor.chip(2, 2) / (weights_tensor.constant((TensorT)1) - solver_params_tensor.chip(1, 2).pow(iter + 1));
-      auto unbiased_var = solver_params_tensor.chip(3, 2) / (weights_tensor.constant((TensorT)1) - solver_params_tensor.chip(1, 2).pow(iter + 1));
-      auto var_estimate = (unbiased_var - unbiased_mean.pow(2)) / (weights_tensor.constant((TensorT)1) - rho);
-      auto gamma = unbiased_mean.pow(2) / (unbiased_mean.pow(2) + rho * var_estimate);
+      auto unbiased_mean = solver_params_tensor.chip(2, 2) / (weights_tensor.constant(TensorT(1)) - solver_params_tensor.chip(1, 2).pow(iter + 1));
+      auto unbiased_var = solver_params_tensor.chip(3, 2) / (weights_tensor.constant(TensorT(1)) - solver_params_tensor.chip(1, 2).pow(iter + 1));
+      auto var_estimate = (rho_selected > rho_selected.constant(TensorT(1) - this->getEps())).select(
+        (unbiased_var - unbiased_mean.pow(2)) / (weights_tensor.constant(TensorT(1)) - rho_selected), 
+        rho_selected.constant(TensorT(0)));
+      auto gamma = unbiased_mean.pow(2) / (unbiased_mean.pow(2) + rho_selected * var_estimate);
 
       // Weight updates
       weights_tensor.device(device) -= solver_params_tensor.chip(0, 2) * gamma * unbiased_mean;
