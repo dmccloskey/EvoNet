@@ -7,11 +7,6 @@
 #include <random>
 #include <iostream>
 
-//#include <cereal/access.hpp>  // serialiation of private members
-//#undef min // clashes with std::limit on windows in polymorphic.hpp
-//#undef max // clashes with std::limit on windows in polymorphic.hpp
-//#include <cereal/types/polymorphic.hpp>
-
 namespace SmartPeak
 {
   /**
@@ -29,8 +24,6 @@ namespace SmartPeak
 
       Max Welling and Yee Whye Teh. 2011. Bayesian learning via stochastic gradient langevin dynamics. 
       In Proceedings of the 28th International Conference on International Conference on Machine Learning (ICML'11), Lise Getoor and Tobias Scheffer (Eds.). Omnipress, USA, 681-688.
-
-    [TODO: add tests for clipGradient and addGradientNoise]
     
   */
 	template<typename TensorT, typename DeviceT>
@@ -39,9 +32,11 @@ namespace SmartPeak
 public: 
     SolverTensorOp() = default;
     SolverTensorOp(const TensorT& gradient_threshold) : gradient_threshold_(gradient_threshold) {};
-    SolverTensorOp(const TensorT& gradient_threshold, const TensorT& gradient_noise_sigma) : gradient_threshold_(gradient_threshold), gradient_noise_sigma_(gradient_noise_sigma) {};
+    SolverTensorOp(const TensorT& gradient_threshold, const TensorT& gradient_noise_sigma, const TensorT& gradient_noise_gamma) : gradient_threshold_(gradient_threshold), gradient_noise_sigma_(gradient_noise_sigma), gradient_noise_gamma_(gradient_noise_gamma) {};
     virtual ~SolverTensorOp() = default;
     virtual std::string getName() const = 0;
+    void setLearningRate(const TensorT& learning_rate) { learning_rate_ = learning_rate; };
+    TensorT getLearningRate() const { return learning_rate_; };
     void setGradientThreshold(const TensorT& gradient_threshold){gradient_threshold_ = gradient_threshold;};
     TensorT getGradientThreshold() const{return gradient_threshold_;};
     virtual void operator()(TensorT* weights, TensorT* errors, TensorT* solver_params, const int& source_layer_size, const int& sink_layer_size, DeviceT& device) = 0;
@@ -50,26 +45,24 @@ public:
     void setGradientNoiseGamma(const TensorT& gradient_noise_gamma){gradient_noise_gamma_ = gradient_noise_gamma;};
     TensorT getGradientNoiseGamma() const{return gradient_noise_gamma_;};
     //virtual std::string getParameters() const = 0;
+    TensorT annealGradientNoiseSigma(const TensorT& iter) {
+      const TensorT sigma_annealed = gradient_noise_sigma_ / std::pow((1 + iter), gradient_noise_gamma_); // annealed variance
+      return sigma_annealed;
+    }
 	private:
-		//friend class cereal::access;
-		//template<class Archive>
-		//void serialize(Archive& archive) {
-		//	archive(gradient_threshold_, gradient_noise_sigma_, gradient_noise_gamma_);
-		//}
     // clipping parameters
     TensorT gradient_threshold_ = TensorT(1e6); ///< maximum gradient magnitude
+    TensorT learning_rate_ = TensorT(1e-3); ///< the learning rate
 
     // gradient noise with annealed variance parameters
     TensorT gradient_noise_sigma_ = TensorT(0.0); ///< variance before annealing (0.0 = none, 1.0 = normal distribution with mean = 0 and var = 1.0)
-    TensorT gradient_noise_gamma_ = TensorT(0.55); ///< time-dependend annealing factor
+    TensorT gradient_noise_gamma_ = TensorT(0.55); ///< iter-dependend annealing factor
     
     TensorT eps_ = TensorT(1e-24);
   };
 
   /**
     @brief Stochastic Gradient Descent (SGD) with momentum Solver.
-
-
   */
 	template<typename TensorT, typename DeviceT>
   class SGDTensorOp: public SolverTensorOp<TensorT, DeviceT>
@@ -98,20 +91,19 @@ public:
       auto clip = errors_no_nans.abs() > errors_no_nans.constant(this->getGradientThreshold());
       auto errors_clipped = clip.select(errors_no_nans * errors_no_nans.constant(this->getGradientThreshold()) / errors_no_nans.abs(), errors_no_nans);
 
-      // Gradient noise
-      auto noise = weights_tensor.random()*weights_tensor.constant(this->getGradientNoiseSigma());
+      //// Gradient noise
+      //auto noise = weights_tensor.random()*weights_tensor.constant(this->annealGradientNoiseSigma(iter));
+      //auto errors_noise = errors_clipped + noise;
 
       // Weight updates (omitting the bias correction step)
 			solver_params_tensor.chip(2, 2).device(device) = solver_params_tensor.chip(1, 2) * solver_params_tensor.chip(2,2) + (errors_tensor.constant(TensorT(1)) - solver_params_tensor.chip(1, 2)) * errors_clipped;
-			weights_tensor.device(device) -= solver_params_tensor.chip(0, 2) * solver_params_tensor.chip(2, 2) + noise;
+			weights_tensor.device(device) -= solver_params_tensor.chip(0, 2) * solver_params_tensor.chip(2, 2);
     };
+    void setMomentum(const TensorT& momentum) { momentum_ = momentum; };
+    TensorT getMomentum() const { return momentum_; };
     std::string getName() const{return "SGDTensorOp";};
-	//private:
-	//	friend class cereal::access;
-	//	template<class Archive>
-	//	void serialize(Archive& archive) {
-	//		archive(cereal::base_class<SolverTensorOp<TensorT, DeviceT>>(this));
-	//	}
+	private:
+    TensorT momentum_ = TensorT(0.9); ///< Momentum
   };
 
   /**
@@ -145,20 +137,19 @@ public:
       // Remove Nans and return the sign of the gradient
       auto errors_sign = (errors_tensor == errors_tensor).select(errors_tensor/errors_tensor.abs(), errors_tensor.constant(TensorT(0)));
 
-      // Gradient noise
-      auto noise = weights_tensor.random()*weights_tensor.constant(this->getGradientNoiseSigma());
+      //// Gradient noise
+      //auto noise = weights_tensor.random()*weights_tensor.constant(this->annealGradientNoiseSigma(iter));
+      //auto errors_noise = errors_clipped + noise;
 
       // Weight updates (omitting the bias correction step)
       solver_params_tensor.chip(2, 2).device(device) = solver_params_tensor.chip(1, 2) * solver_params_tensor.chip(2, 2) + (errors_tensor.constant(TensorT(1)) - solver_params_tensor.chip(1, 2)) * errors_sign;
-      weights_tensor.device(device) -= solver_params_tensor.chip(0, 2) * solver_params_tensor.chip(2, 2) + noise;
+      weights_tensor.device(device) -= solver_params_tensor.chip(0, 2) * solver_params_tensor.chip(2, 2);
     };
+    void setMomentum(const TensorT& momentum) { momentum_ = momentum; };
+    TensorT getMomentum() const { return momentum_; };
     std::string getName() const { return "SSDTensorOp"; };
-    //private:
-    //	friend class cereal::access;
-    //	template<class Archive>
-    //	void serialize(Archive& archive) {
-    //		archive(cereal::base_class<SolverTensorOp<TensorT, DeviceT>>(this));
-    //	}
+    private:
+      TensorT momentum_ = TensorT(0.9); ///< Momentum
   };
 
   /**
@@ -195,23 +186,28 @@ public:
       auto clip = errors_no_nans.abs() > errors_no_nans.constant(this->getGradientThreshold());
       auto errors_clipped = clip.select(errors_no_nans * errors_no_nans.constant(this->getGradientThreshold()) / errors_no_nans.abs(), errors_no_nans);
 
-      // Gradient noise
-      auto noise = weights_tensor.random()*weights_tensor.constant(this->getGradientNoiseSigma());
+      //// Gradient noise
+      //auto noise = weights_tensor.random()*weights_tensor.constant(this->annealGradientNoiseSigma(iter));
+      //auto errors_noise = errors_clipped + noise;
 
       // Weight updates (omitting the bias correction step)
 			solver_params_tensor.chip(4, 2).device(device) = solver_params_tensor.chip(1, 2) * solver_params_tensor.chip(4, 2) + (weights_tensor.constant((TensorT)1) - solver_params_tensor.chip(1, 2)) * errors_clipped;
 			solver_params_tensor.chip(5, 2).device(device) = solver_params_tensor.chip(2, 2) * solver_params_tensor.chip(5, 2) + (weights_tensor.constant((TensorT)1) - solver_params_tensor.chip(2, 2)) * errors_clipped.pow(2);
       //auto unbiased_adam1 = solver_params_tensor.chip(4, 2) / (weights_tensor.constant((TensorT)1) - solver_params_tensor.chip(1, 2));
       //auto unbiased_adam2 = solver_params_tensor.chip(5, 2) / (weights_tensor.constant((TensorT)1) - solver_params_tensor.chip(2, 2));
-			weights_tensor.device(device) -= solver_params_tensor.chip(0, 2) * solver_params_tensor.chip(4, 2) / (solver_params_tensor.chip(5, 2).sqrt() + solver_params_tensor.chip(3, 2)) + noise;
+			weights_tensor.device(device) -= solver_params_tensor.chip(0, 2) * solver_params_tensor.chip(4, 2) / (solver_params_tensor.chip(5, 2).sqrt() + solver_params_tensor.chip(3, 2));
     };
+    void setMomentum(const TensorT& momentum) { momentum_ = momentum; };
+    TensorT getMomentum() const { return momentum_; };
+    void setMomentum2(const TensorT& momentum2) { momentum2_ = momentum2; };
+    TensorT getMomentum2() const { return momentum2_; };
+    void setDelta(const TensorT& delta) { delta_ = delta; };
+    TensorT getDelta() const { return delta_; };
     std::string getName() const{return "AdamTensorOp";};
-	//private:
-	//	friend class cereal::access;
-	//	template<class Archive>
-	//	void serialize(Archive& archive) {
-	//		archive(cereal::base_class<SolverTensorOp<TensorT, DeviceT>>(this));
-	//	}
+	private:
+    TensorT momentum_ = (TensorT)0.9; ///< Momentum
+    TensorT momentum2_ = (TensorT)0.999; ///< Momentum2
+    TensorT delta_ = (TensorT)1e-8; ///< Delta
   };
 
   /**
@@ -248,8 +244,9 @@ public:
       auto clip = errors_no_nans.abs() > errors_no_nans.constant(this->getGradientThreshold());
       auto errors_clipped = clip.select(errors_no_nans * errors_no_nans.constant(this->getGradientThreshold()) / errors_no_nans.abs(), errors_no_nans);
 
-      // Gradient noise
-      auto noise = weights_tensor.random()*weights_tensor.constant(this->getGradientNoiseSigma());
+      //// Gradient noise
+      //auto noise = weights_tensor.random()*weights_tensor.constant(this->annealGradientNoiseSigma(iter));
+      //auto errors_noise = errors_clipped + noise;
 
       // Calculate Rho
       auto rho = (
@@ -269,15 +266,9 @@ public:
       solver_params_tensor.chip(5, 2).device(device) = solver_params_tensor.chip(2, 2) * solver_params_tensor.chip(5, 2) + (weights_tensor.constant((TensorT)1) - solver_params_tensor.chip(2, 2)) * weights_tensor * errors_clipped * weights_tensor * errors_clipped;
       auto unbiased_adam1 = solver_params_tensor.chip(4, 2) / (weights_tensor.constant((TensorT)1) - solver_params_tensor.chip(1, 2));
       auto unbiased_adam2 = solver_params_tensor.chip(5, 2) / (weights_tensor.constant((TensorT)1) - solver_params_tensor.chip(2, 2));
-      weights_tensor.device(device) -= solver_params_tensor.chip(0, 2) * unbiased_adam1 / (unbiased_adam2.sqrt() + solver_params_tensor.chip(3, 2)) + noise;
+      weights_tensor.device(device) -= solver_params_tensor.chip(0, 2) * unbiased_adam1 / (unbiased_adam2.sqrt() + solver_params_tensor.chip(3, 2));
     };
     std::string getName() const { return "AdamTensorOp"; };
-    //private:
-    //	friend class cereal::access;
-    //	template<class Archive>
-    //	void serialize(Archive& archive) {
-    //		archive(cereal::base_class<SolverTensorOp<TensorT, DeviceT>>(this));
-    //	}
   };
 
 	/**
@@ -290,12 +281,6 @@ public:
     using SolverTensorOp<TensorT, DeviceT>::SolverTensorOp;
 		void operator()(TensorT* weights, TensorT* errors, TensorT* solver_params, const int& source_layer_size, const int& sink_layer_size, DeviceT& device)	{	};
 		std::string getName() const { return "DummySolverTensorOp"; };
-	//private:
-	//	friend class cereal::access;
-	//	template<class Archive>
-	//	void serialize(Archive& archive) {
-	//		archive(cereal::base_class<SolverTensorOp<TensorT, DeviceT>>(this));
-	//	}
 	};
 
   /**
@@ -320,18 +305,5 @@ public:
       arXiv:1712.06563
   */
 }
-
-//CEREAL_REGISTER_TYPE(SmartPeak::SGDTensorOp<float, Eigen::DefaultDevice>);
-//CEREAL_REGISTER_TYPE(SmartPeak::AdamTensorOp<float, Eigen::DefaultDevice>);
-//CEREAL_REGISTER_TYPE(SmartPeak::DummySolverTensorOp<float, Eigen::DefaultDevice>);
-//CEREAL_REGISTER_TYPE(SmartPeak::SGDNoiseTensorOp<float, Eigen::DefaultDevice>);
-//
-//#if COMPILE_WITH_CUDA
-//CEREAL_REGISTER_TYPE(SmartPeak::SGDTensorOp<float, Eigen::GpuDevice>);
-//CEREAL_REGISTER_TYPE(SmartPeak::AdamTensorOp<float, Eigen::GpuDevice>);
-//CEREAL_REGISTER_TYPE(SmartPeak::DummySolverTensorOp<float, Eigen::GpuDevice>);
-//CEREAL_REGISTER_TYPE(SmartPeak::SGDNoiseTensorOp<float, Eigen::GpuDevice>);
-//#endif
-//// TODO: add double, int, etc.
 
 #endif //SMARTPEAK_SOLVERTENSOR_H

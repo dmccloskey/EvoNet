@@ -35,12 +35,12 @@ namespace SmartPeak
     
   */
 	template<typename TensorT>
-  class SolverOp
+  class SolverOp 
   {
 public: 
     SolverOp() = default; 
     SolverOp(const TensorT& gradient_threshold) : gradient_threshold_(gradient_threshold) {};
-    SolverOp(const TensorT& gradient_threshold, const TensorT& gradient_noise_sigma) : gradient_threshold_(gradient_threshold), gradient_noise_sigma_(gradient_noise_sigma){};
+    SolverOp(const TensorT& gradient_threshold, const TensorT& gradient_noise_sigma, const TensorT& gradient_noise_gamma) : gradient_threshold_(gradient_threshold), gradient_noise_sigma_(gradient_noise_sigma), gradient_noise_gamma_(gradient_noise_gamma){};
     virtual ~SolverOp() = default;
     virtual std::string getName() const = 0;
     void setGradientThreshold(const TensorT& gradient_threshold){gradient_threshold_ = gradient_threshold;};
@@ -49,14 +49,6 @@ public:
     TensorT getGradientNoiseSigma() const{return gradient_noise_sigma_;};
     void setGradientNoiseGamma(const TensorT& gradient_noise_gamma){gradient_noise_gamma_ = gradient_noise_gamma;};
     TensorT getGradientNoiseGamma() const{return gradient_noise_gamma_;};
-    //TensorT addGradientNoiseAnnealed(const TensorT& gradient, const TensorT& time)
-    //{
-    //  const TensorT sigma_annealed = gradient_noise_sigma_ / std::pow((1 + time), gradient_noise_gamma_); // annealed variance
-    //  std::random_device rd{};
-    //  std::mt19937 gen{rd()};
-    //  std::normal_distribution<> d{0.0f, sigma_annealed};
-    //  return gradient + d(gen);
-    //}
 		void setLearningRate(const TensorT& learning_rate) { learning_rate_ = learning_rate; };
 		TensorT getLearningRate() const { return learning_rate_; };
     virtual std::string getParamsAsStr() const = 0;
@@ -88,13 +80,11 @@ public:
     SGDOp() = default; 
     virtual ~SGDOp() = default;
     SGDOp(const TensorT& learning_rate, const TensorT& momentum):
-      learning_rate_(learning_rate), momentum_(momentum){}
+      momentum_(momentum){this->setLearningRate(learning_rate);}
     SGDOp(const TensorT& learning_rate, const TensorT& momentum, const TensorT& gradient_threshold) :
-      SolverOp(gradient_threshold), learning_rate_(learning_rate), momentum_(momentum) {}
-    SGDOp(const TensorT& learning_rate, const TensorT& momentum, const TensorT& gradient_threshold, const TensorT& gradient_noise_sigma) :
-      SolverOp(gradient_threshold, gradient_noise_sigma), learning_rate_(learning_rate), momentum_(momentum) {}
-    void setLearningRate(const TensorT& learning_rate){learning_rate_ = learning_rate;};
-    TensorT getLearningRate() const{return learning_rate_;};
+      SolverOp(gradient_threshold), momentum_(momentum) { this->setLearningRate(learning_rate); }
+    SGDOp(const TensorT& learning_rate, const TensorT& momentum, const TensorT& gradient_threshold, const TensorT& gradient_noise_sigma, const TensorT& gradient_noise_gamma) :
+      SolverOp(gradient_threshold, gradient_noise_sigma, gradient_noise_gamma),momentum_(momentum) {this->setLearningRate(learning_rate);}
     void setMomentum(const TensorT& momentum){momentum_ = momentum;};
     TensorT getMomentum() const{return momentum_;};
     void setMomentumPrev(const TensorT& momentum_prev){momentum_prev_ = momentum_prev;};
@@ -119,7 +109,7 @@ public:
     }
     SolverOp<TensorT>* copy() const { return new SGDOp<TensorT>(*this); }
 		std::vector<TensorT> getParameters() const {
-			std::vector<TensorT> parameters = {learning_rate_, momentum_, momentum_prev_};
+			std::vector<TensorT> parameters = { this->getLearningRate(), momentum_, momentum_prev_};
 			return parameters;
 		}
 		int getNParameters() const { return 3; };
@@ -127,11 +117,10 @@ private:
 		friend class cereal::access;
 		template<class Archive>
 		void serialize(Archive& archive) {
-			archive(cereal::base_class<SolverOp<TensorT>>(this), learning_rate_, momentum_, momentum_prev_);
+			archive(cereal::base_class<SolverOp<TensorT>>(this), momentum_, momentum_prev_);
 		}
-    TensorT learning_rate_ = 0.01; ///< Learning rate
-    TensorT momentum_ = 0.9; ///< Momentum
-    TensorT momentum_prev_ = 0.0;
+    TensorT momentum_ = TensorT(0.9); ///< Momentum
+    TensorT momentum_prev_ = TensorT(0.0);
   };
 
   /**
@@ -144,13 +133,11 @@ private:
     SSDOp() = default;
     virtual ~SSDOp() = default;
     SSDOp(const TensorT& learning_rate, const TensorT& momentum) :
-      learning_rate_(learning_rate), momentum_(momentum) {}
+      momentum_(momentum) {this->setLearningRate(learning_rate);}
     SSDOp(const TensorT& learning_rate, const TensorT& momentum, const TensorT& gradient_threshold) :
-      SolverOp(gradient_threshold), learning_rate_(learning_rate), momentum_(momentum) {}
-    SSDOp(const TensorT& learning_rate, const TensorT& momentum, const TensorT& gradient_threshold, const TensorT& gradient_noise_sigma) :
-      SolverOp(gradient_threshold, gradient_noise_sigma), learning_rate_(learning_rate), momentum_(momentum) {}
-    void setLearningRate(const TensorT& learning_rate) { learning_rate_ = learning_rate; };
-    TensorT getLearningRate() const { return learning_rate_; };
+      SolverOp(gradient_threshold), momentum_(momentum) {this->setLearningRate(learning_rate);}
+    SSDOp(const TensorT& learning_rate, const TensorT& momentum, const TensorT& gradient_threshold, const TensorT& gradient_noise_sigma, const TensorT& gradient_noise_gamma) :
+      SolverOp(gradient_threshold, gradient_noise_sigma, gradient_noise_gamma), momentum_(momentum) {this->setLearningRate(learning_rate);}
     void setMomentum(const TensorT& momentum) { momentum_ = momentum; };
     TensorT getMomentum() const { return momentum_; };
     void setMomentumPrev(const TensorT& momentum_prev) { momentum_prev_ = momentum_prev; };
@@ -175,7 +162,7 @@ private:
     }
     SolverOp<TensorT>* copy() const { return new SSDOp<TensorT>(*this); }
     std::vector<TensorT> getParameters() const {
-      std::vector<TensorT> parameters = { learning_rate_, momentum_, momentum_prev_ };
+      std::vector<TensorT> parameters = { this->getLearningRate(), momentum_, momentum_prev_ };
       return parameters;
     }
     int getNParameters() const { return 3; };
@@ -183,9 +170,8 @@ private:
     friend class cereal::access;
     template<class Archive>
     void serialize(Archive& archive) {
-      archive(cereal::base_class<SolverOp<TensorT>>(this), learning_rate_, momentum_, momentum_prev_);
+      archive(cereal::base_class<SolverOp<TensorT>>(this), momentum_, momentum_prev_);
     }
-    TensorT learning_rate_ = 0.01; ///< Learning rate
     TensorT momentum_ = 0.9; ///< Momentum
     TensorT momentum_prev_ = 0.0;
   };
@@ -204,13 +190,11 @@ public:
     AdamOp() = default; 
     virtual ~AdamOp() = default;
     AdamOp(const TensorT& learning_rate, const TensorT& momentum, const TensorT& momentum2, const TensorT& delta) :
-      learning_rate_(learning_rate), momentum_(momentum), momentum2_(momentum2), delta_(delta) {};
+      momentum_(momentum), momentum2_(momentum2), delta_(delta) {this->setLearningRate(learning_rate);};
     AdamOp(const TensorT& learning_rate, const TensorT& momentum, const TensorT& momentum2, const TensorT& delta, const TensorT& gradient_threshold) :
-      SolverOp(gradient_threshold), learning_rate_(learning_rate), momentum_(momentum), momentum2_(momentum2), delta_(delta) {}
-    AdamOp(const TensorT& learning_rate, const TensorT& momentum, const TensorT& momentum2, const TensorT& delta, const TensorT& gradient_threshold, const TensorT& gradient_noise_sigma) :
-      SolverOp(gradient_threshold, gradient_noise_sigma), learning_rate_(learning_rate), momentum_(momentum), momentum2_(momentum2), delta_(delta) {}
-    void setLearningRate(const TensorT& learning_rate){learning_rate_ = learning_rate;};
-    TensorT getLearningRate() const{return learning_rate_;};
+      SolverOp(gradient_threshold), momentum_(momentum), momentum2_(momentum2), delta_(delta) {this->setLearningRate(learning_rate);}
+    AdamOp(const TensorT& learning_rate, const TensorT& momentum, const TensorT& momentum2, const TensorT& delta, const TensorT& gradient_threshold, const TensorT& gradient_noise_sigma, const TensorT& gradient_noise_gamma) :
+      SolverOp(gradient_threshold, gradient_noise_sigma, gradient_noise_gamma), momentum_(momentum), momentum2_(momentum2), delta_(delta) {this->setLearningRate(learning_rate);}
     void setMomentum(const TensorT& momentum){momentum_ = momentum;};
     TensorT getMomentum() const{return momentum_;};
     void setMomentum2(const TensorT& momentum2){momentum2_ = momentum2;};
@@ -247,7 +231,7 @@ public:
     }
 		int getNParameters() const { return 6; };
 		std::vector<TensorT> getParameters() const {
-			std::vector<TensorT> parameters = { learning_rate_, momentum_, momentum2_, delta_, momentum_prev_, momentum2_prev_ };
+			std::vector<TensorT> parameters = { this->getLearningRate(), momentum_, momentum2_, delta_, momentum_prev_, momentum2_prev_ };
 			return parameters;
 		}
     SolverOp<TensorT>* copy() const { return new AdamOp<TensorT>(*this); }
@@ -255,9 +239,8 @@ private:
 		friend class cereal::access;
 		template<class Archive>
 		void serialize(Archive& archive) {
-			archive(cereal::base_class<SolverOp<TensorT>>(this), learning_rate_, momentum_, momentum2_, delta_, momentum_prev_, momentum2_prev_);
+			archive(cereal::base_class<SolverOp<TensorT>>(this), momentum_, momentum2_, delta_, momentum_prev_, momentum2_prev_);
 		}
-    TensorT learning_rate_ = (TensorT)0.01; ///< Learning rate
     TensorT momentum_ = (TensorT)0.9; ///< Momentum
     TensorT momentum2_ = (TensorT)0.999; ///< Momentum2
     TensorT delta_ = (TensorT)1e-8; ///< Delta

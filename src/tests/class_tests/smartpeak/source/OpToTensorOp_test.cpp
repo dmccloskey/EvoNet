@@ -364,32 +364,36 @@ BOOST_AUTO_TEST_CASE(convertOpToTensorOpSolverOpToSolverTensorOp)
 	SolverOp<float>* op_class;
 	SolverTensorOp<float, Eigen::DefaultDevice>* op_tensor_class;
 
-	op_class = new SGDOp<float>(0.1, 0.9, 10.0, 1.0);
+	op_class = new SGDOp<float>(0.1, 0.9, 10.0, 1.0, 0.55);
 	op_tensor_class = op_to_tensor_op.convertOpToTensorOp(op_class);
 	BOOST_CHECK_EQUAL(op_tensor_class->getName(), "SGDTensorOp");
   BOOST_CHECK_EQUAL(op_tensor_class->getGradientThreshold(), 10);
   BOOST_CHECK_EQUAL(op_tensor_class->getGradientNoiseSigma(), 1);
+  BOOST_CHECK_EQUAL(op_tensor_class->getGradientNoiseGamma(), 0.55);
 
-  op_class = new SSDOp<float>(0.1, 0.9, 10.0, 1.0);
+  op_class = new SSDOp<float>(0.1, 0.9, 10.0, 1.0, 0.55);
   op_tensor_class = op_to_tensor_op.convertOpToTensorOp(op_class);
   BOOST_CHECK_EQUAL(op_tensor_class->getName(), "SSDTensorOp");
   BOOST_CHECK_EQUAL(op_tensor_class->getGradientThreshold(), 10);
   BOOST_CHECK_EQUAL(op_tensor_class->getGradientNoiseSigma(), 1);
+  BOOST_CHECK_EQUAL(op_tensor_class->getGradientNoiseGamma(), 0.55);
 
-	op_class = new AdamOp<float>(0.001, 0.9, 0.999, 1e-8, 10.0, 1.0);
-  op_class->setGradientThreshold(10);
+	op_class = new AdamOp<float>(0.001, 0.9, 0.999, 1e-8, 10.0, 1.0, 0.55);
 	op_tensor_class = op_to_tensor_op.convertOpToTensorOp(op_class);
 	BOOST_CHECK_EQUAL(op_tensor_class->getName(), "AdamTensorOp");
   BOOST_CHECK_EQUAL(op_tensor_class->getGradientThreshold(), 10);
   BOOST_CHECK_EQUAL(op_tensor_class->getGradientNoiseSigma(), 1);
+  BOOST_CHECK_EQUAL(op_tensor_class->getGradientNoiseGamma(), 0.55);
 
 	op_class = new DummySolverOp<float>();
   op_class->setGradientThreshold(10);
   op_class->setGradientNoiseSigma(1);
+  op_class->setGradientNoiseGamma(0.55);
 	op_tensor_class = op_to_tensor_op.convertOpToTensorOp(op_class);
 	BOOST_CHECK_EQUAL(op_tensor_class->getName(), "DummySolverTensorOp");
   BOOST_CHECK_EQUAL(op_tensor_class->getGradientThreshold(), 10);
   BOOST_CHECK_EQUAL(op_tensor_class->getGradientNoiseSigma(), 1);
+  BOOST_CHECK_EQUAL(op_tensor_class->getGradientNoiseGamma(), 0.55);
 }
 
 BOOST_AUTO_TEST_CASE(getTensorParamsSolverOpToSolverTensorOp)
