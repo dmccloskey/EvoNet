@@ -73,16 +73,16 @@ BOOST_AUTO_TEST_CASE(operationfunctionSGDOp)
 
   // Test operator
 	operation(weights.data(), errors.data(), solver_params.data(), source_layer_size, sink_layer_size, device);
-	BOOST_CHECK_CLOSE(weights(0, 0), 0.999, 1e-4);
-	BOOST_CHECK_CLOSE(weights(1, 0), 0.9, 1e-4);
+	BOOST_CHECK_CLOSE(weights(0, 0), 0.999899983, 1e-4);
+	BOOST_CHECK_CLOSE(weights(1, 0), 0.99000001, 1e-4);
 	BOOST_CHECK_CLOSE(errors(0, 0), 0.1, 1e-4);
 	BOOST_CHECK_CLOSE(errors(1, 0), 10.0, 1e-4);
 	BOOST_CHECK_CLOSE(solver_params(0, 0, 0), 0.01, 1e-4);
 	BOOST_CHECK_CLOSE(solver_params(0, 0, 1), 0.9, 1e-4);
-	BOOST_CHECK_CLOSE(solver_params(0, 0, 2), -0.001, 1e-4);
+	BOOST_CHECK_CLOSE(solver_params(0, 0, 2), 0.0100000026, 1e-4);
 	BOOST_CHECK_CLOSE(solver_params(1, 0, 0), 0.01, 1e-4);
 	BOOST_CHECK_CLOSE(solver_params(1, 0, 1), 0.9, 1e-4);
-	BOOST_CHECK_CLOSE(solver_params(1, 0, 2), -0.099999994, 1e-4);
+	BOOST_CHECK_CLOSE(solver_params(1, 0, 2), 1.00000024, 1e-4);
 
   Eigen::Tensor<float, 2> weights1(source_layer_size, sink_layer_size);
   weights1.setConstant(1);
@@ -93,16 +93,16 @@ BOOST_AUTO_TEST_CASE(operationfunctionSGDOp)
 
   // Test second operator call
   operation(weights1.data(), errors.data(), solver_params1.data(), source_layer_size, sink_layer_size, device);
-  BOOST_CHECK_CLOSE(weights1(0, 0), 0.999, 1e-4);
-  BOOST_CHECK_CLOSE(weights1(1, 0), 0.99, 1e-4);
+  BOOST_CHECK_CLOSE(weights1(0, 0), 0.999899983, 1e-4);
+  BOOST_CHECK_CLOSE(weights1(1, 0), 0.999000013, 1e-4);
   BOOST_CHECK_CLOSE(errors(0, 0), 0.1, 1e-4);
   BOOST_CHECK_CLOSE(errors(1, 0), 10.0, 1e-4);
   BOOST_CHECK_CLOSE(solver_params1(0, 0, 0), 0.01, 1e-4);
   BOOST_CHECK_CLOSE(solver_params1(0, 0, 1), 0.9, 1e-4);
-  BOOST_CHECK_CLOSE(solver_params1(0, 0, 2), -0.001, 1e-4);
+  BOOST_CHECK_CLOSE(solver_params1(0, 0, 2), 0.0100000026, 1e-4);
   BOOST_CHECK_CLOSE(solver_params1(1, 0, 0), 0.01, 1e-4);
   BOOST_CHECK_CLOSE(solver_params1(1, 0, 1), 0.9, 1e-4);
-  BOOST_CHECK_CLOSE(solver_params1(1, 0, 2), -0.00999999978, 1e-4);
+  BOOST_CHECK_CLOSE(solver_params1(1, 0, 2), 0.100000024, 1e-4);
 
   // Test operator call with noise
   operation.setGradientNoiseSigma(10.0f);
@@ -111,16 +111,16 @@ BOOST_AUTO_TEST_CASE(operationfunctionSGDOp)
   solver_params.setValues({ {{0.01, 0.9, 0.0}},
     {{0.01, 0.9, 0.0}} });
   operation(weights.data(), errors.data(), solver_params.data(), source_layer_size, sink_layer_size, device);
-  BOOST_CHECK(weights(0, 0) != 0.999, 1e-4);
-  BOOST_CHECK(weights(1, 0)!= 0.9, 1e-4);
+  BOOST_CHECK(weights(0, 0) != 0.999899983, 1e-4);
+  BOOST_CHECK(weights(1, 0)!= 0.99000001, 1e-4);
   BOOST_CHECK_CLOSE(errors(0, 0), 0.1, 1e-4);
   BOOST_CHECK_CLOSE(errors(1, 0), 10.0, 1e-4);
   BOOST_CHECK_CLOSE(solver_params(0, 0, 0), 0.01, 1e-4);
   BOOST_CHECK_CLOSE(solver_params(0, 0, 1), 0.9, 1e-4);
-  BOOST_CHECK(solver_params(0, 0, 2)!= -0.001, 1e-4);
+  BOOST_CHECK(solver_params(0, 0, 2)!= 0.0100000026, 1e-4);
   BOOST_CHECK_CLOSE(solver_params(1, 0, 0), 0.01, 1e-4);
   BOOST_CHECK_CLOSE(solver_params(1, 0, 1), 0.9, 1e-4);
-  BOOST_CHECK(solver_params(1, 0, 2)!= -0.099999994, 1e-4);
+  BOOST_CHECK(solver_params(1, 0, 2)!= 1.00000024, 1e-4);
 }
 
 BOOST_AUTO_TEST_CASE(operationfunctionSSDOp)
@@ -141,16 +141,16 @@ BOOST_AUTO_TEST_CASE(operationfunctionSSDOp)
 
   // Test operator
   operation(weights.data(), errors.data(), solver_params.data(), source_layer_size, sink_layer_size, device);
-  BOOST_CHECK_CLOSE(weights(0, 0), 0.99, 1e-4);
-  BOOST_CHECK_CLOSE(weights(1, 0), 0.99, 1e-4);
+  BOOST_CHECK_CLOSE(weights(0, 0), 0.999000013, 1e-4);
+  BOOST_CHECK_CLOSE(weights(1, 0), 0.999000013, 1e-4);
   BOOST_CHECK_CLOSE(errors(0, 0), 0.1, 1e-4);
   BOOST_CHECK_CLOSE(errors(1, 0), 10.0, 1e-4);
   BOOST_CHECK_CLOSE(solver_params(0, 0, 0), 0.01, 1e-4);
   BOOST_CHECK_CLOSE(solver_params(0, 0, 1), 0.9, 1e-4);
-  BOOST_CHECK_CLOSE(solver_params(0, 0, 2), -0.00999999978, 1e-4);
+  BOOST_CHECK_CLOSE(solver_params(0, 0, 2), 0.100000024, 1e-4);
   BOOST_CHECK_CLOSE(solver_params(1, 0, 0), 0.01, 1e-4);
   BOOST_CHECK_CLOSE(solver_params(1, 0, 1), 0.9, 1e-4);
-  BOOST_CHECK_CLOSE(solver_params(1, 0, 2), -0.00999999978, 1e-4);
+  BOOST_CHECK_CLOSE(solver_params(1, 0, 2), 0.100000024, 1e-4);
 
   Eigen::Tensor<float, 2> weights1(source_layer_size, sink_layer_size);
   weights1.setConstant(1);
@@ -161,16 +161,16 @@ BOOST_AUTO_TEST_CASE(operationfunctionSSDOp)
 
   // Test second operator call
   operation(weights1.data(), errors.data(), solver_params1.data(), source_layer_size, sink_layer_size, device);
-  BOOST_CHECK_CLOSE(weights1(0, 0), 0.99, 1e-4);
-  BOOST_CHECK_CLOSE(weights1(1, 0), 0.99, 1e-4);
+  BOOST_CHECK_CLOSE(weights1(0, 0), 0.999000013, 1e-4);
+  BOOST_CHECK_CLOSE(weights1(1, 0), 0.999000013, 1e-4);
   BOOST_CHECK_CLOSE(errors(0, 0), 0.1, 1e-4);
   BOOST_CHECK_CLOSE(errors(1, 0), 10.0, 1e-4);
   BOOST_CHECK_CLOSE(solver_params1(0, 0, 0), 0.01, 1e-4);
   BOOST_CHECK_CLOSE(solver_params1(0, 0, 1), 0.9, 1e-4);
-  BOOST_CHECK_CLOSE(solver_params1(0, 0, 2), -0.00999999978, 1e-4);
+  BOOST_CHECK_CLOSE(solver_params1(0, 0, 2), 0.100000024, 1e-4);
   BOOST_CHECK_CLOSE(solver_params1(1, 0, 0), 0.01, 1e-4);
   BOOST_CHECK_CLOSE(solver_params1(1, 0, 1), 0.9, 1e-4);
-  BOOST_CHECK_CLOSE(solver_params1(1, 0, 2), -0.00999999978, 1e-4);
+  BOOST_CHECK_CLOSE(solver_params1(1, 0, 2), 0.100000024, 1e-4);
 
   // Test operator call with noise
   operation.setGradientNoiseSigma(10.0f);
@@ -179,16 +179,16 @@ BOOST_AUTO_TEST_CASE(operationfunctionSSDOp)
   solver_params.setValues({ {{0.01, 0.9, 0.0}},
     {{0.01, 0.9, 0.0}} });
   operation(weights.data(), errors.data(), solver_params.data(), source_layer_size, sink_layer_size, device);
-  BOOST_CHECK(weights(0, 0) != 0.99, 1e-4);
-  BOOST_CHECK(weights(1, 0) != 0.99, 1e-4);
+  BOOST_CHECK(weights(0, 0) != 0.999000013, 1e-4);
+  BOOST_CHECK(weights(1, 0) != 0.999000013, 1e-4);
   BOOST_CHECK_CLOSE(errors(0, 0), 0.1, 1e-4);
   BOOST_CHECK_CLOSE(errors(1, 0), 10.0, 1e-4);
   BOOST_CHECK_CLOSE(solver_params(0, 0, 0), 0.01, 1e-4);
   BOOST_CHECK_CLOSE(solver_params(0, 0, 1), 0.9, 1e-4);
-  BOOST_CHECK(solver_params(0, 0, 2) != -0.00999999978, 1e-4);
+  BOOST_CHECK(solver_params(0, 0, 2) != 0.100000024, 1e-4);
   BOOST_CHECK_CLOSE(solver_params(1, 0, 0), 0.01, 1e-4);
   BOOST_CHECK_CLOSE(solver_params(1, 0, 1), 0.9, 1e-4);
-  BOOST_CHECK(solver_params(1, 0, 2) != -0.00999999978, 1e-4);
+  BOOST_CHECK(solver_params(1, 0, 2) != 0.100000024, 1e-4);
 }
 
 BOOST_AUTO_TEST_CASE(operationfunctionAdamOp)

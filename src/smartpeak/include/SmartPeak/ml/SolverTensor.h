@@ -67,7 +67,9 @@ public:
   };
 
   /**
-    @brief SGD Stochastic Gradient Descent Solver.
+    @brief Stochastic Gradient Descent (SGD) with momentum Solver.
+
+
   */
 	template<typename TensorT, typename DeviceT>
   class SGDTensorOp: public SolverTensorOp<TensorT, DeviceT>
@@ -99,9 +101,9 @@ public:
       // Gradient noise
       auto noise = weights_tensor.random()*weights_tensor.constant(this->getGradientNoiseSigma());
 
-      // Weight updates
-			solver_params_tensor.chip(2, 2).device(device) = solver_params_tensor.chip(1, 2) * solver_params_tensor.chip(2,2) - solver_params_tensor.chip(0, 2) * weights_tensor * errors_clipped + noise;
-			weights_tensor.device(device) += solver_params_tensor.chip(2, 2);
+      // Weight updates (omitting the bias correction step)
+			solver_params_tensor.chip(2, 2).device(device) = solver_params_tensor.chip(1, 2) * solver_params_tensor.chip(2,2) + (errors_tensor.constant(TensorT(1)) - solver_params_tensor.chip(1, 2)) * errors_clipped;
+			weights_tensor.device(device) = weights_tensor - solver_params_tensor.chip(0, 2) * solver_params_tensor.chip(2, 2) + noise;
     };
     std::string getName() const{return "SGDTensorOp";};
 	//private:
@@ -146,9 +148,9 @@ public:
       // Gradient noise
       auto noise = weights_tensor.random()*weights_tensor.constant(this->getGradientNoiseSigma());
 
-      // Weight updates
-      solver_params_tensor.chip(2, 2).device(device) = solver_params_tensor.chip(1, 2) * solver_params_tensor.chip(2, 2) - solver_params_tensor.chip(0, 2) * weights_tensor * errors_sign + noise;
-      weights_tensor.device(device) += solver_params_tensor.chip(2, 2);
+      // Weight updates (omitting the bias correction step)
+      solver_params_tensor.chip(2, 2).device(device) = solver_params_tensor.chip(1, 2) * solver_params_tensor.chip(2, 2) + (errors_tensor.constant(TensorT(1)) - solver_params_tensor.chip(1, 2)) * errors_sign;
+      weights_tensor.device(device) = weights_tensor - solver_params_tensor.chip(0, 2) * solver_params_tensor.chip(2, 2) + noise;
     };
     std::string getName() const { return "SSDTensorOp"; };
     //private:
