@@ -96,7 +96,7 @@ public:
       // Weight updates
 			solver_params_tensor.chip(2, 2).device(device) = solver_params_tensor.chip(1, 2) * solver_params_tensor.chip(2,2) + (errors_tensor.constant(TensorT(1)) - solver_params_tensor.chip(1, 2)) * errors_noise;
 			auto velocity_unbiased = solver_params_tensor.chip(2, 2) / (weights_tensor.constant(TensorT(1)) - solver_params_tensor.chip(1, 2).pow(iter + 1));
-      weights_tensor.device(device) -= solver_params_tensor.chip(0, 2) * velocity_unbiased;
+      weights_tensor.device(device) -= solver_params_tensor.chip(0, 2) * velocity_unbiased.eval();
     };
     void setMomentum(const TensorT& momentum) { momentum_ = momentum; };
     TensorT getMomentum() const { return momentum_; };
@@ -194,7 +194,7 @@ public:
 			solver_params_tensor.chip(5, 2).device(device) = solver_params_tensor.chip(2, 2) * solver_params_tensor.chip(5, 2) + (weights_tensor.constant(TensorT(1)) - solver_params_tensor.chip(2, 2)) * errors_noise.pow(2);
       auto unbiased_adam1 = solver_params_tensor.chip(4, 2) / (weights_tensor.constant(TensorT(1)) - solver_params_tensor.chip(1, 2).pow(iter + 1));
       auto unbiased_adam2 = solver_params_tensor.chip(5, 2) / (weights_tensor.constant(TensorT(1)) - solver_params_tensor.chip(2, 2).pow(iter + 1));
-			weights_tensor.device(device) -= solver_params_tensor.chip(0, 2) * solver_params_tensor.chip(4, 2) / (solver_params_tensor.chip(5, 2).sqrt() + solver_params_tensor.chip(3, 2));
+			weights_tensor.device(device) -= solver_params_tensor.chip(0, 2) * unbiased_adam1.eval() / (unbiased_adam2.eval().sqrt() + solver_params_tensor.chip(3, 2));
     };
     void setMomentum(const TensorT& momentum) { momentum_ = momentum; };
     TensorT getMomentum() const { return momentum_; };
@@ -275,7 +275,7 @@ public:
       auto gamma = unbiased_mean.pow(2) / (unbiased_mean.pow(2) + rho * var_estimate);
 
       // Weight updates
-      weights_tensor.device(device) -= solver_params_tensor.chip(0, 2) * gamma * unbiased_mean;
+      weights_tensor.device(device) -= solver_params_tensor.chip(0, 2) * gamma.eval() * unbiased_mean.eval();
 
       // Deallocate temporary memory
       if (typeid(device).name() == typeid(Eigen::DefaultDevice).name()) {
