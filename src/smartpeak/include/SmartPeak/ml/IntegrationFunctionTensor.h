@@ -487,9 +487,7 @@ public:
 			auto source_exp_input_tensor = source_input_tensor.chip(source_time_step, 1).broadcast(Eigen::array<int, 3>({ 1, sink_layer_size, 1 }));
 			
 			// step 2: divide out the comp_tensor, scale by the source error, and reduce by taking the sum along the source layer
-      // NOTE for numerical stability, we multiply by the comp_tensor in order to zero out non contributing elements,
-      //      which otherwise would result in an very large error even though their contribution was 0,
-      //      and then divide by the square of the comp_tensor plus a small constant to avoid division by 0
+      // NOTE for numerical stability, we return 0 for all comp_tensor elements that are 0
       TensorT* tmp_data;
       if (typeid(device).name() == typeid(Eigen::DefaultDevice).name()) {
         tmp_data = new TensorT[batch_size*sink_layer_size*source_layer_size];

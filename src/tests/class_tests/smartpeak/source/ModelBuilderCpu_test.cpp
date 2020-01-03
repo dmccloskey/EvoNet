@@ -31,7 +31,7 @@ void trainModel(Model<TensorT>& model, const std::vector<std::string>& input_nod
 
   model_interpreter.executeBackwardPropogationOperations(0); // BP
   model_interpreter.executeWeightErrorOperations(); // Weight error
-  model_interpreter.executeWeightUpdateOperations(); // Weight update
+  model_interpreter.executeWeightUpdateOperations(0); // Weight update
 
   // retrieve the results
   model_interpreter.getModelResults(model, true, true, true, false);
