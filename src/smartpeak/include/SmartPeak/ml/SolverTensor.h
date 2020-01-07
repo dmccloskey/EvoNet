@@ -262,11 +262,11 @@ public:
       //rho.device(device) = ((
       //  (weights_tensor.constant(TensorT(1)) - solver_params_tensor.chip(1, 2)) * (weights_tensor.constant(TensorT(1)) + solver_params_tensor.chip(1, 2).pow(iter + 1))) / (
       //    (weights_tensor.constant(TensorT(1)) + solver_params_tensor.chip(1, 2)) * (weights_tensor.constant(TensorT(1)) - solver_params_tensor.chip(1, 2)).pow(iter + 1))
-      //  ).clip(TensorT(0), TensorT(1) - this->getEps());
+      //  ).clip(TensorT(0), TensorT(1));
       rho.device(device) = ((
         (weights_tensor.constant(TensorT(1)) - solver_params_tensor.chip(1, 2)).sqrt() * (weights_tensor.constant(TensorT(1)) - solver_params_tensor.chip(1, 2).pow(iter + 1).sqrt())) / (
         (weights_tensor.constant(TensorT(1)) - solver_params_tensor.chip(1, 2).pow(iter + 1)).sqrt() * (weights_tensor.constant(TensorT(1)) - solver_params_tensor.chip(1, 2).sqrt()))
-        ).clip(TensorT(0), TensorT(1) - this->getEps());
+        ).clip(TensorT(0), TensorT(1));
 
       // Calculate momentum and variance estimates
       solver_params_tensor.chip(2, 2).device(device) = solver_params_tensor.chip(1, 2) * solver_params_tensor.chip(2, 2) + (weights_tensor.constant(TensorT(1)) - solver_params_tensor.chip(1, 2)) * errors_noise;
