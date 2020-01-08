@@ -45,117 +45,97 @@ public:
     // Add the inputs
     std::vector<std::string> node_names_input = model_builder.addInputNodes(model, "Input", "Input", n_inputs, specify_layer);
 
+    // Define the activation based on `add_feature_norm`
+    std::shared_ptr<ActivationOp<TensorT>> activation = std::make_shared<LeakyReLUOp<TensorT>>(LeakyReLUOp<TensorT>());
+    std::shared_ptr<ActivationOp<TensorT>> activation_grad = std::make_shared<LeakyReLUGradOp<TensorT>>(LeakyReLUGradOp<TensorT>());
+
+    // Define the node integration
+    auto integration_op = std::make_shared<SumOp<TensorT>>(SumOp<TensorT>());
+    auto integration_error_op = std::make_shared<SumErrorOp<TensorT>>(SumErrorOp<TensorT>());
+    auto integration_weight_grad_op = std::make_shared<SumWeightGradOp<TensorT>>(SumWeightGradOp<TensorT>());
+
+    // Define the solver
+    auto solver_op = std::make_shared<AdamOp<TensorT>>(AdamOp<TensorT>(1e-5, 0.9, 0.999, 1e-8, 10));
+
     // Add the Endocer FC layers
     std::vector<std::string> node_names, node_names_mu, node_names_logvar, node_names_logalpha;
     node_names = model_builder.addFullyConnected(model, "EN0", "EN0", node_names_input, n_hidden_0,
-      std::make_shared<LeakyReLUOp<TensorT>>(LeakyReLUOp<TensorT>()),
-      std::make_shared<LeakyReLUGradOp<TensorT>>(LeakyReLUGradOp<TensorT>()),
-      std::make_shared<SumOp<TensorT>>(SumOp<TensorT>()),
-      std::make_shared<SumErrorOp<TensorT>>(SumErrorOp<TensorT>()),
-      std::make_shared<SumWeightGradOp<TensorT>>(SumWeightGradOp<TensorT>()),
+      activation, activation_grad, integration_op, integration_error_op, integration_weight_grad_op,
       std::make_shared<RandWeightInitOp<TensorT>>(RandWeightInitOp<TensorT>((TensorT)(node_names_input.size() + node_names.size()) / 2, 1)),
-      std::make_shared<AdamOp<TensorT>>(AdamOp<TensorT>(1e-4, 0.9, 0.999, 1e-8, 10)), 0.0f, 0.0f, false, specify_layer);
+      solver_op, 0.0f, 0.0f, false, specify_layer);
     node_names = model_builder.addFullyConnected(model, "EN1", "EN1", node_names, n_hidden_0,
-      std::make_shared<LeakyReLUOp<TensorT>>(LeakyReLUOp<TensorT>()),
-      std::make_shared<LeakyReLUGradOp<TensorT>>(LeakyReLUGradOp<TensorT>()),
-      std::make_shared<SumOp<TensorT>>(SumOp<TensorT>()),
-      std::make_shared<SumErrorOp<TensorT>>(SumErrorOp<TensorT>()),
-      std::make_shared<SumWeightGradOp<TensorT>>(SumWeightGradOp<TensorT>()),
+      activation, activation_grad, integration_op, integration_error_op, integration_weight_grad_op,
       std::make_shared<RandWeightInitOp<TensorT>>(RandWeightInitOp<TensorT>((TensorT)(node_names.size() + node_names.size()) / 2, 1)),
-      std::make_shared<AdamOp<TensorT>>(AdamOp<TensorT>(1e-4, 0.9, 0.999, 1e-8, 10)), 0.0f, 0.0f, false, specify_layer);
+      solver_op, 0.0f, 0.0f, false, specify_layer);
     node_names_mu = model_builder.addFullyConnected(model, "EN-Mu", "EN-Mu", node_names, n_encodings,
       std::make_shared<LinearOp<TensorT>>(LinearOp<TensorT>()),
       std::make_shared<LinearGradOp<TensorT>>(LinearGradOp<TensorT>()),
-      std::make_shared<SumOp<TensorT>>(SumOp<TensorT>()),
-      std::make_shared<SumErrorOp<TensorT>>(SumErrorOp<TensorT>()),
-      std::make_shared<SumWeightGradOp<TensorT>>(SumWeightGradOp<TensorT>()),
+      integration_op, integration_error_op, integration_weight_grad_op,
       std::make_shared<RandWeightInitOp<TensorT>>(RandWeightInitOp<TensorT>((TensorT)(node_names.size() + n_encodings) / 2, 1)),
-      std::make_shared<AdamOp<TensorT>>(AdamOp<TensorT>(1e-4, 0.9, 0.999, 1e-8, 10)), 0.0f, 0.0f, false, specify_layer);
+      solver_op, 0.0f, 0.0f, false, specify_layer);
     node_names_logvar = model_builder.addFullyConnected(model, "EN-LogVar", "EN-LogVar", node_names, n_encodings,
       std::make_shared<LinearOp<TensorT>>(LinearOp<TensorT>()),
       std::make_shared<LinearGradOp<TensorT>>(LinearGradOp<TensorT>()),
-      std::make_shared<SumOp<TensorT>>(SumOp<TensorT>()),
-      std::make_shared<SumErrorOp<TensorT>>(SumErrorOp<TensorT>()),
-      std::make_shared<SumWeightGradOp<TensorT>>(SumWeightGradOp<TensorT>()),
+      integration_op, integration_error_op, integration_weight_grad_op,
       std::make_shared<RandWeightInitOp<TensorT>>(RandWeightInitOp<TensorT>((TensorT)(node_names.size() + n_encodings) / 2, 1)),
-      std::make_shared<AdamOp<TensorT>>(AdamOp<TensorT>(1e-4, 0.9, 0.999, 1e-8, 10)), 0.0f, 0.0f, false, specify_layer);
+      solver_op, 0.0f, 0.0f, false, specify_layer);
     node_names_logalpha = model_builder.addFullyConnected(model, "EN-LogAlpha", "EN-LogAlpha", node_names, n_categorical,
       std::make_shared<LinearOp<TensorT>>(LinearOp<TensorT>()),
       std::make_shared<LinearGradOp<TensorT>>(LinearGradOp<TensorT>()),
-      std::make_shared<SumOp<TensorT>>(SumOp<TensorT>()),
-      std::make_shared<SumErrorOp<TensorT>>(SumErrorOp<TensorT>()),
-      std::make_shared<SumWeightGradOp<TensorT>>(SumWeightGradOp<TensorT>()),
+      integration_op, integration_error_op, integration_weight_grad_op,
       std::make_shared<RandWeightInitOp<TensorT>>(RandWeightInitOp<TensorT>((TensorT)(node_names.size() + n_categorical) / 2, 1)),
-      std::make_shared<AdamOp<TensorT>>(AdamOp<TensorT>(1e-4, 0.9, 0.999, 1e-8, 10)), 0.0f, 0.0f, false, specify_layer);
-
-    // TODO: specify the output nodes for the encodings
+      solver_op, 0.0f, 0.0f, false, specify_layer);
 
     // Add the Encoding layers
     std::vector<std::string> node_names_Gencoder = model_builder.addGaussianEncoding(model, "Gaussian_encoding", "Gaussian_encoding", node_names_mu, node_names_logvar, true);
     std::vector<std::string> node_names_Cencoder = model_builder.addCategoricalEncoding(model, "Categorical_encoding", "Categorical_encoding", node_names_logalpha, true);
-    for (const std::string& node_name : node_names_Cencoder)
-      model.nodes_.at(node_name)->setType(NodeType::output);
 
     // Add the Decoder FC layers
     node_names = model_builder.addFullyConnected(model, "DE0", "DE0", node_names_Gencoder, n_hidden_0,
-      std::make_shared<LeakyReLUOp<TensorT>>(LeakyReLUOp<TensorT>()),
-      std::make_shared<LeakyReLUGradOp<TensorT>>(LeakyReLUGradOp<TensorT>()),
-      std::make_shared<SumOp<TensorT>>(SumOp<TensorT>()),
-      std::make_shared<SumErrorOp<TensorT>>(SumErrorOp<TensorT>()),
-      std::make_shared<SumWeightGradOp<TensorT>>(SumWeightGradOp<TensorT>()),
+      activation, activation_grad, integration_op, integration_error_op, integration_weight_grad_op,
       std::make_shared<RandWeightInitOp<TensorT>>(RandWeightInitOp<TensorT>((TensorT)(node_names_Gencoder.size() + n_hidden_0) / 2, 1)),
-      std::make_shared<AdamOp<TensorT>>(AdamOp<TensorT>(1e-4, 0.9, 0.999, 1e-8, 10)), 0.0f, 0.0f, false, specify_layer);
+      solver_op, 0.0f, 0.0f, false, specify_layer);
     model_builder.addFullyConnected(model, "DE0", node_names_Cencoder, node_names,
       std::make_shared<RandWeightInitOp<TensorT>>(RandWeightInitOp<TensorT>((TensorT)(node_names_Cencoder.size() + n_hidden_0) / 2, 1)),
-      std::make_shared<AdamOp<TensorT>>(AdamOp<TensorT>(1e-4, 0.9, 0.999, 1e-8, 10)), 0.0f, specify_layer);
+      solver_op, 0.0f, specify_layer);
     node_names = model_builder.addFullyConnected(model, "DE1", "DE1", node_names, n_hidden_0,
-      std::make_shared<LeakyReLUOp<TensorT>>(LeakyReLUOp<TensorT>()),
-      std::make_shared<LeakyReLUGradOp<TensorT>>(LeakyReLUGradOp<TensorT>()),
-      std::make_shared<SumOp<TensorT>>(SumOp<TensorT>()),
-      std::make_shared<SumErrorOp<TensorT>>(SumErrorOp<TensorT>()),
-      std::make_shared<SumWeightGradOp<TensorT>>(SumWeightGradOp<TensorT>()),
+      activation, activation_grad, integration_op, integration_error_op, integration_weight_grad_op,
       std::make_shared<RandWeightInitOp<TensorT>>(RandWeightInitOp<TensorT>((TensorT)(node_names.size() + n_hidden_0) / 2, 1)),
-      std::make_shared<AdamOp<TensorT>>(AdamOp<TensorT>(1e-4, 0.9, 0.999, 1e-8, 10)), 0.0f, 0.0f, false, specify_layer);
+      solver_op, 0.0f, 0.0f, false, specify_layer);
     node_names = model_builder.addFullyConnected(model, "DE-Output", "DE-Output", node_names, n_inputs,
-      std::make_shared<LeakyReLUOp<TensorT>>(LeakyReLUOp<TensorT>()),
-      std::make_shared<LeakyReLUGradOp<TensorT>>(LeakyReLUGradOp<TensorT>()),
-      std::make_shared<SumOp<TensorT>>(SumOp<TensorT>()),
-      std::make_shared<SumErrorOp<TensorT>>(SumErrorOp<TensorT>()),
-      std::make_shared<SumWeightGradOp<TensorT>>(SumWeightGradOp<TensorT>()),
+      activation, activation_grad, integration_op, integration_error_op, integration_weight_grad_op,
       std::make_shared<RandWeightInitOp<TensorT>>(RandWeightInitOp<TensorT>(node_names.size(), 1)),
-      std::make_shared<AdamOp<TensorT>>(AdamOp<TensorT>(1e-4, 0.9, 0.999, 1e-8, 10)), 0.0f, 0.0f, false, true);
+      solver_op, 0.0f, 0.0f, false, true);
 
     // Add the actual output nodes
     node_names_mu = model_builder.addSinglyConnected(model, "Mu", "Mu", node_names_mu, node_names_mu.size(),
       std::make_shared<LinearOp<TensorT>>(LinearOp<TensorT>()),
       std::make_shared<LinearGradOp<TensorT>>(LinearGradOp<TensorT>()),
-      std::make_shared<SumOp<TensorT>>(SumOp<TensorT>()),
-      std::make_shared<SumErrorOp<TensorT>>(SumErrorOp<TensorT>()),
-      std::make_shared<SumWeightGradOp<TensorT>>(SumWeightGradOp<TensorT>()),
+      integration_op, integration_error_op, integration_weight_grad_op,
       std::make_shared<ConstWeightInitOp<TensorT>>(ConstWeightInitOp<TensorT>(1)),
       std::make_shared<DummySolverOp<TensorT>>(DummySolverOp<TensorT>()), 0.0f, 0.0f, false, true);
     node_names_logvar = model_builder.addSinglyConnected(model, "LogVar", "LogVar", node_names_logvar, node_names_logvar.size(),
       std::make_shared<LinearOp<TensorT>>(LinearOp<TensorT>()),
       std::make_shared<LinearGradOp<TensorT>>(LinearGradOp<TensorT>()),
-      std::make_shared<SumOp<TensorT>>(SumOp<TensorT>()),
-      std::make_shared<SumErrorOp<TensorT>>(SumErrorOp<TensorT>()),
-      std::make_shared<SumWeightGradOp<TensorT>>(SumWeightGradOp<TensorT>()),
+      integration_op, integration_error_op, integration_weight_grad_op,
       std::make_shared<ConstWeightInitOp<TensorT>>(ConstWeightInitOp<TensorT>(1)),
       std::make_shared<DummySolverOp<TensorT>>(DummySolverOp<TensorT>()), 0.0f, 0.0f, false, true);
     node_names_logalpha = model_builder.addSinglyConnected(model, "LogAlpha", "LogAlpha", node_names_logalpha, node_names_logalpha.size(),
       std::make_shared<LinearOp<TensorT>>(LinearOp<TensorT>()),
       std::make_shared<LinearGradOp<TensorT>>(LinearGradOp<TensorT>()),
-      std::make_shared<SumOp<TensorT>>(SumOp<TensorT>()),
-      std::make_shared<SumErrorOp<TensorT>>(SumErrorOp<TensorT>()),
-      std::make_shared<SumWeightGradOp<TensorT>>(SumWeightGradOp<TensorT>()),
+      integration_op, integration_error_op, integration_weight_grad_op,
       std::make_shared<ConstWeightInitOp<TensorT>>(ConstWeightInitOp<TensorT>(1)),
       std::make_shared<DummySolverOp<TensorT>>(DummySolverOp<TensorT>()), 0.0f, 0.0f, false, true);
+    //node_names_Cencoder = model_builder.addSinglyConnected(model, "Categorical_encoding-Out", "Categorical_encoding-Out", node_names_Cencoder, node_names_Cencoder.size(),
+    //  std::make_shared<LinearOp<TensorT>>(LinearOp<TensorT>()),
+    //  std::make_shared<LinearGradOp<TensorT>>(LinearGradOp<TensorT>()),
+    //  integration_op, integration_error_op, integration_weight_grad_op,
+    //  std::make_shared<ConstWeightInitOp<TensorT>>(ConstWeightInitOp<TensorT>(1)),
+    //  std::make_shared<DummySolverOp<TensorT>>(DummySolverOp<TensorT>()), 0.0f, 0.0f, false, true);
     node_names = model_builder.addSinglyConnected(model, "Output", "Output", node_names, n_inputs,
       std::make_shared<LinearOp<TensorT>>(LinearOp<TensorT>()),
       std::make_shared<LinearGradOp<TensorT>>(LinearGradOp<TensorT>()),
-      std::make_shared<SumOp<TensorT>>(SumOp<TensorT>()),
-      std::make_shared<SumErrorOp<TensorT>>(SumErrorOp<TensorT>()),
-      std::make_shared<SumWeightGradOp<TensorT>>(SumWeightGradOp<TensorT>()),
+      integration_op, integration_error_op, integration_weight_grad_op,
       std::make_shared<ConstWeightInitOp<TensorT>>(ConstWeightInitOp<TensorT>(1)),
       std::make_shared<DummySolverOp<TensorT>>(DummySolverOp<TensorT>()), 0.0f, 0.0f, false, true);
 
@@ -165,6 +145,8 @@ public:
     for (const std::string& node_name : node_names_logvar)
       model.nodes_.at(node_name)->setType(NodeType::output);
     for (const std::string& node_name : node_names_logalpha)
+      model.nodes_.at(node_name)->setType(NodeType::output);
+    for (const std::string& node_name : node_names_Cencoder)
       model.nodes_.at(node_name)->setType(NodeType::output);
     for (const std::string& node_name : node_names)
       model.getNodesMap().at(node_name)->setType(NodeType::output);
@@ -176,9 +158,33 @@ public:
     Model<TensorT>& model,
     ModelInterpreterGpu<TensorT>& model_interpreter,
     const std::vector<float>& model_errors) {
-    if (n_epochs % 1000 == 0 && n_epochs != 0) override {
+
+    // Increase the KL divergence beta after [...] number of iterations
+    TensorT scale_factor = (n_epochs - 100 > 0) ? n_epochs - 100 : 1;
+    TensorT beta = 30 / 2.5e4 * scale_factor;
+    if (beta > 30) beta = 30;
+    TensorT capacity_c = 5 / 2.5e4 * scale_factor;
+    if (capacity_c > 5) capacity_c = 5;
+    TensorT capacity_d = 5 / 2.5e4 * scale_factor;
+    if (capacity_d > 5) capacity_d = 5;
+    this->getLossFunctions().at(1) = std::make_shared<KLDivergenceMuLossOp<float>>(KLDivergenceMuLossOp<float>(1e-6, beta, capacity_c));
+    this->getLossFunctions().at(2) = std::make_shared<KLDivergenceLogVarLossOp<float>>(KLDivergenceLogVarLossOp<float>(1e-6, beta, capacity_c));
+    this->getLossFunctions().at(3) = std::make_shared<KLDivergenceCatLossOp<float>>(KLDivergenceCatLossOp<float>(1e-6, beta, capacity_d));
+    this->getLossFunctionGrads().at(1) = std::make_shared<KLDivergenceMuLossGradOp<float>>(KLDivergenceMuLossGradOp<float>(1e-6, beta, capacity_c));
+    this->getLossFunctionGrads().at(2) = std::make_shared<KLDivergenceLogVarLossGradOp<float>>(KLDivergenceLogVarLossGradOp<float>(1e-6, beta, capacity_c));
+    this->getLossFunctionGrads().at(3) = std::make_shared<KLDivergenceCatLossGradOp<float>>(KLDivergenceCatLossGradOp<float>(1e-6, beta, capacity_d));
+
+    if (n_epochs % 1000 == 0 && n_epochs != 0) {
+      // save the model every 1000 epochs
       model_interpreter.getModelResults(model, false, true, false, false);
       ModelFile<TensorT> data;
+
+      //// save the model weights to .csv
+      //data.storeModelCsv(model.getName() + "_" + std::to_string(n_epochs) + "_nodes.csv",
+      //	model.getName() + "_" + std::to_string(n_epochs) + "_links.csv",
+      //	model.getName() + "_" + std::to_string(n_epochs) + "_weights.csv", model, false, false, true);
+
+      // save the model and tensors to binary
       data.storeModelBinary(model.getName() + "_" + std::to_string(n_epochs) + "_model.binary", model);
       ModelInterpreterFileGpu<TensorT> interpreter_data;
       interpreter_data.storeModelInterpreterBinary(model.getName() + "_" + std::to_string(n_epochs) + "_interpreter.binary", model_interpreter);
@@ -371,9 +377,9 @@ void main_MNIST(const std::string& data_dir, const bool& make_model, const bool&
 
   // define the data simulator
   const std::size_t input_size = 784;
-  const std::size_t encoding_size = 64;
+  const std::size_t encoding_size = 8;
   const std::size_t categorical_size = 10;
-  const std::size_t n_hidden = 128;
+  const std::size_t n_hidden = 512;
   const std::size_t training_data_size = 60000; //60000;
   const std::size_t validation_data_size = 10000; //10000;
   DataSimulatorExt<float> data_simulator;
@@ -460,7 +466,7 @@ void main_MNIST(const std::string& data_dir, const bool& make_model, const bool&
   std::vector<std::string> categorical_nodes_output;
   for (int i = 0; i < categorical_size; ++i) {
     char name_char[512];
-    sprintf(name_char, "Categorical_encoding-SoftMax-Out_%012d", i);
+    sprintf(name_char, "Categorical_encoding-Out_%012d", i);
     std::string name(name_char);
     categorical_nodes_output.push_back(name);
   }
@@ -474,8 +480,8 @@ void main_MNIST(const std::string& data_dir, const bool& make_model, const bool&
   }
   ModelTrainerExt<float> model_trainer;
   //model_trainer.setBatchSize(1); // evaluation only
-  model_trainer.setBatchSize(64);
-  model_trainer.setNEpochsTraining(100001);
+  model_trainer.setBatchSize(128);
+  model_trainer.setNEpochsTraining(200001);
   model_trainer.setNEpochsValidation(25);
   model_trainer.setNEpochsEvaluation(0);
   model_trainer.setMemorySize(1);
@@ -486,16 +492,16 @@ void main_MNIST(const std::string& data_dir, const bool& make_model, const bool&
   model_trainer.setLossFunctions({
     std::make_shared<MSELossOp<float>>(MSELossOp<float>(1e-6, 1.0)),
     //std::make_shared<BCEWithLogitsLossOp<float>>(BCEWithLogitsLossOp<float>(1e-6, 1.0)),
-    std::make_shared<KLDivergenceMuLossOp<float>>(KLDivergenceMuLossOp<float>(1e-6, 1.0)),
-    std::make_shared<KLDivergenceLogVarLossOp<float>>(KLDivergenceLogVarLossOp<float>(1e-6, 1.0)),
-    std::make_shared<KLDivergenceCatLossOp<float>>(KLDivergenceCatLossOp<float>(1e-6, 1.0)),
+    std::make_shared<KLDivergenceMuLossOp<float>>(KLDivergenceMuLossOp<float>(1e-6, 0.0, 0.0)),
+    std::make_shared<KLDivergenceLogVarLossOp<float>>(KLDivergenceLogVarLossOp<float>(1e-6, 0.0, 0.0)),
+    std::make_shared<KLDivergenceCatLossOp<float>>(KLDivergenceCatLossOp<float>(1e-6, 0.0, 0.0)),
     std::make_shared<NegativeLogLikelihoodLossOp<float>>(NegativeLogLikelihoodLossOp<float>(1e-6, 0.0)) });
   model_trainer.setLossFunctionGrads({
     std::make_shared<MSELossGradOp<float>>(MSELossGradOp<float>(1e-6, 1.0)),
     //std::make_shared<BCEWithLogitsLossGradOp<float>>(BCEWithLogitsLossGradOp<float>(1e-6, 1.0)),
-    std::make_shared<KLDivergenceMuLossGradOp<float>>(KLDivergenceMuLossGradOp<float>(1e-6, 1.0)),
-    std::make_shared<KLDivergenceLogVarLossGradOp<float>>(KLDivergenceLogVarLossGradOp<float>(1e-6, 1.0)),
-    std::make_shared<KLDivergenceCatLossGradOp<float>>(KLDivergenceCatLossGradOp<float>(1e-6, 1.0)),
+    std::make_shared<KLDivergenceMuLossGradOp<float>>(KLDivergenceMuLossGradOp<float>(1e-6, 0.0, 0.0)),
+    std::make_shared<KLDivergenceLogVarLossGradOp<float>>(KLDivergenceLogVarLossGradOp<float>(1e-6, 0.0, 0.0)),
+    std::make_shared<KLDivergenceCatLossGradOp<float>>(KLDivergenceCatLossGradOp<float>(1e-6, 0.0, 0.0)),
     std::make_shared<NegativeLogLikelihoodLossGradOp<float>>(NegativeLogLikelihoodLossGradOp<float>(1e-6, 0.0)) });
   model_trainer.setLossOutputNodes({ output_nodes, encoding_nodes_mu, encoding_nodes_logvar, encoding_nodes_logalpha, categorical_nodes_output });
   model_trainer.setMetricFunctions({ std::make_shared<MAEOp<float>>(MAEOp<float>()), std::make_shared<PrecisionMCMicroOp<float>>(PrecisionMCMicroOp<float>()) });
@@ -514,8 +520,8 @@ void main_MNIST(const std::string& data_dir, const bool& make_model, const bool&
   else {
     // read in the trained model
     std::cout << "Reading in the model..." << std::endl;
-    const std::string model_filename = data_dir + "CVAE_9000_model.binary";
-    const std::string interpreter_filename = data_dir + "CVAE_9000_interpreter.binary";
+    const std::string model_filename = data_dir + "CVAE_model.binary";
+    const std::string interpreter_filename = data_dir + "CVAE_interpreter.binary";
     ModelFile<float> model_file;
     model_file.loadModelBinary(model_filename, model);
     model.setId(1);
@@ -523,7 +529,7 @@ void main_MNIST(const std::string& data_dir, const bool& make_model, const bool&
     ModelInterpreterFileGpu<float> model_interpreter_file;
     model_interpreter_file.loadModelInterpreterBinary(interpreter_filename, model_interpreters[0]);
   }
-  std::vector<Model<float>> population = { model };
+  //std::vector<Model<float>> population = { model };
 
   if (train_model) {
     // Train the model
@@ -539,19 +545,31 @@ void main_MNIST(const std::string& data_dir, const bool& make_model, const bool&
     //population_trainer_file.storeModelValidations("MNISTErrors.csv", models_validation_errors_per_generation);
   }
   else {
-    // Evaluate the population
-    population_trainer.evaluateModels(
-      population, model_trainer, model_interpreters, model_replicator, data_simulator, model_logger, input_nodes);
+    //// Evaluate the population
+    //population_trainer.evaluateModels(
+    //  population, model_trainer, model_interpreters, model_replicator, data_simulator, model_logger, input_nodes);
   }
 }
 
 int main(int argc, char** argv)
 {
-  // define the data directory
+  // Parse the user commands
+  std::string data_dir = "C:/Users/dmccloskey/Documents/GitHub/mnist/";
   //std::string data_dir = "/home/user/data/";
-  std::string data_dir = "C:/Users/domccl/GitHub/mnist/";
-  //std::string data_dir = "C:/Users/dmccloskey/Documents/GitHub/mnist/";
+  //std::string data_dir = "C:/Users/domccl/GitHub/mnist/";
+  bool make_model = true, train_model = true;
+  if (argc >= 2) {
+    data_dir = argv[1];
+  }
+  if (argc >= 3) {
+    make_model = (argv[2] == std::string("true")) ? true : false;
+  }
+  if (argc >= 4) {
+    train_model = (argv[3] == std::string("true")) ? true : false;
+  }
 
   // run the application
-  main_MNIST(data_dir, true, true);
+  main_MNIST(data_dir, make_model, train_model);
+
+  return 0;
 }
