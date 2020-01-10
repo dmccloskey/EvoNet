@@ -47,7 +47,7 @@ public:
   @brief Denoising Auto Encoder that takes a segment of a raw chromatogram
     and returns a smoothed and denoised version of the same chromatogram
   */
-  void makeDenoisingAE(Model<TensorT>& model, int n_inputs = 512, int n_encodings = 32, 
+  void makeDenoisingAE(Model<TensorT>& model, int n_inputs = 512, int n_encodings = 32,
     int n_hidden_0 = 512, int n_hidden_1 = 256, int n_hidden_2 = 64,
     int n_isPeak_0 = 256, int n_isPeak_1 = 64,
     int n_isPeakApex_0 = 256, int n_isPeakApex_1 = 64,
@@ -76,7 +76,7 @@ public:
     auto integration_weight_grad_op = std::make_shared<SumWeightGradOp<TensorT>>(SumWeightGradOp<TensorT>());
 
     // Define the solver
-    auto solver_op = std::make_shared<AdamOp<TensorT>>(AdamOp<TensorT>(1e-4, 0.9, 0.999, 1e-8, 10));
+    auto solver_op = std::make_shared<AdamOp<TensorT>>(AdamOp<TensorT>(1e-5, 0.9, 0.999, 1e-8, 10));
 
     // Add the Encoder FC layers
     if (n_hidden_0 > 0) {
@@ -199,7 +199,7 @@ public:
       //std::make_shared<SigmoidOp<TensorT>>(SigmoidOp<TensorT>()),
       //std::make_shared<SigmoidGradOp<TensorT>>(SigmoidGradOp<TensorT>()),
       std::make_shared<LeakyReLUOp<TensorT>>(LeakyReLUOp<TensorT>()),
-      std::make_shared<LeakyReLUGradOp<TensorT>>(LeakyReLUGradOp<TensorT>()), 
+      std::make_shared<LeakyReLUGradOp<TensorT>>(LeakyReLUGradOp<TensorT>()),
       integration_op, integration_error_op, integration_weight_grad_op,
       std::make_shared<RandWeightInitOp<TensorT>>(RandWeightInitOp<TensorT>(node_names.size(), 1)),
       solver_op, 0.0f, 0.0f, false, specify_layers);
@@ -220,7 +220,7 @@ public:
       node_names = model_builder.addFullyConnected(model, "DE_IsPeakApex_1", "DE_IsPeakApex_1", node_names, n_isPeakApex_1,
         activation, activation_grad, integration_op, integration_error_op, integration_weight_grad_op,
         std::make_shared<RandWeightInitOp<TensorT>>(RandWeightInitOp<TensorT>((int)(node_names.size() + n_isPeakApex_1) / 2, 1)),
-        std::make_shared<AdamOp<TensorT>>(AdamOp<TensorT>(1e-3, 0.9, 0.999, 1e-8, 10, 0.0)), 0.0f, 0.0f, false, specify_layers);
+        solver_op, 0.0f, 0.0f, false, specify_layers);
       if (add_norm) {
         node_names = model_builder.addNormalization(model, "DE_IsPeakApex_1-Norm", "DE_IsPeakApex_1-Norm", node_names, specify_layers);
         node_names = model_builder.addSinglyConnected(model, "DE_IsPeakApex_1-Norm-gain", "DE_IsPeakApex_1-Norm-gain", node_names, node_names.size(),
@@ -234,7 +234,7 @@ public:
       node_names = model_builder.addFullyConnected(model, "DE_IsPeakApex_0", "DE_IsPeakApex_0", node_names, n_isPeakApex_0,
         activation, activation_grad, integration_op, integration_error_op, integration_weight_grad_op,
         std::make_shared<RandWeightInitOp<TensorT>>(RandWeightInitOp<TensorT>((int)(node_names.size() + n_isPeakApex_0) / 2, 1)),
-        std::make_shared<AdamOp<TensorT>>(AdamOp<TensorT>(1e-3, 0.9, 0.999, 1e-8, 10, 0.0)), 0.0f, 0.0f, false, specify_layers);
+        solver_op, 0.0f, 0.0f, false, specify_layers);
       if (add_norm) {
         node_names = model_builder.addNormalization(model, "DE_IsPeakApex_0-Norm", "DE_IsPeakApex_0-Norm", node_names, specify_layers);
         node_names = model_builder.addSinglyConnected(model, "DE_IsPeakApex_0-Norm-gain", "DE_IsPeakApex_0-Norm-gain", node_names, node_names.size(),
@@ -250,7 +250,7 @@ public:
       //std::make_shared<SigmoidOp<TensorT>>(SigmoidOp<TensorT>()),
       //std::make_shared<SigmoidGradOp<TensorT>>(SigmoidGradOp<TensorT>()),
       std::make_shared<LeakyReLUOp<TensorT>>(LeakyReLUOp<TensorT>()),
-      std::make_shared<LeakyReLUGradOp<TensorT>>(LeakyReLUGradOp<TensorT>()), 
+      std::make_shared<LeakyReLUGradOp<TensorT>>(LeakyReLUGradOp<TensorT>()),
       integration_op, integration_error_op, integration_weight_grad_op,
       std::make_shared<RandWeightInitOp<TensorT>>(RandWeightInitOp<TensorT>(node_names.size(), 1)),
       solver_op, 0.0f, 0.0f, false, specify_layers);
@@ -300,7 +300,7 @@ public:
       //std::make_shared<SigmoidOp<TensorT>>(SigmoidOp<TensorT>()),
       //std::make_shared<SigmoidGradOp<TensorT>>(SigmoidGradOp<TensorT>()),
       std::make_shared<LeakyReLUOp<TensorT>>(LeakyReLUOp<TensorT>()),
-      std::make_shared<LeakyReLUGradOp<TensorT>>(LeakyReLUGradOp<TensorT>()), 
+      std::make_shared<LeakyReLUGradOp<TensorT>>(LeakyReLUGradOp<TensorT>()),
       integration_op, integration_error_op, integration_weight_grad_op,
       std::make_shared<RandWeightInitOp<TensorT>>(RandWeightInitOp<TensorT>(node_names.size(), 1)),
       solver_op, 0.0f, 0.0f, false, specify_layers);
@@ -663,7 +663,7 @@ void main_DenoisingAE(const std::string& data_dir, const bool& make_model, const
     model_interpreters.push_back(model_interpreter);
   }
   ModelTrainerExt<float> model_trainer;
-  model_trainer.setBatchSize(64);
+  model_trainer.setBatchSize(128);
   model_trainer.setNEpochsTraining(100001);
   model_trainer.setNEpochsValidation(25);
   model_trainer.setNEpochsEvaluation(25);
@@ -673,10 +673,10 @@ void main_DenoisingAE(const std::string& data_dir, const bool& make_model, const
   model_trainer.setFindCycles(false);
   model_trainer.setFastInterpreter(true);
   model_trainer.setPreserveOoO(true);
-  model_trainer.setLossFunctions({ std::make_shared<MSELossOp<float>>(MSELossOp<float>(1e-6, 1.0 / float(input_size))),
+  model_trainer.setLossFunctions({ std::make_shared<MSELossOp<float>>(MSELossOp<float>(1e-6, 1.0)),
     std::make_shared<BCEWithLogitsLossOp<float>>(BCEWithLogitsLossOp<float>(1e-6, 1.0 / float(input_size))),
     std::make_shared<BCEWithLogitsLossOp<float>>(BCEWithLogitsLossOp<float>(1e-6, 1.0 / float(input_size))) });
-  model_trainer.setLossFunctionGrads({ std::make_shared<MSELossGradOp<float>>(MSELossGradOp<float>(1e-6, 1.0 / float(input_size))),
+  model_trainer.setLossFunctionGrads({ std::make_shared<MSELossGradOp<float>>(MSELossGradOp<float>(1e-6, 1.0)),
     std::make_shared<BCEWithLogitsLossGradOp<float>>(BCEWithLogitsLossGradOp<float>(1e-6, 1.0 / float(input_size))),
     std::make_shared<BCEWithLogitsLossGradOp<float>>(BCEWithLogitsLossGradOp<float>(1e-6, 1.0 / float(input_size))) });
   model_trainer.setLossOutputNodes({ output_nodes_intensity, output_nodes_isPeakApex, output_nodes_isPeak });
@@ -693,7 +693,7 @@ void main_DenoisingAE(const std::string& data_dir, const bool& make_model, const
   std::cout << "Initializing the population..." << std::endl;
   Model<float> model;
   if (make_model) {
-    model_trainer.makeDenoisingAE(model, input_size, encoding_size, 512, 256, 64, 256, 64, 256, 64, true, true);
+    model_trainer.makeDenoisingAE(model, input_size, encoding_size, 256, 256, 0, 256, 0, 256, 0, false, true);
   }
   else {
     std::cout << "Reading in the model..." << std::endl;
