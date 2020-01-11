@@ -479,14 +479,13 @@ void main_MNIST(const std::string& data_dir, const bool& make_model, const bool&
     model_interpreters.push_back(model_interpreter);
   }
   ModelTrainerExt<float> model_trainer;
-  //model_trainer.setBatchSize(1); // evaluation only
   model_trainer.setBatchSize(128);
   model_trainer.setNEpochsTraining(200001);
   model_trainer.setNEpochsValidation(25);
   model_trainer.setNEpochsEvaluation(0);
   model_trainer.setMemorySize(1);
   model_trainer.setVerbosityLevel(1);
-  model_trainer.setLogging(true, false, true);
+  model_trainer.setLogging(true);
   model_trainer.setFindCycles(false);
   model_trainer.setFastInterpreter(true);
   model_trainer.setLossFunctions({

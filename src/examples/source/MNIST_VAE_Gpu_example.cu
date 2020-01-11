@@ -179,9 +179,9 @@ public:
       }
     }
     node_names = model_builder.addFullyConnected(model, "DE-Output", "DE-Output", node_names, n_inputs,
-      std::make_shared<SigmoidOp<TensorT>>(SigmoidOp<TensorT>()),
-      std::make_shared<SigmoidGradOp<TensorT>>(SigmoidGradOp<TensorT>()),
-      //activation_norm, activation_norm_grad,
+      //std::make_shared<SigmoidOp<TensorT>>(SigmoidOp<TensorT>()),
+      //std::make_shared<SigmoidGradOp<TensorT>>(SigmoidGradOp<TensorT>()),
+      activation_norm, activation_norm_grad,
       integration_op, integration_error_op, integration_weight_grad_op,
       std::make_shared<RandWeightInitOp<TensorT>>(RandWeightInitOp<TensorT>(node_names.size(), 1)),
       solver_op, 0.0f, 0.0f, add_bias, true);
@@ -684,7 +684,6 @@ class DataSimulatorExt : public MNISTSimulator<TensorT>
 {
 public:
   int n_encodings_;
-  int perc_corruption_ = 0;
   void simulateTrainingData(Eigen::Tensor<TensorT, 3>& input_data, Eigen::Tensor<TensorT, 3>& loss_output_data, Eigen::Tensor<TensorT, 3>& metric_output_data, Eigen::Tensor<TensorT, 2>& time_steps)
   {
     // infer data dimensions based on the input tensors
@@ -710,11 +709,6 @@ public:
         Eigen::Tensor<TensorT, 2> gaussian_samples = GaussianSampler<TensorT>(1, n_encodings_);
 
         for (int nodes_iter = 0; nodes_iter < n_input_pixels; ++nodes_iter) {
-          //std::random_device rd;
-          //std::uniform_int_distribution<int> distribution(1, 100);
-          //std::mt19937 engine(rd());
-          //if (distribution(engine) > perc_corruption_) input_data(batch_iter, memory_iter, nodes_iter) = this->training_data(sample_indices[batch_iter], nodes_iter);
-          //else  input_data(batch_iter, memory_iter, nodes_iter) = TensorT(0);
           input_data(batch_iter, memory_iter, nodes_iter) = this->training_data(sample_indices[batch_iter], nodes_iter);
           loss_output_data(batch_iter, memory_iter, nodes_iter) = this->training_data(sample_indices[batch_iter], nodes_iter);
           metric_output_data(batch_iter, memory_iter, nodes_iter) = this->training_data(sample_indices[batch_iter], nodes_iter);
@@ -812,7 +806,6 @@ void main_MNIST(const std::string& data_dir, const bool& make_model, const bool&
   data_simulator.readData(validation_data_filename, validation_labels_filename, false, validation_data_size, input_size);
   data_simulator.unitScaleData();
   data_simulator.n_encodings_ = encoding_size;
-  data_simulator.perc_corruption_ = 0;
 
   // Make the input nodes
   std::vector<std::string> input_nodes;

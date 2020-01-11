@@ -1,6 +1,6 @@
 /**TODO:  Add copyright*/
 
-#define BOOST_TEST_MODULE DataSimulator test suite 
+#define BOOST_TEST_MODULE MNISTSimulator test suite 
 #include <boost/test/included/unit_test.hpp>
 #include <SmartPeak/simulator/MNISTSimulator.h>
 #include <SmartPeak/test_config.h>
@@ -10,7 +10,7 @@
 using namespace SmartPeak;
 using namespace std;
 
-BOOST_AUTO_TEST_SUITE(datasimulator)
+BOOST_AUTO_TEST_SUITE(MNISTSimulator1)
 
 template<typename TensorT>
 class MNISTSimulatorExt : public MNISTSimulator<TensorT>
@@ -102,6 +102,98 @@ BOOST_AUTO_TEST_CASE(readData)
     //std::cout << "Labels test:\n" << test_labels_expected.at(i) << std::endl;
     BOOST_CHECK_EQUAL(datasimulator.validation_labels(i, test_labels_expected.at(i)), 1);
   }
+}
+
+BOOST_AUTO_TEST_CASE(smoothLabels)
+{
+  MNISTSimulatorExt<float> datasimulator;
+
+  // MNIST metadata
+  const std::size_t input_size = 784;
+  const std::size_t training_data_size = 10; //60000;
+  const std::size_t validation_data_size = 10; //10000;  
+  std::string training_data_filename = SMARTPEAK_GET_TEST_DATA_PATH("train-images.idx3-ubyte");
+  std::string training_labels_filename = SMARTPEAK_GET_TEST_DATA_PATH("train-labels.idx1-ubyte");
+  std::string validation_data_filename = SMARTPEAK_GET_TEST_DATA_PATH("t10k-images.idx3-ubyte");
+  std::string validation_labels_filename = SMARTPEAK_GET_TEST_DATA_PATH("t10k-labels.idx1-ubyte");
+
+  // Read training data
+  datasimulator.readData(training_data_filename, training_labels_filename, true, training_data_size, input_size);
+
+  // Read validation data
+  datasimulator.readData(validation_data_filename, validation_labels_filename, false, validation_data_size, input_size);
+
+  // Test
+  datasimulator.smoothLabels(0.1, 0.9);
+}
+
+BOOST_AUTO_TEST_CASE(unitScaleData)
+{
+  MNISTSimulatorExt<float> datasimulator;
+
+  // MNIST metadata
+  const std::size_t input_size = 784;
+  const std::size_t training_data_size = 10; //60000;
+  const std::size_t validation_data_size = 10; //10000;  
+  std::string training_data_filename = SMARTPEAK_GET_TEST_DATA_PATH("train-images.idx3-ubyte");
+  std::string training_labels_filename = SMARTPEAK_GET_TEST_DATA_PATH("train-labels.idx1-ubyte");
+  std::string validation_data_filename = SMARTPEAK_GET_TEST_DATA_PATH("t10k-images.idx3-ubyte");
+  std::string validation_labels_filename = SMARTPEAK_GET_TEST_DATA_PATH("t10k-labels.idx1-ubyte");
+
+  // Read training data
+  datasimulator.readData(training_data_filename, training_labels_filename, true, training_data_size, input_size);
+
+  // Read validation data
+  datasimulator.readData(validation_data_filename, validation_labels_filename, false, validation_data_size, input_size);
+
+  // Test
+  datasimulator.unitScaleData();
+}
+
+BOOST_AUTO_TEST_CASE(centerUnitScaleData)
+{
+  MNISTSimulatorExt<float> datasimulator;
+
+  // MNIST metadata
+  const std::size_t input_size = 784;
+  const std::size_t training_data_size = 10; //60000;
+  const std::size_t validation_data_size = 10; //10000;  
+  std::string training_data_filename = SMARTPEAK_GET_TEST_DATA_PATH("train-images.idx3-ubyte");
+  std::string training_labels_filename = SMARTPEAK_GET_TEST_DATA_PATH("train-labels.idx1-ubyte");
+  std::string validation_data_filename = SMARTPEAK_GET_TEST_DATA_PATH("t10k-images.idx3-ubyte");
+  std::string validation_labels_filename = SMARTPEAK_GET_TEST_DATA_PATH("t10k-labels.idx1-ubyte");
+
+  // Read training data
+  datasimulator.readData(training_data_filename, training_labels_filename, true, training_data_size, input_size);
+
+  // Read validation data
+  datasimulator.readData(validation_data_filename, validation_labels_filename, false, validation_data_size, input_size);
+
+  // Test
+  datasimulator.centerUnitScaleData();
+}
+
+BOOST_AUTO_TEST_CASE(corruptTrainingData)
+{
+  MNISTSimulatorExt<float> datasimulator;
+
+  // MNIST metadata
+  const std::size_t input_size = 784;
+  const std::size_t training_data_size = 10; //60000;
+  const std::size_t validation_data_size = 10; //10000;  
+  std::string training_data_filename = SMARTPEAK_GET_TEST_DATA_PATH("train-images.idx3-ubyte");
+  std::string training_labels_filename = SMARTPEAK_GET_TEST_DATA_PATH("train-labels.idx1-ubyte");
+  std::string validation_data_filename = SMARTPEAK_GET_TEST_DATA_PATH("t10k-images.idx3-ubyte");
+  std::string validation_labels_filename = SMARTPEAK_GET_TEST_DATA_PATH("t10k-labels.idx1-ubyte");
+
+  // Read training data
+  datasimulator.readData(training_data_filename, training_labels_filename, true, training_data_size, input_size);
+
+  // Read validation data
+  datasimulator.readData(validation_data_filename, validation_labels_filename, false, validation_data_size, input_size);
+
+  // Test
+  datasimulator.corruptTrainingData(0.25);
 }
 
 BOOST_AUTO_TEST_SUITE_END()
