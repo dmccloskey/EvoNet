@@ -394,8 +394,8 @@ public:
     const int n_metric_output_nodes = metric_output_data.dimension(2);
     const int n_input_pixels = this->validation_data.dimension(1);
 
-    assert(n_output_nodes == n_input_pixels + 2 * n_encodings_ + 2 * n_categorical_); // mu, logvar, logalpha, XEntropy
-    assert(n_metric_output_nodes == n_categorical_ + n_input_pixels);
+    assert(n_output_nodes == n_input_pixels + 2 * n_encodings_ + n_categorical_); // mu, logvar, logalpha
+    assert(n_metric_output_nodes == n_input_pixels);
     assert(n_input_nodes == n_input_pixels + n_encodings_ + 2 * n_categorical_); // Guassian sampler, Gumbel sampler, inverse tau
 
     // make the start and end sample indices
@@ -426,8 +426,6 @@ public:
             input_data(batch_iter, memory_iter, nodes_iter + n_input_pixels + n_encodings_) = categorical_samples(0, nodes_iter); // sample from gumbel distribution
             input_data(batch_iter, memory_iter, nodes_iter + n_input_pixels + n_encodings_ + n_categorical_) = inverse_tau; // inverse tau
             loss_output_data(batch_iter, memory_iter, nodes_iter + n_input_pixels + 2 * n_encodings_) = 0; // Dummy data for the KL divergence cat
-            loss_output_data(batch_iter, memory_iter, nodes_iter + n_input_pixels + 2 * n_encodings_ + n_categorical_) = (TensorT)this->training_labels(sample_indices(batch_iter), nodes_iter); // Expected label
-            metric_output_data(batch_iter, memory_iter, nodes_iter + n_input_pixels) = (TensorT)this->training_labels(sample_indices(batch_iter), nodes_iter); // Expected label
           }
         }
       }
@@ -443,8 +441,8 @@ public:
     const int n_metric_output_nodes = metric_output_data.dimension(2);
     const int n_input_pixels = this->validation_data.dimension(1);
 
-    assert(n_output_nodes == n_input_pixels + 2 * n_encodings_ + 2 * n_categorical_); // mu, logvar, logalpha, XEntropy
-    assert(n_metric_output_nodes == n_categorical_ + n_input_pixels);
+    assert(n_output_nodes == n_input_pixels + 2 * n_encodings_ + n_categorical_); // mu, logvar, logalpha
+    assert(n_metric_output_nodes == n_input_pixels);
     assert(n_input_nodes == n_input_pixels + n_encodings_ + 2 * n_categorical_); // Guassian sampler, Gumbel sampler, inverse tau
 
     // make the start and end sample indices
@@ -475,8 +473,6 @@ public:
             input_data(batch_iter, memory_iter, nodes_iter + n_input_pixels + n_encodings_) = categorical_samples(0, nodes_iter); // sample from gumbel distribution
             input_data(batch_iter, memory_iter, nodes_iter + n_input_pixels + n_encodings_ + n_categorical_) = inverse_tau; // inverse tau
             loss_output_data(batch_iter, memory_iter, nodes_iter + n_input_pixels + 2 * n_encodings_) = 0; // Dummy data for KL divergence cat
-            loss_output_data(batch_iter, memory_iter, nodes_iter + n_input_pixels + 2 * n_encodings_ + n_categorical_) = (TensorT)this->validation_labels(sample_indices(batch_iter), nodes_iter); // Expected label
-            metric_output_data(batch_iter, memory_iter, nodes_iter + n_input_pixels) = (TensorT)this->validation_labels(sample_indices(batch_iter), nodes_iter); // Expected label
           }
         }
       }
@@ -489,14 +485,16 @@ public:
     const int memory_size = input_data.dimension(1);
     const int n_input_nodes = input_data.dimension(2);
 
-    assert(n_input_nodes ==  n_encodings_ + n_categorical_); // Guassian sampler, Gumbel sampler
+    assert(n_input_nodes ==  n_encodings_ + n_categorical_); // Guassian encoding, Gumbel categorical
     input_data = input_data.constant(TensorT(0)); // initialize the input to 0;
 
-    // Assign the encoding values
+    // Assign the encoding values by sampling the 95% confidence limits of the inverse normal distribution
     const TensorT step_size = (0.95 - 0.05) / (batch_size - 1);
+    input_data.chip(encodings_traversal_iter_, 2) = (input_data.chip(encodings_traversal_iter_, 2).constant(step_size).cumsum(0) +
+      input_data.chip(encodings_traversal_iter_, 2).constant(TensorT(0.05))).ndtri();
 
     // Assign the categorical values
-    input_data.chip(n_encodings_ + categorical_traversal_iter_, 2) = input_data.chip(n_encodings_ + categorical_traversal_iter_, 2).constant(TensorT(0));
+    input_data.chip(n_encodings_ + categorical_traversal_iter_, 2) = input_data.chip(n_encodings_ + categorical_traversal_iter_, 2).constant(TensorT(1));
 
     // Increase the traversal iterators
     if (encodings_traversal_iter_ >= n_encodings_) {
@@ -507,7 +505,6 @@ public:
       categorical_traversal_iter_ = 0;
     }
   }
-
 };
 
 template<typename TensorT>
@@ -528,19 +525,7 @@ class PopulationTrainerExt : public PopulationTrainerGpu<TensorT>
   Data processing:
   - whole image pixels (linearized) 28x28 normalized to 0 to 1
  */
-void main_MNIST(const std::string& data_dir, const bool& make_model, const bool& train_model) {
-
-  const int n_hard_threads = std::thread::hardware_concurrency();
-  const int n_threads = 1;
-
-  // define the populatin trainer
-  PopulationTrainerExt<float> population_trainer;
-  population_trainer.setNGenerations(1);
-  population_trainer.setLogging(false);
-
-  // define the population logger
-  PopulationLogger<float> population_logger(true, true);
-
+void trainModel(const std::string& data_dir, const bool& make_model) {
   // define the model logger
   ModelLogger<float> model_logger(true, true, false, false, false, false, false);
 
@@ -631,22 +616,12 @@ void main_MNIST(const std::string& data_dir, const bool& make_model, const bool&
     encoding_nodes_logalpha.push_back(name);
   }
 
-  // Make the categorical output nodes
-  std::vector<std::string> categorical_nodes_output;
-  for (int i = 0; i < categorical_size; ++i) {
-    char name_char[512];
-    sprintf(name_char, "Categorical_encoding-Out_%012d", i);
-    std::string name(name_char);
-    categorical_nodes_output.push_back(name);
-  }
-
   // define the model trainers and resources for the trainers
   std::vector<ModelInterpreterGpu<float>> model_interpreters;
-  for (size_t i = 0; i < n_threads; ++i) {
-    ModelResources model_resources = { ModelDevice(0, 1) };
-    ModelInterpreterGpu<float> model_interpreter(model_resources);
-    model_interpreters.push_back(model_interpreter);
-  }
+  ModelResources model_resources = { ModelDevice(0, 1) };
+  ModelInterpreterGpu<float> model_interpreter(model_resources);
+  model_interpreters.push_back(model_interpreter);
+
   ModelTrainerExt<float> model_trainer;
   model_trainer.setBatchSize(128);
   model_trainer.setNEpochsTraining(200001);
@@ -662,27 +637,22 @@ void main_MNIST(const std::string& data_dir, const bool& make_model, const bool&
     //std::make_shared<BCEWithLogitsLossOp<float>>(BCEWithLogitsLossOp<float>(1e-6, 1.0)),
     std::make_shared<KLDivergenceMuLossOp<float>>(KLDivergenceMuLossOp<float>(1e-6, 0.0, 0.0)),
     std::make_shared<KLDivergenceLogVarLossOp<float>>(KLDivergenceLogVarLossOp<float>(1e-6, 0.0, 0.0)),
-    std::make_shared<KLDivergenceCatLossOp<float>>(KLDivergenceCatLossOp<float>(1e-6, 0.0, 0.0)),
-    std::make_shared<NegativeLogLikelihoodLossOp<float>>(NegativeLogLikelihoodLossOp<float>(1e-6, 0.0)) });
+    std::make_shared<KLDivergenceCatLossOp<float>>(KLDivergenceCatLossOp<float>(1e-6, 0.0, 0.0)) });
   model_trainer.setLossFunctionGrads({
     std::make_shared<MSELossGradOp<float>>(MSELossGradOp<float>(1e-6, 1.0)),
     //std::make_shared<BCEWithLogitsLossGradOp<float>>(BCEWithLogitsLossGradOp<float>(1e-6, 1.0)),
     std::make_shared<KLDivergenceMuLossGradOp<float>>(KLDivergenceMuLossGradOp<float>(1e-6, 0.0, 0.0)),
     std::make_shared<KLDivergenceLogVarLossGradOp<float>>(KLDivergenceLogVarLossGradOp<float>(1e-6, 0.0, 0.0)),
-    std::make_shared<KLDivergenceCatLossGradOp<float>>(KLDivergenceCatLossGradOp<float>(1e-6, 0.0, 0.0)),
-    std::make_shared<NegativeLogLikelihoodLossGradOp<float>>(NegativeLogLikelihoodLossGradOp<float>(1e-6, 0.0)) });
-  model_trainer.setLossOutputNodes({ output_nodes, encoding_nodes_mu, encoding_nodes_logvar, encoding_nodes_logalpha, categorical_nodes_output });
-  model_trainer.setMetricFunctions({ std::make_shared<MAEOp<float>>(MAEOp<float>()), std::make_shared<PrecisionMCMicroOp<float>>(PrecisionMCMicroOp<float>()) });
-  model_trainer.setMetricOutputNodes({ output_nodes, categorical_nodes_output });
-  model_trainer.setMetricNames({ "MAE", "PrecisionMCMicro" });
-
-  // define the model replicator for growth mode
-  ModelReplicatorExt<float> model_replicator;
+    std::make_shared<KLDivergenceCatLossGradOp<float>>(KLDivergenceCatLossGradOp<float>(1e-6, 0.0, 0.0)) });
+  model_trainer.setLossOutputNodes({ output_nodes, encoding_nodes_mu, encoding_nodes_logvar, encoding_nodes_logalpha });
+  model_trainer.setMetricFunctions({ std::make_shared<MAEOp<float>>(MAEOp<float>()) });
+  model_trainer.setMetricOutputNodes({ output_nodes });
+  model_trainer.setMetricNames({ "MAE" });
 
   // define the initial population
-  std::cout << "Initializing the population..." << std::endl;
   Model<float> model;
   if (make_model) {
+    std::cout << "Making the model..." << std::endl;
     model_trainer.makeCVAE(model, input_size, categorical_size, encoding_size, n_hidden);
   }
   else {
@@ -697,26 +667,46 @@ void main_MNIST(const std::string& data_dir, const bool& make_model, const bool&
     ModelInterpreterFileGpu<float> model_interpreter_file;
     model_interpreter_file.loadModelInterpreterBinary(interpreter_filename, model_interpreters[0]);
   }
-  //std::vector<Model<float>> population = { model };
 
-  if (train_model) {
-    // Train the model
-    std::pair<std::vector<float>, std::vector<float>> model_errors = model_trainer.trainModel(model, data_simulator,
-      input_nodes, model_logger, model_interpreters.front());
+  // Train the model
+  std::pair<std::vector<float>, std::vector<float>> model_errors = model_trainer.trainModel(model, data_simulator,
+    input_nodes, model_logger, model_interpreters.front());
+}
 
-    //// Evolve the population
-    //std::vector<std::vector<std::tuple<int, std::string, float>>> models_validation_errors_per_generation = population_trainer.evolveModels(
-    //	population, model_trainer, model_interpreters, model_replicator, data_simulator, model_logger, population_logger, input_nodes);
+void traverseLatentSpace(const std::string& data_dir) {
 
-    //PopulationTrainerFile<float> population_trainer_file;
-    //population_trainer_file.storeModels(population, "MNIST");
-    //population_trainer_file.storeModelValidations("MNISTErrors.csv", models_validation_errors_per_generation);
-  }
-  else {
-    //// Evaluate the population
-    //population_trainer.evaluateModels(
-    //  population, model_trainer, model_interpreters, model_replicator, data_simulator, model_logger, input_nodes);
-  }
+  // define the model logger
+  ModelLogger<float> model_logger(true, true, false, false, false, false, false);
+
+  // define the data simulator
+  const std::size_t input_size = 784;
+  const std::size_t encoding_size = 8;
+  const std::size_t categorical_size = 10;
+  const std::size_t n_hidden = 512;
+  DataSimulatorExt<float> data_simulator;
+  data_simulator.n_encodings_ = encoding_size;
+  data_simulator.n_categorical_ = categorical_size;
+
+  // define the model trainers and resources for the trainers
+  std::vector<ModelInterpreterGpu<float>> model_interpreters;
+  ModelResources model_resources = { ModelDevice(0, 1) };
+  ModelInterpreterGpu<float> model_interpreter(model_resources);
+  model_interpreters.push_back(model_interpreter);
+
+  ModelTrainerExt<float> model_trainer;
+  model_trainer.setBatchSize(128); // determines the number of samples across the latent dimension
+  model_trainer.setNEpochsEvaluation(encoding_size * categorical_size); // determined by the number of latent dimensions to traverse
+  model_trainer.setMemorySize(1);
+  model_trainer.setVerbosityLevel(1);
+  model_trainer.setLogging(true);
+  model_trainer.setFindCycles(false);
+  model_trainer.setFastInterpreter(true);
+
+  // read in the trained model
+
+  // build the decoder and update the weights from the trained model
+
+  // traverse the latent space (evaluation)
 }
 
 int main(int argc, char** argv)
@@ -737,7 +727,7 @@ int main(int argc, char** argv)
   }
 
   // run the application
-  main_MNIST(data_dir, make_model, train_model);
+  if (train_model) trainModel(data_dir, make_model);
 
   return 0;
 }

@@ -38,12 +38,15 @@ Model<float> makeModel1()
 	w1 = Weight<float>("0", weight_init, solver);
 	weight_init = std::make_shared<ConstWeightInitOp<float>>(ConstWeightInitOp<float>(1.0));
 	solver = std::make_shared<SGDOp<float>>(SGDOp<float>(0.01, 0.9));
+  w1.setWeight(1);
 	w2 = Weight<float>("1", weight_init, solver);
 	weight_init = std::make_shared<ConstWeightInitOp<float>>(ConstWeightInitOp<float>(1.0));
 	solver = std::make_shared<SGDOp<float>>(SGDOp<float>(0.01, 0.9));
+  w2.setWeight(2);
 	w3 = Weight<float>("2", weight_init, solver);
 	weight_init = std::make_shared<ConstWeightInitOp<float>>(ConstWeightInitOp<float>(1.0));
 	solver = std::make_shared<SGDOp<float>>(SGDOp<float>(0.01, 0.9));
+  w3.setWeight(3);
 	w4 = Weight<float>("3", weight_init, solver);
 	weight_init = std::make_shared<ConstWeightInitOp<float>>(ConstWeightInitOp<float>(1.0));
 	solver = std::make_shared<SGDOp<float>>(SGDOp<float>(0.01, 0.9));
@@ -164,6 +167,37 @@ BOOST_AUTO_TEST_CASE(loadModelBinary)
   BOOST_CHECK(model_test.getInputNodes().size() == model1.getInputNodes().size()); // Not sure why this fails
   BOOST_CHECK(model_test.getOutputNodes().size() == model1.getOutputNodes().size()); // Not sure why this fails
 	//BOOST_CHECK(model_test == model1); // Not sure why this fails
+}
+
+BOOST_AUTO_TEST_CASE(loadWeightValuesBinary)
+{
+  // Store the binarized model
+  ModelFile<float> data;
+  std::string filename = "ModelFileTest.binary";
+  Model<float> model1 = makeModel1();
+  model1.setInputAndOutputNodes();
+  data.storeModelBinary(filename, model1);
+
+  // Read in the weight values
+  std::map<std::string, std::shared_ptr<Weight<float>>> weights_test;
+  for (int i = 0; i < 3; ++i) {
+    auto weight_init = std::make_shared<ConstWeightInitOp<float>>(ConstWeightInitOp<float>(1.0));
+    auto solver = std::make_shared<SGDOp<float>>(SGDOp<float>(0.01, 0.9));
+    std::shared_ptr<Weight<float>> weight(new Weight<float>(
+      std::to_string(i),
+      weight_init,
+      solver));
+    weight->setModuleName(std::to_string(i));
+    weight->setWeight(0);
+    weights_test.emplace(weight->getName(), weight);
+  }
+  data.loadWeightValuesBinary(filename, weights_test);
+
+  // Test that the weight values match 
+  for (int i = 0; i < 3; ++i) {
+    BOOST_CHECK_EQUAL(model1.weights_.at(std::to_string(i))->getWeight(), weights_test.at(std::to_string(i))->getWeight());
+    BOOST_CHECK(!weights_test.at(std::to_string(i))->getInitWeight());
+  }
 }
 
 BOOST_AUTO_TEST_SUITE_END()

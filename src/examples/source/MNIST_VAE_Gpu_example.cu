@@ -886,9 +886,6 @@ void main_MNIST(const std::string& data_dir, const bool& make_model, const bool&
   model_trainer.setMetricOutputNodes({ output_nodes });
   model_trainer.setMetricNames({ "MAE" });
 
-  // define the model replicator
-  ModelReplicatorExt<float> model_replicator;
-
   // define the initial population
   Model<float> model;
   if (make_model) {
@@ -914,26 +911,10 @@ void main_MNIST(const std::string& data_dir, const bool& make_model, const bool&
     //  }
     //}
   }
-  //std::vector<Model<float>> population = { model };
 
-  if (train_model) {
-    // Train the model
-    std::pair<std::vector<float>, std::vector<float>> model_errors = model_trainer.trainModel(model, data_simulator,
-      input_nodes, model_logger, model_interpreters.front());
-
-    //// Evolve the population
-    //std::vector<std::vector<std::tuple<int, std::string, float>>> models_validation_errors_per_generation = population_trainer.evolveModels(
-    //  population, model_trainer, model_interpreters, model_replicator, data_simulator, model_logger, population_logger, input_nodes);
-
-    //PopulationTrainerFile<float> population_trainer_file;
-    //population_trainer_file.storeModels(population, "MNIST");
-    //population_trainer_file.storeModelValidations("MNISTErrors.csv", models_validation_errors_per_generation);
-  }
-  else {
-    //// Evaluate the population
-    //population_trainer.evaluateModels(
-    //	population, model_trainer, model_interpreters, model_replicator, data_simulator, model_logger, input_nodes);
-  }
+  // Train the model
+  std::pair<std::vector<float>, std::vector<float>> model_errors = model_trainer.trainModel(model, data_simulator,
+    input_nodes, model_logger, model_interpreters.front());
 }
 
 /// cmd: MNIST_VAE_example C:/Users/dmccloskey/Documents/GitHub/mnist/ true true
