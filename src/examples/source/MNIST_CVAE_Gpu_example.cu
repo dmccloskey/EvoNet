@@ -175,7 +175,7 @@ public:
 
     // Add the inputs
     std::vector<std::string> node_names_Gencoder = model_builder.addInputNodes(model, "Gaussian_encoding", "Gaussian_encoding", n_encodings, specify_layer);
-    std::vector<std::string> node_names_Cencoder = model_builder.addInputNodes(model, "Categorical_encoding", "Categorical_encoding", n_categorical, specify_layer);
+    std::vector<std::string> node_names_Cencoder = model_builder.addInputNodes(model, "Categorical_encoding-SoftMax-Out", "Categorical_encoding-SoftMax-Out", n_categorical, specify_layer);
 
     // Define the activation based on `add_feature_norm`
     std::shared_ptr<ActivationOp<TensorT>> activation = std::make_shared<LeakyReLUOp<TensorT>>(LeakyReLUOp<TensorT>());
@@ -190,7 +190,7 @@ public:
     auto solver_op = std::make_shared<AdamOp<TensorT>>(AdamOp<TensorT>(1e-5, 0.9, 0.999, 1e-8, 10));
 
     // Add the Decoder FC layers
-    node_names = model_builder.addFullyConnected(model, "DE0", "DE0", node_names_Gencoder, n_hidden_0,
+    std::vector<std::string> node_names = model_builder.addFullyConnected(model, "DE0", "DE0", node_names_Gencoder, n_hidden_0,
       activation, activation_grad, integration_op, integration_error_op, integration_weight_grad_op,
       std::make_shared<RandWeightInitOp<TensorT>>(RandWeightInitOp<TensorT>((TensorT)(node_names_Gencoder.size() + n_hidden_0) / 2, 1)),
       solver_op, 0.0f, 0.0f, false, specify_layer);
@@ -485,7 +485,7 @@ public:
     const int memory_size = input_data.dimension(1);
     const int n_input_nodes = input_data.dimension(2);
 
-    assert(n_input_nodes ==  n_encodings_ + n_categorical_); // Guassian encoding, Gumbel categorical
+    assert(n_input_nodes == n_encodings_ + n_categorical_); // Guassian encoding, Gumbel categorical
     input_data = input_data.constant(TensorT(0)); // initialize the input to 0;
 
     // Assign the encoding values by sampling the 95% confidence limits of the inverse normal distribution
@@ -530,7 +530,7 @@ void trainModel(const std::string& data_dir, const bool& make_model) {
   ModelLogger<float> model_logger(true, true, false, false, false, false, false);
 
   // define the data simulator
-  const std::size_t input_size = 784;
+  const std::size_t n_pixels = 784;
   const std::size_t encoding_size = 8;
   const std::size_t categorical_size = 10;
   const std::size_t n_hidden = 512;
@@ -541,19 +541,19 @@ void trainModel(const std::string& data_dir, const bool& make_model) {
   // read in the training data
   std::string training_data_filename = data_dir + "train-images.idx3-ubyte";
   std::string training_labels_filename = data_dir + "train-labels.idx1-ubyte";
-  data_simulator.readData(training_data_filename, training_labels_filename, true, training_data_size, input_size);
+  data_simulator.readData(training_data_filename, training_labels_filename, true, training_data_size, n_pixels);
 
   // read in the validation data
   std::string validation_data_filename = data_dir + "t10k-images.idx3-ubyte";
   std::string validation_labels_filename = data_dir + "t10k-labels.idx1-ubyte";
-  data_simulator.readData(validation_data_filename, validation_labels_filename, false, validation_data_size, input_size);
+  data_simulator.readData(validation_data_filename, validation_labels_filename, false, validation_data_size, n_pixels);
   data_simulator.unitScaleData();
   data_simulator.n_encodings_ = encoding_size;
   data_simulator.n_categorical_ = categorical_size;
 
   // Make the input nodes
   std::vector<std::string> input_nodes;
-  for (int i = 0; i < input_size; ++i) {
+  for (int i = 0; i < n_pixels; ++i) {
     char name_char[512];
     sprintf(name_char, "Input_%012d", i);
     std::string name(name_char);
@@ -582,7 +582,7 @@ void trainModel(const std::string& data_dir, const bool& make_model) {
 
   // Make the output nodes
   std::vector<std::string> output_nodes;
-  for (int i = 0; i < input_size; ++i) {
+  for (int i = 0; i < n_pixels; ++i) {
     char name_char[512];
     sprintf(name_char, "Output_%012d", i);
     std::string name(name_char);
@@ -653,7 +653,7 @@ void trainModel(const std::string& data_dir, const bool& make_model) {
   Model<float> model;
   if (make_model) {
     std::cout << "Making the model..." << std::endl;
-    model_trainer.makeCVAE(model, input_size, categorical_size, encoding_size, n_hidden);
+    model_trainer.makeCVAE(model, n_pixels, categorical_size, encoding_size, n_hidden);
   }
   else {
     // read in the trained model
@@ -673,13 +673,13 @@ void trainModel(const std::string& data_dir, const bool& make_model) {
     input_nodes, model_logger, model_interpreters.front());
 }
 
-void traverseLatentSpace(const std::string& data_dir) {
+void traverseLatentSpace(const std::string& data_dir, const bool& make_model) {
 
   // define the model logger
   ModelLogger<float> model_logger(true, true, false, false, false, false, false);
 
   // define the data simulator
-  const std::size_t input_size = 784;
+  const std::size_t n_pixels = 784;
   const std::size_t encoding_size = 8;
   const std::size_t categorical_size = 10;
   const std::size_t n_hidden = 512;
@@ -687,11 +687,35 @@ void traverseLatentSpace(const std::string& data_dir) {
   data_simulator.n_encodings_ = encoding_size;
   data_simulator.n_categorical_ = categorical_size;
 
+  // Make the input nodes
+  std::vector<std::string> input_nodes;
+
+  // Make the encoding nodes and add them to the input
+  for (int i = 0; i < encoding_size; ++i) {
+    char name_char[512];
+    sprintf(name_char, "Gaussian_encoding_%012d", i);
+    std::string name(name_char);
+    input_nodes.push_back(name);
+  }
+  for (int i = 0; i < categorical_size; ++i) {
+    char name_char[512];
+    sprintf(name_char, "Categorical_encoding-SoftMax-Out_%012d", i);
+    std::string name(name_char);
+    input_nodes.push_back(name);
+  }
+
+  // Make the output nodes
+  std::vector<std::string> output_nodes;
+  for (int i = 0; i < n_pixels; ++i) {
+    char name_char[512];
+    sprintf(name_char, "Output_%012d", i);
+    std::string name(name_char);
+    output_nodes.push_back(name);
+  }
+
   // define the model trainers and resources for the trainers
-  std::vector<ModelInterpreterGpu<float>> model_interpreters;
   ModelResources model_resources = { ModelDevice(0, 1) };
   ModelInterpreterGpu<float> model_interpreter(model_resources);
-  model_interpreters.push_back(model_interpreter);
 
   ModelTrainerExt<float> model_trainer;
   model_trainer.setBatchSize(128); // determines the number of samples across the latent dimension
@@ -701,12 +725,40 @@ void traverseLatentSpace(const std::string& data_dir) {
   model_trainer.setLogging(true);
   model_trainer.setFindCycles(false);
   model_trainer.setFastInterpreter(true);
-
-  // read in the trained model
+  model_trainer.setLossOutputNodes({ output_nodes });
 
   // build the decoder and update the weights from the trained model
+  Model<float> model;
+  if (make_model) {
+    std::cout << "Making the model..." << std::endl;
+    model_trainer.makeCVAEDecoder(model, n_pixels, categorical_size, encoding_size, n_hidden);
+    std::cout << "Reading in the trained model weights..." << std::endl;
+    const std::string model_filename = data_dir + "CVAE_model.binary";
+    ModelFile<float> model_file;
+    model_file.loadWeightValuesBinary(model_filename, model.weights_);
+
+    // check that all weights were read in correctly
+    for (auto& weight_map : model.getWeightsMap()) {
+      if (weight_map.second->getInitWeight()) {
+        std::cout << "Model " << model.getName() << " Weight " << weight_map.first << " has not be initialized." << std::endl;;
+      }
+    }
+  }
+  else {
+    // read in the trained model
+    std::cout << "Reading in the model..." << std::endl;
+    const std::string model_filename = data_dir + "CVAEDecoder_model.binary";
+    const std::string interpreter_filename = data_dir + "CVAEDecoder_interpreter.binary";
+    ModelFile<float> model_file;
+    model_file.loadModelBinary(model_filename, model);
+    model.setId(1);
+    model.setName("CVAEDecoder1");
+    ModelInterpreterFileGpu<float> model_interpreter_file;
+    model_interpreter_file.loadModelInterpreterBinary(interpreter_filename, model_interpreter);
+  }
 
   // traverse the latent space (evaluation)
+  Eigen::Tensor<float, 4> values = model_trainer.evaluateModel(model, data_simulator, input_nodes, model_logger, model_interpreter);
 }
 
 int main(int argc, char** argv)
@@ -715,7 +767,7 @@ int main(int argc, char** argv)
   std::string data_dir = "C:/Users/dmccloskey/Documents/GitHub/mnist/";
   //std::string data_dir = "/home/user/data/";
   //std::string data_dir = "C:/Users/domccl/GitHub/mnist/";
-  bool make_model = true, train_model = true;
+  bool make_model = true, train_model = false;
   if (argc >= 2) {
     data_dir = argv[1];
   }
@@ -728,6 +780,7 @@ int main(int argc, char** argv)
 
   // run the application
   if (train_model) trainModel(data_dir, make_model);
+  else traverseLatentSpace(data_dir, make_model);
 
   return 0;
 }
