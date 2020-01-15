@@ -255,7 +255,7 @@ public:
     // Adjust the population size
     //this->setPopulationSizeFixed(n_generations, models, models_errors_per_generations);
     // [TODO: single model training requires the line below to be commented]
-    //this->setPopulationSizeDoubling(n_generations, models, models_errors_per_generations);
+    this->setPopulationSizeDoubling(n_generations, models, models_errors_per_generations);
 	}
 	void trainingPopulationLogger(
 		const int& n_generations,
@@ -277,8 +277,8 @@ public:
 void main_AddProbAtt(const std::string& mode) {
   // define the population trainer parameters
   PopulationTrainerExt<float> population_trainer;
-  //population_trainer.setNGenerations(50); // population training
-  population_trainer.setNGenerations(1); // single model training
+  population_trainer.setNGenerations(50); // population training
+  //population_trainer.setNGenerations(1); // single model training
   population_trainer.setLogging(true);
 
   // define the population logger
@@ -319,8 +319,8 @@ void main_AddProbAtt(const std::string& mode) {
   ModelTrainerExt<float> model_trainer;
   model_trainer.setBatchSize(32);
   model_trainer.setMemorySize(1);
-  //model_trainer.setNEpochsTraining(100); // population training
-  model_trainer.setNEpochsTraining(5000); // single model training
+  model_trainer.setNEpochsTraining(100); // population training
+  //model_trainer.setNEpochsTraining(5000); // single model training
   model_trainer.setNEpochsValidation(25);
   model_trainer.setVerbosityLevel(1);
   model_trainer.setFindCycles(false);
@@ -359,8 +359,8 @@ void main_AddProbAtt(const std::string& mode) {
 
     // make the model name
     Model<float> model;
-    //model_trainer.makeModelMinimal(model, input_nodes.size() / 2, output_nodes.size());
-    model_trainer.makeModelSolution(model, input_nodes.size() / 2, output_nodes.size(), false, false);
+    model_trainer.makeModelMinimal(model, input_nodes.size() / 2, output_nodes.size());
+    //model_trainer.makeModelSolution(model, input_nodes.size() / 2, output_nodes.size(), false, false);
     //model_trainer.makeModelAttention(model, (int)(input_nodes.size() / 2), output_nodes.size(), { 4 }, { 8 }, { 16 }, false, false, false, true);
     population.push_back(model);
 
