@@ -96,31 +96,47 @@ public:
     std::vector<std::string> node_names_random = model_builder.addInputNodes(model, "Random", "Random", n_inputs, specify_layers);
     std::vector<std::string> node_names_mask = model_builder.addInputNodes(model, "Mask", "Mask", n_inputs, specify_layers);
 
+    // Define the activation 
+    std::shared_ptr<ActivationOp<TensorT>> activation = std::make_shared<LeakyReLUOp<TensorT>>(LeakyReLUOp<TensorT>());
+    std::shared_ptr<ActivationOp<TensorT>> activation_grad = std::make_shared<LeakyReLUGradOp<TensorT>>(LeakyReLUGradOp<TensorT>());
+    std::shared_ptr<ActivationOp<TensorT>> activation_output = std::make_shared<LeakyReLUOp<TensorT>>(LeakyReLUOp<TensorT>());
+    std::shared_ptr<ActivationOp<TensorT>> activation_output_grad = std::make_shared<LeakyReLUGradOp<TensorT>>(LeakyReLUGradOp<TensorT>());
+
+    // Define the node integration
+    auto integration_op = std::make_shared<SumOp<TensorT>>(SumOp<TensorT>());
+    auto integration_error_op = std::make_shared<SumErrorOp<TensorT>>(SumErrorOp<TensorT>());
+    auto integration_weight_grad_op = std::make_shared<SumWeightGradOp<TensorT>>(SumWeightGradOp<TensorT>());
+
+    // Define the solver
+    auto solver_op = std::make_shared<SGDOp<TensorT>>(SGDOp<TensorT>(1e-4, 0.9, 10));
+
     // Add the hidden layer
     std::vector<std::string> node_names = model_builder.addFullyConnected(model, "HiddenR", "HiddenR", node_names_random, n_hidden_0,
-      std::make_shared<LinearOp<TensorT>>(LinearOp<TensorT>()),
-      std::make_shared<LinearGradOp<TensorT>>(LinearGradOp<TensorT>()),
-      std::make_shared<SumOp<TensorT>>(SumOp<TensorT>()),
-      std::make_shared<SumErrorOp<TensorT>>(SumErrorOp<TensorT>()),
-      std::make_shared<SumWeightGradOp<TensorT>>(SumWeightGradOp<TensorT>()),
+      activation, activation_grad, integration_op, integration_error_op, integration_weight_grad_op,
       std::make_shared<RandWeightInitOp<TensorT>>(RandWeightInitOp<TensorT>((int)(node_names_random.size() + n_hidden_0) / 2, 1)),
-      std::make_shared<AdamOp<TensorT>>(AdamOp<TensorT>(0.001, 0.9, 0.999, 1e-8, 10.0)), 0.0f, 0.0f, false, specify_layers);
+      solver_op, 0.0f, 0.0f, false, specify_layers);
     model_builder.addFullyConnected(model, "HiddenR", node_names_mask, node_names,
       std::make_shared<RandWeightInitOp<TensorT>>(RandWeightInitOp<TensorT>((int)(node_names_mask.size() + n_hidden_0) / 2, 1)),
-      std::make_shared<AdamOp<TensorT>>(AdamOp<TensorT>(0.001, 0.9, 0.999, 1e-8)), 0.0f, specify_layers);
+      solver_op, 0.0f, specify_layers);
 
     // Add the output layer
-    node_names = model_builder.addFullyConnected(model, "Output", "Output", node_names, n_outputs,
+    node_names = model_builder.addFullyConnected(model, "FC-Out", "FC-Out", node_names, n_outputs,
+      activation_output, activation_output_grad, integration_op, integration_error_op, integration_weight_grad_op,
+      std::make_shared<RandWeightInitOp<TensorT>>(RandWeightInitOp<TensorT>(node_names.size(), 2)),
+      solver_op, 0.0f, 0.0f, false, true);
+    for (const std::string& node_name : node_names)
+      model.getNodesMap().at(node_name)->setType(NodeType::unmodifiable);
+
+    node_names = model_builder.addSinglyConnected(model, "Output", "Output", node_names, n_outputs,
       std::make_shared<LinearOp<TensorT>>(LinearOp<TensorT>()),
       std::make_shared<LinearGradOp<TensorT>>(LinearGradOp<TensorT>()),
-      std::make_shared<SumOp<TensorT>>(SumOp<TensorT>()),
-      std::make_shared<SumErrorOp<TensorT>>(SumErrorOp<TensorT>()),
-      std::make_shared<SumWeightGradOp<TensorT>>(SumWeightGradOp<TensorT>()),
-      std::make_shared<RandWeightInitOp<TensorT>>(RandWeightInitOp<TensorT>((int)(node_names.size() + n_outputs) / 2, 1)),
-        std::make_shared<AdamOp<TensorT>>(AdamOp<TensorT>(0.001, 0.9, 0.999, 1e-8, 10.0)), 0.0f, 0.0f, false, true);
+      integration_op, integration_error_op, integration_weight_grad_op,
+      std::make_shared<ConstWeightInitOp<TensorT>>(ConstWeightInitOp<TensorT>(1)),
+      std::make_shared<DummySolverOp<TensorT>>(DummySolverOp<TensorT>()), 0.0f, 0.0f, false, true);
 
     for (const std::string& node_name : node_names)
-      model.nodes_.at(node_name)->setType(NodeType::output);
+      model.getNodesMap().at(node_name)->setType(NodeType::output);
+    model.setInputAndOutputNodes();
 	}
 	/*
 	@brief Minimal newtork required to solve the addition problem
@@ -136,41 +152,57 @@ public:
     std::vector<std::string> node_names_random = model_builder.addInputNodes(model, "Random", "Random", n_inputs, specify_layers);
     std::vector<std::string> node_names_mask = model_builder.addInputNodes(model, "Mask", "Mask", n_inputs, specify_layers);
 
-    std::shared_ptr<SolverOp<TensorT>> solver;
+    // Define the activation 
+    std::shared_ptr<ActivationOp<TensorT>> activation = std::make_shared<LeakyReLUOp<TensorT>>(LeakyReLUOp<TensorT>());
+    std::shared_ptr<ActivationOp<TensorT>> activation_grad = std::make_shared<LeakyReLUGradOp<TensorT>>(LeakyReLUGradOp<TensorT>());
+    std::shared_ptr<ActivationOp<TensorT>> activation_output = std::make_shared<LeakyReLUOp<TensorT>>(LeakyReLUOp<TensorT>());
+    std::shared_ptr<ActivationOp<TensorT>> activation_output_grad = std::make_shared<LeakyReLUGradOp<TensorT>>(LeakyReLUGradOp<TensorT>());
+
+    // Define the node integration
+    auto integration_op = std::make_shared<SumOp<TensorT>>(SumOp<TensorT>());
+    auto integration_error_op = std::make_shared<SumErrorOp<TensorT>>(SumErrorOp<TensorT>());
+    auto integration_weight_grad_op = std::make_shared<SumWeightGradOp<TensorT>>(SumWeightGradOp<TensorT>());
+
+    // Define the solver and weight init ops
+    std::shared_ptr<SolverOp<TensorT>> solver_op;
     std::shared_ptr<WeightInitOp<TensorT>> weight_init;
     if (init_weight_soln) {
-      solver.reset(new DummySolverOp<TensorT>());
+      solver_op = std::make_shared<DummySolverOp<TensorT>>(DummySolverOp<TensorT>());
       weight_init = std::make_shared<ConstWeightInitOp<TensorT>>(ConstWeightInitOp<TensorT>(1));
     }
     else {
-      solver.reset(new AdamOp<TensorT>(0.001, 0.9, 0.999, 1e-8));
-      weight_init.reset(new RangeWeightInitOp<float>(0.5, 1.5)); // Solves
-      //weight_init.reset(new RangeWeightInitOp<float>(-1, 1)); // Fails
-      //weight_init.reset(new RandWeightInitOp<TensorT>((int)(node_names_random.size() + n_inputs) / 2, 1)); // Fails
+      solver_op = std::make_shared<SGDOp<TensorT>>(SGDOp<TensorT>(1e-4, 0.9, 10));
+      weight_init = std::make_shared<RandWeightInitOp<TensorT>>(RandWeightInitOp<TensorT>((int)(node_names_random.size() + n_inputs) / 2, 1));
     }
 
     // Add the hidden layer
     std::vector<std::string> node_names = model_builder.addSinglyConnected(model, "HiddenR", "HiddenR", node_names_random, n_inputs,
-      std::make_shared<LinearOp<TensorT>>(LinearOp<TensorT>()),
-      std::make_shared<LinearGradOp<TensorT>>(LinearGradOp<TensorT>()),
+      activation, activation_grad,
       std::make_shared<ProdOp<TensorT>>(ProdOp<TensorT>()),
-     std::make_shared<ProdErrorOp<TensorT>>(ProdErrorOp<TensorT>()),
+      std::make_shared<ProdErrorOp<TensorT>>(ProdErrorOp<TensorT>()),
       std::make_shared<ProdWeightGradOp<TensorT>>(ProdWeightGradOp<TensorT>()),
-      weight_init, solver, 0.0f, 0.0f, false, specify_layers);
+      weight_init, solver_op, 0.0f, 0.0f, false, specify_layers);
     model_builder.addSinglyConnected(model, "HiddenR", node_names_mask, node_names,
-      weight_init, solver, 0.0f, specify_layers);
+      weight_init, solver_op, 0.0f, specify_layers);
 
     // Add the output layer
-    node_names = model_builder.addFullyConnected(model, "Output", "Output", node_names, n_outputs,
+    node_names = model_builder.addFullyConnected(model, "FC-Out", "FC-Out", node_names, n_outputs,
+      activation_output, activation_output_grad, integration_op, integration_error_op, integration_weight_grad_op,
+      std::make_shared<RandWeightInitOp<TensorT>>(RandWeightInitOp<TensorT>(node_names.size(), 2)),
+      solver_op, 0.0f, 0.0f, false, true);
+    for (const std::string& node_name : node_names)
+      model.getNodesMap().at(node_name)->setType(NodeType::unmodifiable);
+
+    node_names = model_builder.addSinglyConnected(model, "Output", "Output", node_names, n_outputs,
       std::make_shared<LinearOp<TensorT>>(LinearOp<TensorT>()),
       std::make_shared<LinearGradOp<TensorT>>(LinearGradOp<TensorT>()),
-      std::make_shared<SumOp<TensorT>>(SumOp<TensorT>()),
-      std::make_shared<SumErrorOp<TensorT>>(SumErrorOp<TensorT>()),
-      std::make_shared<SumWeightGradOp<TensorT>>(SumWeightGradOp<TensorT>()),
-      weight_init, solver, 0.0f, 0.0f, false, true);  // always specify the output layer!
+      integration_op, integration_error_op, integration_weight_grad_op,
+      std::make_shared<ConstWeightInitOp<TensorT>>(ConstWeightInitOp<TensorT>(1)),
+      std::make_shared<DummySolverOp<TensorT>>(DummySolverOp<TensorT>()), 0.0f, 0.0f, false, true);
 
     for (const std::string& node_name : node_names)
       model.nodes_.at(node_name)->setType(NodeType::output);
+    model.setInputAndOutputNodes();
 	}  
 	/*
 	@brief Dot product attention implementation with a single attention layer
@@ -265,14 +297,7 @@ public:
 		const int& n_epochs,
 		Model<TensorT>& model,
 		ModelInterpreterDefaultDevice<TensorT>& model_interpreter,
-		const std::vector<float>& model_errors)override {
-		if (n_epochs % 500 == 0 && n_epochs != 0) {
-			// save the model every 500 epochs
-			ModelFile<TensorT> data;
-			data.storeModelCsv(model.getName() + "_" + std::to_string(n_epochs) + "_nodes.csv",
-				model.getName() + "_" + std::to_string(n_epochs) + "_links.csv",
-				model.getName() + "_" + std::to_string(n_epochs) + "_weights.csv", model);
-		}
+		const std::vector<float>& model_errors) override {
 		// Check point the model every 1000 epochs
 		if (n_epochs % 1000 == 0 && n_epochs != 0) {
 			model_interpreter.getModelResults(model, false, true, false, false);
@@ -282,40 +307,14 @@ public:
 			interpreter_data.storeModelInterpreterBinary(model.getName() + "_" + std::to_string(n_epochs) + "_interpreter.binary", model_interpreter);
 		}
 	}
-	void trainingModelLogger(const int & n_epochs, Model<TensorT>& model, ModelInterpreterDefaultDevice<TensorT>& model_interpreter, ModelLogger<TensorT>& model_logger,
-		const Eigen::Tensor<TensorT, 3>& expected_values,
-		const std::vector<std::string>& output_nodes,
-		const TensorT& model_error)override
-	{
-		//model_logger.setLogTimeEpoch(true);
-		//model_logger.setLogTrainValMetricEpoch(true);
-		//model_logger.setLogExpectedEpoch(true);
-		if (n_epochs == 0) {
-			model_logger.initLogs(model);
-		}
-		if (n_epochs % 10 == 0) {
-			if (model_logger.getLogExpectedEpoch())
-				model_interpreter.getModelResults(model, true, false, false);
-			model_logger.writeLogs(model, n_epochs, { "Error" }, {}, { model_error }, {}, output_nodes, expected_values);
-		}
-	}
-	void validationModelLogger(const int & n_epochs, Model<TensorT>& model, ModelInterpreterDefaultDevice<TensorT>& model_interpreter, ModelLogger<TensorT>& model_logger,
-		const Eigen::Tensor<TensorT, 3>& expected_values,
-		const std::vector<std::string>& output_nodes,
-		const TensorT& model_error)override
-	{
-		//model_logger.setLogTimeEpoch(false);
-		//model_logger.setLogTrainValMetricEpoch(false);
-		//model_logger.setLogExpectedEpoch(true);
-		if (n_epochs == 0) {
-			model_logger.initLogs(model);
-		}
-		if (n_epochs % 1 == 0) {
-			if (model_logger.getLogExpectedEpoch())
-				model_interpreter.getModelResults(model, true, false, false);
-			model_logger.writeLogs(model, n_epochs, {}, { "Error" }, {}, { model_error }, output_nodes, expected_values);
-		}
-	}
+  void trainingModelLogger(const int& n_epochs, Model<TensorT>& model, ModelInterpreterDefaultDevice<TensorT>& model_interpreter, ModelLogger<TensorT>& model_logger,
+    const Eigen::Tensor<TensorT, 3>& expected_values, const std::vector<std::string>& output_nodes, const std::vector<std::string>& input_nodes, const TensorT& model_error) override
+  { // Left blank intentionally to prevent writing of files during training
+  }
+  void validationModelLogger(const int& n_epochs, Model<TensorT>& model, ModelInterpreterDefaultDevice<TensorT>& model_interpreter, ModelLogger<TensorT>& model_logger,
+    const Eigen::Tensor<TensorT, 3>& expected_values, const std::vector<std::string>& output_nodes, const std::vector<std::string>& input_nodes, const TensorT& model_error) override
+  { // Left blank intentionally to prevent writing of files during validation
+  }
 };
 
 template<typename TensorT>
@@ -454,26 +453,24 @@ public:
 	}
 };
 
-// Main
-int main(int argc, char** argv)
-{
-	// define the population trainer parameters
-	PopulationTrainerExt<float> population_trainer;
-	population_trainer.setNGenerations(25);
-	//population_trainer.setNGenerations(1);
-	population_trainer.setLogging(true);
+void main_AddProbAtt(const std::string& mode) {
+  // define the population trainer parameters
+  PopulationTrainerExt<float> population_trainer;
+  population_trainer.setNGenerations(50); // population training
+  //population_trainer.setNGenerations(1); // single model training
+  population_trainer.setLogging(true);
 
-	// define the population logger
-	PopulationLogger<float> population_logger(true, true);
+  // define the population logger
+  PopulationLogger<float> population_logger(true, true);
 
-	// define the multithreading parameters
-	const int n_hard_threads = std::thread::hardware_concurrency();
-	const int n_threads = n_hard_threads; // the number of threads
+  // define the multithreading parameters
+  const int n_hard_threads = std::thread::hardware_concurrency();
+  const int n_threads = n_hard_threads; // the number of threads
 
-	// define the data simulator
-	DataSimulatorExt<float> data_simulator;
-	data_simulator.n_mask_ = 2;
-	data_simulator.sequence_length_ = 25;
+  // define the data simulator
+  DataSimulatorExt<float> data_simulator;
+  data_simulator.n_mask_ = 2;
+  data_simulator.sequence_length_ = 25;
 
   // define the input/output nodes
   std::vector<std::string> input_nodes;
@@ -491,68 +488,91 @@ int main(int argc, char** argv)
   }
   std::vector<std::string> output_nodes = { "Output_000000000000" };
 
-	// define the model trainers and resources for the trainers
-	std::vector<ModelInterpreterDefaultDevice<float>> model_interpreters;
-	for (size_t i = 0; i < n_threads; ++i) {
-		ModelResources model_resources = { ModelDevice(0, 1) };
-		ModelInterpreterDefaultDevice<float> model_interpreter(model_resources);
-		model_interpreters.push_back(model_interpreter);
-	}
-	ModelTrainerExt<float> model_trainer;
-	model_trainer.setBatchSize(32);
-	model_trainer.setMemorySize(1);
-	//model_trainer.setNEpochsTraining(1001);
-  model_trainer.setNEpochsTraining(101);
-	model_trainer.setNEpochsValidation(25);
-	model_trainer.setVerbosityLevel(1);
-	model_trainer.setFindCycles(false);
-	model_trainer.setLogging(true, false);
-	model_trainer.setPreserveOoO(true);
-	model_trainer.setFastInterpreter(false); // NOTE: change back to false for experiments with Minimal and Solution!
-	model_trainer.setLossFunctions({ std::make_shared<MSELossOp<float>>(MSELossOp<float>()) });
-	model_trainer.setLossFunctionGrads({ std::make_shared<MSELossGradOp<float>>(MSELossGradOp<float>()) });
-	model_trainer.setLossOutputNodes({ output_nodes });
+  // define the model trainers and resources for the trainers
+  std::vector<ModelInterpreterDefaultDevice<float>> model_interpreters;
+  for (size_t i = 0; i < n_threads; ++i) {
+    ModelResources model_resources = { ModelDevice(0, 1) };
+    ModelInterpreterDefaultDevice<float> model_interpreter(model_resources);
+    model_interpreters.push_back(model_interpreter);
+  }
+  ModelTrainerExt<float> model_trainer;
+  model_trainer.setBatchSize(32);
+  model_trainer.setMemorySize(1);
+  model_trainer.setNEpochsTraining(100); // population training
+  //model_trainer.setNEpochsTraining(5000); // single model training
+  model_trainer.setNEpochsValidation(25);
+  model_trainer.setVerbosityLevel(1);
+  model_trainer.setFindCycles(false);
+  model_trainer.setLogging(true, false);
+  model_trainer.setPreserveOoO(true);
+  model_trainer.setFastInterpreter(false);
+  model_trainer.setLossFunctions({ std::make_shared<MSELossOp<float>>(MSELossOp<float>()) });
+  model_trainer.setLossFunctionGrads({ std::make_shared<MSELossGradOp<float>>(MSELossGradOp<float>()) });
+  model_trainer.setLossOutputNodes({ output_nodes });
 
-	// define the model logger
-	//ModelLogger<float> model_logger(true, true, true, false, false, false, false);
-	ModelLogger<float> model_logger(true, true, false, false, false, false, false);
+  // define the model logger
+  ModelLogger<float> model_logger(true, true, false, false, false, false, false, false);
 
-	// define the model replicator for growth mode
-	ModelReplicatorExt<float> model_replicator;
-	model_replicator.setNodeActivations({ std::make_pair(std::make_shared<ReLUOp<float>>(ReLUOp<float>()), std::make_shared<ReLUGradOp<float>>(ReLUGradOp<float>())),
-		std::make_pair(std::make_shared<LinearOp<float>>(LinearOp<float>()), std::make_shared<LinearGradOp<float>>(LinearGradOp<float>())),
-		//std::make_pair(std::make_shared<ELUOp<float>>(ELUOp<float>()), std::make_shared<ELUGradOp<float>>(ELUGradOp<float>())),
-		std::make_pair(std::make_shared<SigmoidOp<float>>(SigmoidOp<float>()), std::make_shared<SigmoidGradOp<float>>(SigmoidGradOp<float>())),
-		std::make_pair(std::make_shared<TanHOp<float>>(TanHOp<float>()), std::make_shared<TanHGradOp<float>>(TanHGradOp<float>())),
-		//std::make_pair(std::make_shared<ExponentialOp<float>>(ExponentialOp<float>()), std::make_shared<ExponentialGradOp<float>>(ExponentialGradOp<float>())),
-		//std::make_pair(std::make_shared<LogOp<float>>(LogOp<float>()), std::make_shared<LogGradOp<float>>(LogGradOp<float>())),
-		//std::make_pair(std::shared_ptr<ActivationOp<float>>(new InverseOp<float>()), std::shared_ptr<ActivationOp<float>>(new InverseGradOp<float>()))
-		});
-	model_replicator.setNodeIntegrations({ std::make_tuple(std::make_shared<ProdOp<float>>(ProdOp<float>()), std::make_shared<ProdErrorOp<float>>(ProdErrorOp<float>()), std::make_shared<ProdWeightGradOp<float>>(ProdWeightGradOp<float>())),
-		std::make_tuple(std::make_shared<SumOp<float>>(SumOp<float>()), std::make_shared<SumErrorOp<float>>(SumErrorOp<float>()), std::make_shared<SumWeightGradOp<float>>(SumWeightGradOp<float>())),
-		//std::make_tuple(std::make_shared<MeanOp<float>>(MeanOp<float>()), std::make_shared<MeanErrorOp<float>>(MeanErrorOp<float>()), std::make_shared<MeanWeightGradO<float>>(MeanWeightGradOp<float>())),
-		//std::make_tuple(std::make_shared<VarModOp<float>>(VarModOp<float>()), std::make_shared<VarModErrorOp<float>>(VarModErrorOp<float>()), std::make_shared<VarModWeightGradOp<float>>(VarModWeightGradOp<float>())),
-		//std::make_tuple(std::make_shared<CountOp<float>>(CountOp<float>()), std::make_shared<CountErrorOp<float>>(CountErrorOp<float>()), std::make_shared<CountWeightGradOp<float>>(CountWeightGradOp<float>()))
-		});
+  // define the model replicator for growth mode
+  ModelReplicatorExt<float> model_replicator;
+  model_replicator.setNodeActivations({ std::make_pair(std::make_shared<ReLUOp<float>>(ReLUOp<float>()), std::make_shared<ReLUGradOp<float>>(ReLUGradOp<float>())),
+    std::make_pair(std::make_shared<LinearOp<float>>(LinearOp<float>()), std::make_shared<LinearGradOp<float>>(LinearGradOp<float>())),
+    std::make_pair(std::make_shared<ELUOp<float>>(ELUOp<float>()), std::make_shared<ELUGradOp<float>>(ELUGradOp<float>())),
+    std::make_pair(std::make_shared<SigmoidOp<float>>(SigmoidOp<float>()), std::make_shared<SigmoidGradOp<float>>(SigmoidGradOp<float>())),
+    std::make_pair(std::make_shared<TanHOp<float>>(TanHOp<float>()), std::make_shared<TanHGradOp<float>>(TanHGradOp<float>())),
+    //std::make_pair(std::make_shared<ExponentialOp<float>>(ExponentialOp<float>()), std::make_shared<ExponentialGradOp<float>>(ExponentialGradOp<float>())),
+    //std::make_pair(std::make_shared<LogOp<float>>(LogOp<float>()), std::make_shared<LogGradOp<float>>(LogGradOp<float>())),
+    //std::make_pair(std::shared_ptr<ActivationOp<float>>(new InverseOp<float>()), std::shared_ptr<ActivationOp<float>>(new InverseGradOp<float>()))
+    });
+  model_replicator.setNodeIntegrations({ std::make_tuple(std::make_shared<ProdOp<float>>(ProdOp<float>()), std::make_shared<ProdErrorOp<float>>(ProdErrorOp<float>()), std::make_shared<ProdWeightGradOp<float>>(ProdWeightGradOp<float>())),
+    std::make_tuple(std::make_shared<SumOp<float>>(SumOp<float>()), std::make_shared<SumErrorOp<float>>(SumErrorOp<float>()), std::make_shared<SumWeightGradOp<float>>(SumWeightGradOp<float>())),
+    //std::make_tuple(std::make_shared<MeanOp<float>>(MeanOp<float>()), std::make_shared<MeanErrorOp<float>>(MeanErrorOp<float>()), std::make_shared<MeanWeightGradO<float>>(MeanWeightGradOp<float>())),
+    //std::make_tuple(std::make_shared<VarModOp<float>>(VarModOp<float>()), std::make_shared<VarModErrorOp<float>>(VarModErrorOp<float>()), std::make_shared<VarModWeightGradOp<float>>(VarModWeightGradOp<float>())),
+    //std::make_tuple(std::make_shared<CountOp<float>>(CountOp<float>()), std::make_shared<CountErrorOp<float>>(CountErrorOp<float>()), std::make_shared<CountWeightGradOp<float>>(CountWeightGradOp<float>()))
+    });
 
-	// define the initial population [BUG FREE]
-	std::cout << "Initializing the population..." << std::endl;
-	std::vector<Model<float>> population;
+  if (mode == "evolve_population") {
+    // define the initial population
+    std::cout << "Initializing the population..." << std::endl;
+    std::vector<Model<float>> population;
 
-	// make the model name
-  Model<float> model;
-  model_trainer.makeModelMinimal(model, input_nodes.size() / 2, output_nodes.size());
-  //model_trainer.makeModelSolution(model, input_nodes.size() / 2, output_nodes.size(), false, false);
-  //model_trainer.makeModelAttention(model, (int)(input_nodes.size() / 2), output_nodes.size(), { 4 }, { 8 }, { 16 }, false, false, false, true);
-	population.push_back(model);
+    // make the model name
+    Model<float> model;
+    //model_trainer.makeModelMinimal(model, input_nodes.size() / 2, output_nodes.size());
+    model_trainer.makeModelSolution(model, input_nodes.size() / 2, output_nodes.size(), false, false);
+    //model_trainer.makeModelAttention(model, (int)(input_nodes.size() / 2), output_nodes.size(), { 4 }, { 8 }, { 16 }, false, false, false, true);
+    population.push_back(model);
 
-	// Evolve the population
-	std::vector<std::vector<std::tuple<int, std::string, float>>> models_validation_errors_per_generation = population_trainer.evolveModels(
-		population, model_trainer, model_interpreters, model_replicator, data_simulator, model_logger, population_logger, input_nodes);
+    // Evolve the population
+    std::vector<std::vector<std::tuple<int, std::string, float>>> models_validation_errors_per_generation = population_trainer.evolveModels(
+      population, model_trainer, model_interpreters, model_replicator, data_simulator, model_logger, population_logger, input_nodes);
 
-	PopulationTrainerFile<float> population_trainer_file;
-	population_trainer_file.storeModels(population, "AddProbAtt");
-	population_trainer_file.storeModelValidations("AddProbAtt-ValidationErrors.csv", models_validation_errors_per_generation);
+    PopulationTrainerFile<float> population_trainer_file;
+    population_trainer_file.storeModels(population, "AddProbAtt");
+    population_trainer_file.storeModelValidations("AddProbAtt-ValidationErrors.csv", models_validation_errors_per_generation);
+  }
+  else if (mode == "train_single_model") {
+    // Read in the model from .csv
+    const std::string data_dir = "C:/Users/domccl/Desktop/EvoNetExp/AddProb_Rec_CPU/FromMinimalModel/CPU13_BestModel/";
+    std::string filename_nodes = "MemoryCell_0@replicateModel#9_12_2019-05-28-09-32-36_14_nodes.csv";
+    std::string filename_links = "MemoryCell_0@replicateModel#9_12_2019-05-28-09-32-36_14_links.csv";
+    std::string filename_weights = "MemoryCell_0@replicateModel#9_12_2019-05-28-09-32-36_14_weights.csv";
+    Model<float> model;
+    model.setId(1);
+    model.setName("MemoryCell_0@replicateModel#9_12_2019-05-28-09-32-36_14");
+    ModelFile<float> data;
+    data.loadModelCsv(data_dir + filename_nodes, data_dir + filename_links, data_dir + filename_weights, model);
 
+    // Train the model
+    std::pair<std::vector<float>, std::vector<float>> model_errors = model_trainer.trainModel(model, data_simulator,
+      input_nodes, model_logger, model_interpreters.front());
+  }
+}
+
+// Main
+int main(int argc, char** argv)
+{
+  main_AddProbAtt("evolve_population");
+  //main_AddProbAtt("train_single_model");
 	return 0;
 }

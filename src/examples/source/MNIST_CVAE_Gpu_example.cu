@@ -302,12 +302,13 @@ public:
     const std::vector<float>& model_errors) {
 
     // Increase the KL divergence beta after [...] number of iterations
-    TensorT scale_factor = (n_epochs - 100 > 0) ? n_epochs - 100 : 1;
-    TensorT beta = 30 / 2.5e4 * scale_factor;
+    TensorT scale_factor1 = (n_epochs - 100 > 0) ? n_epochs - 100 : 1;
+    TensorT beta = 30 / 1.0e4 * scale_factor1;
     if (beta > 30) beta = 30;
-    TensorT capacity_c = 5 / 2.5e4 * scale_factor;
+    TensorT scale_factor2 = (n_epochs - 1.0e4 > 0) ? n_epochs - 1.0e4 : 1;
+    TensorT capacity_c = 5 / 1.0e4 * scale_factor2;
     if (capacity_c > 5) capacity_c = 5;
-    TensorT capacity_d = 5 / 2.5e4 * scale_factor;
+    TensorT capacity_d = 5 / 1.0e4 * scale_factor2;
     if (capacity_d > 5) capacity_d = 5;
     this->getLossFunctions().at(1) = std::make_shared<KLDivergenceMuLossOp<float>>(KLDivergenceMuLossOp<float>(1e-6, beta, capacity_c));
     this->getLossFunctions().at(2) = std::make_shared<KLDivergenceLogVarLossOp<float>>(KLDivergenceLogVarLossOp<float>(1e-6, beta, capacity_c));
@@ -486,7 +487,12 @@ public:
     const int n_input_nodes = input_data.dimension(2);
 
     assert(n_input_nodes == n_encodings_ + n_categorical_); // Guassian encoding, Gumbel categorical
+
+    // Initialize the gaussian encodings to random and all categorical encodings to 0
     input_data = input_data.constant(TensorT(0)); // initialize the input to 0;
+    Eigen::array<Eigen::Index, 3> offsets = { 0, 0, 0 };
+    Eigen::array<Eigen::Index, 3> extents = { batch_size, memory_size, n_encodings_ };
+    input_data.slice(offsets, extents) = input_data.slice(offsets, extents).random();
 
     // Assign the encoding values by sampling the 95% confidence limits of the inverse normal distribution
     const TensorT step_size = (0.95 - 0.05) / (batch_size - 1);
@@ -497,6 +503,7 @@ public:
     input_data.chip(n_encodings_ + categorical_traversal_iter_, 2) = input_data.chip(n_encodings_ + categorical_traversal_iter_, 2).constant(TensorT(1));
 
     // Increase the traversal iterators
+    encodings_traversal_iter_ += 1;
     if (encodings_traversal_iter_ >= n_encodings_) {
       encodings_traversal_iter_ = 0;
       categorical_traversal_iter_ += 1;
@@ -676,7 +683,7 @@ void trainModel(const std::string& data_dir, const bool& make_model) {
 void traverseLatentSpace(const std::string& data_dir, const bool& make_model) {
 
   // define the model logger
-  ModelLogger<float> model_logger(true, true, false, false, false, false, false);
+  ModelLogger<float> model_logger(true, true, false, false, false, true, false, true);
 
   // define the data simulator
   const std::size_t n_pixels = 784;
@@ -718,11 +725,11 @@ void traverseLatentSpace(const std::string& data_dir, const bool& make_model) {
   ModelInterpreterGpu<float> model_interpreter(model_resources);
 
   ModelTrainerExt<float> model_trainer;
-  model_trainer.setBatchSize(128); // determines the number of samples across the latent dimension
+  model_trainer.setBatchSize(8); // determines the number of samples across the latent dimension
   model_trainer.setNEpochsEvaluation(encoding_size * categorical_size); // determined by the number of latent dimensions to traverse
   model_trainer.setMemorySize(1);
   model_trainer.setVerbosityLevel(1);
-  model_trainer.setLogging(true);
+  model_trainer.setLogging(false, false, true);
   model_trainer.setFindCycles(false);
   model_trainer.setFastInterpreter(true);
   model_trainer.setLossOutputNodes({ output_nodes });
@@ -767,7 +774,7 @@ int main(int argc, char** argv)
   std::string data_dir = "C:/Users/dmccloskey/Documents/GitHub/mnist/";
   //std::string data_dir = "/home/user/data/";
   //std::string data_dir = "C:/Users/domccl/GitHub/mnist/";
-  bool make_model = true, train_model = false;
+  bool make_model = true, train_model = true;
   if (argc >= 2) {
     data_dir = argv[1];
   }

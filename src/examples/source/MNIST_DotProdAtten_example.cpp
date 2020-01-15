@@ -410,7 +410,7 @@ void main_MNIST(const std::string& data_dir, const bool& make_model, const bool&
   model_trainer.setFindCycles(false);
   model_trainer.setFastInterpreter(true);
   model_trainer.setLossFunctions({
-    std::make_shared<MSELossOp<float>>(MSELossOp<float>(1e-24, 0.0)), 
+    std::make_shared<MSELossOp<float>>(MSELossOp<float>(1e-24, 0.0)),
     std::make_shared<CrossEntropyWithLogitsLossOp<float>>(CrossEntropyWithLogitsLossOp<float>())
     });
   model_trainer.setLossFunctionGrads({

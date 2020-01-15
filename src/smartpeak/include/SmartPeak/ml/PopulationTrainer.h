@@ -709,8 +709,10 @@ private:
       bool complete_model = true;
       if (check_complete_input_to_output) complete_model = model_copy.checkCompleteInputToOutput();
 
-			if (complete_model)
-				return std::make_pair(true, model_copy);
+      if (complete_model) {
+        model_copy.setInputAndOutputNodes();
+        return std::make_pair(true, model_copy);
+      }
 		}
 		return std::make_pair(false, Model<TensorT>());
 		//throw std::runtime_error("All modified models were broken!");

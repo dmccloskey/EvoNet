@@ -39,7 +39,7 @@ template<typename TensorT>
 class DataSimulatorExt : public AddProbSimulator<TensorT>
 {
 public:
-	void simulateData(Eigen::Tensor<TensorT, 4>& input_data, Eigen::Tensor<TensorT, 4>& output_data, Eigen::Tensor<TensorT, 3>& time_steps)override
+	void simulateData(Eigen::Tensor<TensorT, 4>& input_data, Eigen::Tensor<TensorT, 4>& output_data, Eigen::Tensor<TensorT, 3>& time_steps)
 	{
 		// infer data dimensions based on the input tensors
 		const int batch_size = input_data.dimension(0);
@@ -150,175 +150,136 @@ public:
 	*/
 	void makeModelMinimal(Model<TensorT>& model)
 	{
-		Node<TensorT> i_rand, i_mask, h, o,
+		Node<TensorT> i_rand, i_mask, h, o, output,
 			h_bias, o_bias;
 		Link Link_i_rand_to_h, Link_i_mask_to_h,
-			Link_h_to_o,
+			Link_h_to_o, Link_o_to_output,
 			Link_h_bias_to_h, Link_o_bias_to_o;
 		Weight<TensorT> Weight_i_rand_to_h, Weight_i_mask_to_h,
-			Weight_h_to_o,
+			Weight_h_to_o, Weight_o_to_output,
 			Weight_h_bias_to_h, Weight_o_bias_to_o;
 		// Nodes
-		i_rand = Node<TensorT>("Input_000000000000", NodeType::input, NodeStatus::activated, std::make_shared<LinearOp<TensorT>>(LinearOp<float>()), std::make_shared<LinearGradOp<TensorT>>(LinearGradOp<float>()), std::make_shared<SumOp<TensorT>>(SumOp<TensorT>()), std::make_shared<SumErrorOp<TensorT>>(SumErrorOp<TensorT>()), std::make_shared<SumWeightGradOp<TensorT>>(SumWeightGradOp<TensorT>()));
-		i_mask = Node<TensorT>("Input_000000000001", NodeType::input, NodeStatus::activated, std::make_shared<LinearOp<TensorT>>(LinearOp<float>()), std::make_shared<LinearGradOp<TensorT>>(LinearGradOp<float>()), std::make_shared<SumOp<TensorT>>(SumOp<TensorT>()), std::make_shared<SumErrorOp<TensorT>>(SumErrorOp<TensorT>()), std::make_shared<SumWeightGradOp<TensorT>>(SumWeightGradOp<TensorT>()));
-		h = Node<TensorT>("h", NodeType::hidden, NodeStatus::deactivated, std::shared_ptr<ActivationOp<TensorT>>(new ReLUOp<float>()), std::shared_ptr<ActivationOp<TensorT>>(new ReLUGradOp<float>()), std::make_shared<SumOp<TensorT>>(SumOp<TensorT>()), std::make_shared<SumErrorOp<TensorT>>(SumErrorOp<TensorT>()), std::make_shared<SumWeightGradOp<TensorT>>(SumWeightGradOp<TensorT>()));
-		o = Node<TensorT>("Output_000000000000", NodeType::output, NodeStatus::deactivated, std::shared_ptr<ActivationOp<TensorT>>(new ReLUOp<float>()), std::shared_ptr<ActivationOp<TensorT>>(new ReLUGradOp<float>()), std::make_shared<SumOp<TensorT>>(SumOp<TensorT>()), std::make_shared<SumErrorOp<TensorT>>(SumErrorOp<TensorT>()), std::make_shared<SumWeightGradOp<TensorT>>(SumWeightGradOp<TensorT>()));
-		h_bias = Node<TensorT>("h_bias", NodeType::bias, NodeStatus::activated, std::make_shared<LinearOp<TensorT>>(LinearOp<float>()), std::make_shared<LinearGradOp<TensorT>>(LinearGradOp<float>()), std::make_shared<SumOp<TensorT>>(SumOp<TensorT>()), std::make_shared<SumErrorOp<TensorT>>(SumErrorOp<TensorT>()), std::make_shared<SumWeightGradOp<TensorT>>(SumWeightGradOp<TensorT>()));
-		o_bias = Node<TensorT>("o_bias", NodeType::bias, NodeStatus::activated, std::make_shared<LinearOp<TensorT>>(LinearOp<float>()), std::make_shared<LinearGradOp<TensorT>>(LinearGradOp<float>()), std::make_shared<SumOp<TensorT>>(SumOp<TensorT>()), std::make_shared<SumErrorOp<TensorT>>(SumErrorOp<TensorT>()), std::make_shared<SumWeightGradOp<TensorT>>(SumWeightGradOp<TensorT>()));
-		o.setLayerName("Output");
+		i_rand = Node<TensorT>("Input_000000000000", NodeType::input, NodeStatus::activated, std::make_shared<LinearOp<TensorT>>(LinearOp<TensorT>()), std::make_shared<LinearGradOp<TensorT>>(LinearGradOp<TensorT>()), std::make_shared<SumOp<TensorT>>(SumOp<TensorT>()), std::make_shared<SumErrorOp<TensorT>>(SumErrorOp<TensorT>()), std::make_shared<SumWeightGradOp<TensorT>>(SumWeightGradOp<TensorT>()));
+		i_mask = Node<TensorT>("Input_000000000001", NodeType::input, NodeStatus::activated, std::make_shared<LinearOp<TensorT>>(LinearOp<TensorT>()), std::make_shared<LinearGradOp<TensorT>>(LinearGradOp<TensorT>()), std::make_shared<SumOp<TensorT>>(SumOp<TensorT>()), std::make_shared<SumErrorOp<TensorT>>(SumErrorOp<TensorT>()), std::make_shared<SumWeightGradOp<TensorT>>(SumWeightGradOp<TensorT>()));
+		h = Node<TensorT>("h", NodeType::hidden, NodeStatus::deactivated, std::shared_ptr<ActivationOp<TensorT>>(new ReLUOp<TensorT>()), std::shared_ptr<ActivationOp<TensorT>>(new ReLUGradOp<TensorT>()), std::make_shared<SumOp<TensorT>>(SumOp<TensorT>()), std::make_shared<SumErrorOp<TensorT>>(SumErrorOp<TensorT>()), std::make_shared<SumWeightGradOp<TensorT>>(SumWeightGradOp<TensorT>()));
+		o = Node<TensorT>("o", NodeType::unmodifiable, NodeStatus::deactivated, std::shared_ptr<ActivationOp<TensorT>>(new ReLUOp<TensorT>()), std::shared_ptr<ActivationOp<TensorT>>(new ReLUGradOp<TensorT>()), std::make_shared<SumOp<TensorT>>(SumOp<TensorT>()), std::make_shared<SumErrorOp<TensorT>>(SumErrorOp<TensorT>()), std::make_shared<SumWeightGradOp<TensorT>>(SumWeightGradOp<TensorT>()));
+    output = Node<TensorT>("Output_000000000000", NodeType::output, NodeStatus::deactivated, std::make_shared<LinearOp<TensorT>>(LinearOp<TensorT>()), std::make_shared<LinearGradOp<TensorT>>(LinearGradOp<TensorT>()), std::make_shared<SumOp<TensorT>>(SumOp<TensorT>()), std::make_shared<SumErrorOp<TensorT>>(SumErrorOp<TensorT>()), std::make_shared<SumWeightGradOp<TensorT>>(SumWeightGradOp<TensorT>()));
+    h_bias = Node<TensorT>("h_bias", NodeType::bias, NodeStatus::activated, std::make_shared<LinearOp<TensorT>>(LinearOp<TensorT>()), std::make_shared<LinearGradOp<TensorT>>(LinearGradOp<TensorT>()), std::make_shared<SumOp<TensorT>>(SumOp<TensorT>()), std::make_shared<SumErrorOp<TensorT>>(SumErrorOp<TensorT>()), std::make_shared<SumWeightGradOp<TensorT>>(SumWeightGradOp<TensorT>()));
+		o_bias = Node<TensorT>("o_bias", NodeType::bias, NodeStatus::activated, std::make_shared<LinearOp<TensorT>>(LinearOp<TensorT>()), std::make_shared<LinearGradOp<TensorT>>(LinearGradOp<TensorT>()), std::make_shared<SumOp<TensorT>>(SumOp<TensorT>()), std::make_shared<SumErrorOp<TensorT>>(SumErrorOp<TensorT>()), std::make_shared<SumWeightGradOp<TensorT>>(SumWeightGradOp<TensorT>()));
+    output.setLayerName("Output");
 		// weights  
-		std::shared_ptr<WeightInitOp<TensorT>> weight_init;
-		std::shared_ptr<SolverOp<TensorT>> solver;
-		weight_init.reset(new RandWeightInitOp<TensorT>(2.0));
-		solver.reset(new AdamOp<TensorT>(0.001, 0.9, 0.999, 1e-8));
-		solver->setGradientThreshold(10.0f);
+		std::shared_ptr<WeightInitOp<TensorT>> weight_init = std::make_shared<RandWeightInitOp<TensorT>>(RandWeightInitOp<TensorT>(0.4));
+    std::shared_ptr<SolverOp<TensorT>> solver = std::make_shared<SGDOp<TensorT>>(SGDOp<TensorT>(1e-4, 0.9, 10));
 		Weight_i_rand_to_h = Weight<TensorT>("Weight_i_rand_to_h", weight_init, solver);
-		weight_init.reset(new RandWeightInitOp<TensorT>(2.0));
-		solver.reset(new AdamOp<TensorT>(0.001, 0.9, 0.999, 1e-8));
-		solver->setGradientThreshold(10.0f);
 		Weight_i_mask_to_h = Weight<TensorT>("Weight_i_mask_to_h", weight_init, solver);
-		weight_init.reset(new RandWeightInitOp<TensorT>(2.0));
-		solver.reset(new AdamOp<TensorT>(0.001, 0.9, 0.999, 1e-8));
-		solver->setGradientThreshold(10.0f);
 		Weight_h_to_o = Weight<TensorT>("Weight_h_to_o", weight_init, solver);
-		weight_init.reset(new RandWeightInitOp<TensorT>(2.0));
-		solver.reset(new AdamOp<TensorT>(0.001, 0.9, 0.999, 1e-8));
-		solver->setGradientThreshold(10.0f);		
+    Weight_o_to_output = Weight<TensorT>("Weight_o_to_output", std::make_shared<ConstWeightInitOp<TensorT>>(ConstWeightInitOp<TensorT>(1.0)), std::make_shared<DummySolverOp<TensorT>>(DummySolverOp<TensorT>()));
 		Weight_h_bias_to_h = Weight<TensorT>("Weight_h_bias_to_h", weight_init, solver);
-		weight_init = std::make_shared<ConstWeightInitOp<TensorT>>(ConstWeightInitOp<TensorT>(0.0)); //solution
-		weight_init = std::make_shared<ConstWeightInitOp<TensorT>>(ConstWeightInitOp<TensorT>(1.0));
-		solver.reset(new AdamOp<TensorT>(0.001, 0.9, 0.999, 1e-8));
-		solver->setGradientThreshold(10.0f);
-		Weight_o_bias_to_o = Weight<TensorT>("Weight_o_bias_to_o", weight_init, solver);
+		Weight_o_bias_to_o = Weight<TensorT>("Weight_o_bias_to_o", std::make_shared<ConstWeightInitOp<TensorT>>(ConstWeightInitOp<TensorT>(0.0)), solver);
 		weight_init.reset();
 		solver.reset();
 		// links
 		Link_i_rand_to_h = Link("Link_i_rand_to_h", "Input_000000000000", "h", "Weight_i_rand_to_h");
 		Link_i_mask_to_h = Link("Link_i_mask_to_h", "Input_000000000001", "h", "Weight_i_mask_to_h");
-		Link_h_to_o = Link("Link_h_to_o", "h", "Output_000000000000", "Weight_h_to_o");
+		Link_h_to_o = Link("Link_h_to_o", "h", "o", "Weight_h_to_o");
+    Link_o_to_output = Link("Link_o_to_output", "o", "Output_000000000000", "Weight_o_to_output");
 		Link_h_bias_to_h = Link("Link_h_bias_to_h", "h_bias", "h", "Weight_h_bias_to_h");
-		Link_o_bias_to_o = Link("Link_o_bias_to_o", "o_bias", "Output_000000000000", "Weight_o_bias_to_o");
+		Link_o_bias_to_o = Link("Link_o_bias_to_o", "o_bias", "o", "Weight_o_bias_to_o");
 		// add nodes, links, and weights to the model
 		model.setName("MemoryCell");
-		model.addNodes({ i_rand, i_mask, h, o//, h_bias, o_bias 
+		model.addNodes({ i_rand, i_mask, h, o, output//, h_bias, o_bias 
 			});
-		model.addWeights({ Weight_i_rand_to_h, Weight_i_mask_to_h, Weight_h_to_o//,	Weight_h_bias_to_h, Weight_o_bias_to_o 
+		model.addWeights({ Weight_i_rand_to_h, Weight_i_mask_to_h, Weight_h_to_o, Weight_o_to_output//,	Weight_h_bias_to_h, Weight_o_bias_to_o 
 			});
-		model.addLinks({ Link_i_rand_to_h, Link_i_mask_to_h, Link_h_to_o//,	Link_h_bias_to_h, Link_o_bias_to_o 
+		model.addLinks({ Link_i_rand_to_h, Link_i_mask_to_h, Link_h_to_o, Link_o_to_output//,	Link_h_bias_to_h, Link_o_bias_to_o 
 			});
+    model.setInputAndOutputNodes();
 	}
 	/*
 	@brief Minimal network required to solve the addition problem
 	*/
   void makeModelSolution(Model<TensorT>& model, bool init_weight_soln = true)
 	{
-		Node<TensorT> i_rand, i_mask, h, m, mr, o,
+		Node<TensorT> i_rand, i_mask, h, m, mr, o, output,
 			h_bias, m_bias, o_bias;
 		Link Link_i_rand_to_h, Link_i_mask_to_h,
 			Link_h_to_m,
 			Link_m_to_o, Link_m_to_mr, Link_mr_to_m,
 			Link_h_bias_to_h,
-			Link_m_bias_to_m, Link_o_bias_to_o;
+			Link_m_bias_to_m, Link_o_bias_to_o,
+      Link_o_to_output;
 		Weight<TensorT> Weight_i_rand_to_h, Weight_i_mask_to_h,
 			Weight_h_to_m,
 			Weight_m_to_o, Weight_m_to_mr, Weight_mr_to_m,
 			Weight_h_bias_to_h,
-			Weight_m_bias_to_m, Weight_o_bias_to_o;
+			Weight_m_bias_to_m, Weight_o_bias_to_o,
+      Weight_o_to_output;
 		// Nodes
-		i_rand = Node<TensorT>("Input_000000000000", NodeType::input, NodeStatus::activated, std::make_shared<LinearOp<TensorT>>(LinearOp<float>()), std::make_shared<LinearGradOp<TensorT>>(LinearGradOp<float>()), std::make_shared<SumOp<TensorT>>(SumOp<TensorT>()), std::make_shared<SumErrorOp<TensorT>>(SumErrorOp<TensorT>()), std::make_shared<SumWeightGradOp<TensorT>>(SumWeightGradOp<TensorT>()));
-		i_mask = Node<TensorT>("Input_000000000001", NodeType::input, NodeStatus::activated, std::make_shared<LinearOp<TensorT>>(LinearOp<float>()), std::make_shared<LinearGradOp<TensorT>>(LinearGradOp<float>()), std::make_shared<SumOp<TensorT>>(SumOp<TensorT>()), std::make_shared<SumErrorOp<TensorT>>(SumErrorOp<TensorT>()), std::make_shared<SumWeightGradOp<TensorT>>(SumWeightGradOp<TensorT>()));
-		h = Node<TensorT>("h", NodeType::hidden, NodeStatus::initialized, std::make_shared<LinearOp<TensorT>>(LinearOp<float>()), std::make_shared<LinearGradOp<TensorT>>(LinearGradOp<float>()), std::make_shared<ProdOp<TensorT>>(ProdOp<TensorT>()),std::make_shared<ProdErrorOp<TensorT>>(ProdErrorOp<TensorT>()), std::make_shared<ProdWeightGradOp<TensorT>>(ProdWeightGradOp<TensorT>()));
-		m = Node<TensorT>("m", NodeType::hidden, NodeStatus::initialized, std::make_shared<LinearOp<TensorT>>(LinearOp<float>()), std::make_shared<LinearGradOp<TensorT>>(LinearGradOp<float>()), std::make_shared<SumOp<TensorT>>(SumOp<TensorT>()), std::make_shared<SumErrorOp<TensorT>>(SumErrorOp<TensorT>()), std::make_shared<SumWeightGradOp<TensorT>>(SumWeightGradOp<TensorT>()));
-		mr = Node<TensorT>("mr", NodeType::hidden, NodeStatus::initialized, std::make_shared<LinearOp<TensorT>>(LinearOp<float>()), std::make_shared<LinearGradOp<TensorT>>(LinearGradOp<float>()), std::make_shared<SumOp<TensorT>>(SumOp<TensorT>()), std::make_shared<SumErrorOp<TensorT>>(SumErrorOp<TensorT>()), std::make_shared<SumWeightGradOp<TensorT>>(SumWeightGradOp<TensorT>()));
-		o = Node<TensorT>("Output_000000000000", NodeType::output, NodeStatus::deactivated, std::shared_ptr<ActivationOp<TensorT>>(new ReLUOp<float>()), std::shared_ptr<ActivationOp<TensorT>>(new ReLUGradOp<float>()), std::make_shared<SumOp<TensorT>>(SumOp<TensorT>()), std::make_shared<SumErrorOp<TensorT>>(SumErrorOp<TensorT>()), std::make_shared<SumWeightGradOp<TensorT>>(SumWeightGradOp<TensorT>()));
-		h_bias = Node<TensorT>("h_bias", NodeType::bias, NodeStatus::activated, std::make_shared<LinearOp<TensorT>>(LinearOp<float>()), std::make_shared<LinearGradOp<TensorT>>(LinearGradOp<float>()), std::make_shared<SumOp<TensorT>>(SumOp<TensorT>()), std::make_shared<SumErrorOp<TensorT>>(SumErrorOp<TensorT>()), std::make_shared<SumWeightGradOp<TensorT>>(SumWeightGradOp<TensorT>()));
-		m_bias = Node<TensorT>("m_bias", NodeType::bias, NodeStatus::activated, std::make_shared<LinearOp<TensorT>>(LinearOp<float>()), std::make_shared<LinearGradOp<TensorT>>(LinearGradOp<float>()), std::make_shared<SumOp<TensorT>>(SumOp<TensorT>()), std::make_shared<SumErrorOp<TensorT>>(SumErrorOp<TensorT>()), std::make_shared<SumWeightGradOp<TensorT>>(SumWeightGradOp<TensorT>()));
-		o_bias = Node<TensorT>("o_bias", NodeType::bias, NodeStatus::activated, std::make_shared<LinearOp<TensorT>>(LinearOp<float>()), std::make_shared<LinearGradOp<TensorT>>(LinearGradOp<float>()), std::make_shared<SumOp<TensorT>>(SumOp<TensorT>()), std::make_shared<SumErrorOp<TensorT>>(SumErrorOp<TensorT>()), std::make_shared<SumWeightGradOp<TensorT>>(SumWeightGradOp<TensorT>()));
-    o.setLayerName("Output");
+		i_rand = Node<TensorT>("Input_000000000000", NodeType::input, NodeStatus::activated, std::make_shared<LinearOp<TensorT>>(LinearOp<TensorT>()), std::make_shared<LinearGradOp<TensorT>>(LinearGradOp<TensorT>()), std::make_shared<SumOp<TensorT>>(SumOp<TensorT>()), std::make_shared<SumErrorOp<TensorT>>(SumErrorOp<TensorT>()), std::make_shared<SumWeightGradOp<TensorT>>(SumWeightGradOp<TensorT>()));
+		i_mask = Node<TensorT>("Input_000000000001", NodeType::input, NodeStatus::activated, std::make_shared<LinearOp<TensorT>>(LinearOp<TensorT>()), std::make_shared<LinearGradOp<TensorT>>(LinearGradOp<TensorT>()), std::make_shared<SumOp<TensorT>>(SumOp<TensorT>()), std::make_shared<SumErrorOp<TensorT>>(SumErrorOp<TensorT>()), std::make_shared<SumWeightGradOp<TensorT>>(SumWeightGradOp<TensorT>()));
+		h = Node<TensorT>("h", NodeType::hidden, NodeStatus::initialized, std::make_shared<LinearOp<TensorT>>(LinearOp<TensorT>()), std::make_shared<LinearGradOp<TensorT>>(LinearGradOp<TensorT>()), std::make_shared<ProdOp<TensorT>>(ProdOp<TensorT>()),std::make_shared<ProdErrorOp<TensorT>>(ProdErrorOp<TensorT>()), std::make_shared<ProdWeightGradOp<TensorT>>(ProdWeightGradOp<TensorT>()));
+		m = Node<TensorT>("m", NodeType::hidden, NodeStatus::initialized, std::make_shared<LinearOp<TensorT>>(LinearOp<TensorT>()), std::make_shared<LinearGradOp<TensorT>>(LinearGradOp<TensorT>()), std::make_shared<SumOp<TensorT>>(SumOp<TensorT>()), std::make_shared<SumErrorOp<TensorT>>(SumErrorOp<TensorT>()), std::make_shared<SumWeightGradOp<TensorT>>(SumWeightGradOp<TensorT>()));
+		mr = Node<TensorT>("mr", NodeType::hidden, NodeStatus::initialized, std::make_shared<LinearOp<TensorT>>(LinearOp<TensorT>()), std::make_shared<LinearGradOp<TensorT>>(LinearGradOp<TensorT>()), std::make_shared<SumOp<TensorT>>(SumOp<TensorT>()), std::make_shared<SumErrorOp<TensorT>>(SumErrorOp<TensorT>()), std::make_shared<SumWeightGradOp<TensorT>>(SumWeightGradOp<TensorT>()));
+    o = Node<TensorT>("o", NodeType::unmodifiable, NodeStatus::deactivated, std::shared_ptr<ActivationOp<TensorT>>(new ReLUOp<TensorT>()), std::shared_ptr<ActivationOp<TensorT>>(new ReLUGradOp<TensorT>()), std::make_shared<SumOp<TensorT>>(SumOp<TensorT>()), std::make_shared<SumErrorOp<TensorT>>(SumErrorOp<TensorT>()), std::make_shared<SumWeightGradOp<TensorT>>(SumWeightGradOp<TensorT>()));
+    output = Node<TensorT>("Output_000000000000", NodeType::output, NodeStatus::deactivated, std::make_shared<LinearOp<TensorT>>(LinearOp<TensorT>()), std::make_shared<LinearGradOp<TensorT>>(LinearGradOp<TensorT>()), std::make_shared<SumOp<TensorT>>(SumOp<TensorT>()), std::make_shared<SumErrorOp<TensorT>>(SumErrorOp<TensorT>()), std::make_shared<SumWeightGradOp<TensorT>>(SumWeightGradOp<TensorT>()));
+		h_bias = Node<TensorT>("h_bias", NodeType::bias, NodeStatus::activated, std::make_shared<LinearOp<TensorT>>(LinearOp<TensorT>()), std::make_shared<LinearGradOp<TensorT>>(LinearGradOp<TensorT>()), std::make_shared<SumOp<TensorT>>(SumOp<TensorT>()), std::make_shared<SumErrorOp<TensorT>>(SumErrorOp<TensorT>()), std::make_shared<SumWeightGradOp<TensorT>>(SumWeightGradOp<TensorT>()));
+		m_bias = Node<TensorT>("m_bias", NodeType::bias, NodeStatus::activated, std::make_shared<LinearOp<TensorT>>(LinearOp<TensorT>()), std::make_shared<LinearGradOp<TensorT>>(LinearGradOp<TensorT>()), std::make_shared<SumOp<TensorT>>(SumOp<TensorT>()), std::make_shared<SumErrorOp<TensorT>>(SumErrorOp<TensorT>()), std::make_shared<SumWeightGradOp<TensorT>>(SumWeightGradOp<TensorT>()));
+		o_bias = Node<TensorT>("o_bias", NodeType::bias, NodeStatus::activated, std::make_shared<LinearOp<TensorT>>(LinearOp<TensorT>()), std::make_shared<LinearGradOp<TensorT>>(LinearGradOp<TensorT>()), std::make_shared<SumOp<TensorT>>(SumOp<TensorT>()), std::make_shared<SumErrorOp<TensorT>>(SumErrorOp<TensorT>()), std::make_shared<SumWeightGradOp<TensorT>>(SumWeightGradOp<TensorT>()));
+    output.setLayerName("Output");
     // weights  
 		std::shared_ptr<WeightInitOp<TensorT>> weight_init;
-		std::shared_ptr<SolverOp<TensorT>> solver;
-		if (init_weight_soln) weight_init = std::make_shared<ConstWeightInitOp<TensorT>>(ConstWeightInitOp<TensorT>(1.0)); //solution
-		else weight_init.reset(new RangeWeightInitOp<TensorT>(0.5, 1.5));
-		solver.reset(new AdamOp<TensorT>(0.0005, 0.9, 0.999, 1e-8));
-		solver->setGradientThreshold(10.0f);
+		std::shared_ptr<SolverOp<TensorT>> solver = std::make_shared<SGDOp<TensorT>>(SGDOp<TensorT>(1e-4, 0.9, 10));
+    if (init_weight_soln) {
+      weight_init = std::make_shared<ConstWeightInitOp<TensorT>>(ConstWeightInitOp<TensorT>(1.0)); //solution
+    }
+    else {
+      weight_init = std::make_shared<RandWeightInitOp<TensorT>>(RandWeightInitOp<TensorT>(0.4));
+      //weight_init = std::make_shared<RangeWeightInitOp<TensorT>>(RangeWeightInitOp<TensorT>(0.5, 1.5));
+    }
 		Weight_i_rand_to_h = Weight<TensorT>("Weight_i_rand_to_h", weight_init, solver);
-    if (init_weight_soln) weight_init = std::make_shared<ConstWeightInitOp<TensorT>>(ConstWeightInitOp<TensorT>(1.0)); //solution 
-    else weight_init.reset(new RangeWeightInitOp<TensorT>(0.5, 1.5));
-		solver.reset(new AdamOp<TensorT>(0.0005, 0.9, 0.999, 1e-8));
-		solver->setGradientThreshold(10.0f);
 		Weight_i_mask_to_h = Weight<TensorT>("Weight_i_mask_to_h", weight_init, solver);
-    if (init_weight_soln) weight_init = std::make_shared<ConstWeightInitOp<TensorT>>(ConstWeightInitOp<TensorT>(1.0)); //solution
-    else weight_init.reset(new RangeWeightInitOp<TensorT>(0.5, 1.5));
-		solver.reset(new AdamOp<TensorT>(0.0005, 0.9, 0.999, 1e-8));
-		solver->setGradientThreshold(10.0f);
 		Weight_h_to_m = Weight<TensorT>("Weight_h_to_m", weight_init, solver);
-    if (init_weight_soln) weight_init = std::make_shared<ConstWeightInitOp<TensorT>>(ConstWeightInitOp<TensorT>(1.0)); //solution
-    else weight_init.reset(new RangeWeightInitOp<TensorT>(0.5, 1.5));
-		solver.reset(new AdamOp<TensorT>(0.0005, 0.9, 0.999, 1e-8));
-		solver->setGradientThreshold(10.0f);
 		Weight_m_to_mr = Weight<TensorT>("Weight_m_to_mr", weight_init, solver);
-  //  if (init_weight_soln) weight_init = std::make_shared<ConstWeightInitOp<TensorT>>(ConstWeightInitOp<TensorT>(1.0)); //solution
-  //  else weight_init.reset(new RangeWeightInitOp<TensorT>(0.0, 1.0));
-		//solver.reset(new AdamOp<TensorT>(0.0005, 0.9, 0.999, 1e-8));
-    weight_init = std::make_shared<ConstWeightInitOp<TensorT>>(ConstWeightInitOp<TensorT>(1.0)); //solution
-    solver.reset(new DummySolverOp<TensorT>());
-		solver->setGradientThreshold(10.0f);
-		Weight_mr_to_m = Weight<TensorT>("Weight_mr_to_m", weight_init, solver);
-  //  if (init_weight_soln) weight_init = std::make_shared<ConstWeightInitOp<TensorT>>(ConstWeightInitOp<TensorT>(1.0)); //solution
-  //  else weight_init.reset(new RangeWeightInitOp<TensorT>(0.0, 1.0));
-		//solver.reset(new AdamOp<TensorT>(0.0005, 0.9, 0.999, 1e-8));
-    weight_init = std::make_shared<ConstWeightInitOp<TensorT>>(ConstWeightInitOp<TensorT>(1.0)); //solution
-    solver.reset(new DummySolverOp<TensorT>());
-		solver->setGradientThreshold(10.0f);
+		Weight_mr_to_m = Weight<TensorT>("Weight_mr_to_m", std::make_shared<ConstWeightInitOp<TensorT>>(ConstWeightInitOp<TensorT>(1.0)), solver);
 		Weight_m_to_o = Weight<TensorT>("Weight_m_to_o", weight_init, solver);
-    if (init_weight_soln) weight_init = std::make_shared<ConstWeightInitOp<TensorT>>(ConstWeightInitOp<TensorT>(1.0)); //solution
-    else weight_init.reset(new RangeWeightInitOp<TensorT>(0.5, 1.5));
-		solver.reset(new AdamOp<TensorT>(0.0005, 0.9, 0.999, 1e-8));
-		solver->setGradientThreshold(10.0f);
-		Weight_h_bias_to_h = Weight<TensorT>("Weight_h_bias_to_h", weight_init, solver);
-		weight_init = std::make_shared<ConstWeightInitOp<TensorT>>(ConstWeightInitOp<TensorT>(0.0)); //solution
-		weight_init = std::make_shared<ConstWeightInitOp<TensorT>>(ConstWeightInitOp<TensorT>(1.0));
-		solver.reset(new AdamOp<TensorT>(0.0005, 0.9, 0.999, 1e-8));
-		solver->setGradientThreshold(10.0f);
-		Weight_m_bias_to_m = Weight<TensorT>("Weight_m_bias_to_m", weight_init, solver);
-		weight_init = std::make_shared<ConstWeightInitOp<TensorT>>(ConstWeightInitOp<TensorT>(0.0)); //solution
-		weight_init = std::make_shared<ConstWeightInitOp<TensorT>>(ConstWeightInitOp<TensorT>(1.0));
-		solver.reset(new AdamOp<TensorT>(0.0005, 0.9, 0.999, 1e-8));
-		solver->setGradientThreshold(10.0f);
-		Weight_o_bias_to_o = Weight<TensorT>("Weight_o_bias_to_o", weight_init, solver);
+    Weight_o_to_output = Weight<TensorT>("Weight_o_to_output", std::make_shared<ConstWeightInitOp<TensorT>>(ConstWeightInitOp<TensorT>(1.0)), std::make_shared<DummySolverOp<TensorT>>(DummySolverOp<TensorT>()));
+		Weight_h_bias_to_h = Weight<TensorT>("Weight_h_bias_to_h", std::make_shared<ConstWeightInitOp<TensorT>>(ConstWeightInitOp<TensorT>(0.0)), solver);
+		Weight_m_bias_to_m = Weight<TensorT>("Weight_m_bias_to_m", std::make_shared<ConstWeightInitOp<TensorT>>(ConstWeightInitOp<TensorT>(0.0)), solver);
+		Weight_o_bias_to_o = Weight<TensorT>("Weight_o_bias_to_o", std::make_shared<ConstWeightInitOp<TensorT>>(ConstWeightInitOp<TensorT>(0.0)), solver);
 		weight_init.reset();
 		solver.reset();
 		// links
 		Link_i_rand_to_h = Link("Link_i_rand_to_h", "Input_000000000000", "h", "Weight_i_rand_to_h");
 		Link_i_mask_to_h = Link("Link_i_mask_to_h", "Input_000000000001", "h", "Weight_i_mask_to_h");
 		Link_h_to_m = Link("Link_h_to_m", "h", "m", "Weight_h_to_m");
-		Link_m_to_o = Link("Link_m_to_o", "m", "Output_000000000000", "Weight_m_to_o");
+		Link_m_to_o = Link("Link_m_to_o", "m", "o", "Weight_m_to_o");
+    Link_o_to_output = Link("Link_o_to_output", "o", "Output_000000000000", "Weight_o_to_output");
 		Link_m_to_mr = Link("Link_m_to_mr", "m", "mr", "Weight_m_to_mr");
 		Link_mr_to_m = Link("Link_mr_to_m", "mr", "m", "Weight_mr_to_m");
 		//Link_m_to_m = Link("Link_m_to_m", "m", "m", "Weight_m_to_m");
 		Link_h_bias_to_h = Link("Link_h_bias_to_h", "h_bias", "h", "Weight_h_bias_to_h");
 		Link_m_bias_to_m = Link("Link_m_bias_to_m", "m_bias", "m", "Weight_m_bias_to_m");
-		Link_o_bias_to_o = Link("Link_o_bias_to_o", "o_bias", "Output_000000000000", "Weight_o_bias_to_o");
+		Link_o_bias_to_o = Link("Link_o_bias_to_o", "o_bias", "o", "Weight_o_bias_to_o");
 		// add nodes, links, and weights to the model
 		model.setName("MemoryCell");
-		model.addNodes({ i_rand, i_mask, h, m, mr, o//,
+		model.addNodes({ i_rand, i_mask, h, m, mr, o, output//,
 			//h_bias, m_bias, o_bias 
 			});
 		model.addWeights({ Weight_i_rand_to_h, Weight_i_mask_to_h,
 			Weight_h_to_m,
-			Weight_m_to_o, Weight_m_to_mr, Weight_mr_to_m//,
+			Weight_m_to_o, Weight_m_to_mr, Weight_mr_to_m, Weight_o_to_output//,
 			//Weight_h_bias_to_h,
 			//Weight_m_bias_to_m, 
 			//Weight_o_bias_to_o 
 			});
 		model.addLinks({ Link_i_rand_to_h, Link_i_mask_to_h,
 			Link_h_to_m,
-			Link_m_to_o, Link_m_to_mr, Link_mr_to_m//,
+			Link_m_to_o, Link_m_to_mr, Link_mr_to_m, Link_o_to_output//,
 			//Link_h_bias_to_h,
 			//Link_m_bias_to_m, 
 			//Link_o_bias_to_o 
 			});
+    model.setInputAndOutputNodes();
 	}
 	/*
 	@brief LSTM implementation
@@ -333,7 +294,7 @@ public:
 		Cho et al. "Learning Phrase Representations using RNN Encoder–Decoder for Statistical Machine Translation". 2014. arXiv:1406.1078v3
 		Chung et al. "Empirical Evaluation of Gated Recurrent Neural Networks on Sequence Modeling". 2014. arXiv:1412.3555v1
 	*/
-	void makeModelLSTM(Model<TensorT>& model, const int& n_inputs, int n_blocks = 2, int n_cells = 2, bool specify_layers = false)
+	void makeModelLSTM(Model<TensorT>& model, const int& n_inputs, int n_blocks = 2, int n_cells = 2, bool add_forget_gate = false, bool specify_layers = false)
 	{
 		model.setId(0);
 		model.setName("LSTM");
@@ -343,42 +304,49 @@ public:
 		// Add the inputs
 		std::vector<std::string> node_names_input = model_builder.addInputNodes(model, "Input", "Input", n_inputs, specify_layers);
 
-		// Add the LSTM layer
-		std::vector<std::string> node_names = model_builder.addLSTM(model, "LSTM", "LSTM", node_names_input, n_blocks, n_cells,
-			std::shared_ptr<ActivationOp<TensorT>>(new ReLUOp<float>()), std::shared_ptr<ActivationOp<TensorT>>(new ReLUGradOp<float>()),
-			std::make_shared<SumOp<TensorT>>(SumOp<TensorT>()), std::make_shared<SumErrorOp<TensorT>>(SumErrorOp<TensorT>()), std::make_shared<SumWeightGradOp<TensorT>>(SumWeightGradOp<TensorT>()),
-			std::make_shared<ConstWeightInitOp<TensorT>>(ConstWeightInitOp<TensorT>(0.4)), 
-      //std::shared_ptr<WeightInitOp<TensorT>>(new RangeWeightInitOp<TensorT>(0.2, 0.6)),
-      std::make_shared<AdamOp<TensorT>>(AdamOp<TensorT>(1e-4, 0.9, 0.999, 1e-8)),
-			0.0f, 0.0f, true, true, 1, specify_layers);
+    // Define the activation 
+    std::shared_ptr<ActivationOp<TensorT>> activation = std::make_shared<TanHOp<TensorT>>(TanHOp<TensorT>());
+    std::shared_ptr<ActivationOp<TensorT>> activation_grad = std::make_shared<TanHGradOp<TensorT>>(TanHGradOp<TensorT>());
+    std::shared_ptr<ActivationOp<TensorT>> activation_output = std::make_shared<LeakyReLUOp<TensorT>>(LeakyReLUOp<TensorT>());
+    std::shared_ptr<ActivationOp<TensorT>> activation_output_grad = std::make_shared<LeakyReLUGradOp<TensorT>>(LeakyReLUGradOp<TensorT>());
 
-		// Add a final output layer (Specify the layer name to ensure the output is always on its own tensor!!!)
-		node_names = model_builder.addFullyConnected(model, "Output", "Output", node_names, 1,
-			std::make_shared<LinearOp<TensorT>>(LinearOp<float>()),
-			std::make_shared<LinearGradOp<TensorT>>(LinearGradOp<float>()),
-			std::make_shared<SumOp<TensorT>>(SumOp<TensorT>()),
-			std::make_shared<SumErrorOp<TensorT>>(SumErrorOp<TensorT>()),
-			std::make_shared<SumWeightGradOp<TensorT>>(SumWeightGradOp<TensorT>()),
-			std::make_shared<RandWeightInitOp<TensorT>>(RandWeightInitOp<TensorT>(node_names.size(), 2)),
-      //std::shared_ptr<WeightInitOp<TensorT>>(new RangeWeightInitOp<TensorT>(0.9, 1.1)),
-			std::make_shared<AdamOp<TensorT>>(AdamOp<TensorT>(1e-4, 0.9, 0.999, 1e-8)), 0.0f, 0.0f, true, true);
+    // Define the node integration
+    auto integration_op = std::make_shared<SumOp<TensorT>>(SumOp<TensorT>());
+    auto integration_error_op = std::make_shared<SumErrorOp<TensorT>>(SumErrorOp<TensorT>());
+    auto integration_weight_grad_op = std::make_shared<SumWeightGradOp<TensorT>>(SumWeightGradOp<TensorT>());
 
-		for (const std::string& node_name : node_names)
-			model.getNodesMap().at(node_name)->setType(NodeType::output);
+    // Define the solver
+    auto solver_op = std::make_shared<SGDOp<TensorT>>(SGDOp<TensorT>(1e-4, 0.9, 10));
 
-		if (!model.checkCompleteInputToOutput())
-			std::cout << "Model input and output are not fully connected!" << std::endl;
+    // Add the LSTM layer(s)
+    std::vector<std::string> node_names = model_builder.addLSTM(model, "LSTM-01", "LSTM-01", node_names_input, n_blocks, n_cells,
+      activation, activation_grad, integration_op, integration_error_op, integration_weight_grad_op,
+      std::make_shared<RandWeightInitOp<TensorT>>(RandWeightInitOp<TensorT>((TensorT)(node_names_input.size() + n_blocks) / 2, 1)),
+      solver_op,
+      0.0f, 0.0f, true, add_forget_gate, 1, specify_layers);
+
+    // Add a final output layer
+    node_names = model_builder.addFullyConnected(model, "FC-Out", "FC-Out", node_names, 1,
+      activation_output, activation_output_grad, integration_op, integration_error_op, integration_weight_grad_op,
+      std::make_shared<RandWeightInitOp<TensorT>>(RandWeightInitOp<TensorT>(node_names.size(), 2)),
+      solver_op, 0.0f, 0.0f, false, true);
+    node_names = model_builder.addSinglyConnected(model, "Output", "Output", node_names, 1,
+      std::make_shared<LinearOp<TensorT>>(LinearOp<TensorT>()),
+      std::make_shared<LinearGradOp<TensorT>>(LinearGradOp<TensorT>()),
+      integration_op, integration_error_op, integration_weight_grad_op,
+      std::make_shared<ConstWeightInitOp<TensorT>>(ConstWeightInitOp<TensorT>(1)),
+      std::make_shared<DummySolverOp<TensorT>>(DummySolverOp<TensorT>()), 0.0f, 0.0f, false, true);
+
+    for (const std::string& node_name : node_names)
+      model.getNodesMap().at(node_name)->setType(NodeType::output);
+    model.setInputAndOutputNodes();
 	}
-	void trainingModelLogger(const int & n_epochs, Model<TensorT>& model, ModelInterpreterDefaultDevice<TensorT>& model_interpreter, ModelLogger<TensorT>& model_logger,
-		const Eigen::Tensor<TensorT, 3>& expected_values,
-		const std::vector<std::string>& output_nodes,
-		const TensorT& model_error)override
+	void trainingModelLogger(const int& n_epochs, Model<TensorT>& model, ModelInterpreterDefaultDevice<TensorT>& model_interpreter, ModelLogger<TensorT>& model_logger,
+    const Eigen::Tensor<TensorT, 3>& expected_values, const std::vector<std::string>& output_nodes, const std::vector<std::string>& input_nodes, const TensorT& model_error) override
 	{ // Left blank intentionally to prevent writing of files during training
 	}
-	void validationModelLogger(const int & n_epochs, Model<TensorT>& model, ModelInterpreterDefaultDevice<TensorT>& model_interpreter, ModelLogger<TensorT>& model_logger,
-		const Eigen::Tensor<TensorT, 3>& expected_values,
-		const std::vector<std::string>& output_nodes,
-		const TensorT& model_error)override
+	void validationModelLogger(const int& n_epochs, Model<TensorT>& model, ModelInterpreterDefaultDevice<TensorT>& model_interpreter, ModelLogger<TensorT>& model_logger,
+    const Eigen::Tensor<TensorT, 3>& expected_values, const std::vector<std::string>& output_nodes, const std::vector<std::string>& input_nodes, const TensorT& model_error) override
 	{ // Left blank intentionally to prevent writing of files during validation
 	}
   void adaptiveTrainerScheduler(
@@ -688,8 +656,8 @@ public:
 void main_AddProbRec(const std::string& mode) {
   // define the population trainer parameters
   PopulationTrainerExt<float> population_trainer;
-  //population_trainer.setNGenerations(50); // population training
-  population_trainer.setNGenerations(1); // single model training
+  population_trainer.setNGenerations(50); // population training
+  //population_trainer.setNGenerations(1); // single model training
   population_trainer.setLogging(true);
 
   // define the population logger
@@ -718,8 +686,8 @@ void main_AddProbRec(const std::string& mode) {
   ModelTrainerExt<float> model_trainer;
   model_trainer.setBatchSize(32);
   model_trainer.setMemorySize(data_simulator.sequence_length_);
-  //model_trainer.setNEpochsTraining(100); // population training
-  model_trainer.setNEpochsTraining(5000); // single model training
+  model_trainer.setNEpochsTraining(100); // population training
+  //model_trainer.setNEpochsTraining(5000); // single model training
   model_trainer.setNEpochsValidation(25);
   model_trainer.setNTETTSteps(data_simulator.sequence_length_);
   model_trainer.setNTBPTTSteps(data_simulator.sequence_length_);
@@ -760,9 +728,9 @@ void main_AddProbRec(const std::string& mode) {
 
     // make the model name
     Model<float> model;
-    //model_trainer.makeModelMinimal(model);
+    model_trainer.makeModelMinimal(model);
     //model_trainer.makeModelSolution(model, false);
-    model_trainer.makeModelLSTM(model, input_nodes.size(), 1, 1, true);
+    //model_trainer.makeModelLSTM(model, input_nodes.size(), 1, 1, false);
     char model_name_char[512];
     sprintf(model_name_char, "%s_%d", model.getName().data(), 0);
     std::string model_name(model_name_char);
