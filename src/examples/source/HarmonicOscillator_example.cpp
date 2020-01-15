@@ -76,22 +76,23 @@ public:
   */
 	void makeHarmonicOscillator3M2S(Model<TensorT>& model) {
 		Node<TensorT> m1, m2, m3, s1f, s2f, s1r, s2r, 
-      m1_output, m3_output;
+      m2_input, m1_output, m3_output;
 		Link m1_to_s1f, s1r_to_m1, s1f_to_m2, m2_to_s1r, m2_to_s2f, s2r_to_m2, s2f_to_m3, m3_to_s2r,
-      m1_to_m1_output, m3_to_m3_output;
+      m2_input_to_m2, m1_to_m1_output, m3_to_m3_output;
 		Weight<TensorT> Wm1_to_s1f, Ws1r_to_m1, Ws1f_to_m2, Wm2_to_s1r, Wm2_to_s2f, Ws2r_to_m2, Ws2f_to_m3, Wm3_to_s2r,
-      Wm1_to_m1_output, Wm3_to_m3_output;
+      Wm2_input_to_m2, Wm1_to_m1_output, Wm3_to_m3_output;
 		// Toy network: 1 hidden layer, fully connected, DCG
 		m1 = Node<TensorT>("m1", NodeType::unmodifiable, NodeStatus::initialized, std::make_shared<LinearOp<TensorT>>(LinearOp<TensorT>()), std::make_shared<LinearGradOp<TensorT>>(LinearGradOp<TensorT>()), std::make_shared<SumOp<TensorT>>(SumOp<TensorT>()), std::make_shared<SumErrorOp<TensorT>>(SumErrorOp<TensorT>()), std::make_shared<SumWeightGradOp<TensorT>>(SumWeightGradOp<TensorT>()));
-		m2 = Node<TensorT>("m2", NodeType::input, NodeStatus::initialized, std::make_shared<LinearOp<TensorT>>(LinearOp<TensorT>()), std::make_shared<LinearGradOp<TensorT>>(LinearGradOp<TensorT>()), std::make_shared<SumOp<TensorT>>(SumOp<TensorT>()), std::make_shared<SumErrorOp<TensorT>>(SumErrorOp<TensorT>()), std::make_shared<SumWeightGradOp<TensorT>>(SumWeightGradOp<TensorT>()));
+		m2 = Node<TensorT>("m2", NodeType::unmodifiable, NodeStatus::initialized, std::make_shared<LinearOp<TensorT>>(LinearOp<TensorT>()), std::make_shared<LinearGradOp<TensorT>>(LinearGradOp<TensorT>()), std::make_shared<SumOp<TensorT>>(SumOp<TensorT>()), std::make_shared<SumErrorOp<TensorT>>(SumErrorOp<TensorT>()), std::make_shared<SumWeightGradOp<TensorT>>(SumWeightGradOp<TensorT>()));
 		m3 = Node<TensorT>("m3", NodeType::unmodifiable, NodeStatus::initialized, std::make_shared<LinearOp<TensorT>>(LinearOp<TensorT>()), std::make_shared<LinearGradOp<TensorT>>(LinearGradOp<TensorT>()), std::make_shared<SumOp<TensorT>>(SumOp<TensorT>()), std::make_shared<SumErrorOp<TensorT>>(SumErrorOp<TensorT>()), std::make_shared<SumWeightGradOp<TensorT>>(SumWeightGradOp<TensorT>()));
 		s1f = Node<TensorT>("s1f", NodeType::hidden, NodeStatus::initialized, std::make_shared<LinearOp<TensorT>>(LinearOp<TensorT>()), std::make_shared<LinearGradOp<TensorT>>(LinearGradOp<TensorT>()), std::make_shared<SumOp<TensorT>>(SumOp<TensorT>()), std::make_shared<SumErrorOp<TensorT>>(SumErrorOp<TensorT>()), std::make_shared<SumWeightGradOp<TensorT>>(SumWeightGradOp<TensorT>()));
 		s2f = Node<TensorT>("s2f", NodeType::hidden, NodeStatus::initialized, std::make_shared<LinearOp<TensorT>>(LinearOp<TensorT>()), std::make_shared<LinearGradOp<TensorT>>(LinearGradOp<TensorT>()), std::make_shared<SumOp<TensorT>>(SumOp<TensorT>()), std::make_shared<SumErrorOp<TensorT>>(SumErrorOp<TensorT>()), std::make_shared<SumWeightGradOp<TensorT>>(SumWeightGradOp<TensorT>()));
     s1r = Node<TensorT>("s1r", NodeType::hidden, NodeStatus::initialized, std::make_shared<LinearOp<TensorT>>(LinearOp<TensorT>()), std::make_shared<LinearGradOp<TensorT>>(LinearGradOp<TensorT>()), std::make_shared<SumOp<TensorT>>(SumOp<TensorT>()), std::make_shared<SumErrorOp<TensorT>>(SumErrorOp<TensorT>()), std::make_shared<SumWeightGradOp<TensorT>>(SumWeightGradOp<TensorT>()));
     s2r = Node<TensorT>("s2r", NodeType::hidden, NodeStatus::initialized, std::make_shared<LinearOp<TensorT>>(LinearOp<TensorT>()), std::make_shared<LinearGradOp<TensorT>>(LinearGradOp<TensorT>()), std::make_shared<SumOp<TensorT>>(SumOp<TensorT>()), std::make_shared<SumErrorOp<TensorT>>(SumErrorOp<TensorT>()), std::make_shared<SumWeightGradOp<TensorT>>(SumWeightGradOp<TensorT>()));
     m1_output = Node<TensorT>("m1_output", NodeType::output, NodeStatus::initialized, std::make_shared<LinearOp<TensorT>>(LinearOp<TensorT>()), std::make_shared<LinearGradOp<TensorT>>(LinearGradOp<TensorT>()), std::make_shared<SumOp<TensorT>>(SumOp<TensorT>()), std::make_shared<SumErrorOp<TensorT>>(SumErrorOp<TensorT>()), std::make_shared<SumWeightGradOp<TensorT>>(SumWeightGradOp<TensorT>()));
+    m2_input = Node<TensorT>("m2_input", NodeType::input, NodeStatus::initialized, std::make_shared<LinearOp<TensorT>>(LinearOp<TensorT>()), std::make_shared<LinearGradOp<TensorT>>(LinearGradOp<TensorT>()), std::make_shared<SumOp<TensorT>>(SumOp<TensorT>()), std::make_shared<SumErrorOp<TensorT>>(SumErrorOp<TensorT>()), std::make_shared<SumWeightGradOp<TensorT>>(SumWeightGradOp<TensorT>()));
     m3_output = Node<TensorT>("m3_output", NodeType::output, NodeStatus::initialized, std::make_shared<LinearOp<TensorT>>(LinearOp<TensorT>()), std::make_shared<LinearGradOp<TensorT>>(LinearGradOp<TensorT>()), std::make_shared<SumOp<TensorT>>(SumOp<TensorT>()), std::make_shared<SumErrorOp<TensorT>>(SumErrorOp<TensorT>()), std::make_shared<SumWeightGradOp<TensorT>>(SumWeightGradOp<TensorT>()));
-    m1_output.setLayerName("Output"); m3_output.setLayerName("Output"); m2.setLayerName("Input");
+    m1_output.setLayerName("Output"); m2_input.setLayerName("Input"); m3_output.setLayerName("Output");
 		// weights  
     std::shared_ptr<WeightInitOp<TensorT>> weight_init = std::make_shared<RandWeightInitOp<TensorT>>(RandWeightInitOp<TensorT>(2.0));
     std::shared_ptr<SolverOp<TensorT>> solver_op = std::make_shared<SGDOp<TensorT>>(SGDOp<TensorT>(0.001, 0.9, 10));
@@ -104,6 +105,7 @@ public:
 		Ws2f_to_m3 = Weight<TensorT>("s2f_to_m3", weight_init, solver_op);
 		Wm3_to_s2r = Weight<TensorT>("m3_to_s2r", weight_init, solver_op);
     Wm1_to_m1_output = Weight<TensorT>("m1_to_m1_output", std::make_shared<ConstWeightInitOp<TensorT>>(ConstWeightInitOp<TensorT>(1.0)), std::make_shared<DummySolverOp<TensorT>>(DummySolverOp<TensorT>()));
+    Wm2_input_to_m2 = Weight<TensorT>("m2_input_to_m2", std::make_shared<ConstWeightInitOp<TensorT>>(ConstWeightInitOp<TensorT>(1.0)), std::make_shared<DummySolverOp<TensorT>>(DummySolverOp<TensorT>()));
     Wm3_to_m3_output = Weight<TensorT>("m3_to_m3_output", std::make_shared<ConstWeightInitOp<TensorT>>(ConstWeightInitOp<TensorT>(1.0)), std::make_shared<DummySolverOp<TensorT>>(DummySolverOp<TensorT>()));
 		// links
 		m1_to_s1f = Link("m1_to_s1f", "m1", "s1f", "m1_to_s1f");
@@ -115,12 +117,13 @@ public:
 		s2f_to_m3 = Link("s2f_to_m3", "s2f", "m3", "s2f_to_m3");
 		m3_to_s2r = Link("m3_to_s2r", "m3", "s2r", "m3_to_s2r");
     m1_to_m1_output = Link("m1_to_m1_output", "m1", "m1_output", "m1_to_m1_output");
-    m3_to_m3_output = Link("m3_to_m3_output", "m1", "m1_output", "m3_to_m3_output");
+    m2_input_to_m2 = Link("m2_input_to_m2", "m2_input", "m2", "m2_input_to_m2");
+    m3_to_m3_output = Link("m3_to_m3_output", "m3", "m3_output", "m3_to_m3_output");
 		model.setId(0);
 		model.setName("HarmonicOscillator3M2S");
-		model.addNodes({ m1, m2, m3, s1f, s2f, s1r, s2r, m1_output, m3_output });
-		model.addWeights({ Wm1_to_s1f, Ws1r_to_m1, Ws1f_to_m2, Wm2_to_s1r, Wm2_to_s2f, Ws2r_to_m2, Ws2f_to_m3, Wm3_to_s2r, Wm1_to_m1_output, Wm3_to_m3_output });
-		model.addLinks({ m1_to_s1f, s1r_to_m1, s1f_to_m2, m2_to_s1r, m2_to_s2f, s2r_to_m2, s2f_to_m3, m3_to_s2r, m1_to_m1_output, m3_to_m3_output });
+		model.addNodes({ m1, m2, m3, s1f, s2f, s1r, s2r, m1_output, m2_input, m3_output });
+		model.addWeights({ Wm1_to_s1f, Ws1r_to_m1, Ws1f_to_m2, Wm2_to_s1r, Wm2_to_s2f, Ws2r_to_m2, Ws2f_to_m3, Wm3_to_s2r, Wm1_to_m1_output, Wm2_input_to_m2, Wm3_to_m3_output });
+		model.addLinks({ m1_to_s1f, s1r_to_m1, s1f_to_m2, m2_to_s1r, m2_to_s2f, s2r_to_m2, s2f_to_m3, m3_to_s2r, m1_to_m1_output, m2_input_to_m2, m3_to_m3_output });
 	}
   /**
   @brief Interaction Graph Toy Network Model based on Linear Harmonic Oscillator with two masses and three springs
@@ -301,7 +304,7 @@ void main_WeightSpring3W2S1D(const bool& make_model, const bool& train_model) {
 	const int n_threads = n_hard_threads; // the number of threads
 
 	// define the input/output nodes
-	std::vector<std::string> input_nodes = { "m2" };
+	std::vector<std::string> input_nodes = { "m2_input" };
 	std::vector<std::string> output_nodes = { "m1_output","m3_output" };
 
 	// define the data simulator
