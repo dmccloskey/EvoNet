@@ -15,7 +15,7 @@ template<typename TensorT>
 class DataSimulatorExt : public DataSimulator<TensorT>
 {
 public:
-	void simulateTrainingData(Eigen::Tensor<TensorT, 4>& input_data, Eigen::Tensor<TensorT, 4>& output_data, Eigen::Tensor<TensorT, 3>& time_steps)
+	void simulateTrainingData(Eigen::Tensor<TensorT, 4>& input_data, Eigen::Tensor<TensorT, 4>& output_data, Eigen::Tensor<TensorT, 3>& time_steps) override
 	{
 		// infer data dimensions based on the input tensors
 		const int batch_size = input_data.dimension(0);
@@ -42,7 +42,7 @@ public:
 		// update the time_steps
 		time_steps.setConstant(1.0f); // TODO
 	}
-  void simulateTrainingData(Eigen::Tensor<TensorT, 3>& input_data, Eigen::Tensor<TensorT, 3>& output_data, Eigen::Tensor<TensorT, 2>& time_steps)
+  void simulateTrainingData(Eigen::Tensor<TensorT, 3>& input_data, Eigen::Tensor<TensorT, 3>& output_data, Eigen::Tensor<TensorT, 2>& time_steps) override
   {
     // infer data dimensions based on the input tensors
     const int batch_size = input_data.dimension(0);
@@ -66,7 +66,7 @@ public:
     // update the time_steps
     time_steps.setConstant(1.0f); // TODO
   }
-  void simulateTrainingData(Eigen::Tensor<TensorT, 3>& input_data, Eigen::Tensor<TensorT, 3>& loss_output_data, Eigen::Tensor<TensorT, 3>& metric_output_data, Eigen::Tensor<TensorT, 2>& time_steps)
+  void simulateTrainingData(Eigen::Tensor<TensorT, 3>& input_data, Eigen::Tensor<TensorT, 3>& loss_output_data, Eigen::Tensor<TensorT, 3>& metric_output_data, Eigen::Tensor<TensorT, 2>& time_steps) override
   {
     // infer data dimensions based on the input tensors
     const int batch_size = input_data.dimension(0);
@@ -95,7 +95,7 @@ public:
     // update the time_steps
     time_steps.setConstant(1.0f); // TODO
   }
-	void simulateValidationData(Eigen::Tensor<TensorT, 4>& input_data, Eigen::Tensor<TensorT, 4>& output_data, Eigen::Tensor<TensorT, 3>& time_steps)
+	void simulateValidationData(Eigen::Tensor<TensorT, 4>& input_data, Eigen::Tensor<TensorT, 4>& output_data, Eigen::Tensor<TensorT, 3>& time_steps) override
 	{
 		// infer data dimensions based on the input tensors
 		const int batch_size = input_data.dimension(0);
@@ -122,7 +122,7 @@ public:
 		// update the time_steps
 		time_steps.setConstant(1.0f); // TODO
 	}
-  void simulateValidationData(Eigen::Tensor<TensorT, 3>& input_data, Eigen::Tensor<TensorT, 3>& output_data, Eigen::Tensor<TensorT, 2>& time_steps)
+  void simulateValidationData(Eigen::Tensor<TensorT, 3>& input_data, Eigen::Tensor<TensorT, 3>& output_data, Eigen::Tensor<TensorT, 2>& time_steps) override
   {
     // infer data dimensions based on the input tensors
     const int batch_size = input_data.dimension(0);
@@ -146,7 +146,7 @@ public:
     // update the time_steps
     time_steps.setConstant(1.0f); // TODO
   }
-  void simulateValidationData(Eigen::Tensor<TensorT, 3>& input_data, Eigen::Tensor<TensorT, 3>& loss_output_data, Eigen::Tensor<TensorT, 3>& metric_output_data, Eigen::Tensor<TensorT, 2>& time_steps)
+  void simulateValidationData(Eigen::Tensor<TensorT, 3>& input_data, Eigen::Tensor<TensorT, 3>& loss_output_data, Eigen::Tensor<TensorT, 3>& metric_output_data, Eigen::Tensor<TensorT, 2>& time_steps) override
   {
     // infer data dimensions based on the input tensors
     const int batch_size = input_data.dimension(0);
@@ -175,7 +175,7 @@ public:
     // update the time_steps
     time_steps.setConstant(1.0f); // TODO
   }
-	void simulateEvaluationData(Eigen::Tensor<TensorT, 4>& input_data, Eigen::Tensor<TensorT, 3>& time_steps)
+	void simulateEvaluationData(Eigen::Tensor<TensorT, 4>& input_data, Eigen::Tensor<TensorT, 3>& time_steps) override
 	{
 		// infer data dimensions based on the input tensors
 		const int batch_size = input_data.dimension(0);
@@ -197,7 +197,7 @@ public:
 		// update the time_steps
 		time_steps.setConstant(1.0f); // TODO
 	}
-  void simulateEvaluationData(Eigen::Tensor<TensorT, 3>& input_data, Eigen::Tensor<TensorT, 2>& time_steps)
+  void simulateEvaluationData(Eigen::Tensor<TensorT, 3>& input_data, Eigen::Tensor<TensorT, 2>& time_steps) override
   {
     // infer data dimensions based on the input tensors
     const int batch_size = input_data.dimension(0);

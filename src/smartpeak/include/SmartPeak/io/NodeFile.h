@@ -99,29 +99,29 @@ public:
 			// parse the node_activation
 			std::shared_ptr<ActivationOp<TensorT>> node_activation;
 			if (node_activation_str == "ReLUOp") node_activation.reset(new ReLUOp<TensorT>());
-			else if (node_activation_str == "ELUOp") node_activation.reset(new ELUOp<TensorT>(1.0));
+			else if (node_activation_str == "ELUOp") node_activation.reset(new ELUOp<TensorT>());
 			else if (node_activation_str == "LinearOp") node_activation.reset(new LinearOp<TensorT>());
 			else if (node_activation_str == "SigmoidOp") node_activation.reset(new SigmoidOp<TensorT>());
 			else if (node_activation_str == "TanHOp") node_activation.reset(new TanHOp<TensorT>());
 			else if (node_activation_str == "ExponentialOp") node_activation.reset(new ExponentialOp<TensorT>());
 			else if (node_activation_str == "InverseOp") node_activation.reset(new InverseOp<TensorT>());
 			else if (node_activation_str == "LinearOp") node_activation.reset(new LinearOp<TensorT>());
-			else if (node_activation_str == "LeakyReLUOp") node_activation.reset(new LeakyReLUOp<TensorT>(1e-2)); // TODO define values
-			else if (node_activation_str == "PowOp") node_activation.reset(new PowOp<TensorT>(-0.5));  // TODO define values
+			else if (node_activation_str == "LeakyReLUOp") node_activation.reset(new LeakyReLUOp<TensorT>()); // TODO define values
+			else if (node_activation_str == "PowOp") node_activation.reset(new PowOp<TensorT>());  // TODO define values
 			else std::cout << "NodeActivation for node_name " << node_name << " was not recognized." << std::endl;
 
 			// parse the node_activation
 			std::shared_ptr<ActivationOp<TensorT>> node_activation_grad;
 			if (node_activation_grad_str == "ReLUGradOp") node_activation_grad.reset(new ReLUGradOp<TensorT>());
-			else if (node_activation_grad_str == "ELUGradOp") node_activation_grad.reset(new ELUGradOp<TensorT>(1.0));
+			else if (node_activation_grad_str == "ELUGradOp") node_activation_grad.reset(new ELUGradOp<TensorT>());
 			else if (node_activation_grad_str == "LinearGradOp") node_activation_grad.reset(new LinearGradOp<TensorT>());
 			else if (node_activation_grad_str == "SigmoidGradOp") node_activation_grad.reset(new SigmoidGradOp<TensorT>());
 			else if (node_activation_grad_str == "TanHGradOp") node_activation_grad.reset(new TanHGradOp<TensorT>());
 			else if (node_activation_grad_str == "ExponentialGradOp") node_activation_grad.reset(new ExponentialGradOp<TensorT>());
 			else if (node_activation_grad_str == "InverseGradOp") node_activation_grad.reset(new InverseGradOp<TensorT>());
 			else if (node_activation_grad_str == "LinearGradOp") node_activation_grad.reset(new LinearGradOp<TensorT>());
-			else if (node_activation_grad_str == "LeakyReLUGradOp") node_activation_grad.reset(new LeakyReLUGradOp<TensorT>(1e-2));
-			else if (node_activation_grad_str == "PowGradOp") node_activation_grad.reset(new PowGradOp<TensorT>(-0.5));
+			else if (node_activation_grad_str == "LeakyReLUGradOp") node_activation_grad.reset(new LeakyReLUGradOp<TensorT>());
+			else if (node_activation_grad_str == "PowGradOp") node_activation_grad.reset(new PowGradOp<TensorT>());
 			else std::cout << "NodeActivationGrad for node_name " << node_name << " was not recognized." << std::endl;
 
 			// parse the node_integration

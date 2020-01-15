@@ -336,6 +336,16 @@ BOOST_AUTO_TEST_CASE(destructorKLDivergenceMuOp)
 	delete ptrKLDivergenceMu;
 }
 
+BOOST_AUTO_TEST_CASE(gettersAndSettersKLDivergenceMuOp)
+{
+	KLDivergenceMuLossOp<float> operation(1e-3, 1, 5);
+	BOOST_CHECK_EQUAL(operation.getName(), "KLDivergenceMuLossOp");
+	BOOST_CHECK_EQUAL(operation.getParameters().size(), 3);
+	BOOST_CHECK_CLOSE(operation.getParameters().at(0), 1e-3, 1e-4);
+	BOOST_CHECK_EQUAL(operation.getParameters().at(1), 1);
+	BOOST_CHECK_EQUAL(operation.getParameters().at(2), 5);
+}
+
 /**
 	KLDivergenceMuLossGradOp Tests
 */
@@ -351,6 +361,16 @@ BOOST_AUTO_TEST_CASE(destructorKLDivergenceMuGradOp)
 	KLDivergenceMuLossGradOp<double>* ptrKLDivergenceMu = nullptr;
 	ptrKLDivergenceMu = new KLDivergenceMuLossGradOp<double>();
 	delete ptrKLDivergenceMu;
+}
+
+BOOST_AUTO_TEST_CASE(gettersAndSettersKLDivergenceGradMuOp)
+{
+	KLDivergenceMuLossGradOp<float> operation(1e-3, 1, 5);
+	BOOST_CHECK_EQUAL(operation.getName(), "KLDivergenceMuLossGradOp");
+	BOOST_CHECK_EQUAL(operation.getParameters().size(), 3);
+	BOOST_CHECK_CLOSE(operation.getParameters().at(0), 1e-3, 1e-4);
+	BOOST_CHECK_EQUAL(operation.getParameters().at(1), 1);
+	BOOST_CHECK_EQUAL(operation.getParameters().at(2), 5);
 }
 
 /**
@@ -370,6 +390,16 @@ BOOST_AUTO_TEST_CASE(destructorKLDivergenceLogVarOp)
 	delete ptrKLDivergenceLogVar;
 }
 
+BOOST_AUTO_TEST_CASE(gettersAndSettersKLDivergenceLogVarOp)
+{
+	KLDivergenceLogVarLossOp<float> operation(1e-3, 1, 5);
+	BOOST_CHECK_EQUAL(operation.getName(), "KLDivergenceLogVarLossOp");
+	BOOST_CHECK_EQUAL(operation.getParameters().size(), 3);
+	BOOST_CHECK_CLOSE(operation.getParameters().at(0), 1e-3, 1e-4);
+	BOOST_CHECK_EQUAL(operation.getParameters().at(1), 1);
+	BOOST_CHECK_EQUAL(operation.getParameters().at(2), 5);
+}
+
 /**
 	KLDivergenceLogVarLossGradOp Tests
 */
@@ -385,6 +415,16 @@ BOOST_AUTO_TEST_CASE(destructorKLDivergenceLogVarGradOp)
 	KLDivergenceLogVarLossGradOp<double>* ptrKLDivergenceLogVar = nullptr;
 	ptrKLDivergenceLogVar = new KLDivergenceLogVarLossGradOp<double>();
 	delete ptrKLDivergenceLogVar;
+}
+
+BOOST_AUTO_TEST_CASE(gettersAndSettersKLDivergenceLogVarLossGradOp)
+{
+	KLDivergenceLogVarLossGradOp<float> operation(1e-3, 1, 5);
+	BOOST_CHECK_EQUAL(operation.getName(), "KLDivergenceLogVarLossGradOp");
+	BOOST_CHECK_EQUAL(operation.getParameters().size(), 3);
+	BOOST_CHECK_CLOSE(operation.getParameters().at(0), 1e-3, 1e-4);
+	BOOST_CHECK_EQUAL(operation.getParameters().at(1), 1);
+	BOOST_CHECK_EQUAL(operation.getParameters().at(2), 5);
 }
 
 /**
@@ -532,8 +572,12 @@ BOOST_AUTO_TEST_CASE(destructorKLDivergenceCatOp)
 
 BOOST_AUTO_TEST_CASE(gettersAndSettersKLDivergenceCatOp)
 {
-  KLDivergenceCatLossOp<float> operation;
+  KLDivergenceCatLossOp<float> operation(1e-3, 1, 5);
   BOOST_CHECK_EQUAL(operation.getName(), "KLDivergenceCatLossOp");
+	BOOST_CHECK_EQUAL(operation.getParameters().size(), 3);
+	BOOST_CHECK_CLOSE(operation.getParameters().at(0), 1e-3, 1e-4);
+	BOOST_CHECK_EQUAL(operation.getParameters().at(1), 1);
+	BOOST_CHECK_EQUAL(operation.getParameters().at(2), 5);
 }
 
 /**
@@ -555,8 +599,12 @@ BOOST_AUTO_TEST_CASE(destructorKLDivergenceCatGradOp)
 
 BOOST_AUTO_TEST_CASE(gettersAndSettersKLDivergenceCatGradOp)
 {
-  KLDivergenceCatLossGradOp<float> operation;
+  KLDivergenceCatLossGradOp<float> operation(1e-3, 1, 5);
   BOOST_CHECK_EQUAL(operation.getName(), "KLDivergenceCatLossGradOp");
+	BOOST_CHECK_EQUAL(operation.getParameters().size(), 3);
+	BOOST_CHECK_CLOSE(operation.getParameters().at(0), 1e-3, 1e-4);
+	BOOST_CHECK_EQUAL(operation.getParameters().at(1), 1);
+	BOOST_CHECK_EQUAL(operation.getParameters().at(2), 5);
 }
 
 /**

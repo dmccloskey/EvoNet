@@ -47,8 +47,8 @@ BOOST_AUTO_TEST_CASE(storeAndLoadCsv)
   std::shared_ptr<SolverOp<float>> solver;
   for (int i=0; i<3; ++i)
   {
-    weight_init.reset(new ConstWeightInitOp<float>(1.0));
-    solver.reset(new SGDOp<float>(0.01, 0.9));
+    weight_init = std::make_shared<ConstWeightInitOp<float>>(ConstWeightInitOp<float>(1.0));
+    solver = std::make_shared<SGDOp<float>>(SGDOp<float>(0.01, 0.9));
     std::shared_ptr<Weight<float>> weight(new Weight<float>(
       "Weight_" + std::to_string(i), 
       weight_init,
@@ -95,8 +95,8 @@ BOOST_AUTO_TEST_CASE(storeAndLoadWeightValuesCsv)
 	std::shared_ptr<SolverOp<float>> solver;
 	for (int i = 0; i < 3; ++i)
 	{
-		weight_init.reset(new ConstWeightInitOp<float>(1.0));
-		solver.reset(new SGDOp<float>(0.01, 0.9));
+		weight_init = std::make_shared<ConstWeightInitOp<float>>(ConstWeightInitOp<float>(1.0));
+		solver = std::make_shared<SGDOp<float>>(SGDOp<float>(0.01, 0.9));
 		std::shared_ptr<Weight<float>> weight(new Weight<float>(
 			"Weight_" + std::to_string(i),
 			weight_init,
@@ -110,8 +110,8 @@ BOOST_AUTO_TEST_CASE(storeAndLoadWeightValuesCsv)
 	std::map<std::string, std::shared_ptr<Weight<float>>> weights_test;
 	for (int i = 0; i < 3; ++i)
 	{
-		weight_init.reset(new ConstWeightInitOp<float>(1.0));
-		solver.reset(new SGDOp<float>(0.01, 0.9));
+		weight_init = std::make_shared<ConstWeightInitOp<float>>(ConstWeightInitOp<float>(1.0));
+		solver = std::make_shared<SGDOp<float>>(SGDOp<float>(0.01, 0.9));
 		std::shared_ptr<Weight<float>> weight(new Weight<float>(
 			"Weight_" + std::to_string(i),
 			weight_init,
@@ -141,8 +141,8 @@ BOOST_AUTO_TEST_CASE(storeAndLoadBinary)
 	std::shared_ptr<SolverOp<float>> solver;
 	for (int i = 0; i < 3; ++i)
 	{
-		weight_init.reset(new ConstWeightInitOp<float>(1.0));
-		solver.reset(new SGDOp<float>(0.01, 0.9));
+		weight_init = std::make_shared<ConstWeightInitOp<float>>(ConstWeightInitOp<float>(1.0));
+		solver = std::make_shared<SGDOp<float>>(SGDOp<float>(0.01, 0.9));
 		std::shared_ptr<Weight<float>> weight(new Weight<float>(
 			"Weight_" + std::to_string(i),
 			weight_init,

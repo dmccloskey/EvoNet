@@ -303,8 +303,8 @@ BOOST_AUTO_TEST_CASE(getBestLeftAndRight)
 	EMGModel<double> emg(10.0, 0.0, 5.0, 1.0);
 	psim.simulatePeak(x, y, emg);
 	best_lr = psim.getBestLeftAndRight(x, y, emg.getMu());
-	BOOST_CHECK_CLOSE(best_lr.first, 0.0, 1e-4);
-	BOOST_CHECK_CLOSE(best_lr.second, 10.0, 1e-4);
+	BOOST_CHECK_CLOSE(best_lr.first, 1.0, 1e-4);
+	BOOST_CHECK_CLOSE(best_lr.second, 9.0, 1e-4);
 
 	// time and intensity arrays
 	x.clear();
@@ -319,7 +319,7 @@ BOOST_AUTO_TEST_CASE(getBestLeftAndRight)
 	emg = EMGModel<double>(10.0, 0.5, 5.0, 1.0);
 	psim.simulatePeak(x, y, emg);
 	best_lr = psim.getBestLeftAndRight(x, y, emg.getMu());
-	BOOST_CHECK_CLOSE(best_lr.first, 0.0, 1e-4);
+	BOOST_CHECK_CLOSE(best_lr.first, 1.0, 1e-4);
 	BOOST_CHECK_CLOSE(best_lr.second, 10.0, 1e-4);
 
 	// time and intensity arrays

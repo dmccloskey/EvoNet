@@ -151,86 +151,86 @@ public:
     std::vector<std::string> node_names = node_names_input;
     if (n_en_hidden_0 > 0) {
       node_names = model_builder.addFullyConnected(model, "EN0", "EN0", node_names, n_en_hidden_0,
-        std::shared_ptr<ActivationOp<TensorT>>(new LeakyReLUOp<TensorT>()),
-        std::shared_ptr<ActivationOp<TensorT>>(new LeakyReLUGradOp<TensorT>()),
-        //std::shared_ptr<ActivationOp<TensorT>>(new LinearOp<TensorT>()),
-        //std::shared_ptr<ActivationOp<TensorT>>(new LinearGradOp<TensorT>()),
-        std::shared_ptr<IntegrationOp<TensorT>>(new SumOp<TensorT>()),
-        std::shared_ptr<IntegrationErrorOp<TensorT>>(new SumErrorOp<TensorT>()),
-        std::shared_ptr<IntegrationWeightGradOp<TensorT>>(new SumWeightGradOp<TensorT>()),
-        std::shared_ptr<WeightInitOp<TensorT>>(new RandWeightInitOp<TensorT>((int)(node_names.size() + n_en_hidden_0) / 2, 1)),
-        std::shared_ptr<SolverOp<TensorT>>(new AdamOp<TensorT>(1e-4, 0.9, 0.999, 1e-8)), 0.0f, 0.0f, false, true);
+        std::make_shared<LeakyReLUOp<TensorT>>(LeakyReLUOp<TensorT>()),
+        std::make_shared<LeakyReLUGradOp<TensorT>>(LeakyReLUGradOp<TensorT>()),
+        //std::make_shared<LinearOp<TensorT>>(LinearOp<TensorT>()),
+        //std::make_shared<LinearGradOp<TensorT>>(LinearGradOp<TensorT>()),
+        std::make_shared<SumOp<TensorT>>(SumOp<TensorT>()),
+        std::make_shared<SumErrorOp<TensorT>>(SumErrorOp<TensorT>()),
+        std::make_shared<SumWeightGradOp<TensorT>>(SumWeightGradOp<TensorT>()),
+        std::make_shared<RandWeightInitOp<TensorT>>(RandWeightInitOp<TensorT>((int)(node_names.size() + n_en_hidden_0) / 2, 1)),
+        std::make_shared<AdamOp<TensorT>>(AdamOp<TensorT>(1e-4, 0.9, 0.999, 1e-8)), 0.0f, 0.0f, false, true);
       if (add_norm) {
         node_names = model_builder.addNormalization(model, "EN0-Norm", "EN0-Norm", node_names, true);
         node_names = model_builder.addSinglyConnected(model, "EN0-Norm-gain", "EN0-Norm-gain", node_names, node_names.size(),
-          std::shared_ptr<ActivationOp<TensorT>>(new LeakyReLUOp<TensorT>()), // Nonlinearity occures after the normalization
-          std::shared_ptr<ActivationOp<TensorT>>(new LeakyReLUGradOp<TensorT>()),
-          std::shared_ptr<IntegrationOp<TensorT>>(new SumOp<TensorT>()),
-          std::shared_ptr<IntegrationErrorOp<TensorT>>(new SumErrorOp<TensorT>()),
-          std::shared_ptr<IntegrationWeightGradOp<TensorT>>(new SumWeightGradOp<TensorT>()),
-          std::shared_ptr<WeightInitOp<TensorT>>(new ConstWeightInitOp<TensorT>(1)),
-          std::shared_ptr<SolverOp<TensorT>>(new AdamOp<TensorT>(1e-4, 0.9, 0.999, 1e-8)),
+          std::make_shared<LeakyReLUOp<TensorT>>(LeakyReLUOp<TensorT>()), // Nonlinearity occures after the normalization
+          std::make_shared<LeakyReLUGradOp<TensorT>>(LeakyReLUGradOp<TensorT>()),
+          std::make_shared<SumOp<TensorT>>(SumOp<TensorT>()),
+          std::make_shared<SumErrorOp<TensorT>>(SumErrorOp<TensorT>()),
+          std::make_shared<SumWeightGradOp<TensorT>>(SumWeightGradOp<TensorT>()),
+          std::make_shared<ConstWeightInitOp<TensorT>>(ConstWeightInitOp<TensorT>(1)),
+          std::make_shared<AdamOp<TensorT>>(AdamOp<TensorT>(1e-4, 0.9, 0.999, 1e-8)),
           0.0, 0.0, true, true);
       }
     }
     if (n_en_hidden_1 > 0) {
       node_names = model_builder.addFullyConnected(model, "EN1", "EN1", node_names, n_en_hidden_1,
-        std::shared_ptr<ActivationOp<TensorT>>(new LeakyReLUOp<TensorT>()),
-        std::shared_ptr<ActivationOp<TensorT>>(new LeakyReLUGradOp<TensorT>()),
-        //std::shared_ptr<ActivationOp<TensorT>>(new LinearOp<TensorT>()),
-        //std::shared_ptr<ActivationOp<TensorT>>(new LinearGradOp<TensorT>()),
-        std::shared_ptr<IntegrationOp<TensorT>>(new SumOp<TensorT>()),
-        std::shared_ptr<IntegrationErrorOp<TensorT>>(new SumErrorOp<TensorT>()),
-        std::shared_ptr<IntegrationWeightGradOp<TensorT>>(new SumWeightGradOp<TensorT>()),
-        std::shared_ptr<WeightInitOp<TensorT>>(new RandWeightInitOp<TensorT>((int)(node_names.size() + n_en_hidden_1) / 2, 1)),
-        std::shared_ptr<SolverOp<TensorT>>(new AdamOp<TensorT>(1e-4, 0.9, 0.999, 1e-8)), 0.0f, 0.0f, false, true);
+        std::make_shared<LeakyReLUOp<TensorT>>(LeakyReLUOp<TensorT>()),
+        std::make_shared<LeakyReLUGradOp<TensorT>>(LeakyReLUGradOp<TensorT>()),
+        //std::make_shared<LinearOp<TensorT>>(LinearOp<TensorT>()),
+        //std::make_shared<LinearGradOp<TensorT>>(LinearGradOp<TensorT>()),
+        std::make_shared<SumOp<TensorT>>(SumOp<TensorT>()),
+        std::make_shared<SumErrorOp<TensorT>>(SumErrorOp<TensorT>()),
+        std::make_shared<SumWeightGradOp<TensorT>>(SumWeightGradOp<TensorT>()),
+        std::make_shared<RandWeightInitOp<TensorT>>(RandWeightInitOp<TensorT>((int)(node_names.size() + n_en_hidden_1) / 2, 1)),
+        std::make_shared<AdamOp<TensorT>>(AdamOp<TensorT>(1e-4, 0.9, 0.999, 1e-8)), 0.0f, 0.0f, false, true);
       if (add_norm) {
         node_names = model_builder.addNormalization(model, "EN1-Norm", "EN1-Norm", node_names, true);
         node_names = model_builder.addSinglyConnected(model, "EN1-Norm-gain", "EN1-Norm-gain", node_names, node_names.size(),
-          std::shared_ptr<ActivationOp<TensorT>>(new LeakyReLUOp<TensorT>()), // Nonlinearity occures after the normalization
-          std::shared_ptr<ActivationOp<TensorT>>(new LeakyReLUGradOp<TensorT>()),
-          std::shared_ptr<IntegrationOp<TensorT>>(new SumOp<TensorT>()),
-          std::shared_ptr<IntegrationErrorOp<TensorT>>(new SumErrorOp<TensorT>()),
-          std::shared_ptr<IntegrationWeightGradOp<TensorT>>(new SumWeightGradOp<TensorT>()),
-          std::shared_ptr<WeightInitOp<TensorT>>(new ConstWeightInitOp<TensorT>(1)),
-          std::shared_ptr<SolverOp<TensorT>>(new AdamOp<TensorT>(1e-4, 0.9, 0.999, 1e-8)),
+          std::make_shared<LeakyReLUOp<TensorT>>(LeakyReLUOp<TensorT>()), // Nonlinearity occures after the normalization
+          std::make_shared<LeakyReLUGradOp<TensorT>>(LeakyReLUGradOp<TensorT>()),
+          std::make_shared<SumOp<TensorT>>(SumOp<TensorT>()),
+          std::make_shared<SumErrorOp<TensorT>>(SumErrorOp<TensorT>()),
+          std::make_shared<SumWeightGradOp<TensorT>>(SumWeightGradOp<TensorT>()),
+          std::make_shared<ConstWeightInitOp<TensorT>>(ConstWeightInitOp<TensorT>(1)),
+          std::make_shared<AdamOp<TensorT>>(AdamOp<TensorT>(1e-4, 0.9, 0.999, 1e-8)),
           0.0, 0.0, true, true);
       }
     }
     if (n_en_hidden_2 > 0) {
       node_names = model_builder.addFullyConnected(model, "EN2", "EN2", node_names, n_en_hidden_2,
-        std::shared_ptr<ActivationOp<TensorT>>(new LeakyReLUOp<TensorT>()),
-        std::shared_ptr<ActivationOp<TensorT>>(new LeakyReLUGradOp<TensorT>()),
-        //std::shared_ptr<ActivationOp<TensorT>>(new LinearOp<TensorT>()),
-        //std::shared_ptr<ActivationOp<TensorT>>(new LinearGradOp<TensorT>()),
-        std::shared_ptr<IntegrationOp<TensorT>>(new SumOp<TensorT>()),
-        std::shared_ptr<IntegrationErrorOp<TensorT>>(new SumErrorOp<TensorT>()),
-        std::shared_ptr<IntegrationWeightGradOp<TensorT>>(new SumWeightGradOp<TensorT>()),
-        std::shared_ptr<WeightInitOp<TensorT>>(new RandWeightInitOp<TensorT>((int)(node_names.size() + n_en_hidden_2) / 2, 1)),
-        std::shared_ptr<SolverOp<TensorT>>(new AdamOp<TensorT>(1e-4, 0.9, 0.999, 1e-8)), 0.0f, 0.0f, false, true);
+        std::make_shared<LeakyReLUOp<TensorT>>(LeakyReLUOp<TensorT>()),
+        std::make_shared<LeakyReLUGradOp<TensorT>>(LeakyReLUGradOp<TensorT>()),
+        //std::make_shared<LinearOp<TensorT>>(LinearOp<TensorT>()),
+        //std::make_shared<LinearGradOp<TensorT>>(LinearGradOp<TensorT>()),
+        std::make_shared<SumOp<TensorT>>(SumOp<TensorT>()),
+        std::make_shared<SumErrorOp<TensorT>>(SumErrorOp<TensorT>()),
+        std::make_shared<SumWeightGradOp<TensorT>>(SumWeightGradOp<TensorT>()),
+        std::make_shared<RandWeightInitOp<TensorT>>(RandWeightInitOp<TensorT>((int)(node_names.size() + n_en_hidden_2) / 2, 1)),
+        std::make_shared<AdamOp<TensorT>>(AdamOp<TensorT>(1e-4, 0.9, 0.999, 1e-8)), 0.0f, 0.0f, false, true);
       if (add_norm) {
         node_names = model_builder.addNormalization(model, "EN2-Norm", "EN2-Norm", node_names, true);
         node_names = model_builder.addSinglyConnected(model, "EN2-Norm-gain", "EN2-Norm-gain", node_names, node_names.size(),
-          std::shared_ptr<ActivationOp<TensorT>>(new LeakyReLUOp<TensorT>()), // Nonlinearity occures after the normalization
-          std::shared_ptr<ActivationOp<TensorT>>(new LeakyReLUGradOp<TensorT>()),
-          std::shared_ptr<IntegrationOp<TensorT>>(new SumOp<TensorT>()),
-          std::shared_ptr<IntegrationErrorOp<TensorT>>(new SumErrorOp<TensorT>()),
-          std::shared_ptr<IntegrationWeightGradOp<TensorT>>(new SumWeightGradOp<TensorT>()),
-          std::shared_ptr<WeightInitOp<TensorT>>(new ConstWeightInitOp<TensorT>(1)),
-          std::shared_ptr<SolverOp<TensorT>>(new AdamOp<TensorT>(1e-4, 0.9, 0.999, 1e-8)),
+          std::make_shared<LeakyReLUOp<TensorT>>(LeakyReLUOp<TensorT>()), // Nonlinearity occures after the normalization
+          std::make_shared<LeakyReLUGradOp<TensorT>>(LeakyReLUGradOp<TensorT>()),
+          std::make_shared<SumOp<TensorT>>(SumOp<TensorT>()),
+          std::make_shared<SumErrorOp<TensorT>>(SumErrorOp<TensorT>()),
+          std::make_shared<SumWeightGradOp<TensorT>>(SumWeightGradOp<TensorT>()),
+          std::make_shared<ConstWeightInitOp<TensorT>>(ConstWeightInitOp<TensorT>(1)),
+          std::make_shared<AdamOp<TensorT>>(AdamOp<TensorT>(1e-4, 0.9, 0.999, 1e-8)),
           0.0, 0.0, true, true);
       }
     }
 
     // Add the mu and log var layers
     std::vector<std::string> node_names_mu = model_builder.addFullyConnected(model, "Mu", "Mu", node_names, n_encodings,
-      std::shared_ptr<ActivationOp<TensorT>>(new LinearOp<TensorT>()),
-      std::shared_ptr<ActivationOp<TensorT>>(new LinearGradOp<TensorT>()),
-      std::shared_ptr<IntegrationOp<TensorT>>(new SumOp<TensorT>()),
-      std::shared_ptr<IntegrationErrorOp<TensorT>>(new SumErrorOp<TensorT>()),
-      std::shared_ptr<IntegrationWeightGradOp<TensorT>>(new SumWeightGradOp<TensorT>()),
-      std::shared_ptr<WeightInitOp<TensorT>>(new RandWeightInitOp<TensorT>((int)(node_names.size() + n_encodings) / 2, 1)),
-      std::shared_ptr<SolverOp<TensorT>>(new AdamOp<TensorT>(1e-4, 0.9, 0.999, 1e-8)), 0.0f, 0.0f, false, true);
+      std::make_shared<LinearOp<TensorT>>(LinearOp<TensorT>()),
+      std::make_shared<LinearGradOp<TensorT>>(LinearGradOp<TensorT>()),
+      std::make_shared<SumOp<TensorT>>(SumOp<TensorT>()),
+      std::make_shared<SumErrorOp<TensorT>>(SumErrorOp<TensorT>()),
+      std::make_shared<SumWeightGradOp<TensorT>>(SumWeightGradOp<TensorT>()),
+      std::make_shared<RandWeightInitOp<TensorT>>(RandWeightInitOp<TensorT>((int)(node_names.size() + n_encodings) / 2, 1)),
+      std::make_shared<AdamOp<TensorT>>(AdamOp<TensorT>(1e-4, 0.9, 0.999, 1e-8)), 0.0f, 0.0f, false, true);
 
     // Specify the output node types manually
     for (const std::string& node_name : node_names_mu)
@@ -253,73 +253,73 @@ public:
     // Add the decoding layers
     if (n_de_hidden_0 > 0) {
       node_names = model_builder.addFullyConnected(model, "DE0", "DE0", node_names, n_de_hidden_0,
-        std::shared_ptr<ActivationOp<TensorT>>(new LeakyReLUOp<TensorT>()),
-        std::shared_ptr<ActivationOp<TensorT>>(new LeakyReLUGradOp<TensorT>()),
-        //std::shared_ptr<ActivationOp<TensorT>>(new LinearOp<TensorT>()),
-        //std::shared_ptr<ActivationOp<TensorT>>(new LinearGradOp<TensorT>()),
-        std::shared_ptr<IntegrationOp<TensorT>>(new SumOp<TensorT>()),
-        std::shared_ptr<IntegrationErrorOp<TensorT>>(new SumErrorOp<TensorT>()),
-        std::shared_ptr<IntegrationWeightGradOp<TensorT>>(new SumWeightGradOp<TensorT>()),
-        std::shared_ptr<WeightInitOp<TensorT>>(new RandWeightInitOp<TensorT>((int)(node_names.size() + n_de_hidden_0) / 2, 1)),
-        std::shared_ptr<SolverOp<TensorT>>(new AdamOp<TensorT>(1e-4, 0.9, 0.999, 1e-8)), 0.0f, 0.0f, false, true);
+        std::make_shared<LeakyReLUOp<TensorT>>(LeakyReLUOp<TensorT>()),
+        std::make_shared<LeakyReLUGradOp<TensorT>>(LeakyReLUGradOp<TensorT>()),
+        //std::make_shared<LinearOp<TensorT>>(LinearOp<TensorT>()),
+        //std::make_shared<LinearGradOp<TensorT>>(LinearGradOp<TensorT>()),
+        std::make_shared<SumOp<TensorT>>(SumOp<TensorT>()),
+        std::make_shared<SumErrorOp<TensorT>>(SumErrorOp<TensorT>()),
+        std::make_shared<SumWeightGradOp<TensorT>>(SumWeightGradOp<TensorT>()),
+        std::make_shared<RandWeightInitOp<TensorT>>(RandWeightInitOp<TensorT>((int)(node_names.size() + n_de_hidden_0) / 2, 1)),
+        std::make_shared<AdamOp<TensorT>>(AdamOp<TensorT>(1e-4, 0.9, 0.999, 1e-8)), 0.0f, 0.0f, false, true);
       if (add_norm) {
         node_names = model_builder.addNormalization(model, "DE0-Norm", "DE0-Norm", node_names, true);
         node_names = model_builder.addSinglyConnected(model, "DE0-Norm-gain", "DE0-Norm-gain", node_names, node_names.size(),
-          std::shared_ptr<ActivationOp<TensorT>>(new LeakyReLUOp<TensorT>()), // Nonlinearity occures after the normalization
-          std::shared_ptr<ActivationOp<TensorT>>(new LeakyReLUGradOp<TensorT>()),
-          std::shared_ptr<IntegrationOp<TensorT>>(new SumOp<TensorT>()),
-          std::shared_ptr<IntegrationErrorOp<TensorT>>(new SumErrorOp<TensorT>()),
-          std::shared_ptr<IntegrationWeightGradOp<TensorT>>(new SumWeightGradOp<TensorT>()),
-          std::shared_ptr<WeightInitOp<TensorT>>(new ConstWeightInitOp<TensorT>(1)),
-          std::shared_ptr<SolverOp<TensorT>>(new AdamOp<TensorT>(1e-4, 0.9, 0.999, 1e-8)),
+          std::make_shared<LeakyReLUOp<TensorT>>(LeakyReLUOp<TensorT>()), // Nonlinearity occures after the normalization
+          std::make_shared<LeakyReLUGradOp<TensorT>>(LeakyReLUGradOp<TensorT>()),
+          std::make_shared<SumOp<TensorT>>(SumOp<TensorT>()),
+          std::make_shared<SumErrorOp<TensorT>>(SumErrorOp<TensorT>()),
+          std::make_shared<SumWeightGradOp<TensorT>>(SumWeightGradOp<TensorT>()),
+          std::make_shared<ConstWeightInitOp<TensorT>>(ConstWeightInitOp<TensorT>(1)),
+          std::make_shared<AdamOp<TensorT>>(AdamOp<TensorT>(1e-4, 0.9, 0.999, 1e-8)),
           0.0, 0.0, true, true);
       }
     }
     if (n_de_hidden_1 > 0) {
       node_names = model_builder.addFullyConnected(model, "DE1", "DE1", node_names, n_de_hidden_1,
-        std::shared_ptr<ActivationOp<TensorT>>(new LeakyReLUOp<TensorT>()),
-        std::shared_ptr<ActivationOp<TensorT>>(new LeakyReLUGradOp<TensorT>()),
-        //std::shared_ptr<ActivationOp<TensorT>>(new LinearOp<TensorT>()),
-        //std::shared_ptr<ActivationOp<TensorT>>(new LinearGradOp<TensorT>()),
-        std::shared_ptr<IntegrationOp<TensorT>>(new SumOp<TensorT>()),
-        std::shared_ptr<IntegrationErrorOp<TensorT>>(new SumErrorOp<TensorT>()),
-        std::shared_ptr<IntegrationWeightGradOp<TensorT>>(new SumWeightGradOp<TensorT>()),
-        std::shared_ptr<WeightInitOp<TensorT>>(new RandWeightInitOp<TensorT>((int)(node_names.size() + n_de_hidden_1) / 2, 1)),
-        std::shared_ptr<SolverOp<TensorT>>(new AdamOp<TensorT>(1e-4, 0.9, 0.999, 1e-8)), 0.0f, 0.0f, false, true);
+        std::make_shared<LeakyReLUOp<TensorT>>(LeakyReLUOp<TensorT>()),
+        std::make_shared<LeakyReLUGradOp<TensorT>>(LeakyReLUGradOp<TensorT>()),
+        //std::make_shared<LinearOp<TensorT>>(LinearOp<TensorT>()),
+        //std::make_shared<LinearGradOp<TensorT>>(LinearGradOp<TensorT>()),
+        std::make_shared<SumOp<TensorT>>(SumOp<TensorT>()),
+        std::make_shared<SumErrorOp<TensorT>>(SumErrorOp<TensorT>()),
+        std::make_shared<SumWeightGradOp<TensorT>>(SumWeightGradOp<TensorT>()),
+        std::make_shared<RandWeightInitOp<TensorT>>(RandWeightInitOp<TensorT>((int)(node_names.size() + n_de_hidden_1) / 2, 1)),
+        std::make_shared<AdamOp<TensorT>>(AdamOp<TensorT>(1e-4, 0.9, 0.999, 1e-8)), 0.0f, 0.0f, false, true);
       if (add_norm) {
         node_names = model_builder.addNormalization(model, "DE1-Norm", "DE1-Norm", node_names, true);
         node_names = model_builder.addSinglyConnected(model, "DE1-Norm-gain", "DE1-Norm-gain", node_names, node_names.size(),
-          std::shared_ptr<ActivationOp<TensorT>>(new LeakyReLUOp<TensorT>()), // Nonlinearity occures after the normalization
-          std::shared_ptr<ActivationOp<TensorT>>(new LeakyReLUGradOp<TensorT>()),
-          std::shared_ptr<IntegrationOp<TensorT>>(new SumOp<TensorT>()),
-          std::shared_ptr<IntegrationErrorOp<TensorT>>(new SumErrorOp<TensorT>()),
-          std::shared_ptr<IntegrationWeightGradOp<TensorT>>(new SumWeightGradOp<TensorT>()),
-          std::shared_ptr<WeightInitOp<TensorT>>(new ConstWeightInitOp<TensorT>(1)),
-          std::shared_ptr<SolverOp<TensorT>>(new AdamOp<TensorT>(1e-4, 0.9, 0.999, 1e-8)),
+          std::make_shared<LeakyReLUOp<TensorT>>(LeakyReLUOp<TensorT>()), // Nonlinearity occures after the normalization
+          std::make_shared<LeakyReLUGradOp<TensorT>>(LeakyReLUGradOp<TensorT>()),
+          std::make_shared<SumOp<TensorT>>(SumOp<TensorT>()),
+          std::make_shared<SumErrorOp<TensorT>>(SumErrorOp<TensorT>()),
+          std::make_shared<SumWeightGradOp<TensorT>>(SumWeightGradOp<TensorT>()),
+          std::make_shared<ConstWeightInitOp<TensorT>>(ConstWeightInitOp<TensorT>(1)),
+          std::make_shared<AdamOp<TensorT>>(AdamOp<TensorT>(1e-4, 0.9, 0.999, 1e-8)),
           0.0, 0.0, true, true);
       }
     }
     if (n_de_hidden_2 > 0) {
       node_names = model_builder.addFullyConnected(model, "DE2", "DE2", node_names, n_de_hidden_2,
-        std::shared_ptr<ActivationOp<TensorT>>(new LeakyReLUOp<TensorT>()),
-        std::shared_ptr<ActivationOp<TensorT>>(new LeakyReLUGradOp<TensorT>()),
-        //std::shared_ptr<ActivationOp<TensorT>>(new LinearOp<TensorT>()),
-        //std::shared_ptr<ActivationOp<TensorT>>(new LinearGradOp<TensorT>()),
-        std::shared_ptr<IntegrationOp<TensorT>>(new SumOp<TensorT>()),
-        std::shared_ptr<IntegrationErrorOp<TensorT>>(new SumErrorOp<TensorT>()),
-        std::shared_ptr<IntegrationWeightGradOp<TensorT>>(new SumWeightGradOp<TensorT>()),
-        std::shared_ptr<WeightInitOp<TensorT>>(new RandWeightInitOp<TensorT>((int)(node_names.size() + n_de_hidden_2) / 2, 1)),
-        std::shared_ptr<SolverOp<TensorT>>(new AdamOp<TensorT>(1e-4, 0.9, 0.999, 1e-8)), 0.0f, 0.0f, false, true);
+        std::make_shared<LeakyReLUOp<TensorT>>(LeakyReLUOp<TensorT>()),
+        std::make_shared<LeakyReLUGradOp<TensorT>>(LeakyReLUGradOp<TensorT>()),
+        //std::make_shared<LinearOp<TensorT>>(LinearOp<TensorT>()),
+        //std::make_shared<LinearGradOp<TensorT>>(LinearGradOp<TensorT>()),
+        std::make_shared<SumOp<TensorT>>(SumOp<TensorT>()),
+        std::make_shared<SumErrorOp<TensorT>>(SumErrorOp<TensorT>()),
+        std::make_shared<SumWeightGradOp<TensorT>>(SumWeightGradOp<TensorT>()),
+        std::make_shared<RandWeightInitOp<TensorT>>(RandWeightInitOp<TensorT>((int)(node_names.size() + n_de_hidden_2) / 2, 1)),
+        std::make_shared<AdamOp<TensorT>>(AdamOp<TensorT>(1e-4, 0.9, 0.999, 1e-8)), 0.0f, 0.0f, false, true);
       if (add_norm) {
         node_names = model_builder.addNormalization(model, "DE2-Norm", "DE2-Norm", node_names, true);
         node_names = model_builder.addSinglyConnected(model, "DE2-Norm-gain", "DE2-Norm-gain", node_names, node_names.size(),
-          std::shared_ptr<ActivationOp<TensorT>>(new LeakyReLUOp<TensorT>()), // Nonlinearity occures after the normalization
-          std::shared_ptr<ActivationOp<TensorT>>(new LeakyReLUGradOp<TensorT>()),
-          std::shared_ptr<IntegrationOp<TensorT>>(new SumOp<TensorT>()),
-          std::shared_ptr<IntegrationErrorOp<TensorT>>(new SumErrorOp<TensorT>()),
-          std::shared_ptr<IntegrationWeightGradOp<TensorT>>(new SumWeightGradOp<TensorT>()),
-          std::shared_ptr<WeightInitOp<TensorT>>(new ConstWeightInitOp<TensorT>(1)),
-          std::shared_ptr<SolverOp<TensorT>>(new AdamOp<TensorT>(1e-4, 0.9, 0.999, 1e-8)),
+          std::make_shared<LeakyReLUOp<TensorT>>(LeakyReLUOp<TensorT>()), // Nonlinearity occures after the normalization
+          std::make_shared<LeakyReLUGradOp<TensorT>>(LeakyReLUGradOp<TensorT>()),
+          std::make_shared<SumOp<TensorT>>(SumOp<TensorT>()),
+          std::make_shared<SumErrorOp<TensorT>>(SumErrorOp<TensorT>()),
+          std::make_shared<SumWeightGradOp<TensorT>>(SumWeightGradOp<TensorT>()),
+          std::make_shared<ConstWeightInitOp<TensorT>>(ConstWeightInitOp<TensorT>(1)),
+          std::make_shared<AdamOp<TensorT>>(AdamOp<TensorT>(1e-4, 0.9, 0.999, 1e-8)),
           0.0, 0.0, true, true);
       }
     }
@@ -327,33 +327,33 @@ public:
     // Add the final output layer
     if (is_fold_change) {
       node_names = model_builder.addFullyConnected(model, "DE-Output", "DE-Output", node_names, n_outputs,
-        std::shared_ptr<ActivationOp<TensorT>>(new LinearOp<TensorT>()),
-        std::shared_ptr<ActivationOp<TensorT>>(new LinearGradOp<TensorT>()),
-        std::shared_ptr<IntegrationOp<TensorT>>(new SumOp<TensorT>()),
-        std::shared_ptr<IntegrationErrorOp<TensorT>>(new SumErrorOp<TensorT>()),
-        std::shared_ptr<IntegrationWeightGradOp<TensorT>>(new SumWeightGradOp<TensorT>()),
-        std::shared_ptr<WeightInitOp<TensorT>>(new RandWeightInitOp<TensorT>((int)(node_names.size() + n_outputs) / 2, 1)),
-        std::shared_ptr<SolverOp<TensorT>>(new AdamOp<TensorT>(1e-4, 0.9, 0.999, 1e-8, 1e2)), 0.0f, 0.0f, false, true);
+        std::make_shared<LinearOp<TensorT>>(LinearOp<TensorT>()),
+        std::make_shared<LinearGradOp<TensorT>>(LinearGradOp<TensorT>()),
+        std::make_shared<SumOp<TensorT>>(SumOp<TensorT>()),
+        std::make_shared<SumErrorOp<TensorT>>(SumErrorOp<TensorT>()),
+        std::make_shared<SumWeightGradOp<TensorT>>(SumWeightGradOp<TensorT>()),
+        std::make_shared<RandWeightInitOp<TensorT>>(RandWeightInitOp<TensorT>((int)(node_names.size() + n_outputs) / 2, 1)),
+        std::make_shared<AdamOp<TensorT>>(AdamOp<TensorT>(1e-4, 0.9, 0.999, 1e-8, 1e2)), 0.0f, 0.0f, false, true);
     }
     else {
       node_names = model_builder.addFullyConnected(model, "DE-Output", "DE-Output", node_names, n_outputs,
-        std::shared_ptr<ActivationOp<TensorT>>(new LeakyReLUOp<TensorT>()),
-        std::shared_ptr<ActivationOp<TensorT>>(new LeakyReLUGradOp<TensorT>()),
-        std::shared_ptr<IntegrationOp<TensorT>>(new SumOp<TensorT>()),
-        std::shared_ptr<IntegrationErrorOp<TensorT>>(new SumErrorOp<TensorT>()),
-        std::shared_ptr<IntegrationWeightGradOp<TensorT>>(new SumWeightGradOp<TensorT>()),
-        std::shared_ptr<WeightInitOp<TensorT>>(new RandWeightInitOp<TensorT>((int)(node_names.size() + n_outputs) / 2, 1)),
-        std::shared_ptr<SolverOp<TensorT>>(new AdamOp<TensorT>(1e-4, 0.9, 0.999, 1e-8, 1e2)), 0.0f, 0.0f, false, true);
+        std::make_shared<LeakyReLUOp<TensorT>>(LeakyReLUOp<TensorT>()),
+        std::make_shared<LeakyReLUGradOp<TensorT>>(LeakyReLUGradOp<TensorT>()),
+        std::make_shared<SumOp<TensorT>>(SumOp<TensorT>()),
+        std::make_shared<SumErrorOp<TensorT>>(SumErrorOp<TensorT>()),
+        std::make_shared<SumWeightGradOp<TensorT>>(SumWeightGradOp<TensorT>()),
+        std::make_shared<RandWeightInitOp<TensorT>>(RandWeightInitOp<TensorT>((int)(node_names.size() + n_outputs) / 2, 1)),
+        std::make_shared<AdamOp<TensorT>>(AdamOp<TensorT>(1e-4, 0.9, 0.999, 1e-8, 1e2)), 0.0f, 0.0f, false, true);
     }
 
     std::vector<std::string> node_names_output = model_builder.addSinglyConnected(model, "Output", "Output", node_names, n_outputs,
-      std::shared_ptr<ActivationOp<TensorT>>(new LinearOp<TensorT>()),
-      std::shared_ptr<ActivationOp<TensorT>>(new LinearGradOp<TensorT>()),
-      std::shared_ptr<IntegrationOp<TensorT>>(new SumOp<TensorT>()),
-      std::shared_ptr<IntegrationErrorOp<TensorT>>(new SumErrorOp<TensorT>()),
-      std::shared_ptr<IntegrationWeightGradOp<TensorT>>(new SumWeightGradOp<TensorT>()),
-      std::shared_ptr<WeightInitOp<TensorT>>(new ConstWeightInitOp<TensorT>(1)),
-      std::shared_ptr<SolverOp<TensorT>>(new DummySolverOp<TensorT>()), 0.0f, 0.0f, false, true);
+      std::make_shared<LinearOp<TensorT>>(LinearOp<TensorT>()),
+      std::make_shared<LinearGradOp<TensorT>>(LinearGradOp<TensorT>()),
+      std::make_shared<SumOp<TensorT>>(SumOp<TensorT>()),
+      std::make_shared<SumErrorOp<TensorT>>(SumErrorOp<TensorT>()),
+      std::make_shared<SumWeightGradOp<TensorT>>(SumWeightGradOp<TensorT>()),
+      std::make_shared<ConstWeightInitOp<TensorT>>(ConstWeightInitOp<TensorT>(1)),
+      std::make_shared<DummySolverOp<TensorT>>(DummySolverOp<TensorT>()), 0.0f, 0.0f, false, true);
 
     // Specify the output node types manually
     for (const std::string& node_name : node_names_output)
@@ -378,84 +378,84 @@ public:
     // Add the hidden layers
     if (n_hidden_0 > 0) {
       node_names = model_builder.addFullyConnected(model, "FC0", "FC0", node_names, n_hidden_0,
-        std::shared_ptr<ActivationOp<TensorT>>(new LeakyReLUOp<TensorT>()),
-        std::shared_ptr<ActivationOp<TensorT>>(new LeakyReLUGradOp<TensorT>()),
-        //std::shared_ptr<ActivationOp<TensorT>>(new LinearOp<TensorT>()),
-        //std::shared_ptr<ActivationOp<TensorT>>(new LinearGradOp<TensorT>()),
-        std::shared_ptr<IntegrationOp<TensorT>>(new SumOp<TensorT>()),
-        std::shared_ptr<IntegrationErrorOp<TensorT>>(new SumErrorOp<TensorT>()),
-        std::shared_ptr<IntegrationWeightGradOp<TensorT>>(new SumWeightGradOp<TensorT>()),
-        std::shared_ptr<WeightInitOp<TensorT>>(new RandWeightInitOp<TensorT>((int)(node_names.size() + n_hidden_0) / 2, 1)),
-        std::shared_ptr<SolverOp<TensorT>>(new AdamOp<TensorT>(5e-4, 0.9, 0.999, 1e-8)), 0.0f, 0.0f, false, true);
+        std::make_shared<LeakyReLUOp<TensorT>>(LeakyReLUOp<TensorT>()),
+        std::make_shared<LeakyReLUGradOp<TensorT>>(LeakyReLUGradOp<TensorT>()),
+        //std::make_shared<LinearOp<TensorT>>(LinearOp<TensorT>()),
+        //std::make_shared<LinearGradOp<TensorT>>(LinearGradOp<TensorT>()),
+        std::make_shared<SumOp<TensorT>>(SumOp<TensorT>()),
+        std::make_shared<SumErrorOp<TensorT>>(SumErrorOp<TensorT>()),
+        std::make_shared<SumWeightGradOp<TensorT>>(SumWeightGradOp<TensorT>()),
+        std::make_shared<RandWeightInitOp<TensorT>>(RandWeightInitOp<TensorT>((int)(node_names.size() + n_hidden_0) / 2, 1)),
+        std::make_shared<AdamOp<TensorT>>(AdamOp<TensorT>(5e-4, 0.9, 0.999, 1e-8)), 0.0f, 0.0f, false, true);
       if (add_norm) {
         node_names = model_builder.addNormalization(model, "FC0-Norm", "FC0-Norm", node_names, true);
         node_names = model_builder.addSinglyConnected(model, "FC0-Norm-gain", "FC0-Norm-gain", node_names, node_names.size(),
-          std::shared_ptr<ActivationOp<TensorT>>(new LeakyReLUOp<TensorT>()), // Nonlinearity occures after the normalization
-          std::shared_ptr<ActivationOp<TensorT>>(new LeakyReLUGradOp<TensorT>()),
-          std::shared_ptr<IntegrationOp<TensorT>>(new SumOp<TensorT>()),
-          std::shared_ptr<IntegrationErrorOp<TensorT>>(new SumErrorOp<TensorT>()),
-          std::shared_ptr<IntegrationWeightGradOp<TensorT>>(new SumWeightGradOp<TensorT>()),
-          std::shared_ptr<WeightInitOp<TensorT>>(new ConstWeightInitOp<TensorT>(1)),
-          std::shared_ptr<SolverOp<TensorT>>(new AdamOp<TensorT>(5e-4, 0.9, 0.999, 1e-8)),
+          std::make_shared<LeakyReLUOp<TensorT>>(LeakyReLUOp<TensorT>()), // Nonlinearity occures after the normalization
+          std::make_shared<LeakyReLUGradOp<TensorT>>(LeakyReLUGradOp<TensorT>()),
+          std::make_shared<SumOp<TensorT>>(SumOp<TensorT>()),
+          std::make_shared<SumErrorOp<TensorT>>(SumErrorOp<TensorT>()),
+          std::make_shared<SumWeightGradOp<TensorT>>(SumWeightGradOp<TensorT>()),
+          std::make_shared<ConstWeightInitOp<TensorT>>(ConstWeightInitOp<TensorT>(1)),
+          std::make_shared<AdamOp<TensorT>>(AdamOp<TensorT>(5e-4, 0.9, 0.999, 1e-8)),
           0.0, 0.0, true, true);
       }
     }
     if (n_hidden_1 > 0) {
       node_names = model_builder.addFullyConnected(model, "FC1", "FC1", node_names, n_hidden_1,
-        std::shared_ptr<ActivationOp<TensorT>>(new LeakyReLUOp<TensorT>()),
-        std::shared_ptr<ActivationOp<TensorT>>(new LeakyReLUGradOp<TensorT>()),
-        //std::shared_ptr<ActivationOp<TensorT>>(new LinearOp<TensorT>()),
-        //std::shared_ptr<ActivationOp<TensorT>>(new LinearGradOp<TensorT>()),
-        std::shared_ptr<IntegrationOp<TensorT>>(new SumOp<TensorT>()),
-        std::shared_ptr<IntegrationErrorOp<TensorT>>(new SumErrorOp<TensorT>()),
-        std::shared_ptr<IntegrationWeightGradOp<TensorT>>(new SumWeightGradOp<TensorT>()),
-        std::shared_ptr<WeightInitOp<TensorT>>(new RandWeightInitOp<TensorT>((int)(node_names.size() + n_hidden_1) / 2, 1)),
-        std::shared_ptr<SolverOp<TensorT>>(new AdamOp<TensorT>(5e-4, 0.9, 0.999, 1e-8)), 0.0f, 0.0f, false, true);
+        std::make_shared<LeakyReLUOp<TensorT>>(LeakyReLUOp<TensorT>()),
+        std::make_shared<LeakyReLUGradOp<TensorT>>(LeakyReLUGradOp<TensorT>()),
+        //std::make_shared<LinearOp<TensorT>>(LinearOp<TensorT>()),
+        //std::make_shared<LinearGradOp<TensorT>>(LinearGradOp<TensorT>()),
+        std::make_shared<SumOp<TensorT>>(SumOp<TensorT>()),
+        std::make_shared<SumErrorOp<TensorT>>(SumErrorOp<TensorT>()),
+        std::make_shared<SumWeightGradOp<TensorT>>(SumWeightGradOp<TensorT>()),
+        std::make_shared<RandWeightInitOp<TensorT>>(RandWeightInitOp<TensorT>((int)(node_names.size() + n_hidden_1) / 2, 1)),
+        std::make_shared<AdamOp<TensorT>>(AdamOp<TensorT>(5e-4, 0.9, 0.999, 1e-8)), 0.0f, 0.0f, false, true);
       if (add_norm) {
         node_names = model_builder.addNormalization(model, "FC1-Norm", "FC1-Norm", node_names, true);
         node_names = model_builder.addSinglyConnected(model, "FC1-Norm-gain", "FC1-Norm-gain", node_names, node_names.size(),
-          std::shared_ptr<ActivationOp<TensorT>>(new LeakyReLUOp<TensorT>()), // Nonlinearity occures after the normalization
-          std::shared_ptr<ActivationOp<TensorT>>(new LeakyReLUGradOp<TensorT>()),
-          std::shared_ptr<IntegrationOp<TensorT>>(new SumOp<TensorT>()),
-          std::shared_ptr<IntegrationErrorOp<TensorT>>(new SumErrorOp<TensorT>()),
-          std::shared_ptr<IntegrationWeightGradOp<TensorT>>(new SumWeightGradOp<TensorT>()),
-          std::shared_ptr<WeightInitOp<TensorT>>(new ConstWeightInitOp<TensorT>(1)),
-          std::shared_ptr<SolverOp<TensorT>>(new AdamOp<TensorT>(5e-4, 0.9, 0.999, 1e-8)),
+          std::make_shared<LeakyReLUOp<TensorT>>(LeakyReLUOp<TensorT>()), // Nonlinearity occures after the normalization
+          std::make_shared<LeakyReLUGradOp<TensorT>>(LeakyReLUGradOp<TensorT>()),
+          std::make_shared<SumOp<TensorT>>(SumOp<TensorT>()),
+          std::make_shared<SumErrorOp<TensorT>>(SumErrorOp<TensorT>()),
+          std::make_shared<SumWeightGradOp<TensorT>>(SumWeightGradOp<TensorT>()),
+          std::make_shared<ConstWeightInitOp<TensorT>>(ConstWeightInitOp<TensorT>(1)),
+          std::make_shared<AdamOp<TensorT>>(AdamOp<TensorT>(5e-4, 0.9, 0.999, 1e-8)),
           0.0, 0.0, true, true);
       }
     }
     if (n_hidden_2 > 0) {
       node_names = model_builder.addFullyConnected(model, "FC2", "FC2", node_names, n_hidden_2,
-        std::shared_ptr<ActivationOp<TensorT>>(new LeakyReLUOp<TensorT>()),
-        std::shared_ptr<ActivationOp<TensorT>>(new LeakyReLUGradOp<TensorT>()),
-        //std::shared_ptr<ActivationOp<TensorT>>(new LinearOp<TensorT>()),
-        //std::shared_ptr<ActivationOp<TensorT>>(new LinearGradOp<TensorT>()),
-        std::shared_ptr<IntegrationOp<TensorT>>(new SumOp<TensorT>()),
-        std::shared_ptr<IntegrationErrorOp<TensorT>>(new SumErrorOp<TensorT>()),
-        std::shared_ptr<IntegrationWeightGradOp<TensorT>>(new SumWeightGradOp<TensorT>()),
-        std::shared_ptr<WeightInitOp<TensorT>>(new RandWeightInitOp<TensorT>((int)(node_names.size() + n_hidden_2) / 2, 1)),
-        std::shared_ptr<SolverOp<TensorT>>(new AdamOp<TensorT>(5e-4, 0.9, 0.999, 1e-8)), 0.0f, 0.0f, false, true);
+        std::make_shared<LeakyReLUOp<TensorT>>(LeakyReLUOp<TensorT>()),
+        std::make_shared<LeakyReLUGradOp<TensorT>>(LeakyReLUGradOp<TensorT>()),
+        //std::make_shared<LinearOp<TensorT>>(LinearOp<TensorT>()),
+        //std::make_shared<LinearGradOp<TensorT>>(LinearGradOp<TensorT>()),
+        std::make_shared<SumOp<TensorT>>(SumOp<TensorT>()),
+        std::make_shared<SumErrorOp<TensorT>>(SumErrorOp<TensorT>()),
+        std::make_shared<SumWeightGradOp<TensorT>>(SumWeightGradOp<TensorT>()),
+        std::make_shared<RandWeightInitOp<TensorT>>(RandWeightInitOp<TensorT>((int)(node_names.size() + n_hidden_2) / 2, 1)),
+        std::make_shared<AdamOp<TensorT>>(AdamOp<TensorT>(5e-4, 0.9, 0.999, 1e-8)), 0.0f, 0.0f, false, true);
       if (add_norm) {
         node_names = model_builder.addNormalization(model, "FC2-Norm", "FC2-Norm", node_names, true);
         node_names = model_builder.addSinglyConnected(model, "FC2-Norm-gain", "FC2-Norm-gain", node_names, node_names.size(),
-          std::shared_ptr<ActivationOp<TensorT>>(new LeakyReLUOp<TensorT>()), // Nonlinearity occures after the normalization
-          std::shared_ptr<ActivationOp<TensorT>>(new LeakyReLUGradOp<TensorT>()),
-          std::shared_ptr<IntegrationOp<TensorT>>(new SumOp<TensorT>()),
-          std::shared_ptr<IntegrationErrorOp<TensorT>>(new SumErrorOp<TensorT>()),
-          std::shared_ptr<IntegrationWeightGradOp<TensorT>>(new SumWeightGradOp<TensorT>()),
-          std::shared_ptr<WeightInitOp<TensorT>>(new ConstWeightInitOp<TensorT>(1)),
-          std::shared_ptr<SolverOp<TensorT>>(new AdamOp<TensorT>(5e-4, 0.9, 0.999, 1e-8)),
+          std::make_shared<LeakyReLUOp<TensorT>>(LeakyReLUOp<TensorT>()), // Nonlinearity occures after the normalization
+          std::make_shared<LeakyReLUGradOp<TensorT>>(LeakyReLUGradOp<TensorT>()),
+          std::make_shared<SumOp<TensorT>>(SumOp<TensorT>()),
+          std::make_shared<SumErrorOp<TensorT>>(SumErrorOp<TensorT>()),
+          std::make_shared<SumWeightGradOp<TensorT>>(SumWeightGradOp<TensorT>()),
+          std::make_shared<ConstWeightInitOp<TensorT>>(ConstWeightInitOp<TensorT>(1)),
+          std::make_shared<AdamOp<TensorT>>(AdamOp<TensorT>(5e-4, 0.9, 0.999, 1e-8)),
           0.0, 0.0, true, true);
       }
     }
     node_names = model_builder.addFullyConnected(model, "Output", "Output", node_names, n_outputs,
-      std::shared_ptr<ActivationOp<TensorT>>(new LeakyReLUOp<TensorT>()),
-      std::shared_ptr<ActivationOp<TensorT>>(new LeakyReLUGradOp<TensorT>()),
-      std::shared_ptr<IntegrationOp<TensorT>>(new SumOp<TensorT>()),
-      std::shared_ptr<IntegrationErrorOp<TensorT>>(new SumErrorOp<TensorT>()),
-      std::shared_ptr<IntegrationWeightGradOp<TensorT>>(new SumWeightGradOp<TensorT>()),
-      std::shared_ptr<WeightInitOp<TensorT>>(new RandWeightInitOp<TensorT>((int)(node_names.size() + n_outputs) / 2, 1)),
-      std::shared_ptr<SolverOp<TensorT>>(new AdamOp<TensorT>(5e-4, 0.9, 0.999, 1e-8)), 0.0f, 0.0f, true, true);
+      std::make_shared<LeakyReLUOp<TensorT>>(LeakyReLUOp<TensorT>()),
+      std::make_shared<LeakyReLUGradOp<TensorT>>(LeakyReLUGradOp<TensorT>()),
+      std::make_shared<SumOp<TensorT>>(SumOp<TensorT>()),
+      std::make_shared<SumErrorOp<TensorT>>(SumErrorOp<TensorT>()),
+      std::make_shared<SumWeightGradOp<TensorT>>(SumWeightGradOp<TensorT>()),
+      std::make_shared<RandWeightInitOp<TensorT>>(RandWeightInitOp<TensorT>((int)(node_names.size() + n_outputs) / 2, 1)),
+      std::make_shared<AdamOp<TensorT>>(AdamOp<TensorT>(5e-4, 0.9, 0.999, 1e-8)), 0.0f, 0.0f, true, true);
 
     // Specify the output node types manually
     for (const std::string& node_name : node_names)
@@ -479,13 +479,13 @@ public:
 
     // Add the final output layer
     node_names = model_builder.addSinglyConnected(model, "Output", "Output", node_names, n_inputs,
-      std::shared_ptr<ActivationOp<TensorT>>(new LinearOp<TensorT>()),
-      std::shared_ptr<ActivationOp<TensorT>>(new LinearGradOp<TensorT>()),
-      std::shared_ptr<IntegrationOp<TensorT>>(new SumOp<TensorT>()),
-      std::shared_ptr<IntegrationErrorOp<TensorT>>(new SumErrorOp<TensorT>()),
-      std::shared_ptr<IntegrationWeightGradOp<TensorT>>(new SumWeightGradOp<TensorT>()),
-      std::shared_ptr<WeightInitOp<TensorT>>(new ConstWeightInitOp<TensorT>(1)),
-      std::shared_ptr<SolverOp<TensorT>>(new DummySolverOp<TensorT>()), 0.0f, 0.0f, false, true);
+      std::make_shared<LinearOp<TensorT>>(LinearOp<TensorT>()),
+      std::make_shared<LinearGradOp<TensorT>>(LinearGradOp<TensorT>()),
+      std::make_shared<SumOp<TensorT>>(SumOp<TensorT>()),
+      std::make_shared<SumErrorOp<TensorT>>(SumErrorOp<TensorT>()),
+      std::make_shared<SumWeightGradOp<TensorT>>(SumWeightGradOp<TensorT>()),
+      std::make_shared<ConstWeightInitOp<TensorT>>(ConstWeightInitOp<TensorT>(1)),
+      std::make_shared<DummySolverOp<TensorT>>(DummySolverOp<TensorT>()), 0.0f, 0.0f, false, true);
 
     // Specify the output node types manually
     for (const std::string& node_name : node_names)
@@ -497,13 +497,13 @@ public:
 
       // Add the final output layer
       node_names = model_builder.addSinglyConnected(model, "Output-IsNeg", "Output-IsNeg", node_names, n_inputs,
-        std::shared_ptr<ActivationOp<TensorT>>(new LinearOp<TensorT>()),
-        std::shared_ptr<ActivationOp<TensorT>>(new LinearGradOp<TensorT>()),
-        std::shared_ptr<IntegrationOp<TensorT>>(new SumOp<TensorT>()),
-        std::shared_ptr<IntegrationErrorOp<TensorT>>(new SumErrorOp<TensorT>()),
-        std::shared_ptr<IntegrationWeightGradOp<TensorT>>(new SumWeightGradOp<TensorT>()),
-        std::shared_ptr<WeightInitOp<TensorT>>(new ConstWeightInitOp<TensorT>(1)),
-        std::shared_ptr<SolverOp<TensorT>>(new DummySolverOp<TensorT>()), 0.0f, 0.0f, false, true);
+        std::make_shared<LinearOp<TensorT>>(LinearOp<TensorT>()),
+        std::make_shared<LinearGradOp<TensorT>>(LinearGradOp<TensorT>()),
+        std::make_shared<SumOp<TensorT>>(SumOp<TensorT>()),
+        std::make_shared<SumErrorOp<TensorT>>(SumErrorOp<TensorT>()),
+        std::make_shared<SumWeightGradOp<TensorT>>(SumWeightGradOp<TensorT>()),
+        std::make_shared<ConstWeightInitOp<TensorT>>(ConstWeightInitOp<TensorT>(1)),
+        std::make_shared<DummySolverOp<TensorT>>(DummySolverOp<TensorT>()), 0.0f, 0.0f, false, true);
 
       // Specify the output node types manually
       for (const std::string& node_name : node_names)
@@ -523,11 +523,11 @@ public:
       node_names = model_builder.addSinglyConnected(model, "LogScaleInput", "LogScaleInput", node_names, node_names.size(),
         std::shared_ptr<ActivationOp<TensorT>>(new LogOp<TensorT>()),
         std::shared_ptr<ActivationOp<TensorT>>(new LogGradOp<TensorT>()),
-        std::shared_ptr<IntegrationOp<TensorT>>(new SumOp<TensorT>()),
-        std::shared_ptr<IntegrationErrorOp<TensorT>>(new SumErrorOp<TensorT>()),
-        std::shared_ptr<IntegrationWeightGradOp<TensorT>>(new SumWeightGradOp<TensorT>()),
-        std::shared_ptr<WeightInitOp<TensorT>>(new ConstWeightInitOp<TensorT>(1)),
-        std::shared_ptr<SolverOp<TensorT>>(new DummySolverOp<TensorT>()), 0.0, 0.0, false, true);
+        std::make_shared<SumOp<TensorT>>(SumOp<TensorT>()),
+        std::make_shared<SumErrorOp<TensorT>>(SumErrorOp<TensorT>()),
+        std::make_shared<SumWeightGradOp<TensorT>>(SumWeightGradOp<TensorT>()),
+        std::make_shared<ConstWeightInitOp<TensorT>>(ConstWeightInitOp<TensorT>(1)),
+        std::make_shared<DummySolverOp<TensorT>>(DummySolverOp<TensorT>()), 0.0, 0.0, false, true);
     }
     if (linear_scale_input) {
       node_names = model_builder.addLinearScale(model, "LinearScaleInput", "LinearScaleInput", node_names, 0, 1, true);
@@ -680,8 +680,8 @@ public:
     model_decoder_.clear();
 
     // define the encoder and decoders
-    model_trainer.makeModelFCVAE_Encoder(model_encoder_, n_input_nodes_, encoding_size_, false, false, false, false,
-      n_en_hidden_0, n_en_hidden_1, n_en_hidden_2, this->use_fold_change_); // normalization type 0
+    model_trainer.makeModelFCVAE_Encoder(model_encoder_, n_input_nodes_, encoding_size_, true, false, false, false,
+      n_en_hidden_0, n_en_hidden_1, n_en_hidden_2, this->use_fold_change_); // normalization type 1
     model_trainer.makeModelFCVAE_Decoder(model_decoder_, n_input_nodes_, encoding_size_, false,
       n_de_hidden_0, n_de_hidden_1, n_de_hidden_2, this->use_fold_change_);
 
@@ -756,7 +756,7 @@ public:
     model_normalization_.clear();
 
     // define the model
-    model_trainer.makeModelNormalization(model_normalization_, n_input_nodes_, false, false, false, this->use_fold_change_); // Normalization type 0
+    model_trainer.makeModelNormalization(model_normalization_, n_input_nodes_, true, false, false, this->use_fold_change_); // Normalization type 1
   };
 
   /*
@@ -1516,12 +1516,12 @@ int main(int argc, char** argv)
   ModelInterpreterDefaultDevice<float> model_interpreter(model_resources);
   ModelTrainerExt<float> model_trainer;
   model_trainer.setBatchSize(512);
-  model_trainer.setBatchSize(1); // Logging only
+  //model_trainer.setBatchSize(1); // Logging only
   model_trainer.setMemorySize(1);
   model_trainer.setNEpochsEvaluation(1);
   model_trainer.setVerbosityLevel(1);
   model_trainer.setLogging(false, false, false);
-  model_trainer.setLogging(false, false, true); // Logging only
+  //model_trainer.setLogging(false, false, true); // Logging only
   model_trainer.setFindCycles(false);
   model_trainer.setFastInterpreter(true);
   model_trainer.setPreserveOoO(true);

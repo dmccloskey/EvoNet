@@ -18,29 +18,29 @@ Model<float> makeModelFCSum()
 	Weight<float> w1, w2, w3, wb1, wb2;
 	Model<float> model2;
 	// Toy network: 1 hidden layer, fully connected, DCG
-	i1 = Node<float>("0", NodeType::input, NodeStatus::activated, std::shared_ptr<ActivationOp<float>>(new LinearOp<float>()), std::shared_ptr<ActivationOp<float>>(new LinearGradOp<float>()), std::shared_ptr<IntegrationOp<float>>(new SumOp<float>()), std::shared_ptr<IntegrationErrorOp<float>>(new SumErrorOp<float>()), std::shared_ptr<IntegrationWeightGradOp<float>>(new SumWeightGradOp<float>()));
-	h1 = Node<float>("1", NodeType::hidden, NodeStatus::initialized, std::shared_ptr<ActivationOp<float>>(new ReLUOp<float>()), std::shared_ptr<ActivationOp<float>>(new ReLUGradOp<float>()), std::shared_ptr<IntegrationOp<float>>(new SumOp<float>()), std::shared_ptr<IntegrationErrorOp<float>>(new SumErrorOp<float>()), std::shared_ptr<IntegrationWeightGradOp<float>>(new SumWeightGradOp<float>()));
-	o1 = Node<float>("2", NodeType::output, NodeStatus::initialized, std::shared_ptr<ActivationOp<float>>(new ReLUOp<float>()), std::shared_ptr<ActivationOp<float>>(new ReLUGradOp<float>()), std::shared_ptr<IntegrationOp<float>>(new SumOp<float>()), std::shared_ptr<IntegrationErrorOp<float>>(new SumErrorOp<float>()), std::shared_ptr<IntegrationWeightGradOp<float>>(new SumWeightGradOp<float>()));
-	b1 = Node<float>("3", NodeType::bias, NodeStatus::activated, std::shared_ptr<ActivationOp<float>>(new LinearOp<float>()), std::shared_ptr<ActivationOp<float>>(new LinearGradOp<float>()), std::shared_ptr<IntegrationOp<float>>(new SumOp<float>()), std::shared_ptr<IntegrationErrorOp<float>>(new SumErrorOp<float>()), std::shared_ptr<IntegrationWeightGradOp<float>>(new SumWeightGradOp<float>()));
-	b2 = Node<float>("4", NodeType::bias, NodeStatus::activated, std::shared_ptr<ActivationOp<float>>(new LinearOp<float>()), std::shared_ptr<ActivationOp<float>>(new LinearGradOp<float>()), std::shared_ptr<IntegrationOp<float>>(new SumOp<float>()), std::shared_ptr<IntegrationErrorOp<float>>(new SumErrorOp<float>()), std::shared_ptr<IntegrationWeightGradOp<float>>(new SumWeightGradOp<float>()));
+	i1 = Node<float>("0", NodeType::input, NodeStatus::activated, std::make_shared<LinearOp<float>>(LinearOp<float>()), std::make_shared<LinearGradOp<float>>(LinearGradOp<float>()), std::make_shared<SumOp<float>>(SumOp<float>()), std::make_shared<SumErrorOp<float>>(SumErrorOp<float>()), std::make_shared<SumWeightGradOp<float>>(SumWeightGradOp<float>()));
+	h1 = Node<float>("1", NodeType::hidden, NodeStatus::initialized, std::make_shared<ReLUOp<float>>(ReLUOp<float>()), std::make_shared<ReLUGradOp<float>>(ReLUGradOp<float>()), std::make_shared<SumOp<float>>(SumOp<float>()), std::make_shared<SumErrorOp<float>>(SumErrorOp<float>()), std::make_shared<SumWeightGradOp<float>>(SumWeightGradOp<float>()));
+	o1 = Node<float>("2", NodeType::output, NodeStatus::initialized, std::make_shared<ReLUOp<float>>(ReLUOp<float>()), std::make_shared<ReLUGradOp<float>>(ReLUGradOp<float>()), std::make_shared<SumOp<float>>(SumOp<float>()), std::make_shared<SumErrorOp<float>>(SumErrorOp<float>()), std::make_shared<SumWeightGradOp<float>>(SumWeightGradOp<float>()));
+	b1 = Node<float>("3", NodeType::bias, NodeStatus::activated, std::make_shared<LinearOp<float>>(LinearOp<float>()), std::make_shared<LinearGradOp<float>>(LinearGradOp<float>()), std::make_shared<SumOp<float>>(SumOp<float>()), std::make_shared<SumErrorOp<float>>(SumErrorOp<float>()), std::make_shared<SumWeightGradOp<float>>(SumWeightGradOp<float>()));
+	b2 = Node<float>("4", NodeType::bias, NodeStatus::activated, std::make_shared<LinearOp<float>>(LinearOp<float>()), std::make_shared<LinearGradOp<float>>(LinearGradOp<float>()), std::make_shared<SumOp<float>>(SumOp<float>()), std::make_shared<SumErrorOp<float>>(SumErrorOp<float>()), std::make_shared<SumWeightGradOp<float>>(SumWeightGradOp<float>()));
 	// weights  
 	std::shared_ptr<WeightInitOp<float>> weight_init;
 	std::shared_ptr<SolverOp<float>> solver;
 	// weight_init.reset(new RandWeightInitOp(1.0)); // No random init for testing
-	weight_init.reset(new ConstWeightInitOp<float>(1.0));
-	solver.reset(new SGDOp<float>(0.01, 0.9));
+	weight_init = std::make_shared<ConstWeightInitOp<float>>(ConstWeightInitOp<float>(1.0));
+	solver = std::make_shared<SGDOp<float>>(SGDOp<float>(0.01, 0.9));
 	w1 = Weight<float>("0", weight_init, solver);
-	weight_init.reset(new ConstWeightInitOp<float>(1.0));
-	solver.reset(new SGDOp<float>(0.01, 0.9));
+	weight_init = std::make_shared<ConstWeightInitOp<float>>(ConstWeightInitOp<float>(1.0));
+	solver = std::make_shared<SGDOp<float>>(SGDOp<float>(0.01, 0.9));
 	w2 = Weight<float>("1", weight_init, solver);
-	weight_init.reset(new ConstWeightInitOp<float>(1.0));
-	solver.reset(new SGDOp<float>(0.01, 0.9));
+	weight_init = std::make_shared<ConstWeightInitOp<float>>(ConstWeightInitOp<float>(1.0));
+	solver = std::make_shared<SGDOp<float>>(SGDOp<float>(0.01, 0.9));
 	w3 = Weight<float>("2", weight_init, solver);
-	weight_init.reset(new ConstWeightInitOp<float>(1.0));
-	solver.reset(new SGDOp<float>(0.01, 0.9));
+	weight_init = std::make_shared<ConstWeightInitOp<float>>(ConstWeightInitOp<float>(1.0));
+	solver = std::make_shared<SGDOp<float>>(SGDOp<float>(0.01, 0.9));
 	wb1 = Weight<float>("3", weight_init, solver);
-	weight_init.reset(new ConstWeightInitOp<float>(1.0));
-	solver.reset(new SGDOp<float>(0.01, 0.9));
+	weight_init = std::make_shared<ConstWeightInitOp<float>>(ConstWeightInitOp<float>(1.0));
+	solver = std::make_shared<SGDOp<float>>(SGDOp<float>(0.01, 0.9));
 	wb2 = Weight<float>("4", weight_init, solver);
 	weight_init.reset();
 	solver.reset();
@@ -519,21 +519,21 @@ void makeModelLSTM(Model<TensorT>& model, const int& n_inputs, int n_blocks = 2,
   // Add the LSTM layer
   std::vector<std::string> node_names = model_builder.addLSTM(model, "LSTM", "LSTM", node_names_input, n_blocks, n_cells,
     std::shared_ptr<ActivationOp<TensorT>>(new ReLUOp<float>()), std::shared_ptr<ActivationOp<TensorT>>(new ReLUGradOp<float>()),
-    std::shared_ptr<IntegrationOp<TensorT>>(new SumOp<TensorT>()), std::shared_ptr<IntegrationErrorOp<TensorT>>(new SumErrorOp<TensorT>()), std::shared_ptr<IntegrationWeightGradOp<TensorT>>(new SumWeightGradOp<TensorT>()),
-    //std::shared_ptr<WeightInitOp<TensorT>>(new RandWeightInitOp<TensorT>(0.4)), 
+    std::make_shared<SumOp<TensorT>>(SumOp<TensorT>()), std::make_shared<SumErrorOp<TensorT>>(SumErrorOp<TensorT>()), std::make_shared<SumWeightGradOp<TensorT>>(SumWeightGradOp<TensorT>()),
+    //std::make_shared<RandWeightInitOp<TensorT>>(RandWeightInitOp<TensorT>(0.4)), 
     std::shared_ptr<WeightInitOp<TensorT>>(new RangeWeightInitOp<TensorT>(0.0, 1.0)),
-    std::shared_ptr<SolverOp<TensorT>>(new AdamOp<TensorT>(0.0005, 0.9, 0.999, 1e-8)),
+    std::make_shared<AdamOp<TensorT>>(AdamOp<TensorT>(0.0005, 0.9, 0.999, 1e-8)),
     0.0f, 0.0f, true, true, 1, specify_layers);
 
   // Add a final output layer (Specify the layer name to ensure the output is always on its own tensor!!!)
   node_names = model_builder.addFullyConnected(model, "Output", "Output", node_names, 1,
-    std::shared_ptr<ActivationOp<TensorT>>(new LinearOp<float>()),
-    std::shared_ptr<ActivationOp<TensorT>>(new LinearGradOp<float>()),
-    std::shared_ptr<IntegrationOp<TensorT>>(new SumOp<TensorT>()),
-    std::shared_ptr<IntegrationErrorOp<TensorT>>(new SumErrorOp<TensorT>()),
-    std::shared_ptr<IntegrationWeightGradOp<TensorT>>(new SumWeightGradOp<TensorT>()),
-    std::shared_ptr<WeightInitOp<TensorT>>(new RandWeightInitOp<TensorT>(node_names.size(), 2)),
-    std::shared_ptr<SolverOp<TensorT>>(new AdamOp<TensorT>(0.001, 0.9, 0.999, 1e-8)), 0.0f, 0.0f, true, true);
+    std::make_shared<LinearOp<TensorT>>(LinearOp<float>()),
+    std::make_shared<LinearGradOp<TensorT>>(LinearGradOp<float>()),
+    std::make_shared<SumOp<TensorT>>(SumOp<TensorT>()),
+    std::make_shared<SumErrorOp<TensorT>>(SumErrorOp<TensorT>()),
+    std::make_shared<SumWeightGradOp<TensorT>>(SumWeightGradOp<TensorT>()),
+    std::make_shared<RandWeightInitOp<TensorT>>(RandWeightInitOp<TensorT>(node_names.size(), 2)),
+    std::make_shared<AdamOp<TensorT>>(AdamOp<TensorT>(0.001, 0.9, 0.999, 1e-8)), 0.0f, 0.0f, true, true);
 
   for (const std::string& node_name : node_names)
     model.getNodesMap().at(node_name)->setType(NodeType::output);
@@ -553,7 +553,7 @@ BOOST_AUTO_TEST_CASE(makeModelLSTM1)
 
   int iter_test = 0;
   std::vector<OperationList<float>> FP_operations_expanded_test;
-  model_interpreter.getFPOpsOoO_(model_test, true, FP_operations_expanded_test, iter_test);
+  model_interpreter.getFPOpsOoO_(model_test, FP_operations_expanded_test, iter_test);
 
   std::set<std::string> identified_sink_nodes_test;
   std::map<std::string, std::vector<int>> tensor_ops_test = model_interpreter.getTensorOperations(FP_operations_expanded_test, identified_sink_nodes_test, true);
@@ -565,7 +565,7 @@ BOOST_AUTO_TEST_CASE(makeModelLSTM1)
 
   int iter = 0;
   std::vector<OperationList<float>> FP_operations_expanded;
-  model_interpreter.getFPOpsOoO_(model, true, FP_operations_expanded, iter);
+  model_interpreter.getFPOpsOoO_(model, FP_operations_expanded, iter);
 
   std::set<std::string> identified_sink_nodes;
   std::map<std::string, std::vector<int>> tensor_ops = model_interpreter.getTensorOperations(FP_operations_expanded, identified_sink_nodes, false);
@@ -597,7 +597,7 @@ BOOST_AUTO_TEST_CASE(makeModelLSTM2)
 
   int iter_test = 0;
   std::vector<OperationList<float>> FP_operations_expanded_test;
-  model_interpreter.getFPOpsOoO_(model_test, true, FP_operations_expanded_test, iter_test);
+  model_interpreter.getFPOpsOoO_(model_test, FP_operations_expanded_test, iter_test);
 
   std::set<std::string> identified_sink_nodes_test;
   std::map<std::string, std::vector<int>> tensor_ops_test = model_interpreter.getTensorOperations(FP_operations_expanded_test, identified_sink_nodes_test, true);
@@ -609,7 +609,7 @@ BOOST_AUTO_TEST_CASE(makeModelLSTM2)
 
   int iter = 0;
   std::vector<OperationList<float>> FP_operations_expanded;
-  model_interpreter.getFPOpsOoO_(model, true, FP_operations_expanded, iter);
+  model_interpreter.getFPOpsOoO_(model, FP_operations_expanded, iter);
 
   std::set<std::string> identified_sink_nodes;
   std::map<std::string, std::vector<int>> tensor_ops = model_interpreter.getTensorOperations(FP_operations_expanded, identified_sink_nodes, false);

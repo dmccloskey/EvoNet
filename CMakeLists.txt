@@ -136,7 +136,8 @@ if (EVONET_CUDA)
   set(CUDA_NVCC_FLAGS "${CUDA_NVCC_FLAGS} --expt-relaxed-constexpr" )
   set(CUDA_NVCC_FLAGS "${CUDA_NVCC_FLAGS} --expt-extended-lambda" )
   if(WIN32)
-    set(CUDA_NVCC_FLAGS "${CUDA_NVCC_FLAGS} --compiler-options;/bigobj") #see: https://cmake.org/pipermail/cmake/2017-June/065615.html
+    #set(CUDA_NVCC_FLAGS "${CUDA_NVCC_FLAGS} --compiler-options;/bigobj") #see: https://cmake.org/pipermail/cmake/2017-June/065615.html
+	set(CMAKE_CUDA_FLAGS "${CMAKE_CUDA_FLAGS} -Xcompiler \"/bigobj\"")
   endif()
   add_compile_definitions(COMPILE_WITH_CUDA=true)
 endif()

@@ -143,7 +143,7 @@ public:
     const int& n_epochs,
     Model<TensorT>& model,
     ModelInterpreterGpu<TensorT>& model_interpreter,
-    const std::vector<float>& model_errors) {
+    const std::vector<float>& model_errors) override {
     if (n_epochs % 1000 == 0 && n_epochs > 5000) {
       // anneal the learning rate by half on each plateau
       TensorT lr_new = this->reduceLROnPlateau(model_errors, 0.5, 100, 10, 0.05);
@@ -161,7 +161,7 @@ public:
       interpreter_data.storeModelInterpreterBinary(model.getName() + "_" + std::to_string(n_epochs) + "_interpreter.binary", model_interpreter);
     }
   }
-  void trainingModelLogger(const int & n_epochs, Model<TensorT>& model, ModelInterpreterGpu<TensorT>& model_interpreter, ModelLogger<TensorT>& model_logger, const Eigen::Tensor<TensorT, 3>& expected_values, const std::vector<std::string>& output_nodes, const TensorT & model_error_train, const TensorT & model_error_test)
+  void trainingModelLogger(const int & n_epochs, Model<TensorT>& model, ModelInterpreterGpu<TensorT>& model_interpreter, ModelLogger<TensorT>& model_logger, const Eigen::Tensor<TensorT, 3>& expected_values, const std::vector<std::string>& output_nodes, const TensorT & model_error_train, const TensorT & model_error_test)override
   {
     // Set the defaults
     model_logger.setLogTimeEpoch(true);
@@ -194,7 +194,7 @@ template<typename TensorT>
 class DataSimulatorExt : public MNISTSimulator<TensorT>
 {
 public:
-  void simulateTrainingData(Eigen::Tensor<TensorT, 3>& input_data, Eigen::Tensor<TensorT, 3>& output_data, Eigen::Tensor<TensorT, 2>& time_steps)
+  void simulateTrainingData(Eigen::Tensor<TensorT, 3>& input_data, Eigen::Tensor<TensorT, 3>& output_data, Eigen::Tensor<TensorT, 2>& time_steps)override
   {
     // infer data dimensions based on the input tensors
     const int batch_size = input_data.dimension(0);
@@ -223,7 +223,7 @@ public:
 
     time_steps.setConstant(1.0f);
   }
-  void simulateValidationData(Eigen::Tensor<TensorT, 3>& input_data, Eigen::Tensor<TensorT, 3>& output_data, Eigen::Tensor<TensorT, 2>& time_steps)
+  void simulateValidationData(Eigen::Tensor<TensorT, 3>& input_data, Eigen::Tensor<TensorT, 3>& output_data, Eigen::Tensor<TensorT, 2>& time_steps)override
   {
     // infer data dimensions based on the input tensors
     const int batch_size = input_data.dimension(0);

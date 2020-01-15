@@ -86,13 +86,13 @@ public:
 
     virtual void setError(const Eigen::Tensor<TensorT, 2>& error) = 0; ///< error setter
 		Eigen::TensorMap<Eigen::Tensor<TensorT, 2>> getError() { Eigen::TensorMap<Eigen::Tensor<TensorT, 2>> error(h_error_.get(), batch_size_, memory_size_); return error; }; ///< error copy getter
-		std::shared_ptr<TensorT> getHErrorPointer() { return h_error_; }; ///< error pointer getter
-		std::shared_ptr<TensorT> getDErrorPointer() { return d_error_; }; ///< error pointer getter
+		std::shared_ptr<TensorT[]> getHErrorPointer() { return h_error_; }; ///< error pointer getter
+		std::shared_ptr<TensorT[]> getDErrorPointer() { return d_error_; }; ///< error pointer getter
 
     virtual void setMetric(const Eigen::Tensor<TensorT, 2>& metric) = 0; ///< metric setter
     Eigen::TensorMap<Eigen::Tensor<TensorT, 2>> getMetric() { Eigen::TensorMap<Eigen::Tensor<TensorT, 2>> metric(h_metric_.get(), n_metrics_, memory_size_); return metric; }; ///< metric copy getter
-    std::shared_ptr<TensorT> getHMetricPointer() { return h_metric_; }; ///< metric pointer getter
-    std::shared_ptr<TensorT> getDMetricPointer() { return d_metric_; }; ///< metric pointer getter
+    std::shared_ptr<TensorT[]> getHMetricPointer() { return h_metric_; }; ///< metric pointer getter
+    std::shared_ptr<TensorT[]> getDMetricPointer() { return d_metric_; }; ///< metric pointer getter
 
 		size_t getErrorTensorSize() { return batch_size_ * memory_size_ * sizeof(TensorT); }; ///< Get the size of each tensor in bytes
     size_t getMetricTensorSize() { return n_metrics_ * memory_size_ * sizeof(TensorT); }; ///< Get the size of each tensor in bytes
@@ -115,10 +115,10 @@ protected:
         where the number of samples spans 0 to n samples
         and the number of time steps spans m time points to 0
     */		
-		std::shared_ptr<TensorT> h_error_ = nullptr;
-		std::shared_ptr<TensorT> d_error_ = nullptr;
-    std::shared_ptr<TensorT> h_metric_ = nullptr;
-    std::shared_ptr<TensorT> d_metric_ = nullptr;
+		std::shared_ptr<TensorT[]> h_error_ = nullptr;
+		std::shared_ptr<TensorT[]> d_error_ = nullptr;
+    std::shared_ptr<TensorT[]> h_metric_ = nullptr;
+    std::shared_ptr<TensorT[]> d_metric_ = nullptr;
 		bool h_error_updated_ = false;
 		bool d_error_updated_ = false;
     bool h_metric_updated_ = false;
@@ -144,7 +144,7 @@ protected:
 	template<typename TensorT>
 	class ModelErrorDataCpu : public ModelErrorData<TensorT, Eigen::DefaultDevice> {
 	public:
-		void setError(const Eigen::Tensor<TensorT, 2>& error) {
+		void setError(const Eigen::Tensor<TensorT, 2>& error) override {
 			TensorT* h_error = new TensorT[this->batch_size_*this->memory_size_];
 			// copy the tensor
 			Eigen::TensorMap<Eigen::Tensor<TensorT, 2>> error_copy(h_error, this->batch_size_, this->memory_size_);
@@ -153,8 +153,8 @@ protected:
 			this->h_error_updated_ = true;
 			this->d_error_updated_ = true;
 		}; ///< error setter
-		bool syncHAndDError(Eigen::DefaultDevice& device) { return true; }
-    void setMetric(const Eigen::Tensor<TensorT, 2>& metric) {
+		bool syncHAndDError(Eigen::DefaultDevice& device) override { return true; }
+    void setMetric(const Eigen::Tensor<TensorT, 2>& metric) override {
       TensorT* h_metric = new TensorT[this->n_metrics_*this->memory_size_];
       // copy the tensor
       Eigen::TensorMap<Eigen::Tensor<TensorT, 2>> metric_copy(h_metric, this->n_metrics_, this->memory_size_);
@@ -163,7 +163,7 @@ protected:
       this->h_metric_updated_ = true;
       this->d_metric_updated_ = true;
     }; ///< metric setter
-    bool syncHAndDMetric(Eigen::DefaultDevice& device) { return true; }
+    bool syncHAndDMetric(Eigen::DefaultDevice& device) override { return true; }
 	//private:
 	//	friend class cereal::access;
 	//	template<class Archive>
@@ -177,7 +177,7 @@ protected:
 	template<typename TensorT>
 	class ModelErrorDataGpu : public ModelErrorData<TensorT, Eigen::GpuDevice> {
 	public:
-		void setError(const Eigen::Tensor<TensorT, 2>& error) {
+		void setError(const Eigen::Tensor<TensorT, 2>& error) override {
 			// allocate cuda and pinned host memory
 			TensorT* d_error;
 			TensorT* h_error;
@@ -194,7 +194,7 @@ protected:
 			this->h_error_updated_ = true;
 			this->d_error_updated_ = false;
 		}; ///< error setter
-		bool syncHAndDError(Eigen::GpuDevice& device) {
+		bool syncHAndDError(Eigen::GpuDevice& device) override {
 			if (this->h_error_updated_ && !this->d_error_updated_) {
 				device.memcpyHostToDevice(this->d_error_.get(), this->h_error_.get(), getErrorTensorSize());
 				this->d_error_updated_ = true;
@@ -212,7 +212,7 @@ protected:
 				return false;
 			}
 		}
-    void setMetric(const Eigen::Tensor<TensorT, 2>& metric) {
+    void setMetric(const Eigen::Tensor<TensorT, 2>& metric) override {
       // allocate cuda and pinned host memory
       TensorT* d_metric;
       TensorT* h_metric;
@@ -229,7 +229,7 @@ protected:
       this->h_metric_updated_ = true;
       this->d_metric_updated_ = false;
     }; ///< metric setter
-    bool syncHAndDMetric(Eigen::GpuDevice& device) {
+    bool syncHAndDMetric(Eigen::GpuDevice& device) override {
       if (this->h_metric_updated_ && !this->d_metric_updated_) {
         device.memcpyHostToDevice(this->d_metric_.get(), this->h_metric_.get(), getMetricTensorSize());
         this->d_metric_updated_ = true;

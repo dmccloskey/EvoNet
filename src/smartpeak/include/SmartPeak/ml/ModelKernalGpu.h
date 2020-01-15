@@ -358,6 +358,7 @@ namespace SmartPeak
 			SolverTensorOp<TensorT, Eigen::GpuDevice>* solver_function,
 			const int& source_layer_size,
 			const int& sink_layer_size,
+      const int& iter,
 			Eigen::GpuDevice& device,
 			bool copyHostToDevice = false,
 			bool copyDeviceToHost = false) override {
@@ -375,7 +376,7 @@ namespace SmartPeak
 			}
 
 			// Update the weights
-			solver_function->operator()(d_weight, d_weight_error, d_solver_params, source_layer_size, sink_layer_size, device);//getDrop()*error);
+			solver_function->operator()(d_weight, d_weight_error, d_solver_params, source_layer_size, sink_layer_size, iter, device);//getDrop()*error);
 
 			// Copy device to host
 			if (copyDeviceToHost) {

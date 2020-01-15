@@ -25,13 +25,17 @@ set(graph_executables_list
 set(ml_executables_list
   ActivationFunction_test
   ActivationFunctionTensor_test
+  ActivationFunctionTensorGpu_test
   IntegrationFunction_test
   IntegrationFunctionTensor_test
+  IntegrationFunctionTensorGpu_test
   Link_test
   LossFunction_test
   LossFunctionTensor_test
+  LossFunctionTensorGpu_test
   MetricFunction_test
   MetricFunctionTensor_test
+  MetricFunctionTensorGpu_test
   ModelBuilder_test
   ModelBuilderCpu_test
   ModelBuilderExperimental_test

@@ -15,16 +15,7 @@ using namespace std;
 // Extended classes used for testing
 template<typename TensorT>
 class ModelTrainerExt : public ModelTrainerDefaultDevice<TensorT>
-{
-public:
-	Model<TensorT> makeModel() { return Model<TensorT>(); }
-	void adaptiveTrainerScheduler(
-		const int& n_generations,
-		const int& n_epochs,
-		Model<TensorT>& model,
-		ModelInterpreterDefaultDevice<TensorT>& model_interpreter,
-		const std::vector<float>& model_errors) {}
-};
+{};
 
 template<typename TensorT>
 class ModelReplicatorExt : public ModelReplicator<TensorT>
@@ -33,7 +24,7 @@ public:
 	void adaptiveReplicatorScheduler(
 		const int& n_generations,
 		std::vector<Model<TensorT>>& models,
-		std::vector<std::vector<std::tuple<int, std::string, float>>>& models_errors_per_generations)
+		std::vector<std::vector<std::tuple<int, std::string, float>>>& models_errors_per_generations) override
 	{
 		if (n_generations >= 0)
 		{
@@ -62,7 +53,7 @@ public:
 	void adaptivePopulationScheduler(
 		const int& n_generations,
 		std::vector<Model<TensorT>>& models,
-		std::vector<std::vector<std::tuple<int, std::string, float>>>& models_errors_per_generations)
+		std::vector<std::vector<std::tuple<int, std::string, float>>>& models_errors_per_generations) override
 	{
 		if (n_generations == getNGenerations() - 1)
 		{
@@ -83,7 +74,7 @@ template<typename TensorT>
 class DataSimulatorExt : public DataSimulator<TensorT>
 {
 public:
-	void simulateEvaluationData(Eigen::Tensor<TensorT, 4>& input_data, Eigen::Tensor<TensorT, 3>& time_steps)
+	void simulateEvaluationData(Eigen::Tensor<TensorT, 4>& input_data, Eigen::Tensor<TensorT, 3>& time_steps) override
 	{
 		// infer data dimensions based on the input tensors
 		const int batch_size = input_data.dimension(0);
@@ -147,11 +138,11 @@ public:
 		time_steps.setConstant(1.0f);
 	}
 
-	void simulateTrainingData(Eigen::Tensor<TensorT, 4>& input_data, Eigen::Tensor<TensorT, 4>& output_data, Eigen::Tensor<TensorT, 3>& time_steps)
+	void simulateTrainingData(Eigen::Tensor<TensorT, 4>& input_data, Eigen::Tensor<TensorT, 4>& output_data, Eigen::Tensor<TensorT, 3>& time_steps) override
 	{
 		simulateData(input_data, output_data, time_steps);
 	}
-	void simulateValidationData(Eigen::Tensor<TensorT, 4>& input_data, Eigen::Tensor<TensorT, 4>& output_data, Eigen::Tensor<TensorT, 3>& time_steps)
+	void simulateValidationData(Eigen::Tensor<TensorT, 4>& input_data, Eigen::Tensor<TensorT, 4>& output_data, Eigen::Tensor<TensorT, 3>& time_steps) override
 	{
 		simulateData(input_data, output_data, time_steps);
 	}
@@ -327,13 +318,13 @@ BOOST_AUTO_TEST_CASE(replicateModels)
 		// make the baseline model
 		std::vector<std::string> node_names = model_builder.addInputNodes(model, "Input", "Input", 1);
 		node_names = model_builder.addFullyConnected(model, "Hidden1", "Mod1", node_names,
-			1, std::shared_ptr<ActivationOp<float>>(new ReLUOp<float>()), std::shared_ptr<ActivationOp<float>>(new ReLUGradOp<float>()),
-			std::shared_ptr<IntegrationOp<float>>(new SumOp<float>()), std::shared_ptr<IntegrationErrorOp<float>>(new SumErrorOp<float>()), std::shared_ptr<IntegrationWeightGradOp<float>>(new SumWeightGradOp<float>()),
-			std::shared_ptr<WeightInitOp<float>>(new ConstWeightInitOp<float>(1.0)), std::shared_ptr<SolverOp<float>>(new AdamOp<float>(0.01, 0.9, 0.999, 1e-8)), 0, 0);
+			1, std::make_shared<ReLUOp<float>>(ReLUOp<float>()), std::make_shared<ReLUGradOp<float>>(ReLUGradOp<float>()),
+			std::make_shared<SumOp<float>>(SumOp<float>()), std::make_shared<SumErrorOp<float>>(SumErrorOp<float>()), std::make_shared<SumWeightGradOp<float>>(SumWeightGradOp<float>()),
+			std::make_shared<ConstWeightInitOp<float>>(ConstWeightInitOp<float>(1.0)), std::make_shared<AdamOp<float>>(AdamOp<float>(0.01, 0.9, 0.999, 1e-8)), 0, 0);
 		node_names = model_builder.addFullyConnected(model, "Output", "Mod2", node_names,
-			1, std::shared_ptr<ActivationOp<float>>(new ReLUOp<float>()), std::shared_ptr<ActivationOp<float>>(new ReLUGradOp<float>()),
-			std::shared_ptr<IntegrationOp<float>>(new SumOp<float>()), std::shared_ptr<IntegrationErrorOp<float>>(new SumErrorOp<float>()), std::shared_ptr<IntegrationWeightGradOp<float>>(new SumWeightGradOp<float>()),
-			std::shared_ptr<WeightInitOp<float>>(new ConstWeightInitOp<float>(1.0)), std::shared_ptr<SolverOp<float>>(new AdamOp<float>(0.01, 0.9, 0.999, 1e-8)), 0, 0);
+			1, std::make_shared<ReLUOp<float>>(ReLUOp<float>()), std::make_shared<ReLUGradOp<float>>(ReLUGradOp<float>()),
+			std::make_shared<SumOp<float>>(SumOp<float>()), std::make_shared<SumErrorOp<float>>(SumErrorOp<float>()), std::make_shared<SumWeightGradOp<float>>(SumWeightGradOp<float>()),
+			std::make_shared<ConstWeightInitOp<float>>(ConstWeightInitOp<float>(1.0)), std::make_shared<AdamOp<float>>(AdamOp<float>(0.01, 0.9, 0.999, 1e-8)), 0, 0);
 		for (const std::string& node_name : node_names)
 			model.getNodesMap().at(node_name)->setType(NodeType::output);
 
@@ -449,8 +440,8 @@ BOOST_AUTO_TEST_CASE(trainModels)
 	model_trainer.setNEpochsTraining(n_epochs_training);
 	model_trainer.setNEpochsValidation(n_epochs_validation);
 	model_trainer.setNEpochsEvaluation(n_epochs_evaluation);
-	model_trainer.setLossFunctions({ std::shared_ptr<LossFunctionOp<float>>(new MSELossOp<float>()) });
-	model_trainer.setLossFunctionGrads({ std::shared_ptr<LossFunctionGradOp<float>>(new MSELossGradOp<float>()) });
+	model_trainer.setLossFunctions({ std::make_shared<MSELossOp<float>>(MSELossOp<float>()) });
+	model_trainer.setLossFunctionGrads({ std::make_shared<MSELossGradOp<float>>(MSELossGradOp<float>()) });
 	model_trainer.setLossOutputNodes({ output_nodes });
 
   ModelReplicatorExt<float> model_replicator;
@@ -470,13 +461,13 @@ BOOST_AUTO_TEST_CASE(trainModels)
 		// make the baseline model
 		std::vector<std::string> node_names = model_builder.addInputNodes(model, "Input", "Input", 1);
 		node_names = model_builder.addFullyConnected(model, "Hidden1", "Mod1", node_names,
-			1, std::shared_ptr<ActivationOp<float>>(new ReLUOp<float>()), std::shared_ptr<ActivationOp<float>>(new ReLUGradOp<float>()),
-			std::shared_ptr<IntegrationOp<float>>(new SumOp<float>()), std::shared_ptr<IntegrationErrorOp<float>>(new SumErrorOp<float>()), std::shared_ptr<IntegrationWeightGradOp<float>>(new SumWeightGradOp<float>()),
-			std::shared_ptr<WeightInitOp<float>>(new ConstWeightInitOp<float>(1.0)), std::shared_ptr<SolverOp<float>>(new AdamOp<float>(0.01, 0.9, 0.999, 1e-8)), 0, 0);
+			1, std::make_shared<ReLUOp<float>>(ReLUOp<float>()), std::make_shared<ReLUGradOp<float>>(ReLUGradOp<float>()),
+			std::make_shared<SumOp<float>>(SumOp<float>()), std::make_shared<SumErrorOp<float>>(SumErrorOp<float>()), std::make_shared<SumWeightGradOp<float>>(SumWeightGradOp<float>()),
+			std::make_shared<ConstWeightInitOp<float>>(ConstWeightInitOp<float>(1.0)), std::make_shared<AdamOp<float>>(AdamOp<float>(0.01, 0.9, 0.999, 1e-8)), 0, 0);
 		node_names = model_builder.addFullyConnected(model, "Output", "Mod2", node_names,
-			1, std::shared_ptr<ActivationOp<float>>(new ReLUOp<float>()), std::shared_ptr<ActivationOp<float>>(new ReLUGradOp<float>()),
-			std::shared_ptr<IntegrationOp<float>>(new SumOp<float>()), std::shared_ptr<IntegrationErrorOp<float>>(new SumErrorOp<float>()), std::shared_ptr<IntegrationWeightGradOp<float>>(new SumWeightGradOp<float>()),
-			std::shared_ptr<WeightInitOp<float>>(new ConstWeightInitOp<float>(1.0)), std::shared_ptr<SolverOp<float>>(new AdamOp<float>(0.01, 0.9, 0.999, 1e-8)), 0, 0);
+			1, std::make_shared<ReLUOp<float>>(ReLUOp<float>()), std::make_shared<ReLUGradOp<float>>(ReLUGradOp<float>()),
+			std::make_shared<SumOp<float>>(SumOp<float>()), std::make_shared<SumErrorOp<float>>(SumErrorOp<float>()), std::make_shared<SumWeightGradOp<float>>(SumWeightGradOp<float>()),
+			std::make_shared<ConstWeightInitOp<float>>(ConstWeightInitOp<float>(1.0)), std::make_shared<AdamOp<float>>(AdamOp<float>(0.01, 0.9, 0.999, 1e-8)), 0, 0);
 		for (const std::string& node_name : node_names)
 			model.getNodesMap().at(node_name)->setType(NodeType::output);
 
@@ -579,8 +570,8 @@ BOOST_AUTO_TEST_CASE(evalModels)
 	model_trainer.setNEpochsTraining(n_epochs_training);
 	model_trainer.setNEpochsValidation(n_epochs_validation);
 	model_trainer.setNEpochsEvaluation(n_epochs_evaluation);
-	model_trainer.setLossFunctions({ std::shared_ptr<LossFunctionOp<float>>(new MSELossOp<float>()) });
-	model_trainer.setLossFunctionGrads({ std::shared_ptr<LossFunctionGradOp<float>>(new MSELossGradOp<float>()) });
+	model_trainer.setLossFunctions({ std::make_shared<MSELossOp<float>>(MSELossOp<float>()) });
+	model_trainer.setLossFunctionGrads({ std::make_shared<MSELossGradOp<float>>(MSELossGradOp<float>()) });
 	model_trainer.setLossOutputNodes({ output_nodes });
 
 	ModelReplicatorExt<float> model_replicator;
@@ -600,13 +591,13 @@ BOOST_AUTO_TEST_CASE(evalModels)
 		// make the baseline model
 		std::vector<std::string> node_names = model_builder.addInputNodes(model, "Input", "Input", 1);
 		node_names = model_builder.addFullyConnected(model, "Hidden1", "Mod1", node_names,
-			1, std::shared_ptr<ActivationOp<float>>(new ReLUOp<float>()), std::shared_ptr<ActivationOp<float>>(new ReLUGradOp<float>()),
-			std::shared_ptr<IntegrationOp<float>>(new SumOp<float>()), std::shared_ptr<IntegrationErrorOp<float>>(new SumErrorOp<float>()), std::shared_ptr<IntegrationWeightGradOp<float>>(new SumWeightGradOp<float>()),
-			std::shared_ptr<WeightInitOp<float>>(new ConstWeightInitOp<float>(1.0)), std::shared_ptr<SolverOp<float>>(new AdamOp<float>(0.01, 0.9, 0.999, 1e-8)), 0, 0);
+			1, std::make_shared<ReLUOp<float>>(ReLUOp<float>()), std::make_shared<ReLUGradOp<float>>(ReLUGradOp<float>()),
+			std::make_shared<SumOp<float>>(SumOp<float>()), std::make_shared<SumErrorOp<float>>(SumErrorOp<float>()), std::make_shared<SumWeightGradOp<float>>(SumWeightGradOp<float>()),
+			std::make_shared<ConstWeightInitOp<float>>(ConstWeightInitOp<float>(1.0)), std::make_shared<AdamOp<float>>(AdamOp<float>(0.01, 0.9, 0.999, 1e-8)), 0, 0);
 		node_names = model_builder.addFullyConnected(model, "Output", "Mod2", node_names,
-			1, std::shared_ptr<ActivationOp<float>>(new ReLUOp<float>()), std::shared_ptr<ActivationOp<float>>(new ReLUGradOp<float>()),
-			std::shared_ptr<IntegrationOp<float>>(new SumOp<float>()), std::shared_ptr<IntegrationErrorOp<float>>(new SumErrorOp<float>()), std::shared_ptr<IntegrationWeightGradOp<float>>(new SumWeightGradOp<float>()),
-			std::shared_ptr<WeightInitOp<float>>(new ConstWeightInitOp<float>(1.0)), std::shared_ptr<SolverOp<float>>(new AdamOp<float>(0.01, 0.9, 0.999, 1e-8)), 0, 0);
+			1, std::make_shared<ReLUOp<float>>(ReLUOp<float>()), std::make_shared<ReLUGradOp<float>>(ReLUGradOp<float>()),
+			std::make_shared<SumOp<float>>(SumOp<float>()), std::make_shared<SumErrorOp<float>>(SumErrorOp<float>()), std::make_shared<SumWeightGradOp<float>>(SumWeightGradOp<float>()),
+			std::make_shared<ConstWeightInitOp<float>>(ConstWeightInitOp<float>(1.0)), std::make_shared<AdamOp<float>>(AdamOp<float>(0.01, 0.9, 0.999, 1e-8)), 0, 0);
 		for (const std::string& node_name : node_names)
 			model.getNodesMap().at(node_name)->setType(NodeType::output);
 		model.setId(i);
@@ -668,8 +659,8 @@ BOOST_AUTO_TEST_CASE(evalModels)
 			BOOST_CHECK_EQUAL(population[i].getNodesMap().at(output_nodes[0])->getOutput().size(), 0);
 		}
 		else {
-			BOOST_CHECK_EQUAL(population[i].getError().size(), 40); // error has not been calculated
-			BOOST_CHECK_EQUAL(total_output(0), 340);
+			BOOST_CHECK_EQUAL(population[i].getError().size(), 0); // error has not been calculated
+			BOOST_CHECK_EQUAL(total_output(0), 260);
 			BOOST_CHECK_EQUAL(population[i].getNodesMap().at(output_nodes[0])->getOutput().size(), batch_size*(memory_size + 1));
 		}
 	}
@@ -714,8 +705,8 @@ BOOST_AUTO_TEST_CASE(exampleUsage)
 	model_trainer.setNEpochsTraining(n_epochs_training);
 	model_trainer.setNEpochsValidation(n_epochs_validation);
 	model_trainer.setNEpochsEvaluation(n_epochs_evaluation);
-	model_trainer.setLossFunctions({ std::shared_ptr<LossFunctionOp<float>>(new MSELossOp<float>()) });
-	model_trainer.setLossFunctionGrads({ std::shared_ptr<LossFunctionGradOp<float>>(new MSELossGradOp<float>()) });
+	model_trainer.setLossFunctions({ std::make_shared<MSELossOp<float>>(MSELossOp<float>()) });
+	model_trainer.setLossFunctionGrads({ std::make_shared<MSELossGradOp<float>>(MSELossGradOp<float>()) });
 	model_trainer.setLossOutputNodes({ output_nodes });
 
   // define the model replicator for growth mode
@@ -737,13 +728,13 @@ BOOST_AUTO_TEST_CASE(exampleUsage)
 		// make the baseline model
 		std::vector<std::string> node_names = model_builder.addInputNodes(model, "Input", "Input", 1);
 		node_names = model_builder.addFullyConnected(model, "Hidden1", "Mod1", node_names,
-			1, std::shared_ptr<ActivationOp<float>>(new ReLUOp<float>()), std::shared_ptr<ActivationOp<float>>(new ReLUGradOp<float>()),
-			std::shared_ptr<IntegrationOp<float>>(new SumOp<float>()), std::shared_ptr<IntegrationErrorOp<float>>(new SumErrorOp<float>()), std::shared_ptr<IntegrationWeightGradOp<float>>(new SumWeightGradOp<float>()),
-			std::shared_ptr<WeightInitOp<float>>(new ConstWeightInitOp<float>(1.0)), std::shared_ptr<SolverOp<float>>(new AdamOp<float>(0.01, 0.9, 0.999, 1e-8)), 0, 0);
+			1, std::make_shared<ReLUOp<float>>(ReLUOp<float>()), std::make_shared<ReLUGradOp<float>>(ReLUGradOp<float>()),
+			std::make_shared<SumOp<float>>(SumOp<float>()), std::make_shared<SumErrorOp<float>>(SumErrorOp<float>()), std::make_shared<SumWeightGradOp<float>>(SumWeightGradOp<float>()),
+			std::make_shared<ConstWeightInitOp<float>>(ConstWeightInitOp<float>(1.0)), std::make_shared<AdamOp<float>>(AdamOp<float>(0.01, 0.9, 0.999, 1e-8)), 0, 0);
 		node_names = model_builder.addFullyConnected(model, "Output", "Mod2", node_names,
-			1, std::shared_ptr<ActivationOp<float>>(new ReLUOp<float>()), std::shared_ptr<ActivationOp<float>>(new ReLUGradOp<float>()),
-			std::shared_ptr<IntegrationOp<float>>(new SumOp<float>()), std::shared_ptr<IntegrationErrorOp<float>>(new SumErrorOp<float>()), std::shared_ptr<IntegrationWeightGradOp<float>>(new SumWeightGradOp<float>()),
-			std::shared_ptr<WeightInitOp<float>>(new ConstWeightInitOp<float>(1.0)), std::shared_ptr<SolverOp<float>>(new AdamOp<float>(0.01, 0.9, 0.999, 1e-8)), 0, 0);
+			1, std::make_shared<ReLUOp<float>>(ReLUOp<float>()), std::make_shared<ReLUGradOp<float>>(ReLUGradOp<float>()),
+			std::make_shared<SumOp<float>>(SumOp<float>()), std::make_shared<SumErrorOp<float>>(SumErrorOp<float>()), std::make_shared<SumWeightGradOp<float>>(SumWeightGradOp<float>()),
+			std::make_shared<ConstWeightInitOp<float>>(ConstWeightInitOp<float>(1.0)), std::make_shared<AdamOp<float>>(AdamOp<float>(0.01, 0.9, 0.999, 1e-8)), 0, 0);
 		for (const std::string& node_name : node_names)
 			model.getNodesMap().at(node_name)->setType(NodeType::output);
 

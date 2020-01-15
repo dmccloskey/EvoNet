@@ -211,6 +211,23 @@ BOOST_AUTO_TEST_CASE(convertOpToTensorOpActivationOpToActivationTensorOp)
   BOOST_CHECK_EQUAL(op_tensor_class->getEps(), 1);
   BOOST_CHECK_EQUAL(op_tensor_class->getMin(), 2);
   BOOST_CHECK_EQUAL(op_tensor_class->getMax(), 3);
+
+  op_class = new BatchNormOp<float>(1.0f, 2.0f, 3.0f);
+  op_tensor_class = op_to_tensor_op.convertOpToTensorOp(op_class);
+  BOOST_CHECK_EQUAL(op_tensor_class->getName(), "BatchNormTensorOp");
+  BOOST_CHECK_EQUAL(op_tensor_class->getEps(), 1);
+  BOOST_CHECK_EQUAL(op_tensor_class->getMin(), 2);
+  BOOST_CHECK_EQUAL(op_tensor_class->getMax(), 3);
+
+  op_class = new BatchNormGradOp<float>(1.0f, 2.0f, 3.0f);
+  op_tensor_class = op_to_tensor_op.convertOpToTensorOp(op_class);
+  BOOST_CHECK_EQUAL(op_tensor_class->getName(), "BatchNormGradTensorOp");
+  BOOST_CHECK_EQUAL(op_tensor_class->getEps(), 1);
+  BOOST_CHECK_EQUAL(op_tensor_class->getMin(), 2);
+  BOOST_CHECK_EQUAL(op_tensor_class->getMax(), 3);
+
+  delete op_class;
+  delete op_tensor_class;
 }
 
 BOOST_AUTO_TEST_CASE(getTensorParamsActivationOpToActivationTensorOp)
@@ -319,6 +336,16 @@ BOOST_AUTO_TEST_CASE(getTensorParamsActivationOpToActivationTensorOp)
 	op_class = new CosGradOp<float>();
 	params = op_to_tensor_op.getTensorParams(op_class);
 	BOOST_CHECK_EQUAL(params.size(), 0);
+
+  op_class = new BatchNormOp<float>();
+  params = op_to_tensor_op.getTensorParams(op_class);
+  BOOST_CHECK_EQUAL(params.size(), 0);
+
+  op_class = new BatchNormGradOp<float>();
+  params = op_to_tensor_op.getTensorParams(op_class);
+  BOOST_CHECK_EQUAL(params.size(), 0);
+
+  delete op_class;
 }
 
 BOOST_AUTO_TEST_CASE(constructorSolverOpToSolverTensorOp)
@@ -342,33 +369,46 @@ BOOST_AUTO_TEST_CASE(convertOpToTensorOpSolverOpToSolverTensorOp)
 	SolverOp<float>* op_class;
 	SolverTensorOp<float, Eigen::DefaultDevice>* op_tensor_class;
 
-	op_class = new SGDOp<float>(0.1, 0.9, 10.0, 1.0);
+	op_class = new SGDOp<float>(0.1, 0.9, 10.0, 1.0, 0.55);
 	op_tensor_class = op_to_tensor_op.convertOpToTensorOp(op_class);
 	BOOST_CHECK_EQUAL(op_tensor_class->getName(), "SGDTensorOp");
   BOOST_CHECK_EQUAL(op_tensor_class->getGradientThreshold(), 10);
   BOOST_CHECK_EQUAL(op_tensor_class->getGradientNoiseSigma(), 1);
+  BOOST_CHECK_CLOSE(op_tensor_class->getGradientNoiseGamma(), 0.55, 1e-4);
 
-	op_class = new AdamOp<float>(0.001, 0.9, 0.999, 1e-8, 10.0, 1.0);
-  op_class->setGradientThreshold(10);
+  op_class = new SSDOp<float>(0.1, 0.9, 10.0, 1.0, 0.55);
+  op_tensor_class = op_to_tensor_op.convertOpToTensorOp(op_class);
+  BOOST_CHECK_EQUAL(op_tensor_class->getName(), "SSDTensorOp");
+  BOOST_CHECK_EQUAL(op_tensor_class->getGradientThreshold(), 10);
+  BOOST_CHECK_EQUAL(op_tensor_class->getGradientNoiseSigma(), 1);
+  BOOST_CHECK_CLOSE(op_tensor_class->getGradientNoiseGamma(), 0.55, 1e-4);
+
+	op_class = new AdamOp<float>(0.001, 0.9, 0.999, 1e-8, 10.0, 1.0, 0.55);
 	op_tensor_class = op_to_tensor_op.convertOpToTensorOp(op_class);
 	BOOST_CHECK_EQUAL(op_tensor_class->getName(), "AdamTensorOp");
   BOOST_CHECK_EQUAL(op_tensor_class->getGradientThreshold(), 10);
   BOOST_CHECK_EQUAL(op_tensor_class->getGradientNoiseSigma(), 1);
+  BOOST_CHECK_CLOSE(op_tensor_class->getGradientNoiseGamma(), 0.55, 1e-4);
+
+  op_class = new SVAGOp<float>(0.001, 0.9,10.0, 1.0, 0.55);
+  op_tensor_class = op_to_tensor_op.convertOpToTensorOp(op_class);
+  BOOST_CHECK_EQUAL(op_tensor_class->getName(), "SVAGTensorOp");
+  BOOST_CHECK_EQUAL(op_tensor_class->getGradientThreshold(), 10);
+  BOOST_CHECK_EQUAL(op_tensor_class->getGradientNoiseSigma(), 1);
+  BOOST_CHECK_CLOSE(op_tensor_class->getGradientNoiseGamma(), 0.55, 1e-4);
 
 	op_class = new DummySolverOp<float>();
   op_class->setGradientThreshold(10);
   op_class->setGradientNoiseSigma(1);
+  op_class->setGradientNoiseGamma(0.55);
 	op_tensor_class = op_to_tensor_op.convertOpToTensorOp(op_class);
 	BOOST_CHECK_EQUAL(op_tensor_class->getName(), "DummySolverTensorOp");
   BOOST_CHECK_EQUAL(op_tensor_class->getGradientThreshold(), 10);
   BOOST_CHECK_EQUAL(op_tensor_class->getGradientNoiseSigma(), 1);
+  BOOST_CHECK_CLOSE(op_tensor_class->getGradientNoiseGamma(), 0.55, 1e-4);
 
-	op_class = new SGDNoiseOp<float>(0.1, 0.9, 1);
-  op_class->setGradientThreshold(10);
-	op_tensor_class = op_to_tensor_op.convertOpToTensorOp(op_class);
-	BOOST_CHECK_EQUAL(op_tensor_class->getName(), "SGDNoiseTensorOp");
-  BOOST_CHECK_EQUAL(op_tensor_class->getGradientThreshold(), 10);
-  BOOST_CHECK_EQUAL(op_tensor_class->getGradientNoiseSigma(), 1);
+  delete op_class;
+  delete op_tensor_class;
 }
 
 BOOST_AUTO_TEST_CASE(getTensorParamsSolverOpToSolverTensorOp)
@@ -380,21 +420,28 @@ BOOST_AUTO_TEST_CASE(getTensorParamsSolverOpToSolverTensorOp)
 	BOOST_CHECK_EQUAL(params.size(), 3);
 	BOOST_CHECK_EQUAL(params[0], 1); BOOST_CHECK_EQUAL(params[1], 2); BOOST_CHECK_EQUAL(params[2], 0);
 
+  op_class = new SSDOp<float>(1, 2);
+  params = op_to_tensor_op.getTensorParams(op_class);
+  BOOST_CHECK_EQUAL(params.size(), 3);
+  BOOST_CHECK_EQUAL(params[0], 1); BOOST_CHECK_EQUAL(params[1], 2); BOOST_CHECK_EQUAL(params[2], 0);
+
 	op_class = new AdamOp<float>(1, 2, 3, 4);
 	params = op_to_tensor_op.getTensorParams(op_class);
 	BOOST_CHECK_EQUAL(params.size(), 6);
 	BOOST_CHECK_EQUAL(params[0], 1); BOOST_CHECK_EQUAL(params[1], 2); BOOST_CHECK_EQUAL(params[2], 3); 
 	BOOST_CHECK_EQUAL(params[3], 4); BOOST_CHECK_EQUAL(params[4], 0); BOOST_CHECK_EQUAL(params[5], 0);
 
+  op_class = new SVAGOp<float>(1, 2);
+  params = op_to_tensor_op.getTensorParams(op_class);
+  BOOST_CHECK_EQUAL(params.size(), 4);
+  BOOST_CHECK_EQUAL(params[0], 1); BOOST_CHECK_EQUAL(params[1], 2); BOOST_CHECK_EQUAL(params[2], 0);
+  BOOST_CHECK_EQUAL(params[3], 0);
+
 	op_class = new DummySolverOp<float>();
 	params = op_to_tensor_op.getTensorParams(op_class);
 	BOOST_CHECK_EQUAL(params.size(), 0);
 
-	op_class = new SGDNoiseOp<float>(1, 2, 3);
-	params = op_to_tensor_op.getTensorParams(op_class);
-	BOOST_CHECK_EQUAL(params.size(), 4);
-	BOOST_CHECK_EQUAL(params[0], 1); BOOST_CHECK_EQUAL(params[1], 2); BOOST_CHECK_EQUAL(params[2], 0);
-	BOOST_CHECK_EQUAL(params[3], 3); 
+  delete op_class;
 }
 
 BOOST_AUTO_TEST_CASE(constructorIntegrationOpToIntegrationTensorOp)
@@ -449,6 +496,9 @@ BOOST_AUTO_TEST_CASE(convertOpToTensorOpIntegrationOpToIntegrationTensorOp)
 	op_class = new VarModOp<float>();
 	op_tensor_class = op_to_tensor_op.convertOpToTensorOp(op_class);
 	BOOST_CHECK_EQUAL(op_tensor_class->getName(), "VarModTensorOp");
+
+  delete op_class;
+  delete op_tensor_class;
 }
 
 BOOST_AUTO_TEST_CASE(getTensorParamsIntegrationOpToIntegrationTensorOp)
@@ -490,6 +540,8 @@ BOOST_AUTO_TEST_CASE(getTensorParamsIntegrationOpToIntegrationTensorOp)
 	op_class = new VarModOp<float>();
 	params = op_to_tensor_op.getTensorParams(op_class);
 	BOOST_CHECK_EQUAL(params.size(), 0);
+
+  delete op_class;
 }
 
 BOOST_AUTO_TEST_CASE(constructorIntegrationErrorOpToIntegrationErrorTensorOp)
@@ -544,6 +596,9 @@ BOOST_AUTO_TEST_CASE(convertOpToTensorOpIntegrationErrorOpToIntegrationErrorTens
 	op_class = new VarModErrorOp<float>();
 	op_tensor_class = op_to_tensor_op.convertOpToTensorOp(op_class);
 	BOOST_CHECK_EQUAL(op_tensor_class->getName(), "VarModErrorTensorOp");
+
+  delete op_class;
+  delete op_tensor_class;
 }
 
 BOOST_AUTO_TEST_CASE(getTensorParamsIntegrationErrorOpToIntegrationErrorTensorOp)
@@ -581,6 +636,8 @@ BOOST_AUTO_TEST_CASE(getTensorParamsIntegrationErrorOpToIntegrationErrorTensorOp
 	op_class = new VarModErrorOp<float>();
 	params = op_to_tensor_op.getTensorParams(op_class);
 	BOOST_CHECK_EQUAL(params.size(), 0);
+
+  delete op_class;
 }
 
 BOOST_AUTO_TEST_CASE(constructorIntegrationWeightGradOpToIntegrationWeightGradTensorOp)
@@ -635,6 +692,9 @@ BOOST_AUTO_TEST_CASE(convertOpToTensorOpIntegrationWeightGradOpToIntegrationWeig
 	op_class = new VarModWeightGradOp<float>();
 	op_tensor_class = op_to_tensor_op.convertOpToTensorOp(op_class);
 	BOOST_CHECK_EQUAL(op_tensor_class->getName(), "VarModWeightGradTensorOp");
+
+  delete op_class;
+  delete op_tensor_class;
 }
 
 BOOST_AUTO_TEST_CASE(getTensorParamsIntegrationWeightGradOpToIntegrationWeightGradTensorOp)
@@ -672,6 +732,8 @@ BOOST_AUTO_TEST_CASE(getTensorParamsIntegrationWeightGradOpToIntegrationWeightGr
 	op_class = new VarModWeightGradOp<float>();
 	params = op_to_tensor_op.getTensorParams(op_class);
 	BOOST_CHECK_EQUAL(params.size(), 0);
+
+  delete op_class;
 }
 
 BOOST_AUTO_TEST_CASE(constructorLossFunctionGradOpToLossFunctionGradTensorOp)
@@ -758,6 +820,9 @@ BOOST_AUTO_TEST_CASE(convertOpToTensorOpLossFunctionGradOpToLossFunctionGradTens
   op_class = new MAPELossGradOp<float>();
   op_tensor_class = op_to_tensor_op.convertOpToTensorOp(op_class);
   BOOST_CHECK_EQUAL(op_tensor_class->getName(), "MAPELossGradTensorOp");
+
+  delete op_class;
+  delete op_tensor_class;
 }
 
 BOOST_AUTO_TEST_CASE(getTensorParamsLossFunctionGradOpToLossFunctionGradTensorOp)
@@ -829,6 +894,8 @@ BOOST_AUTO_TEST_CASE(getTensorParamsLossFunctionGradOpToLossFunctionGradTensorOp
   op_class = new MAPELossGradOp<float>();
   params = op_to_tensor_op.getTensorParams(op_class);
   BOOST_CHECK_EQUAL(params.size(), 0);
+
+  delete op_class;
 }
 
 BOOST_AUTO_TEST_CASE(constructorLossFunctionOpToLossFunctionTensorOp)
@@ -915,6 +982,9 @@ BOOST_AUTO_TEST_CASE(convertOpToTensorOpLossFunctionOpToLossFunctionTensorOp)
   op_class = new MAPELossOp<float>();
   op_tensor_class = op_to_tensor_op.convertOpToTensorOp(op_class);
   BOOST_CHECK_EQUAL(op_tensor_class->getName(), "MAPELossTensorOp");
+
+  delete op_class;
+  delete op_tensor_class;
 }
 
 BOOST_AUTO_TEST_CASE(getTensorParamsLossFunctionOpToLossFunctionTensorOp)
@@ -986,6 +1056,8 @@ BOOST_AUTO_TEST_CASE(getTensorParamsLossFunctionOpToLossFunctionTensorOp)
   op_class = new MAPELossOp<float>();
   params = op_to_tensor_op.getTensorParams(op_class);
   BOOST_CHECK_EQUAL(params.size(), 0);
+
+  delete op_class;
 }
 
 BOOST_AUTO_TEST_CASE(constructorMetricFunctionOpToMetricFunctionTensorOp)
@@ -1068,6 +1140,9 @@ BOOST_AUTO_TEST_CASE(convertOpToTensorOpMetricFunctionOpToMetricFunctionTensorOp
   op_class = new PearsonROp<float>();
   op_tensor_class = op_to_tensor_op.convertOpToTensorOp(op_class);
   BOOST_CHECK_EQUAL(op_tensor_class->getName(), "PearsonRTensorOp");
+
+  delete op_class;
+  delete op_tensor_class;
 }
 
 BOOST_AUTO_TEST_CASE(getTensorParamsMetricFunctionOpToMetricFunctionTensorOp)
@@ -1135,6 +1210,8 @@ BOOST_AUTO_TEST_CASE(getTensorParamsMetricFunctionOpToMetricFunctionTensorOp)
   op_class = new PearsonROp<float>();
   params = op_to_tensor_op.getTensorParams(op_class);
   BOOST_CHECK_EQUAL(params.size(), 0);
+
+  delete op_class;
 }
 
 BOOST_AUTO_TEST_SUITE_END()

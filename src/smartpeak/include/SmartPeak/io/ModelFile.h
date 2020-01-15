@@ -39,8 +39,6 @@ public:
 		/**
 			@brief store Model from file
 
-			[TODO: Broken; need to implement a better serialization method that deals with shared_ptrs]
-
 			@param filename The name of the model file
 			@param model The model to store
 
@@ -51,14 +49,22 @@ public:
 		/**
 			@brief load Model from file
 
-			[TODO: Broken; need to implement a better serialization method that deals with shared_ptrs]
-
 			@param filename The name of the model file
 			@param model The model to load data into
 
 			@returns Status True on success, False if not
 		*/
 		bool loadModelBinary(const std::string& filename, Model<TensorT>& model);
+
+    /**
+      @brief load Model weights from a binarized model file file
+
+      @param filename The name of the model file
+      @param weights The weights to load data into
+
+      @returns Status True on success, False if not
+    */
+    bool loadWeightValuesBinary(const std::string& filename, std::map<std::string, std::shared_ptr<Weight<TensorT>>>& weights);
 
 		/**
 			@brief store nodes, links, and weights as a .csv file from a Model
@@ -129,6 +135,29 @@ public:
 		}
 		return true;
 	}
+
+  template<typename TensorT>
+  inline bool ModelFile<TensorT>::loadWeightValuesBinary(const std::string & filename, std::map<std::string, std::shared_ptr<Weight<TensorT>>>& weights)
+  {
+    // Load in the binarized model
+    Model<TensorT> model;
+    loadModelBinary(filename, model);
+
+    // Transer over the weights
+    for (auto& weight_map: weights){
+      // parse the weight value
+      try
+      {
+        weight_map.second->setWeight(model.weights_.at(weight_map.first)->getWeight());
+        weight_map.second->setInitWeight(false);
+      }
+      catch (std::exception& e)
+      {
+        printf("Exception: %s", e.what());
+      }
+    }
+    return true;
+  }
 
 	template<typename TensorT>
 	bool ModelFile<TensorT>::storeModelCsv(const std::string & filename_nodes, const std::string & filename_links, const std::string & filename_weights, Model<TensorT>& model,

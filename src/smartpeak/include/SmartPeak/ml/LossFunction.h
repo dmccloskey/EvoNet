@@ -260,9 +260,13 @@ public:
 	class KLDivergenceMuLossOp : public LossFunctionOp<TensorT>
 	{
 	public:
-		using LossFunctionOp<TensorT>::LossFunctionOp;
+		KLDivergenceMuLossOp() = default;
+		KLDivergenceMuLossOp(const TensorT & eps, const TensorT & scale, const TensorT& capacity) : LossFunctionOp(eps, scale), capacity_(capacity) {};
+		~KLDivergenceMuLossOp() = default;
 		std::string getName() { return "KLDivergenceMuLossOp"; };
-		std::vector<TensorT> getParameters() const { return std::vector<TensorT>({this->eps_, this->scale_}); }
+		std::vector<TensorT> getParameters() const { return std::vector<TensorT>({this->eps_, this->scale_, this->capacity_}); }
+	private:
+		TensorT capacity_ = TensorT(0);
 	};
 
 	/**
@@ -272,9 +276,13 @@ public:
 	class KLDivergenceMuLossGradOp : public LossFunctionGradOp<TensorT>
 	{
 	public:
-		using LossFunctionGradOp<TensorT>::LossFunctionGradOp;
+		KLDivergenceMuLossGradOp() = default;
+		KLDivergenceMuLossGradOp(const TensorT & eps, const TensorT & scale, const TensorT & capacity) : LossFunctionGradOp(eps, scale), capacity_(capacity) {};
+		~KLDivergenceMuLossGradOp() = default;
 		std::string getName() { return "KLDivergenceMuLossGradOp"; };
-		std::vector<TensorT> getParameters() const { return std::vector<TensorT>({this->eps_, this->scale_}); }
+		std::vector<TensorT> getParameters() const { return std::vector<TensorT>({ this->eps_, this->scale_, this->capacity_ }); }
+	private:
+		TensorT capacity_ = TensorT(0);
 	};
 
 	/**
@@ -289,9 +297,13 @@ public:
 	class KLDivergenceLogVarLossOp : public LossFunctionOp<TensorT>
 	{
 	public:
-		using LossFunctionOp<TensorT>::LossFunctionOp;
+		KLDivergenceLogVarLossOp() = default;
+		KLDivergenceLogVarLossOp(const TensorT & eps, const TensorT & scale, const TensorT & capacity) : LossFunctionOp(eps, scale), capacity_(capacity) {};
+		~KLDivergenceLogVarLossOp() = default;
 		std::string getName() { return "KLDivergenceLogVarLossOp"; };
-		std::vector<TensorT> getParameters() const { return std::vector<TensorT>({this->eps_, this->scale_}); }
+		std::vector<TensorT> getParameters() const { return std::vector<TensorT>({ this->eps_, this->scale_, this->capacity_ }); }
+	private:
+		TensorT capacity_ = TensorT(0);
 	};
 
 	/**
@@ -301,9 +313,13 @@ public:
 	class KLDivergenceLogVarLossGradOp : public LossFunctionGradOp<TensorT>
 	{
 	public:
-		using LossFunctionGradOp<TensorT>::LossFunctionGradOp;
+		KLDivergenceLogVarLossGradOp() = default;
+		KLDivergenceLogVarLossGradOp(const TensorT & eps, const TensorT & scale, const TensorT & capacity) : LossFunctionGradOp(eps, scale), capacity_(capacity) {};
+		~KLDivergenceLogVarLossGradOp() = default;
 		std::string getName() { return "KLDivergenceLogVarLossGradOp"; };
-		std::vector<TensorT> getParameters() const { return std::vector<TensorT>({this->eps_, this->scale_}); }
+		std::vector<TensorT> getParameters() const { return std::vector<TensorT>({ this->eps_, this->scale_, this->capacity_ }); }
+	private:
+		TensorT capacity_ = TensorT(0);
 	};
 
 	/**
@@ -442,9 +458,13 @@ public:
   class KLDivergenceCatLossOp : public LossFunctionOp<TensorT>
   {
   public:
-    using LossFunctionOp<TensorT>::LossFunctionOp;
+		KLDivergenceCatLossOp() = default;
+		KLDivergenceCatLossOp(const TensorT & eps, const TensorT & scale, const TensorT & capacity) : LossFunctionOp(eps, scale), capacity_(capacity) {};
+		~KLDivergenceCatLossOp() = default;
     std::string getName() { return "KLDivergenceCatLossOp"; };
-    std::vector<TensorT> getParameters() const { return std::vector<TensorT>({ this->eps_, this->scale_ }); }
+		std::vector<TensorT> getParameters() const { return std::vector<TensorT>({ this->eps_, this->scale_, this->capacity_ }); }
+	private:
+		TensorT capacity_ = TensorT(0);
   };
 
   /**
@@ -454,9 +474,13 @@ public:
   class KLDivergenceCatLossGradOp : public LossFunctionGradOp<TensorT>
   {
   public:
-    using LossFunctionGradOp<TensorT>::LossFunctionGradOp;
+		KLDivergenceCatLossGradOp() = default;
+		KLDivergenceCatLossGradOp(const TensorT & eps, const TensorT & scale, const TensorT & capacity) : LossFunctionGradOp(eps, scale), capacity_(capacity) {};
+		~KLDivergenceCatLossGradOp() = default;
     std::string getName() { return "KLDivergenceCatLossGradOp"; };
-    std::vector<TensorT> getParameters() const { return std::vector<TensorT>({ this->eps_, this->scale_ }); }
+		std::vector<TensorT> getParameters() const { return std::vector<TensorT>({ this->eps_, this->scale_, this->capacity_ }); }
+	private:
+		TensorT capacity_ = TensorT(0);
   };
 
   /**

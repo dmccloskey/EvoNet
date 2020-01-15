@@ -840,7 +840,7 @@ private:
 				char new_bias_name_char[512];
 				sprintf(new_bias_name_char, "Bias_%s@addNodeRight#", add_node_name.data());
 				new_bias_name = makeUniqueHash(new_bias_name_char, unique_str);
-				Node<TensorT> new_bias(new_bias_name, NodeType::bias, NodeStatus::activated, std::shared_ptr<ActivationOp<TensorT>>(new LinearOp<TensorT>()), std::shared_ptr<ActivationOp<TensorT>>(new LinearGradOp<TensorT>()), std::shared_ptr<IntegrationOp<TensorT>>(new SumOp<TensorT>()), std::shared_ptr<IntegrationErrorOp<TensorT>>(new SumErrorOp<TensorT>()), std::shared_ptr<IntegrationWeightGradOp<TensorT>>(new SumWeightGradOp<TensorT>()));
+				Node<TensorT> new_bias(new_bias_name, NodeType::bias, NodeStatus::activated, std::make_shared<LinearOp<TensorT>>(LinearOp<TensorT>()), std::make_shared<LinearGradOp<TensorT>>(LinearGradOp<TensorT>()), std::make_shared<SumOp<TensorT>>(SumOp<TensorT>()), std::make_shared<SumErrorOp<TensorT>>(SumErrorOp<TensorT>()), std::make_shared<SumWeightGradOp<TensorT>>(SumWeightGradOp<TensorT>()));
 				model.addNodes({ new_bias });
 			}
 			else
@@ -853,7 +853,7 @@ private:
 				sprintf(weight_bias_name_char, "%s_to_%s@addNodeRight#", new_bias_name.data(), new_node_name.data());
 				weight_bias_name = makeUniqueHash(weight_bias_name_char, unique_str);
 				std::shared_ptr<WeightInitOp<TensorT>> bias_weight_init;
-				bias_weight_init.reset(new ConstWeightInitOp<TensorT>(1.0));
+				bias_weight_init = std::make_shared<ConstWeightInitOp<TensorT>>(ConstWeightInitOp<TensorT>(1.0));
 				Weight<TensorT> weight_bias = model.getWeight(model.getLink(bias_link_names[0]).getWeightName()); // [OPTIMIZATION: use Link.getWeightName() directly]
 				weight_bias.setName(weight_bias_name);
 				weight_bias.setWeightInitOp(bias_weight_init);
@@ -1236,7 +1236,7 @@ private:
 				char new_bias_name_char[512];
 				sprintf(new_bias_name_char, "Bias_%s@addNodeDown#", add_node_name.data());
 				new_bias_name = makeUniqueHash(new_bias_name_char, unique_str);
-				Node<TensorT> new_bias(new_bias_name, NodeType::bias, NodeStatus::activated, std::shared_ptr<ActivationOp<TensorT>>(new LinearOp<TensorT>()), std::shared_ptr<ActivationOp<TensorT>>(new LinearGradOp<TensorT>()), std::shared_ptr<IntegrationOp<TensorT>>(new SumOp<TensorT>()), std::shared_ptr<IntegrationErrorOp<TensorT>>(new SumErrorOp<TensorT>()), std::shared_ptr<IntegrationWeightGradOp<TensorT>>(new SumWeightGradOp<TensorT>()));
+				Node<TensorT> new_bias(new_bias_name, NodeType::bias, NodeStatus::activated, std::make_shared<LinearOp<TensorT>>(LinearOp<TensorT>()), std::make_shared<LinearGradOp<TensorT>>(LinearGradOp<TensorT>()), std::make_shared<SumOp<TensorT>>(SumOp<TensorT>()), std::make_shared<SumErrorOp<TensorT>>(SumErrorOp<TensorT>()), std::make_shared<SumWeightGradOp<TensorT>>(SumWeightGradOp<TensorT>()));
 				model.addNodes({ new_bias });
 			}
 			else
@@ -1249,7 +1249,7 @@ private:
 				sprintf(weight_bias_name_char, "%s_to_%s@addNodeDown#", new_bias_name.data(), new_node_name.data());
 				weight_bias_name = makeUniqueHash(weight_bias_name_char, unique_str);
 				std::shared_ptr<WeightInitOp<TensorT>> bias_weight_init;
-				bias_weight_init.reset(new ConstWeightInitOp<TensorT>(1.0));
+				bias_weight_init = std::make_shared<ConstWeightInitOp<TensorT>>(ConstWeightInitOp<TensorT>(1.0));
 				Weight<TensorT> weight_bias = model.getWeight(model.getLink(bias_link_names[0]).getWeightName()); // [OPTIMIZATION: use Link.getWeightName() directly]
 				weight_bias.setName(weight_bias_name);
 				weight_bias.setWeightInitOp(bias_weight_init);

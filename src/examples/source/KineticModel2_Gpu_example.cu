@@ -176,7 +176,7 @@ public:
 		// Convert the interaction graph to a network moel
 		ModelBuilderExperimental<TensorT> model_builder_exp;
 		model_builder_exp.addBiochemicalReactions(model, biochemical_reaction_model.biochemicalReactions_, "RBC", "RBC",
-      std::shared_ptr<WeightInitOp<float>>(new RangeWeightInitOp<float>(0.0, 2.0)), std::shared_ptr<SolverOp<float>>(new AdamOp<float>(0.1, 0.9, 0.999, 1e-8)),
+      std::shared_ptr<WeightInitOp<float>>(new RangeWeightInitOp<float>(0.0, 2.0)), std::make_shared<AdamOp<float>>(AdamOp<float>(0.1, 0.9, 0.999, 1e-8)),
       2, specify_layers, true);
 
     std::set<std::string> output_nodes = { "13dpg","2pg","3pg","adp","amp","atp","dhap","f6p","fdp","g3p","g6p","glc__D","h","h2o","lac__L","nad","nadh","pep","pi","pyr" };
@@ -193,18 +193,18 @@ public:
       std::vector<std::string> node_names = model_builder.addInputNodes(model, "Input", "Input", 1, specify_layers);
       for (const std::string& node : output_nodes) {
         model_builder.addSinglyConnected(model, "Input", node_names, { node },
-          std::shared_ptr<WeightInitOp<float>>(new ConstWeightInitOp<float>(1.0)), std::shared_ptr<SolverOp<float>>(new DummySolverOp<float>()),
+          std::make_shared<ConstWeightInitOp<float>>(ConstWeightInitOp<float>(1.0)), std::shared_ptr<SolverOp<float>>(new DummySolverOp<float>()),
           0.0, specify_layers);
       }
       for (const std::string& node : enzymes_f_nodes) {
         model_builder.addSinglyConnected(model, "Input", node_names, { node },
-          std::shared_ptr<WeightInitOp<float>>(new ConstWeightInitOp<float>(1.0)), std::shared_ptr<SolverOp<float>>(new DummySolverOp<float>()),
+          std::make_shared<ConstWeightInitOp<float>>(ConstWeightInitOp<float>(1.0)), std::shared_ptr<SolverOp<float>>(new DummySolverOp<float>()),
           0.0, specify_layers);
       }
       for (const std::string& node : enzymes_r_nodes) {
         if (model.nodes_.count(node)) {
           model_builder.addSinglyConnected(model, "Input", node_names, { node },
-            std::shared_ptr<WeightInitOp<float>>(new ConstWeightInitOp<float>(1.0)), std::shared_ptr<SolverOp<float>>(new DummySolverOp<float>()),
+            std::make_shared<ConstWeightInitOp<float>>(ConstWeightInitOp<float>(1.0)), std::shared_ptr<SolverOp<float>>(new DummySolverOp<float>()),
             0.0, specify_layers);
         }
       }
@@ -253,7 +253,7 @@ public:
 		const std::vector<float>& model_errors) {
 		// Check point the model every 1000 epochs
 		if (n_epochs % 1000 == 0 && n_epochs != 0) {
-			model_interpreter.getModelResults(model, false, true, false);
+			model_interpreter.getModelResults(model, false, true, false, false);
 			ModelFile<TensorT> data;
 			data.storeModelBinary(model.getName() + "_" + std::to_string(n_epochs) + "_model.binary", model);
 			ModelInterpreterFileGpu<TensorT> interpreter_data;
@@ -262,7 +262,7 @@ public:
 		// Record the nodes/links
 		if (n_epochs % 100 == 0 || n_epochs == 0) {
 			ModelFile<TensorT> data;
-      model_interpreter.getModelResults(model, false, true, false);
+      model_interpreter.getModelResults(model, false, true, false, false);
 			data.storeModelCsv(model.getName() + "_" + std::to_string(n_epochs) + "_nodes.csv",
 				model.getName() + "_" + std::to_string(n_epochs) + "_links.csv",
 				model.getName() + "_" + std::to_string(n_epochs) + "_weights.csv", model, true, true, true);
@@ -362,9 +362,9 @@ void main_KineticModel(const bool& make_model, const bool& train_model, const st
 	//model_trainer.setFindCycles(false);  // manually specifying the cycles
 	//model_trainer.setFastInterpreter(true);
 	//model_trainer.setPreserveOoO(true);
-	model_trainer.setLossFunctions({ std::shared_ptr<LossFunctionOp<float>>(new MSELossOp<float>()) });
-	model_trainer.setLossFunctionGrads({ std::shared_ptr<LossFunctionGradOp<float>>(new MSELossGradOp<float>()) });
-	model_trainer.setOutputNodes({ output_nodes });
+	model_trainer.setLossFunctions({ std::make_shared<MSELossOp<float>>(MSELossOp<float>()) });
+	model_trainer.setLossFunctionGrads({ std::make_shared<MSELossGradOp<float>>(MSELossGradOp<float>()) });
+	model_trainer.setLossOutputNodes({ output_nodes });
 
 	// define the model logger
 	//ModelLogger<float> model_logger(true, true, true, false, false, false, false);
@@ -372,8 +372,8 @@ void main_KineticModel(const bool& make_model, const bool& train_model, const st
 
 	// define the model replicator for growth mode
 	ModelReplicatorExt<float> model_replicator;
-	model_replicator.setNodeActivations({ std::make_pair(std::shared_ptr<ActivationOp<float>>(new ReLUOp<float>()), std::shared_ptr<ActivationOp<float>>(new ReLUGradOp<float>())),
-		std::make_pair(std::shared_ptr<ActivationOp<float>>(new SigmoidOp<float>()), std::shared_ptr<ActivationOp<float>>(new SigmoidGradOp<float>())),
+	model_replicator.setNodeActivations({ std::make_pair(std::make_shared<ReLUOp<float>>(ReLUOp<float>()), std::make_shared<ReLUGradOp<float>>(ReLUGradOp<float>())),
+		std::make_pair(std::make_shared<SigmoidOp<float>>(SigmoidOp<float>()), std::make_shared<SigmoidGradOp<float>>(SigmoidGradOp<float>())),
 		});
 
 	// define the initial population

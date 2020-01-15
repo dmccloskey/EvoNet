@@ -321,8 +321,7 @@ namespace SmartPeak
 		/**
 		@brief Estimate the forward propogation layer dimensions.
 
-    The method determines what each node and weight tensor size is as
-    well as whether they need to be made.
+    The method determines what each node and weight tensor size is as well as whether they need to be made.
 
     TODO: additional descriptions
 
@@ -389,19 +388,17 @@ namespace SmartPeak
 		void getForwardPropogationOperations(Model<TensorT>& model, const int& batch_size, const int& memory_size, const bool& train, const bool& fast_check, const bool& find_cycles, const bool& preserve_OoO);
 		
 		/**
-		@brief Convert a graph model to sequence of tensor operations
-			preserving the order of operations
+		@brief Convert a graph model to sequence of tensor operations preserving the order of operations
 
 		@param[in, out] model Network model
 		@param[in] find_cycles Boolean to search for cyclic nodes
 		@param[out] FP_operations_expanded List of forward (and reverse) operations
 		@param[out] iter Number of operations
 		*/
-		void getFPOpsOoO_(Model<TensorT>& model, const bool& find_cycles, std::vector<OperationList<TensorT>>& FP_operations_expanded, int& iter);
+		void getFPOpsOoO_(Model<TensorT>& model, std::vector<OperationList<TensorT>>& FP_operations_expanded, int& iter);
 
 		/**
-		@brief Convert a graph model to sequence of tensor operations
-			preserving the order of operations
+		@brief Convert a graph model to sequence of tensor operations without preserving the order of operations
 
 		@param[in, out] model Network model
 		@param[in] find_cycles Boolean to search for cyclic nodes
@@ -475,8 +472,10 @@ namespace SmartPeak
 		/**
 		@brief Execute model kernal methods required for weight update calculations
 
+		@param[in] iter The number of training iterations
+
 		*/
-		virtual void executeWeightUpdateOperations() = 0;
+		virtual void executeWeightUpdateOperations(const int& iter) = 0;
 		
 		void addLayerTensor(std::shared_ptr<NodeTensorData<TensorT, DeviceT>>& layer); ///< add a layer to the cache
 		void clearLayerTensors(); ///< clear all layers from the cache
@@ -551,8 +550,10 @@ namespace SmartPeak
 		/**
 		@brief Update the weights
 
+		@param[in] iter The number of training iterations
+
 		*/
-		void updateWeights();
+		void updateWeights(const int& iter);
 
 		/**
 		@brief Transfer Model error, weights, and output node values
@@ -1518,9 +1519,6 @@ namespace SmartPeak
     int sink_layer_pos = tensor_layers_cnt;
     int source_layer_pos = sink_layer_pos + 1;
     int weight_pos = weight_layers_cnt;
-    //int sink_layer_pos = layer_tensors_.size();
-    //int source_layer_pos = layer_tensors_.size() + 1;
-    //int weight_pos = weight_tensors_.size();
 
 		for (const auto& operations : operations_map) {
 			// determine the tensor sizes
@@ -1574,10 +1572,8 @@ namespace SmartPeak
         if (!found.second && layer_pos_max_size.at(FP_operations[ops_index].result.sink_node->getTensorIndex().first) < sink_layer_index)
           layer_pos_max_size.at(FP_operations[ops_index].result.sink_node->getTensorIndex().first) = sink_layer_index;
 
-        // move the source layer position back one because a sink node
-        // is not going to be made
+        // move the source layer position back one because a sink node is not going to be made
 				if (!updated_source_layer_pos && !make_sink_tensor) {
-          //source_layer_pos = sink_layer_pos;  //?
           source_layer_pos_tmp = sink_layer_pos;
 					updated_source_layer_pos = true;
 				}
@@ -1826,7 +1822,7 @@ namespace SmartPeak
 			int iter = 0;
 			std::vector<OperationList<TensorT>> FP_operations_expanded;
 			if (preserve_OoO) 
-				getFPOpsOoO_(model, find_cycles, FP_operations_expanded, iter); // TODO: remove `find_cycles`
+				getFPOpsOoO_(model, FP_operations_expanded, iter); // TODO: remove `find_cycles`
 			else
 				getFPOpsGraph_(model, FP_operations_expanded, iter);
 
@@ -1864,7 +1860,7 @@ namespace SmartPeak
 	}
 
 	template<typename TensorT, typename DeviceT>
-	inline void ModelInterpreter<TensorT, DeviceT>::getFPOpsOoO_(Model<TensorT>& model, const bool& find_cycles, std::vector<OperationList<TensorT>>& FP_operations_expanded, int& iter)
+	inline void ModelInterpreter<TensorT, DeviceT>::getFPOpsOoO_(Model<TensorT>& model, std::vector<OperationList<TensorT>>& FP_operations_expanded, int& iter)
 	{
 		FP_operations_expanded.clear();
 		iter = 0;
@@ -1878,14 +1874,13 @@ namespace SmartPeak
 				nodes_map.second->setStatus(NodeStatus::initialized);
 		}
 
-		// STEP 2: Get a list of unoptimized operations for FP
+		// STEP 2: Get a list of unoptimized operations for FP in As-soon-as-possible (ASAP) hierarchy
 		const int max_iters = 1e6;
 		std::vector<OperationList<TensorT>> FP_operations;
 		for (; iter < max_iters; ++iter)
 		{
       std::map<std::string, int> FP_operations_map;
       std::vector<OperationList<TensorT>> FP_operations_list;
-			//if (find_cycles) { // TBD: if an optimization can be made to reduce the `NextActiveLayer` method to the minimal number of link iterations
       // get the next hidden layer
       getNextInactiveLayer(model, FP_operations_map, FP_operations_list);
 
@@ -1898,15 +1893,6 @@ namespace SmartPeak
 			// Remove all nodes involved in "cycles" that have arguments
 			// involving source to sink node pairs not identified as cycles
 			pruneInactiveLayerCycles(model, FP_operations_map, FP_operations_map_cycles, FP_operations_list, FP_operations_list_cycles, sink_nodes_cycles);
-			//}
-      //else {
-      //  // get the next hidden layer
-      //  getNextInactiveLayerWOBiases(model, FP_operations_map, FP_operations_list);
-
-      //  // get biases
-      //  std::vector<std::string> sink_nodes_with_biases;
-      //  getNextInactiveLayerBiases(model, FP_operations_map, FP_operations_list, sink_nodes_with_biases);
-      //}
 
 			// check if all nodes have been activated
 			if (FP_operations_list.size() == 0) {
@@ -1921,8 +1907,8 @@ namespace SmartPeak
 			}
 		}
 
-		// STEP 3: organize the operations into Tensor layers for hardware acceleration
-		// Pre-emptively Expand the set of operations
+		// STEP 3: Pre-emptively expand the each operation from multi source to single output operations
+    //         to single source to single output operations
 		//expandForwardPropogationOperations(FP_operations, FP_operations_expanded); // Slower and not needed...
 		expandAllForwardPropogationOperations(FP_operations, FP_operations_expanded);
 	}
@@ -2147,10 +2133,10 @@ namespace SmartPeak
 	}
 
 	template<typename TensorT, typename DeviceT>
-	inline void ModelInterpreter<TensorT, DeviceT>::updateWeights()
+	inline void ModelInterpreter<TensorT, DeviceT>::updateWeights(const int& iter)
 	{
 		executeWeightErrorOperations();
-		executeWeightUpdateOperations();
+		executeWeightUpdateOperations(iter);
 	}
 
 	template<typename TensorT, typename DeviceT>

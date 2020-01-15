@@ -798,6 +798,7 @@ void test_weightUpdateGpuDevice(){
 	SolverTensorOp<float, Eigen::GpuDevice>* solver_function = new SGDTensorOp<float, Eigen::GpuDevice>();
 	const int source_layer_size = 2;
 	const int sink_layer_size = 1;
+  const int iter = 0;
 
 	float* h_solver_params = new float[source_layer_size * sink_layer_size * 3];
 	float* d_solver_params = new float[source_layer_size * sink_layer_size * 3];
@@ -842,6 +843,7 @@ void test_weightUpdateGpuDevice(){
 		solver_function,
 		source_layer_size,
 		sink_layer_size,
+    iter,
 		device,
 		true,
 		true);

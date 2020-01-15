@@ -143,6 +143,14 @@ namespace SmartPeak
 				ActivationTensorOp<TensorT, DeviceT>* op_tensor_class = new CosGradTensorOp<TensorT, DeviceT>(op_class->getParameters()[0], op_class->getParameters()[1], op_class->getParameters()[2]);
 				return op_tensor_class;
 			}
+      else if (op_class->getName() == "BatchNormOp") {
+      ActivationTensorOp<TensorT, DeviceT>* op_tensor_class = new BatchNormTensorOp<TensorT, DeviceT>(op_class->getParameters()[0], op_class->getParameters()[1], op_class->getParameters()[2]);
+      return op_tensor_class;
+      }
+      else if (op_class->getName() == "BatchNormGradOp") {
+      ActivationTensorOp<TensorT, DeviceT>* op_tensor_class = new BatchNormGradTensorOp<TensorT, DeviceT>(op_class->getParameters()[0], op_class->getParameters()[1], op_class->getParameters()[2]);
+      return op_tensor_class;
+      }
 			else {
 				std::cout << "No conversion available for " << op_class->getName() << "." << std::endl;
 				ActivationTensorOp<TensorT, DeviceT>* op_tensor_class = new LinearTensorOp<TensorT, DeviceT>();
@@ -158,19 +166,23 @@ namespace SmartPeak
 	public:
 		SolverTensorOp<TensorT, DeviceT>* convertOpToTensorOp(SolverOp<TensorT>* op_class) const {
 			if (op_class->getName() == "SGDOp") {
-				SolverTensorOp<TensorT, DeviceT>* op_tensor_class = new SGDTensorOp<TensorT, DeviceT>(op_class->getGradientThreshold(), op_class->getGradientNoiseSigma());
+				SolverTensorOp<TensorT, DeviceT>* op_tensor_class = new SGDTensorOp<TensorT, DeviceT>(op_class->getGradientThreshold(), op_class->getGradientNoiseSigma(), op_class->getGradientNoiseGamma());
 				return op_tensor_class;
 			}
+      else if (op_class->getName() == "SSDOp") {
+        SolverTensorOp<TensorT, DeviceT>* op_tensor_class = new SSDTensorOp<TensorT, DeviceT>(op_class->getGradientThreshold(), op_class->getGradientNoiseSigma(), op_class->getGradientNoiseGamma());
+        return op_tensor_class;
+      }
 			else if (op_class->getName() == "AdamOp") {
-				SolverTensorOp<TensorT, DeviceT>* op_tensor_class = new AdamTensorOp<TensorT, DeviceT>(op_class->getGradientThreshold(), op_class->getGradientNoiseSigma());
+				SolverTensorOp<TensorT, DeviceT>* op_tensor_class = new AdamTensorOp<TensorT, DeviceT>(op_class->getGradientThreshold(), op_class->getGradientNoiseSigma(), op_class->getGradientNoiseGamma());
 				return op_tensor_class;
 			}
+      else if (op_class->getName() == "SVAGOp") {
+        SolverTensorOp<TensorT, DeviceT>* op_tensor_class = new SVAGTensorOp<TensorT, DeviceT>(op_class->getGradientThreshold(), op_class->getGradientNoiseSigma(), op_class->getGradientNoiseGamma());
+        return op_tensor_class;
+      }
 			else if (op_class->getName() == "DummySolverOp") {
-				SolverTensorOp<TensorT, DeviceT>* op_tensor_class = new DummySolverTensorOp<TensorT, DeviceT>(op_class->getGradientThreshold(), op_class->getGradientNoiseSigma());
-				return op_tensor_class;
-			}
-			else if (op_class->getName() == "SGDNoiseOp") {
-				SolverTensorOp<TensorT, DeviceT>* op_tensor_class = new SGDNoiseTensorOp<TensorT, DeviceT>(op_class->getGradientThreshold(), op_class->getGradientNoiseSigma());
+				SolverTensorOp<TensorT, DeviceT>* op_tensor_class = new DummySolverTensorOp<TensorT, DeviceT>(op_class->getGradientThreshold(), op_class->getGradientNoiseSigma(), op_class->getGradientNoiseGamma());
 				return op_tensor_class;
 			}
 			else {
@@ -220,11 +232,11 @@ namespace SmartPeak
         return op_tensor_class;
       }
 			else if (op_class->getName() == "KLDivergenceMuLossOp") {
-				LossFunctionTensorOp<TensorT, DeviceT>* op_tensor_class = new KLDivergenceMuLossTensorOp<TensorT, DeviceT>(op_class->getParameters()[0], op_class->getParameters()[1]);
+				LossFunctionTensorOp<TensorT, DeviceT>* op_tensor_class = new KLDivergenceMuLossTensorOp<TensorT, DeviceT>(op_class->getParameters()[0], op_class->getParameters()[1], op_class->getParameters()[2]);
 				return op_tensor_class;
 			}
 			else if (op_class->getName() == "KLDivergenceLogVarLossOp") {
-				LossFunctionTensorOp<TensorT, DeviceT>* op_tensor_class = new KLDivergenceLogVarLossTensorOp<TensorT, DeviceT>(op_class->getParameters()[0], op_class->getParameters()[1]);
+				LossFunctionTensorOp<TensorT, DeviceT>* op_tensor_class = new KLDivergenceLogVarLossTensorOp<TensorT, DeviceT>(op_class->getParameters()[0], op_class->getParameters()[1], op_class->getParameters()[2]);
 				return op_tensor_class;
 			}
 			else if (op_class->getName() == "BCEWithLogitsLossOp") {
@@ -244,7 +256,7 @@ namespace SmartPeak
         return op_tensor_class;
       }
       else if (op_class->getName() == "KLDivergenceCatLossOp") {
-        LossFunctionTensorOp<TensorT, DeviceT>* op_tensor_class = new KLDivergenceCatLossTensorOp<TensorT, DeviceT>(op_class->getParameters()[0], op_class->getParameters()[1]);
+        LossFunctionTensorOp<TensorT, DeviceT>* op_tensor_class = new KLDivergenceCatLossTensorOp<TensorT, DeviceT>(op_class->getParameters()[0], op_class->getParameters()[1], op_class->getParameters()[2]);
         return op_tensor_class;
       }
       else if (op_class->getName() == "MAPELossOp") {
@@ -298,11 +310,11 @@ namespace SmartPeak
         return op_tensor_class;
       }
 			else if (op_class->getName() == "KLDivergenceMuLossGradOp") {
-				LossFunctionGradTensorOp<TensorT, DeviceT>* op_tensor_class = new KLDivergenceMuLossGradTensorOp<TensorT, DeviceT>(op_class->getParameters()[0], op_class->getParameters()[1]);
+				LossFunctionGradTensorOp<TensorT, DeviceT>* op_tensor_class = new KLDivergenceMuLossGradTensorOp<TensorT, DeviceT>(op_class->getParameters()[0], op_class->getParameters()[1], op_class->getParameters()[2]);
 				return op_tensor_class;
 			}
 			else if (op_class->getName() == "KLDivergenceLogVarLossGradOp") {
-				LossFunctionGradTensorOp<TensorT, DeviceT>* op_tensor_class = new KLDivergenceLogVarLossGradTensorOp<TensorT, DeviceT>(op_class->getParameters()[0], op_class->getParameters()[1]);
+				LossFunctionGradTensorOp<TensorT, DeviceT>* op_tensor_class = new KLDivergenceLogVarLossGradTensorOp<TensorT, DeviceT>(op_class->getParameters()[0], op_class->getParameters()[1], op_class->getParameters()[2]);
 				return op_tensor_class;
 			}
 			else if (op_class->getName() == "BCEWithLogitsLossGradOp") {
@@ -322,7 +334,7 @@ namespace SmartPeak
         return op_tensor_class;
       }
       else if (op_class->getName() == "KLDivergenceCatLossGradOp") {
-        LossFunctionGradTensorOp<TensorT, DeviceT>* op_tensor_class = new KLDivergenceCatLossGradTensorOp<TensorT, DeviceT>(op_class->getParameters()[0], op_class->getParameters()[1]);
+        LossFunctionGradTensorOp<TensorT, DeviceT>* op_tensor_class = new KLDivergenceCatLossGradTensorOp<TensorT, DeviceT>(op_class->getParameters()[0], op_class->getParameters()[1], op_class->getParameters()[2]);
         return op_tensor_class;
       }
       else if (op_class->getName() == "MAPELossGradOp") {

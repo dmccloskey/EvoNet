@@ -140,9 +140,9 @@ BOOST_AUTO_TEST_CASE(logWeightsPerEpoch)
 	model.setName("Model1");
 	std::vector<std::string> node_names = model_builder.addInputNodes(model, "Input", "Input", 2);
 	node_names = model_builder.addFullyConnected(model, "Hidden", "Mod1", node_names,
-		2, std::shared_ptr<ActivationOp<float>>(new ReLUOp<float>()), std::shared_ptr<ActivationOp<float>>(new ReLUGradOp<float>()),
-		std::shared_ptr<IntegrationOp<float>>(new ProdOp<float>()), std::shared_ptr<IntegrationErrorOp<float>>(new ProdErrorOp<float>()), std::shared_ptr<IntegrationWeightGradOp<float>>(new ProdWeightGradOp<float>()),
-		std::shared_ptr<WeightInitOp<float>>(new ConstWeightInitOp<float>(1.0)), std::shared_ptr<SolverOp<float>>(new SGDOp<float>(0.1, 0.9)));
+		2, std::make_shared<ReLUOp<float>>(ReLUOp<float>()), std::make_shared<ReLUGradOp<float>>(ReLUGradOp<float>()),
+		std::make_shared<ProdOp<float>>(ProdOp<float>()), std::make_shared<ProdErrorOp<float>>(ProdErrorOp<float>()), std::make_shared<ProdWeightGradOp<float>>(ProdWeightGradOp<float>()),
+		std::make_shared<ConstWeightInitOp<float>>(ConstWeightInitOp<float>(1.0)), std::make_shared<SGDOp<float>>(SGDOp<float>(0.1, 0.9)));
 
 	int batch_size = 2;
 	int memory_size = 1;
@@ -164,9 +164,9 @@ BOOST_AUTO_TEST_CASE(logNodeErrorsPerEpoch)
 	model.setName("Model1");
 	std::vector<std::string> node_names = model_builder.addInputNodes(model, "Input", "Input", 2);
 	node_names = model_builder.addFullyConnected(model, "Hidden", "Mod1", node_names,
-		2, std::shared_ptr<ActivationOp<float>>(new ReLUOp<float>()), std::shared_ptr<ActivationOp<float>>(new ReLUGradOp<float>()),
-		std::shared_ptr<IntegrationOp<float>>(new ProdOp<float>()), std::shared_ptr<IntegrationErrorOp<float>>(new ProdErrorOp<float>()), std::shared_ptr<IntegrationWeightGradOp<float>>(new ProdWeightGradOp<float>()),
-		std::shared_ptr<WeightInitOp<float>>(new ConstWeightInitOp<float>(1.0)), std::shared_ptr<SolverOp<float>>(new SGDOp<float>(0.1, 0.9)));
+		2, std::make_shared<ReLUOp<float>>(ReLUOp<float>()), std::make_shared<ReLUGradOp<float>>(ReLUGradOp<float>()),
+		std::make_shared<ProdOp<float>>(ProdOp<float>()), std::make_shared<ProdErrorOp<float>>(ProdErrorOp<float>()), std::make_shared<ProdWeightGradOp<float>>(ProdWeightGradOp<float>()),
+		std::make_shared<ConstWeightInitOp<float>>(ConstWeightInitOp<float>(1.0)), std::make_shared<SGDOp<float>>(SGDOp<float>(0.1, 0.9)));
 
 	int batch_size = 2;
 	int memory_size = 1;
@@ -188,9 +188,9 @@ BOOST_AUTO_TEST_CASE(logNodeOutputsPerEpoch)
 	model.setName("Model1");
 	std::vector<std::string> node_names = model_builder.addInputNodes(model, "Input", "Input", 2);
 	node_names = model_builder.addFullyConnected(model, "Hidden", "Mod1", node_names,
-		2, std::shared_ptr<ActivationOp<float>>(new ReLUOp<float>()), std::shared_ptr<ActivationOp<float>>(new ReLUGradOp<float>()),
-		std::shared_ptr<IntegrationOp<float>>(new ProdOp<float>()), std::shared_ptr<IntegrationErrorOp<float>>(new ProdErrorOp<float>()), std::shared_ptr<IntegrationWeightGradOp<float>>(new ProdWeightGradOp<float>()),
-		std::shared_ptr<WeightInitOp<float>>(new ConstWeightInitOp<float>(1.0)), std::shared_ptr<SolverOp<float>>(new SGDOp<float>(0.1, 0.9)));
+		2, std::make_shared<ReLUOp<float>>(ReLUOp<float>()), std::make_shared<ReLUGradOp<float>>(ReLUGradOp<float>()),
+		std::make_shared<ProdOp<float>>(ProdOp<float>()), std::make_shared<ProdErrorOp<float>>(ProdErrorOp<float>()), std::make_shared<ProdWeightGradOp<float>>(ProdWeightGradOp<float>()),
+		std::make_shared<ConstWeightInitOp<float>>(ConstWeightInitOp<float>(1.0)), std::make_shared<SGDOp<float>>(SGDOp<float>(0.1, 0.9)));
 
 	int batch_size = 2;
 	int memory_size = 1;
@@ -212,9 +212,9 @@ BOOST_AUTO_TEST_CASE(logNodeDerivativesPerEpoch)
 	model.setName("Model1");
 	std::vector<std::string> node_names = model_builder.addInputNodes(model, "Input", "Input", 2);
 	node_names = model_builder.addFullyConnected(model, "Hidden", "Mod1", node_names,
-		2, std::shared_ptr<ActivationOp<float>>(new ReLUOp<float>()), std::shared_ptr<ActivationOp<float>>(new ReLUGradOp<float>()),
-		std::shared_ptr<IntegrationOp<float>>(new ProdOp<float>()), std::shared_ptr<IntegrationErrorOp<float>>(new ProdErrorOp<float>()), std::shared_ptr<IntegrationWeightGradOp<float>>(new ProdWeightGradOp<float>()),
-		std::shared_ptr<WeightInitOp<float>>(new ConstWeightInitOp<float>(1.0)), std::shared_ptr<SolverOp<float>>(new SGDOp<float>(0.1, 0.9)));
+		2, std::make_shared<ReLUOp<float>>(ReLUOp<float>()), std::make_shared<ReLUGradOp<float>>(ReLUGradOp<float>()),
+		std::make_shared<ProdOp<float>>(ProdOp<float>()), std::make_shared<ProdErrorOp<float>>(ProdErrorOp<float>()), std::make_shared<ProdWeightGradOp<float>>(ProdWeightGradOp<float>()),
+		std::make_shared<ConstWeightInitOp<float>>(ConstWeightInitOp<float>(1.0)), std::make_shared<SGDOp<float>>(SGDOp<float>(0.1, 0.9)));
 
 	int batch_size = 2;
 	int memory_size = 1;
@@ -236,9 +236,9 @@ BOOST_AUTO_TEST_CASE(logNodeInputsPerEpoch)
   model.setName("Model1");
   std::vector<std::string> node_names = model_builder.addInputNodes(model, "Input", "Input", 2);
   node_names = model_builder.addFullyConnected(model, "Hidden", "Mod1", node_names,
-    2, std::shared_ptr<ActivationOp<float>>(new ReLUOp<float>()), std::shared_ptr<ActivationOp<float>>(new ReLUGradOp<float>()),
-    std::shared_ptr<IntegrationOp<float>>(new ProdOp<float>()), std::shared_ptr<IntegrationErrorOp<float>>(new ProdErrorOp<float>()), std::shared_ptr<IntegrationWeightGradOp<float>>(new ProdWeightGradOp<float>()),
-    std::shared_ptr<WeightInitOp<float>>(new ConstWeightInitOp<float>(1.0)), std::shared_ptr<SolverOp<float>>(new SGDOp<float>(0.1, 0.9)));
+    2, std::make_shared<ReLUOp<float>>(ReLUOp<float>()), std::make_shared<ReLUGradOp<float>>(ReLUGradOp<float>()),
+    std::make_shared<ProdOp<float>>(ProdOp<float>()), std::make_shared<ProdErrorOp<float>>(ProdErrorOp<float>()), std::make_shared<ProdWeightGradOp<float>>(ProdWeightGradOp<float>()),
+    std::make_shared<ConstWeightInitOp<float>>(ConstWeightInitOp<float>(1.0)), std::make_shared<SGDOp<float>>(SGDOp<float>(0.1, 0.9)));
 
   int batch_size = 2;
   int memory_size = 1;
@@ -259,9 +259,9 @@ BOOST_AUTO_TEST_CASE(writeLogs)
 	model.setName("Model1");
   std::vector<std::string> node_names = model_builder.addInputNodes(model, "Input", "Input", 2);
   node_names = model_builder.addFullyConnected(model, "Hidden", "Mod1", node_names,
-    2, std::shared_ptr<ActivationOp<float>>(new ReLUOp<float>()), std::shared_ptr<ActivationOp<float>>(new ReLUGradOp<float>()),
-    std::shared_ptr<IntegrationOp<float>>(new ProdOp<float>()), std::shared_ptr<IntegrationErrorOp<float>>(new ProdErrorOp<float>()), std::shared_ptr<IntegrationWeightGradOp<float>>(new ProdWeightGradOp<float>()),
-    std::shared_ptr<WeightInitOp<float>>(new ConstWeightInitOp<float>(1.0)), std::shared_ptr<SolverOp<float>>(new SGDOp<float>(0.1, 0.9)));
+    2, std::make_shared<ReLUOp<float>>(ReLUOp<float>()), std::make_shared<ReLUGradOp<float>>(ReLUGradOp<float>()),
+    std::make_shared<ProdOp<float>>(ProdOp<float>()), std::make_shared<ProdErrorOp<float>>(ProdErrorOp<float>()), std::make_shared<ProdWeightGradOp<float>>(ProdWeightGradOp<float>()),
+    std::make_shared<ConstWeightInitOp<float>>(ConstWeightInitOp<float>(1.0)), std::make_shared<SGDOp<float>>(SGDOp<float>(0.1, 0.9)));
 	int batch_size = 2;
 	int memory_size = 1;
 	Eigen::Tensor<float, 3> expected_values(batch_size, memory_size, (int)node_names.size());
