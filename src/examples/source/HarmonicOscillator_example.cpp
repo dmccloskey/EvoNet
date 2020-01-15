@@ -81,7 +81,7 @@ public:
       m2_input_to_m2, m1_to_m1_output, m3_to_m3_output;
 		Weight<TensorT> Wm1_to_s1f, Ws1r_to_m1, Ws1f_to_m2, Wm2_to_s1r, Wm2_to_s2f, Ws2r_to_m2, Ws2f_to_m3, Wm3_to_s2r,
       Wm2_input_to_m2, Wm1_to_m1_output, Wm3_to_m3_output;
-		// Toy network: 1 hidden layer, fully connected, DCG
+		// Nodes
 		m1 = Node<TensorT>("m1", NodeType::unmodifiable, NodeStatus::initialized, std::make_shared<LinearOp<TensorT>>(LinearOp<TensorT>()), std::make_shared<LinearGradOp<TensorT>>(LinearGradOp<TensorT>()), std::make_shared<SumOp<TensorT>>(SumOp<TensorT>()), std::make_shared<SumErrorOp<TensorT>>(SumErrorOp<TensorT>()), std::make_shared<SumWeightGradOp<TensorT>>(SumWeightGradOp<TensorT>()));
 		m2 = Node<TensorT>("m2", NodeType::unmodifiable, NodeStatus::initialized, std::make_shared<LinearOp<TensorT>>(LinearOp<TensorT>()), std::make_shared<LinearGradOp<TensorT>>(LinearGradOp<TensorT>()), std::make_shared<SumOp<TensorT>>(SumOp<TensorT>()), std::make_shared<SumErrorOp<TensorT>>(SumErrorOp<TensorT>()), std::make_shared<SumWeightGradOp<TensorT>>(SumWeightGradOp<TensorT>()));
 		m3 = Node<TensorT>("m3", NodeType::unmodifiable, NodeStatus::initialized, std::make_shared<LinearOp<TensorT>>(LinearOp<TensorT>()), std::make_shared<LinearGradOp<TensorT>>(LinearGradOp<TensorT>()), std::make_shared<SumOp<TensorT>>(SumOp<TensorT>()), std::make_shared<SumErrorOp<TensorT>>(SumErrorOp<TensorT>()), std::make_shared<SumWeightGradOp<TensorT>>(SumWeightGradOp<TensorT>()));
@@ -92,10 +92,13 @@ public:
     m1_output = Node<TensorT>("m1_output", NodeType::output, NodeStatus::initialized, std::make_shared<LinearOp<TensorT>>(LinearOp<TensorT>()), std::make_shared<LinearGradOp<TensorT>>(LinearGradOp<TensorT>()), std::make_shared<SumOp<TensorT>>(SumOp<TensorT>()), std::make_shared<SumErrorOp<TensorT>>(SumErrorOp<TensorT>()), std::make_shared<SumWeightGradOp<TensorT>>(SumWeightGradOp<TensorT>()));
     m2_input = Node<TensorT>("m2_input", NodeType::input, NodeStatus::initialized, std::make_shared<LinearOp<TensorT>>(LinearOp<TensorT>()), std::make_shared<LinearGradOp<TensorT>>(LinearGradOp<TensorT>()), std::make_shared<SumOp<TensorT>>(SumOp<TensorT>()), std::make_shared<SumErrorOp<TensorT>>(SumErrorOp<TensorT>()), std::make_shared<SumWeightGradOp<TensorT>>(SumWeightGradOp<TensorT>()));
     m3_output = Node<TensorT>("m3_output", NodeType::output, NodeStatus::initialized, std::make_shared<LinearOp<TensorT>>(LinearOp<TensorT>()), std::make_shared<LinearGradOp<TensorT>>(LinearGradOp<TensorT>()), std::make_shared<SumOp<TensorT>>(SumOp<TensorT>()), std::make_shared<SumErrorOp<TensorT>>(SumErrorOp<TensorT>()), std::make_shared<SumWeightGradOp<TensorT>>(SumWeightGradOp<TensorT>()));
+    // Node layers
+    m1.setLayerName("IG"); m2.setLayerName("IG"); m3.setLayerName("IG");
+    s1f.setLayerName("IG"); s2f.setLayerName("IG"); s1r.setLayerName("IG"); s2r.setLayerName("IG");
     m1_output.setLayerName("Output"); m2_input.setLayerName("Input"); m3_output.setLayerName("Output");
 		// weights  
     std::shared_ptr<WeightInitOp<TensorT>> weight_init = std::make_shared<RandWeightInitOp<TensorT>>(RandWeightInitOp<TensorT>(2.0));
-    std::shared_ptr<SolverOp<TensorT>> solver_op = std::make_shared<SGDOp<TensorT>>(SGDOp<TensorT>(0.001, 0.9, 10));
+    std::shared_ptr<SolverOp<TensorT>> solver_op = std::make_shared<SGDOp<TensorT>>(SGDOp<TensorT>(1e-4, 0.9, 10));
 		Wm1_to_s1f = Weight<TensorT>("m1_to_s1f", weight_init, solver_op);
 		Ws1r_to_m1 = Weight<TensorT>("s1r_to_m1", weight_init, solver_op);
 		Ws1f_to_m2 = Weight<TensorT>("s1f_to_m2", weight_init, solver_op);
@@ -318,8 +321,8 @@ void main_WeightSpring3W2S1D(const bool& make_model, const bool& train_model) {
 		model_interpreters.push_back(model_interpreter);
 	}
 	ModelTrainerExt<float> model_trainer;
-	model_trainer.setBatchSize(1);
-	//model_trainer.setMemorySize(128);
+	//model_trainer.setBatchSize(32);
+  model_trainer.setBatchSize(1);
   model_trainer.setMemorySize(8);
 	model_trainer.setNEpochsTraining(1000);
   model_trainer.setNEpochsValidation(25);
@@ -334,7 +337,7 @@ void main_WeightSpring3W2S1D(const bool& make_model, const bool& train_model) {
 	model_trainer.setLossOutputNodes({ output_nodes });
 
 	// define the model logger
-	ModelLogger<float> model_logger(true, true, false, false, false, false, false, false);
+	ModelLogger<float> model_logger(true, true, false, false, false, true, false, true);
 
 	// define the model replicator for growth mode
 	ModelReplicatorExt<float> model_replicator;

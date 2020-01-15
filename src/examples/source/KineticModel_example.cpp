@@ -166,21 +166,20 @@ public:
 		std::map<std::string, std::vector<std::pair<std::string, std::string>>> interaction_graph;
 		biochemical_reaction_model.getInteractionGraph(interaction_graph);
 
-		// Convert the interaction graph to a network moel
+		// Convert the interaction graph to a network model
 		ModelBuilderExperimental<TensorT> model_builder;
 		model_builder.addInteractionGraph(interaction_graph, model, "RBC", "RBC",
-			std::make_shared<ReLUOp<float>>(ReLUOp<float>()), std::make_shared<ReLUGradOp<float>>(ReLUGradOp<float>()),
-			std::make_shared<SumOp<float>>(SumOp<float>()), std::make_shared<SumErrorOp<float>>(SumErrorOp<float>()), std::make_shared<SumWeightGradOp<float>>(SumWeightGradOp<float>()),
-			std::shared_ptr<WeightInitOp<float>>(new RangeWeightInitOp<float>(0.0, 2.0)), std::make_shared<AdamOp<float>>(AdamOp<float>(0.001, 0.9, 0.999, 1e-8))
+			std::make_shared<ReLUOp<TensorT>>(ReLUOp<TensorT>()), std::make_shared<ReLUGradOp<TensorT>>(ReLUGradOp<TensorT>()),
+			std::make_shared<SumOp<TensorT>>(SumOp<TensorT>()), std::make_shared<SumErrorOp<TensorT>>(SumErrorOp<TensorT>()), std::make_shared<SumWeightGradOp<TensorT>>(SumWeightGradOp<TensorT>()),
+			std::make_shared<RangeWeightInitOp<TensorT>>(RangeWeightInitOp<TensorT>(0.0, 2.0)),
+      std::make_shared<AdamOp<TensorT>>(AdamOp<TensorT>(0.001, 0.9, 0.999, 1e-8))
 		);
 
 		// Specify the output layer for metabolite nodes (20)
 		std::vector<std::string> output_nodes = { "13dpg","2pg","3pg","adp","amp","atp","dhap","f6p","fdp","g3p","g6p","glc__D","h","h2o","lac__L","nad","nadh","pep","pi","pyr" };
 		int iter = 0;
 		for (const std::string& node : output_nodes) {
-			model.nodes_.at(node)->setLayerName("Metabolites");
-			//model.nodes_.at(node)->setTensorIndex(std::make_pair(0, iter));
-			++iter;
+			model.nodes_.at(node + "_c")->setLayerName("Metabolites");
 		}
 
 		//// Specify the layer for the enzymes (f/r) (14)
@@ -311,9 +310,12 @@ void main_KineticModel(const bool& make_model, const bool& train_model, const st
 	const int n_threads = n_hard_threads; // the number of threads
 
 	// define the input/output nodes
+  auto add_c = [](std::string& met_id) { met_id += "_c"; };
 	std::vector<std::string> input_nodes = { "13dpg","2pg","3pg","adp","amp","atp","dhap","f6p","fdp","g3p","g6p","glc__D","h","h2o","lac__L","nad","nadh","pep","pi","pyr" };
+  std::for_each(input_nodes.begin(), input_nodes.end(), add_c);
 	// TODO: manually specify the tensor index ordering or update for correct tensor ordering
 	std::vector<std::string> output_nodes = { "13dpg","2pg","3pg","adp","amp","atp","dhap","f6p","fdp","g3p","g6p","glc__D","h","h2o","lac__L","nad","nadh","pep","pi","pyr" };
+  std::for_each(output_nodes.begin(), output_nodes.end(), add_c);
 
 	// define the data simulator
 	DataSimulatorExt<float> data_simulator;
