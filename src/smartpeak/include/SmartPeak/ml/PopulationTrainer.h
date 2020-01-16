@@ -49,6 +49,7 @@ public:
     void setPruneModelNum(const int& prune_model_num);
     void setCheckCompleteModelInputToOutput(const bool& check_complete_input_to_output);
     void setSelectModels(const bool& select_models);
+    void setResetModelCopyWeights(const bool& reset_model_copy_weights);
 
 		int getNTop() const; ///< batch_size setter
 		int getNRandom() const; ///< memory_size setter
@@ -58,7 +59,8 @@ public:
     bool getRemoveIsolatedNodes() const;
     int getPruneModelNum() const;
     bool getCheckCompleteModelInputToOutput() const;
-    bool getSelectModels() const; 
+    bool getSelectModels() const;
+    bool getResetModelCopyWeights() const;
 
     /**
       @brief Remove models with non-unique names from the population of models
@@ -148,7 +150,7 @@ public:
     static std::pair<bool, Model<TensorT>> replicateModel_(
       Model<TensorT>* model,
       ModelReplicator<TensorT>* model_replicator,
-      std::string unique_str, int cnt, bool remove_isolated_nodes, int prune_model_num, bool check_complete_input_to_output);
+      std::string unique_str, int cnt, bool remove_isolated_nodes, int prune_model_num, bool check_complete_input_to_output, bool reset_model_copy_weights);
  
     /**
       @brief Trains each of the models in the population
@@ -287,6 +289,7 @@ private:
     bool remove_isolated_nodes_ = true;
     int prune_model_num_ = 10;
     bool check_complete_input_to_output_ = true;
+    bool reset_model_copy_weights_ = false;
   };
 	template<typename TensorT, typename InterpreterT>
 	void PopulationTrainer<TensorT, InterpreterT>::setNTop(const int & n_top)
@@ -332,6 +335,11 @@ private:
   inline void PopulationTrainer<TensorT, InterpreterT>::setSelectModels(const bool & select_models)
   {
     select_models_ = select_models;
+  }
+  template<typename TensorT, typename InterpreterT>
+  inline void PopulationTrainer<TensorT, InterpreterT>::setResetModelCopyWeights(const bool & reset_model_copy_weights)
+  {
+    reset_model_copy_weights_ = reset_model_copy_weights;
   }
 	template<typename TensorT, typename InterpreterT>
 	int PopulationTrainer<TensorT, InterpreterT>::getNTop() const
@@ -382,6 +390,12 @@ private:
   inline bool PopulationTrainer<TensorT, InterpreterT>::getSelectModels() const
   {
     return select_models_;
+  }
+
+  template<typename TensorT, typename InterpreterT>
+  inline bool PopulationTrainer<TensorT, InterpreterT>::getResetModelCopyWeights() const
+  {
+    return reset_model_copy_weights_;
   }
 
 	template<typename TensorT, typename InterpreterT>
@@ -620,7 +634,7 @@ private:
 			{
 				std::packaged_task<std::pair<bool, Model<TensorT>>// encapsulate in a packaged_task
 					(Model<TensorT>*, ModelReplicator<TensorT>*,
-						std::string, int, bool, int, bool
+						std::string, int, bool, int, bool, bool
 						)> task(PopulationTrainer<TensorT, InterpreterT>::replicateModel_);
 
 				// launch the thread
@@ -628,7 +642,7 @@ private:
 				std::thread task_thread(std::move(task),
 					&model, &model_replicator,
 					std::ref(unique_str), std::ref(cnt),
-          std::ref(remove_isolated_nodes_), std::ref(prune_model_num_), std::ref(check_complete_input_to_output_));
+          std::ref(remove_isolated_nodes_), std::ref(prune_model_num_), std::ref(check_complete_input_to_output_), std::ref(reset_model_copy_weights_));
 				task_thread.detach();
 
 				// retreive the results
@@ -674,7 +688,7 @@ private:
 		Model<TensorT>* model,
 		ModelReplicator<TensorT>* model_replicator,
 		std::string unique_str, int cnt,
-    bool remove_isolated_nodes, int prune_model_num, bool check_complete_input_to_output)
+    bool remove_isolated_nodes, int prune_model_num, bool check_complete_input_to_output, bool reset_model_copy_weights)
 	{
 		std::lock_guard<std::mutex> lock(replicateModel_mutex);
 
@@ -710,7 +724,12 @@ private:
       if (check_complete_input_to_output) complete_model = model_copy.checkCompleteInputToOutput();
 
       if (complete_model) {
-        model_copy.setInputAndOutputNodes();
+        // reset the weights
+        if (reset_model_copy_weights) {
+          for (auto& weight_map : model->getWeightsMap()) {
+            weight_map.second->setInitWeight(true);
+          }
+        }
         return std::make_pair(true, model_copy);
       }
 		}

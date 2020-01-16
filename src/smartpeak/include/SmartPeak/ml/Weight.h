@@ -157,12 +157,12 @@ private:
 		std::vector<std::tuple<int, int, int>> tensor_index_; ///< Layer ID: tuple consisting of OperationsList index and source/sink Layer index(used internally by Model)
     std::shared_ptr<WeightInitOp<TensorT>> weight_init_; ///< weight initialization operator
     std::shared_ptr<SolverOp<TensorT>> solver_; ///< weight update operator
-		TensorT weight_ = (TensorT)1;
-		bool init_weight_ = true;
-    TensorT weight_min_ = (TensorT)-1.0e6;
-    TensorT weight_max_ = (TensorT)1.0e6;
-		TensorT drop_probability_ = (TensorT)0.0;
-		TensorT drop_ = (TensorT)1.0;
+		TensorT weight_ = TensorT(1);
+		bool init_weight_ = true; ///< whether to initialize the weight or use the provided value of `weight_`
+    TensorT weight_min_ = TensorT(-1.0e6);
+    TensorT weight_max_ = TensorT(1.0e6);
+		TensorT drop_probability_ = TensorT(0.0);
+		TensorT drop_ = TensorT(1);
   };
 
 	template<typename TensorT>

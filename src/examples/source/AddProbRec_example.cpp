@@ -436,6 +436,7 @@ void main_AddProbRec(const std::string& mode) {
   population_trainer.setNGenerations(50); // population training
   //population_trainer.setNGenerations(1); // single model training
   population_trainer.setLogging(true);
+  population_trainer.setResetModelCopyWeights(true);
 
   // define the population logger
   PopulationLogger<float> population_logger(true, true);
