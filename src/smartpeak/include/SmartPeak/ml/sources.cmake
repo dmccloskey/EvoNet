@@ -23,6 +23,7 @@ set(sources_list_h
 	ModelKernalGpu.h
 	ModelLogger.h
 	ModelReplicator.h
+	ModelReplicatorExperimental.h
 	ModelTrainer.h
 	ModelTrainerDefaultDevice.h
 	ModelTrainerGpu.h
@@ -32,6 +33,9 @@ set(sources_list_h
 	PopulationLogger.h
 	PopulationTrainer.h
 	PopulationTrainerDefaultDevice.h
+	PopulationTrainerExperimental.h
+	PopulationTrainerExperimentalDefaultDevice.h
+	PopulationTrainerExperimentalGpu.h
 	PopulationTrainerGpu.h
 	SharedFunctions.h
 	Solver.h

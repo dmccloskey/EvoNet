@@ -1,8 +1,8 @@
 /**TODO:  Add copyright*/
 
-#include <SmartPeak/ml/PopulationTrainerDefaultDevice.h>
+#include <SmartPeak/ml/PopulationTrainerExperimentalDefaultDevice.h>
 #include <SmartPeak/ml/ModelTrainerDefaultDevice.h>
-#include <SmartPeak/ml/ModelReplicator.h>
+#include <SmartPeak/ml/ModelReplicatorExperimental.h>
 #include <SmartPeak/ml/ModelBuilder.h>
 #include <SmartPeak/ml/Model.h>
 #include <SmartPeak/io/PopulationTrainerFile.h>
@@ -204,94 +204,7 @@ public:
       model.nodes_.at(node_name)->setType(NodeType::output);
     model.setInputAndOutputNodes();
 	}  
-	/*
-	@brief Dot product attention implementation with a single attention layer
-	*/
-	void makeModelAttention(Model<TensorT>& model, const int& n_inputs, const int& n_outputs,
-    std::vector<int> n_heads = { 8, 8 },
-    std::vector<int> key_query_values_lengths = { 48, 24 },
-    std::vector<int> model_lengths = { 48, 24 },
-    bool add_FC = true, bool add_skip = true, bool add_norm = false, bool specify_layers = false) {
-    model.setId(0);
-    model.setName("AddProbAtt-DotProdAtt");
 
-    ModelBuilder<TensorT> model_builder;
-
-    // Add the inputs
-    std::vector<std::string> node_names_random = model_builder.addInputNodes(model, "Random", "Random", n_inputs, specify_layers); // Q and V matrices
-    std::vector<std::string> node_names_mask = model_builder.addInputNodes(model, "Mask", "Mask", n_inputs, specify_layers);  // K matrix
-    std::vector<std::string> node_names_input = node_names_random;  // initial "input"
-
-    // Multi-head attention
-    std::vector<std::string> node_names;
-    for (size_t i = 0; i < n_heads.size(); ++i) {
-      // Add the attention
-      std::string name_head1 = "Attention" + std::to_string(i);
-      node_names = model_builder.addMultiHeadAttention(model, name_head1, name_head1,
-        node_names_random, node_names_mask, node_names_random,
-        n_heads[i], "DotProd", model_lengths[i], key_query_values_lengths[i], key_query_values_lengths[i],
-        std::make_shared<LinearOp<TensorT>>(LinearOp<TensorT>()),
-        std::make_shared<LinearGradOp<TensorT>>(LinearGradOp<TensorT>()),
-        std::make_shared<RandWeightInitOp<TensorT>>(RandWeightInitOp<TensorT>(node_names_input.size(), 2)),
-        std::make_shared<AdamOp<TensorT>>(AdamOp<TensorT>(0.001, 0.9, 0.999, 1e-8)), 0.0f, 0.0f, true, specify_layers);
-      if (add_norm) {
-        std::string norm_name = "Norm" + std::to_string(i);
-        node_names = model_builder.addNormalization(model, norm_name, norm_name, node_names,
-          std::make_shared<LinearOp<TensorT>>(LinearOp<TensorT>()),
-          std::make_shared<LinearGradOp<TensorT>>(LinearGradOp<TensorT>()),
-          std::make_shared<RandWeightInitOp<TensorT>>(RandWeightInitOp<TensorT>(node_names.size(), 2)),
-          std::make_shared<AdamOp<TensorT>>(AdamOp<TensorT>(0.1, 0.9, 0.999, 1e-8)), 0.0, 0.0, specify_layers);
-      }
-      if (add_skip) {
-        std::string skip_name = "Skip" + std::to_string(i);
-        model_builder.addSinglyConnected(model, skip_name, node_names_input, node_names,
-          std::make_shared<RandWeightInitOp<TensorT>>(RandWeightInitOp<TensorT>(node_names_input.size(), 2)),
-          std::make_shared<AdamOp<TensorT>>(AdamOp<TensorT>(0.001, 0.9, 0.999, 1e-8)), 0.0f, specify_layers);
-      }
-      node_names_input = node_names;
-
-      // Add the feedforward net
-      if (add_FC) {
-        std::string norm_name = "FC" + std::to_string(i);
-        node_names = model_builder.addFullyConnected(model, norm_name, norm_name, node_names_input, n_inputs,
-          std::shared_ptr<ActivationOp<TensorT>>(new ReLUOp<TensorT>()),
-          std::shared_ptr<ActivationOp<TensorT>>(new ReLUGradOp<TensorT>()),
-          std::make_shared<SumOp<TensorT>>(SumOp<TensorT>()),
-          std::make_shared<SumErrorOp<TensorT>>(SumErrorOp<TensorT>()),
-          std::make_shared<SumWeightGradOp<TensorT>>(SumWeightGradOp<TensorT>()),
-          std::make_shared<RandWeightInitOp<TensorT>>(RandWeightInitOp<TensorT>(node_names_input.size(), 2)),
-          std::make_shared<AdamOp<TensorT>>(AdamOp<TensorT>(0.001, 0.9, 0.999, 1e-8)), 0.0f, 0.0f, true, specify_layers);
-      }
-      if (add_norm) {
-        std::string norm_name = "Norm_FC" + std::to_string(i);
-        node_names = model_builder.addNormalization(model, norm_name, norm_name, node_names,
-          std::make_shared<LinearOp<TensorT>>(LinearOp<TensorT>()),
-          std::make_shared<LinearGradOp<TensorT>>(LinearGradOp<TensorT>()),
-          std::make_shared<RandWeightInitOp<TensorT>>(RandWeightInitOp<TensorT>(node_names.size(), 2)),
-          std::make_shared<AdamOp<TensorT>>(AdamOp<TensorT>(0.1, 0.9, 0.999, 1e-8)), 0.0, 0.0, specify_layers);
-      }
-      //if (add_skip) {
-      //	std::string skip_name = "Skip_FC" + std::to_string(i);
-      //	model_builder.addSinglyConnected(model, skip_name, node_names_input, node_names,
-      //		std::make_shared<RandWeightInitOp<TensorT>>(RandWeightInitOp<TensorT>(n_inputs, 2)),
-      //		std::make_shared<AdamOp<TensorT>>(AdamOp<TensorT>(0.001, 0.9, 0.999, 1e-8)), 0.0f, specify_layers);
-      //}
-      node_names_input = node_names;
-    }
-
-    // Add the FC layer
-    node_names = model_builder.addFullyConnected(model, "Output", "Output", node_names, n_outputs,
-      std::shared_ptr<ActivationOp<TensorT>>(new ReLUOp<TensorT>()),
-      std::shared_ptr<ActivationOp<TensorT>>(new ReLUGradOp<TensorT>()),
-      std::make_shared<SumOp<TensorT>>(SumOp<TensorT>()),
-      std::make_shared<SumErrorOp<TensorT>>(SumErrorOp<TensorT>()),
-      std::make_shared<SumWeightGradOp<TensorT>>(SumWeightGradOp<TensorT>()),
-      std::make_shared<RandWeightInitOp<TensorT>>(RandWeightInitOp<TensorT>(node_names.size(), 2)),
-      std::make_shared<AdamOp<TensorT>>(AdamOp<TensorT>(0.001, 0.9, 0.999, 1e-8)), 0.0f, 0.0f, true, true);
-
-    for (const std::string& node_name : node_names)
-      model.nodes_.at(node_name)->setType(NodeType::output);
-	}
 	void adaptiveTrainerScheduler(
 		const int& n_generations,
 		const int& n_epochs,
@@ -318,123 +231,31 @@ public:
 };
 
 template<typename TensorT>
-class ModelReplicatorExt : public ModelReplicator<TensorT>
+class ModelReplicatorExt : public ModelReplicatorExperimental<TensorT>
 {
 public:
-	void adaptiveReplicatorScheduler(
-		const int& n_generations,
-		std::vector<Model<TensorT>>& models,
-		std::vector<std::vector<std::tuple<int, std::string, TensorT>>>& models_errors_per_generations)override
-	{
-    if (n_generations > 2) {
-      // Calculate the mean of the previous and current model erros
-      TensorT mean_errors_per_generation_prev = 0, mean_errors_per_generation_cur = 0;
-      for (const std::tuple<int, std::string, TensorT>& models_errors : models_errors_per_generations[n_generations - 1])
-        mean_errors_per_generation_prev += std::get<2>(models_errors);
-      mean_errors_per_generation_prev = mean_errors_per_generation_prev / models_errors_per_generations[n_generations - 1].size();
-      for (const std::tuple<int, std::string, TensorT>& models_errors : models_errors_per_generations[n_generations])
-        mean_errors_per_generation_cur += std::get<2>(models_errors);
-      mean_errors_per_generation_cur = mean_errors_per_generation_cur / models_errors_per_generations[n_generations].size();
-
-      // update the # of random modifications
-      TensorT abs_percent_diff = abs(mean_errors_per_generation_prev - mean_errors_per_generation_cur) / mean_errors_per_generation_prev;
-      if (abs_percent_diff < 0.1) {
-        this->setRandomModifications(
-          std::make_pair(this->getRandomModifications()[0].first * 2, this->getRandomModifications()[0].second * 2),
-          std::make_pair(this->getRandomModifications()[1].first * 2, this->getRandomModifications()[1].second * 2),
-          std::make_pair(this->getRandomModifications()[2].first * 2, this->getRandomModifications()[2].second * 2),
-          std::make_pair(this->getRandomModifications()[3].first * 2, this->getRandomModifications()[3].second * 2),
-          std::make_pair(this->getRandomModifications()[4].first * 2, this->getRandomModifications()[4].second * 2),
-          std::make_pair(this->getRandomModifications()[5].first * 2, this->getRandomModifications()[5].second * 2),
-          std::make_pair(this->getRandomModifications()[6].first * 2, this->getRandomModifications()[6].second * 2),
-          std::make_pair(this->getRandomModifications()[7].first * 2, this->getRandomModifications()[7].second * 2),
-          std::make_pair(this->getRandomModifications()[8].first * 2, this->getRandomModifications()[8].second * 2),
-          std::make_pair(this->getRandomModifications()[9].first * 2, this->getRandomModifications()[9].second * 2),
-          std::make_pair(this->getRandomModifications()[10].first * 2, this->getRandomModifications()[10].second * 2),
-          std::make_pair(this->getRandomModifications()[11].first * 2, this->getRandomModifications()[11].second * 2),
-          std::make_pair(this->getRandomModifications()[12].first * 2, this->getRandomModifications()[12].second * 2));
-      }
-      else if (abs_percent_diff >= 0.1 && abs_percent_diff < 0.5) {
-        // Keep the same parameters
-      }
-      else {
-        this->setRandomModifications(
-          std::make_pair(this->getRandomModifications()[0].first / 2, this->getRandomModifications()[0].second / 2),
-          std::make_pair(this->getRandomModifications()[1].first / 2, this->getRandomModifications()[1].second / 2),
-          std::make_pair(this->getRandomModifications()[2].first / 2, this->getRandomModifications()[2].second / 2),
-          std::make_pair(this->getRandomModifications()[3].first / 2, this->getRandomModifications()[3].second / 2),
-          std::make_pair(this->getRandomModifications()[4].first / 2, this->getRandomModifications()[4].second / 2),
-          std::make_pair(this->getRandomModifications()[5].first / 2, this->getRandomModifications()[5].second / 2),
-          std::make_pair(this->getRandomModifications()[6].first / 2, this->getRandomModifications()[6].second / 2),
-          std::make_pair(this->getRandomModifications()[7].first / 2, this->getRandomModifications()[7].second / 2),
-          std::make_pair(this->getRandomModifications()[8].first / 2, this->getRandomModifications()[8].second / 2),
-          std::make_pair(this->getRandomModifications()[9].first / 2, this->getRandomModifications()[9].second / 2),
-          std::make_pair(this->getRandomModifications()[10].first / 2, this->getRandomModifications()[10].second / 2),
-          std::make_pair(this->getRandomModifications()[11].first / 2, this->getRandomModifications()[11].second / 2),
-          std::make_pair(this->getRandomModifications()[12].first / 2, this->getRandomModifications()[12].second / 2));
-      }
-    }
-    else {
-      this->setRandomModifications(
-        std::make_pair(1, 4),
-        std::make_pair(1, 4),
-        std::make_pair(0, 0),
-        std::make_pair(0, 0),
-        std::make_pair(1, 8),
-        std::make_pair(0, 0),
-        std::make_pair(1, 4),
-        std::make_pair(1, 8),
-        std::make_pair(1, 4),
-        std::make_pair(1, 4),
-        std::make_pair(0, 0),
-        std::make_pair(0, 0),
-        std::make_pair(0, 0));
-    }
-	}
+  void adaptiveReplicatorScheduler(
+    const int& n_generations,
+    std::vector<Model<TensorT>>& models,
+    std::vector<std::vector<std::tuple<int, std::string, TensorT>>>& models_errors_per_generations) override
+  {
+    // Adjust the models modifications rates
+    //this->setModificationRateByPrevError(n_generations, models, models_errors_per_generations);
+    this->setModificationRateFixed(n_generations, models, models_errors_per_generations);
+  }
 };
 
 template<typename TensorT>
-class PopulationTrainerExt : public PopulationTrainerDefaultDevice<TensorT>
+class PopulationTrainerExt : public PopulationTrainerExperimentalDefaultDevice<TensorT>
 {
 public:
-	void adaptivePopulationScheduler(
-		const int& n_generations,
-		std::vector<Model<TensorT>>& models,
-		std::vector<std::vector<std::tuple<int, std::string, TensorT>>>& models_errors_per_generations)override
+	void adaptivePopulationScheduler(const int& n_generations, std::vector<Model<TensorT>>& models,
+		std::vector<std::vector<std::tuple<int, std::string, TensorT>>>& models_errors_per_generations) override
 	{
-    // Adjust the population sizes
-    // 
-    const size_t population_size = 32;
-    const size_t selection_ratio = 4; ///< options include 2, 4, 8
-    const size_t selection_size = population_size / selection_ratio;
-    if (n_generations == 0) {
-      this->setNTop(selection_size);
-      this->setNRandom(selection_size);
-      this->setNReplicatesPerModel(population_size - 1);
-    }
-    else {
-      this->setNTop(selection_size);
-      this->setNRandom(selection_size);
-      this->setNReplicatesPerModel(selection_ratio - 1);
-    }
-
-    // Calculate the average model size
-    TensorT mean_model_size = 0;
-    for (Model<TensorT>& model : models) {
-      int links = model.getLinksMap().size();
-      mean_model_size += links;
-    }
-    mean_model_size = mean_model_size / models.size();
-
-    // Adjust the number of training steps
-    if (mean_model_size <= 8)
-      this->setNEpochsTraining(100);
-    else if (mean_model_size <= 16)
-      this->setNEpochsTraining(200);
-    else if (mean_model_size <= 32)
-      this->setNEpochsTraining(400);
-    else if (mean_model_size <= 64)
-      this->setNEpochsTraining(800);
+    // Adjust the population size
+    //this->setPopulationSizeFixed(n_generations, models, models_errors_per_generations);
+    // [TODO: single model training requires the line below to be commented]
+    this->setPopulationSizeDoubling(n_generations, models, models_errors_per_generations);
 	}
 	void trainingPopulationLogger(
 		const int& n_generations,
@@ -538,8 +359,8 @@ void main_AddProbAtt(const std::string& mode) {
 
     // make the model name
     Model<float> model;
-    //model_trainer.makeModelMinimal(model, input_nodes.size() / 2, output_nodes.size());
-    model_trainer.makeModelSolution(model, input_nodes.size() / 2, output_nodes.size(), false, false);
+    model_trainer.makeModelMinimal(model, input_nodes.size() / 2, output_nodes.size());
+    //model_trainer.makeModelSolution(model, input_nodes.size() / 2, output_nodes.size(), false, false);
     //model_trainer.makeModelAttention(model, (int)(input_nodes.size() / 2), output_nodes.size(), { 4 }, { 8 }, { 16 }, false, false, false, true);
     population.push_back(model);
 

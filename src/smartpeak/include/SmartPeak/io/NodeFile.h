@@ -86,6 +86,8 @@ public:
 			else if (node_type_str == "input") node_type = NodeType::input;
 			else if (node_type_str == "bias") node_type = NodeType::bias;
 			else if (node_type_str == "recursive") node_type = NodeType::recursive;
+      else if (node_type_str == "unmodifiable") node_type = NodeType::unmodifiable;
+      else if (node_type_str == "zero") node_type = NodeType::zero;
 			else std::cout << "NodeType for node_name " << node_name << " was not recognized." << std::endl;
 
 			// parse the node_status
@@ -203,6 +205,8 @@ public:
 			else if (node.second->getType() == NodeType::input) node_type_str = "input";
 			else if (node.second->getType() == NodeType::bias) node_type_str = "bias";
 			else if (node.second->getType() == NodeType::recursive) node_type_str = "recursive";
+      else if (node.second->getType() == NodeType::unmodifiable) node_type_str = "unmodifiable";
+      else if (node.second->getType() == NodeType::zero) node_type_str = "zero";
 			else std::cout << "NodeType for node_name " << node.second->getName() << " was not recognized." << std::endl;
 			row.push_back(node_type_str);
 
