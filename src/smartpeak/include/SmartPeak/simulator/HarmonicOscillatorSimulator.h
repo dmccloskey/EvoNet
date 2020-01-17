@@ -168,20 +168,38 @@ namespace SmartPeak
 
     // Make the time-steps and displacements
     time_steps(0) = 0;
-    displacements(0, 0) = TensorT(0);// x1o;
+    displacements(0, 0) = x1o;
     displacements(0, 1) = x2o;
-    displacements(0, 2) = TensorT(0);// x3o;
+    displacements(0, 2) = x3o;
     for (int iter = 1; iter < n_time_steps; ++iter) {
       time_steps(iter) = time_steps(iter - 1) + time_intervals;
-      displacements(iter, 0) = x1_lambda(time_steps(iter), k, m1, A1, displacements(iter - 1, 1));
-      displacements(iter, 2) = x3_lambda(time_steps(iter), k, m3, A3, displacements(iter - 1, 1));
+      displacements(iter, 0) = x1_lambda(time_steps(iter), k, m1, A1, displacements(0, 1));
+      displacements(iter, 2) = x3_lambda(time_steps(iter), k, m3, A3, displacements(0, 1));
       //displacements(iter, 1) = x2_lambda(time_steps(iter), k, m1, m2, m3, A1, A2, A3);
-      displacements(iter, 1) = x2_lambda(time_steps(iter), k, m2, A2, displacements(iter, 0), displacements(iter, 2));
+      displacements(iter, 1) = x2_lambda(time_steps(iter), k, m2, A2, displacements(0, 0), displacements(0, 2));
     }
   }
   template<typename TensorT>
   inline void HarmonicOscillatorSimulator<TensorT>::WeightSpring1W1S1D(Eigen::Tensor<TensorT, 1>& time_steps, Eigen::Tensor<TensorT, 2>& displacements, const int& n_time_steps, const TensorT& time_intervals, const TensorT& m1, const TensorT& k1, const TensorT& x1o, const TensorT& v1o)
   {
+    // Quick checks
+    assert(n_time_steps == time_steps.dimension(0));
+    assert(n_time_steps == displacements.dimension(0));
+    assert(displacements.dimension(1) == 1);
+
+    // Analytical solutions to for each mass
+    auto x1_lambda = [](const TensorT& t, const TensorT& k1, const TensorT& m1, const TensorT& x1o, const TensorT& v1o) {
+      const TensorT w = sqrt(k1 / m1);
+      return = x1o * cos(w*t) + v1o / w * sin(w*t)
+    };
+
+    // Make the time-steps and displacements
+    time_steps(0) = 0;
+    displacements(0, 0) = x1o;
+    for (int iter = 1; iter < n_time_steps; ++iter) {
+      time_steps(iter) = time_steps(iter - 1) + time_intervals;
+      displacements(iter, 0) = x1_lambda(time_steps(iter), k1, m1, x1o, v1o);
+    }
   }
 }
 

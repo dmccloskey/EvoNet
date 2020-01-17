@@ -46,7 +46,8 @@ public:
 					1);
 
 				for (int memory_iter = 0; memory_iter < memory_size; ++memory_iter) {
-					input_data(batch_iter, memory_iter, 0, epochs_iter) = displacements(memory_size - 1 - memory_iter, 1); // m2
+          if (memory_iter == memory_size - 1)	input_data(batch_iter, memory_iter, 0, epochs_iter) = displacements(memory_size - 1 - memory_iter, 1); // m2
+          else input_data(batch_iter, memory_iter, 0, epochs_iter) = TensorT(0);
 					output_data(batch_iter, memory_iter, 0, epochs_iter) = displacements(memory_size - 1 - memory_iter, 0); // m1
 					output_data(batch_iter, memory_iter, 1, epochs_iter) = displacements(memory_size - 1 - memory_iter, 2); // m3
 				}
