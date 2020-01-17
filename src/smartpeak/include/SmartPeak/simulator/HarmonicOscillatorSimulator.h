@@ -190,7 +190,7 @@ namespace SmartPeak
     // Analytical solutions to for each mass
     auto x1_lambda = [](const TensorT& t, const TensorT& k1, const TensorT& m1, const TensorT& x1o, const TensorT& v1o) {
       const TensorT w = sqrt(k1 / m1);
-      return = x1o * cos(w*t) + v1o / w * sin(w*t)
+      return x1o * cos(w * t) + v1o / w * sin(w * t);
     };
 
     // Make the time-steps and displacements
