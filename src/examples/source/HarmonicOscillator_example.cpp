@@ -74,12 +74,14 @@ public:
   /**
   @brief Interaction Graph Toy Network Model based on Linear Harmonic Oscillator with three masses and two springs
   */
-	void makeHarmonicOscillator3M2S(Model<TensorT>& model) {
+	void makeHarmonicOscillator3M2S(Model<TensorT>& model, const int& model_version) {
 		Node<TensorT> m1, m2, m3, s1f, s2f, s1r, s2r, 
       m2_input, m1_output, m3_output;
 		Link m1_to_s1f, s1r_to_m1, s1f_to_m2, m2_to_s1r, m2_to_s2f, s2r_to_m2, s2f_to_m3, m3_to_s2r,
+      m1_to_m2, m2_to_m3, m2_to_m1, m3_to_m2,
       m2_input_to_m2, m1_to_m1_output, m3_to_m3_output;
 		Weight<TensorT> Wm1_to_s1f, Ws1r_to_m1, Ws1f_to_m2, Wm2_to_s1r, Wm2_to_s2f, Ws2r_to_m2, Ws2f_to_m3, Wm3_to_s2r,
+      Wm1_to_m2, Wm2_to_m3, Wm2_to_m1, Wm3_to_m2,
       Wm2_input_to_m2, Wm1_to_m1_output, Wm3_to_m3_output;
 		// Nodes
 		m1 = Node<TensorT>("m1", NodeType::unmodifiable, NodeStatus::initialized, std::make_shared<LinearOp<TensorT>>(LinearOp<TensorT>()), std::make_shared<LinearGradOp<TensorT>>(LinearGradOp<TensorT>()), std::make_shared<SumOp<TensorT>>(SumOp<TensorT>()), std::make_shared<SumErrorOp<TensorT>>(SumErrorOp<TensorT>()), std::make_shared<SumWeightGradOp<TensorT>>(SumWeightGradOp<TensorT>()));
@@ -98,7 +100,7 @@ public:
     m1_output.setLayerName("Output"); m2_input.setLayerName("Input"); m3_output.setLayerName("Output");
 		// weights  
     std::shared_ptr<WeightInitOp<TensorT>> weight_init = std::make_shared<RandWeightInitOp<TensorT>>(RandWeightInitOp<TensorT>(2.0));
-    std::shared_ptr<SolverOp<TensorT>> solver_op = std::make_shared<SGDOp<TensorT>>(SGDOp<TensorT>(1e-4, 0.9, 10));
+    std::shared_ptr<SolverOp<TensorT>> solver_op = std::make_shared<SGDOp<TensorT>>(SGDOp<TensorT>(1e-5, 0.9, 10));
 		Wm1_to_s1f = Weight<TensorT>("m1_to_s1f", weight_init, solver_op);
 		Ws1r_to_m1 = Weight<TensorT>("s1r_to_m1", weight_init, solver_op);
 		Ws1f_to_m2 = Weight<TensorT>("s1f_to_m2", weight_init, solver_op);
@@ -107,6 +109,12 @@ public:
 		Ws2r_to_m2 = Weight<TensorT>("s2r_to_m2", weight_init, solver_op);
 		Ws2f_to_m3 = Weight<TensorT>("s2f_to_m3", weight_init, solver_op);
 		Wm3_to_s2r = Weight<TensorT>("m3_to_s2r", weight_init, solver_op);
+
+    Wm1_to_m2 = Weight<TensorT>("m1_to_m2", weight_init, solver_op);
+    Wm2_to_m3 = Weight<TensorT>("m2_to_m3", weight_init, solver_op);
+    Wm2_to_m1 = Weight<TensorT>("m2_to_m1", weight_init, solver_op);
+    Wm3_to_m2 = Weight<TensorT>("m3_to_m2", weight_init, solver_op);
+
     Wm1_to_m1_output = Weight<TensorT>("m1_to_m1_output", std::make_shared<ConstWeightInitOp<TensorT>>(ConstWeightInitOp<TensorT>(1.0)), std::make_shared<DummySolverOp<TensorT>>(DummySolverOp<TensorT>()));
     Wm2_input_to_m2 = Weight<TensorT>("m2_input_to_m2", std::make_shared<ConstWeightInitOp<TensorT>>(ConstWeightInitOp<TensorT>(1.0)), std::make_shared<DummySolverOp<TensorT>>(DummySolverOp<TensorT>()));
     Wm3_to_m3_output = Weight<TensorT>("m3_to_m3_output", std::make_shared<ConstWeightInitOp<TensorT>>(ConstWeightInitOp<TensorT>(1.0)), std::make_shared<DummySolverOp<TensorT>>(DummySolverOp<TensorT>()));
@@ -119,14 +127,29 @@ public:
 		s2r_to_m2 = Link("s2r_to_m2", "s2r", "m2", "s2r_to_m2");
 		s2f_to_m3 = Link("s2f_to_m3", "s2f", "m3", "s2f_to_m3");
 		m3_to_s2r = Link("m3_to_s2r", "m3", "s2r", "m3_to_s2r");
+
+    m1_to_m2 = Link("m1_to_m2", "m1", "m2", "m1_to_m2");
+    m2_to_m3 = Link("m2_to_m3", "m2", "m3", "m2_to_m3");
+    m2_to_m1 = Link("m2_to_m1", "m2", "m3", "m2_to_m1");
+    m3_to_m2 = Link("m3_to_m2", "m3", "m2", "m3_to_m2");
+
     m1_to_m1_output = Link("m1_to_m1_output", "m1", "m1_output", "m1_to_m1_output");
     m2_input_to_m2 = Link("m2_input_to_m2", "m2_input", "m2", "m2_input_to_m2");
     m3_to_m3_output = Link("m3_to_m3_output", "m3", "m3_output", "m3_to_m3_output");
 		model.setId(0);
 		model.setName("HarmonicOscillator3M2S");
-		model.addNodes({ m1, m2, m3, s1f, s2f, s1r, s2r, m1_output, m2_input, m3_output });
-		model.addWeights({ Wm1_to_s1f, Ws1r_to_m1, Ws1f_to_m2, Wm2_to_s1r, Wm2_to_s2f, Ws2r_to_m2, Ws2f_to_m3, Wm3_to_s2r, Wm1_to_m1_output, Wm2_input_to_m2, Wm3_to_m3_output });
-		model.addLinks({ m1_to_s1f, s1r_to_m1, s1f_to_m2, m2_to_s1r, m2_to_s2f, s2r_to_m2, s2f_to_m3, m3_to_s2r, m1_to_m1_output, m2_input_to_m2, m3_to_m3_output });
+		model.addNodes({ m1, m2, m3, m1_output, m2_input, m3_output });
+		model.addWeights({ Wm1_to_m1_output, Wm2_input_to_m2, Wm3_to_m3_output });
+		model.addLinks({ m1_to_m1_output, m2_input_to_m2, m3_to_m3_output });
+    if (model_version == 1) {
+      model.addNodes({ s1f, s2f, s1r, s2r });
+      model.addWeights({ Wm1_to_s1f, Ws1r_to_m1, Ws1f_to_m2, Wm2_to_s1r, Wm2_to_s2f, Ws2r_to_m2, Ws2f_to_m3, Wm3_to_s2r });
+      model.addLinks({ m1_to_s1f, s1r_to_m1, s1f_to_m2, m2_to_s1r, m2_to_s2f, s2r_to_m2, s2f_to_m3, m3_to_s2r });
+    }
+    else if (model_version == 2) {
+      model.addWeights({ Wm1_to_m2, Wm2_to_m3, Wm2_to_m1, Wm3_to_m2 });
+      model.addLinks({ m1_to_m2, m2_to_m3, m2_to_m1, m3_to_m2 });
+    }
 	}
   /**
   @brief Interaction Graph Toy Network Model based on Linear Harmonic Oscillator with two masses and three springs
@@ -323,12 +346,14 @@ void main_WeightSpring3W2S1D(const bool& make_model, const bool& train_model) {
 	ModelTrainerExt<float> model_trainer;
 	//model_trainer.setBatchSize(32);
   model_trainer.setBatchSize(1);
-  model_trainer.setMemorySize(8);
-	model_trainer.setNEpochsTraining(1000);
+  model_trainer.setMemorySize(32);
+	model_trainer.setNEpochsTraining(10000);
   model_trainer.setNEpochsValidation(25);
+  model_trainer.setNTBPTTSteps(model_trainer.getMemorySize() - 5);
+  model_trainer.setNTETTSteps(model_trainer.getMemorySize() - 5);
 	model_trainer.setVerbosityLevel(1);
-	//model_trainer.setLogging(true, false);
-  model_trainer.setLogging(false, false);
+	model_trainer.setLogging(true, false);
+  //model_trainer.setLogging(false, false);
 	model_trainer.setFindCycles(false); // IG default
 	model_trainer.setFastInterpreter(true); // IG default
 	model_trainer.setPreserveOoO(false);
@@ -337,7 +362,7 @@ void main_WeightSpring3W2S1D(const bool& make_model, const bool& train_model) {
 	model_trainer.setLossOutputNodes({ output_nodes });
 
 	// define the model logger
-	ModelLogger<float> model_logger(true, true, false, false, false, true, false, true);
+	ModelLogger<float> model_logger(true, true, true, false, false, true, false, true);
 
 	// define the model replicator for growth mode
 	ModelReplicatorExt<float> model_replicator;
@@ -361,7 +386,7 @@ void main_WeightSpring3W2S1D(const bool& make_model, const bool& train_model) {
 	std::cout << "Initializing the population..." << std::endl;
 	Model<float> model;
 	if (make_model) {
-		 ModelTrainerExt<float>().makeHarmonicOscillator3M2S(model);
+		 ModelTrainerExt<float>().makeHarmonicOscillator3M2S(model, 1);
 	}
 	else {
 		// read in the trained model
