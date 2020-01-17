@@ -177,6 +177,7 @@ BOOST_AUTO_TEST_CASE(gettersAndSetters)
   population_trainer.setPruneModelNum(12);
   population_trainer.setCheckCompleteModelInputToOutput(false);
   population_trainer.setSelectModels(false);
+  population_trainer.setResetModelCopyWeights(true);
 
 	BOOST_CHECK_EQUAL(population_trainer.getNTop(), 4);
 	BOOST_CHECK_EQUAL(population_trainer.getNRandom(), 1);
@@ -187,6 +188,7 @@ BOOST_AUTO_TEST_CASE(gettersAndSetters)
   BOOST_CHECK_EQUAL(population_trainer.getPruneModelNum(), 12);
   BOOST_CHECK(!population_trainer.getCheckCompleteModelInputToOutput());
   BOOST_CHECK(!population_trainer.getSelectModels());
+  BOOST_CHECK(population_trainer.getResetModelCopyWeights());
 }
 
 BOOST_AUTO_TEST_CASE(setNEpochsTraining)

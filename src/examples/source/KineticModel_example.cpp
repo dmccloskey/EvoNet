@@ -175,6 +175,11 @@ public:
       std::make_shared<AdamOp<TensorT>>(AdamOp<TensorT>(0.001, 0.9, 0.999, 1e-8))
 		);
 
+    // Specify the layer for all nodes
+    for (auto node_map : model.getNodesMap()) {
+      node_map.second->setLayerName("IG");
+    }
+
 		// Specify the output layer for metabolite nodes (20)
 		std::vector<std::string> output_nodes = { "13dpg","2pg","3pg","adp","amp","atp","dhap","f6p","fdp","g3p","g6p","glc__D","h","h2o","lac__L","nad","nadh","pep","pi","pyr" };
 		int iter = 0;
@@ -191,6 +196,7 @@ public:
 		//	++iter;
 		//}
 
+    model.setInputAndOutputNodes();
 	}
 	void adaptiveTrainerScheduler(
 		const int& n_generations,
@@ -329,13 +335,15 @@ void main_KineticModel(const bool& make_model, const bool& train_model, const st
 		model_interpreters.push_back(model_interpreter);
 	}
 	ModelTrainerExt<float> model_trainer;
-	model_trainer.setBatchSize(32);
+	model_trainer.setBatchSize(1);
+  //model_trainer.setBatchSize(32);
 	model_trainer.setMemorySize(16);
 	model_trainer.setNEpochsTraining(500);
 	model_trainer.setNEpochsValidation(25);
 	model_trainer.setNTETTSteps(1);
 	model_trainer.setVerbosityLevel(1);
-	model_trainer.setLogging(false, false);
+	model_trainer.setLogging(true, false);
+  //model_trainer.setLogging(false, false);
 	model_trainer.setFindCycles(false);
 	model_trainer.setFastInterpreter(true);
 	model_trainer.setPreserveOoO(false);
@@ -344,8 +352,7 @@ void main_KineticModel(const bool& make_model, const bool& train_model, const st
 	model_trainer.setLossOutputNodes({ output_nodes });
 
 	// define the model logger
-	//ModelLogger<float> model_logger(true, true, true, false, false, false, false);
-	ModelLogger<float> model_logger(true, true, false, false, false, false, false);
+	ModelLogger<float> model_logger(true, true, true, false, false, true, false, true);
 
 	// define the model replicator for growth mode
 	ModelReplicatorExt<float> model_replicator;

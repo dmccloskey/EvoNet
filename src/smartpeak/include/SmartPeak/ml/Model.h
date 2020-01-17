@@ -311,6 +311,7 @@ public:
 		addNodes(other.getNodes());
 		addWeights(other.getWeights());
 		cyclic_pairs_ = other.cyclic_pairs_;
+    setInputAndOutputNodes(); // re-initialize the input/output nodes
 	}
 
 	template<typename TensorT>
