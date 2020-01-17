@@ -17,7 +17,7 @@ template<typename TensorT>
 class DataSimulatorExt : public HarmonicOscillatorSimulator<TensorT>
 {
 public:
-  std::string simulation_name_ = std::string("WeightSpring1W1S1D");
+  std::string simulation_name_ = std::string("WeightSpring1W1S1DwDamping");
 	void simulateDataWeightSpring3W2S1D(Eigen::Tensor<TensorT, 4>& input_data, Eigen::Tensor<TensorT, 4>& output_data, Eigen::Tensor<TensorT, 3>& time_steps)
 	{
 		// infer data dimensions based on the input tensors
@@ -90,15 +90,51 @@ public:
     }
     time_steps.setConstant(1.0f);
   }
+  void simulateDataWeightSpring1W1S1DwDamping(Eigen::Tensor<TensorT, 4>& input_data, Eigen::Tensor<TensorT, 4>& output_data, Eigen::Tensor<TensorT, 3>& time_steps)
+  {
+    // infer data dimensions based on the input tensors
+    const int batch_size = input_data.dimension(0);
+    const int memory_size = input_data.dimension(1);
+    const int n_input_nodes = input_data.dimension(2);
+    const int n_output_nodes = output_data.dimension(2);
+    const int n_epochs = input_data.dimension(3);
+
+    HarmonicOscillatorSimulator<float> WeightSpring;
+    std::random_device rd{};
+    std::mt19937 gen{ rd() };
+    std::normal_distribution<> dist{ 0.0f, 1.0f };
+
+    // Generate the input and output data for training
+    for (int batch_iter = 0; batch_iter < batch_size; ++batch_iter) {
+      for (int epochs_iter = 0; epochs_iter < n_epochs; ++epochs_iter) {
+
+        // Simulate a 1 weight and 1 spring 1D harmonic system
+        // where the weight has been displaced by a random amount
+        Eigen::Tensor<float, 1> time_steps(memory_size);
+        Eigen::Tensor<float, 2> displacements(memory_size, 1);
+        WeightSpring.WeightSpring1W1S1DwDamping(time_steps, displacements, memory_size, 0.1,
+          1, 1, 0.5, dist(gen), 0);
+
+        for (int memory_iter = 0; memory_iter < memory_size; ++memory_iter) {
+          if (memory_iter == memory_size - 1)	input_data(batch_iter, memory_iter, 0, epochs_iter) = displacements(memory_size - 1 - memory_iter, 0);
+          else input_data(batch_iter, memory_iter, 0, epochs_iter) = TensorT(0);
+          output_data(batch_iter, memory_iter, 0, epochs_iter) = displacements(memory_size - 1 - memory_iter, 0);
+        }
+      }
+    }
+    time_steps.setConstant(1.0f);
+  }
 
 	void simulateTrainingData(Eigen::Tensor<TensorT, 4>& input_data, Eigen::Tensor<TensorT, 4>& output_data, Eigen::Tensor<TensorT, 3>& time_steps)
 	{
     if (simulation_name_ == "WeightSpring1W1S1D")	simulateDataWeightSpring1W1S1D(input_data, output_data, time_steps);
+    else if (simulation_name_ == "WeightSpring1W1S1DwDamping")	simulateDataWeightSpring1W1S1DwDamping(input_data, output_data, time_steps);
     else if (simulation_name_ == "WeightSpring3W2S1D")	simulateDataWeightSpring3W2S1D(input_data, output_data, time_steps);
 	}
 	void simulateValidationData(Eigen::Tensor<TensorT, 4>& input_data, Eigen::Tensor<TensorT, 4>& output_data, Eigen::Tensor<TensorT, 3>& time_steps)
 	{
     if (simulation_name_ == "WeightSpring1W1S1D")	simulateDataWeightSpring1W1S1D(input_data, output_data, time_steps);
+    else if (simulation_name_ == "WeightSpring1W1S1DwDamping")	simulateDataWeightSpring1W1S1DwDamping(input_data, output_data, time_steps);
     else if (simulation_name_ == "WeightSpring3W2S1D")	simulateDataWeightSpring3W2S1D(input_data, output_data, time_steps);
 	}
 	void simulateEvaluationData(Eigen::Tensor<TensorT, 4>& input_data, Eigen::Tensor<TensorT, 3>& time_steps) {};
@@ -382,7 +418,7 @@ void main_WeightSpring3W2S1D(const bool& make_model, const bool& train_model) {
 
 	// define the data simulator
 	DataSimulatorExt<float> data_simulator;
-  data_simulator.simulation_name_ = "WeightSpring1W1S1D";
+  data_simulator.simulation_name_ = "WeightSpring1W1S1DwDamping";
 
 	// define the model trainers and resources for the trainers
 	std::vector<ModelInterpreterDefaultDevice<float>> model_interpreters;
@@ -392,8 +428,8 @@ void main_WeightSpring3W2S1D(const bool& make_model, const bool& train_model) {
 		model_interpreters.push_back(model_interpreter);
 	}
 	ModelTrainerExt<float> model_trainer;
-	model_trainer.setBatchSize(32);
-  //model_trainer.setBatchSize(1);
+	//model_trainer.setBatchSize(32);
+  model_trainer.setBatchSize(1);
   model_trainer.setMemorySize(128);
 	model_trainer.setNEpochsTraining(10000);
   model_trainer.setNEpochsValidation(25);

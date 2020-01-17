@@ -96,6 +96,36 @@ namespace SmartPeak
       const TensorT& m1, const TensorT& k1, const TensorT& x1o, const TensorT& v1o);
 
     /*
+    @brief 1 weight and 1 spring system (1D) with damping system
+    Where the spring is tethered to a rigid body
+
+    Analytical solution for 0 < beta < 1
+    F1: x1 = exp(-beta1 * w * t * ((v1o + beta1 * w * x1o) / wd) * sin(wd * t) + x1o * cos(wd * t));
+    where w = sqrt(k1 / m)
+  and where wd = w * sqrt(1-pow(beta1, 2))
+    and where x1o is the initial displacement with initial velocity v1o
+
+    [TODO: add tests]
+
+    @param[in, out] time_steps (dim0: n_time_steps)
+    @param[in, out] displacements (dim0: n_time_steps, dim1: x1...x3 displacements)
+    @param[in] n_time_steps The number of time-steps
+    @param[in] time_intervals The spacing between time-steps
+    @param[in] m1 The mass values
+    @param[in] k The spring constant (for simplicity, we assume all spring constants are the same)
+    @param[in] beta The damping constant
+    @param[in] x1o The starting mass displacements from their starting positions
+    @param[in] v1o The starting mass velocity (e.g., 0)
+
+    @returns time_steps and displacements for the system
+    **/
+    static void WeightSpring1W1S1DwDamping(
+      Eigen::Tensor<TensorT, 1>& time_steps,
+      Eigen::Tensor<TensorT, 2>& displacements,
+      const int& n_time_steps, const TensorT& time_intervals,
+      const TensorT& m1, const TensorT& k1, const TensorT& beta1, const TensorT& x1o, const TensorT& v1o);
+
+    /*
     @brief 2 weight and 3 spring system (1D) without damping
     Where the two end springs are tethered to rigid bodies
 
@@ -199,6 +229,32 @@ namespace SmartPeak
     for (int iter = 1; iter < n_time_steps; ++iter) {
       time_steps(iter) = time_steps(iter - 1) + time_intervals;
       displacements(iter, 0) = x1_lambda(time_steps(iter), k1, m1, x1o, v1o);
+    }
+  }
+  template<typename TensorT>
+  void HarmonicOscillatorSimulator<TensorT>::WeightSpring1W1S1DwDamping(
+    Eigen::Tensor<TensorT, 1>& time_steps,
+    Eigen::Tensor<TensorT, 2>& displacements,
+    const int& n_time_steps, const TensorT& time_intervals,
+    const TensorT& m1, const TensorT& k1, const TensorT& beta1, const TensorT& x1o, const TensorT& v1o) {
+    // Quick checks
+    assert(n_time_steps == time_steps.dimension(0));
+    assert(n_time_steps == displacements.dimension(0));
+    assert(displacements.dimension(1) == 1);
+
+    // Analytical solutions to for each mass
+    auto x1_lambda = [](const TensorT& t, const TensorT& k1, const TensorT& beta1, const TensorT& m1, const TensorT& x1o, const TensorT& v1o) {
+      const TensorT w = sqrt(k1 / m1);
+      const TensorT wd = w * sqrt(1 - pow(beta1, 2));
+      return exp(-beta1 * w * t * ((v1o + beta1 * w * x1o) / wd) * sin(wd * t) + x1o * cos(wd * t));
+    };
+
+    // Make the time-steps and displacements
+    time_steps(0) = 0;
+    displacements(0, 0) = x1o;
+    for (int iter = 1; iter < n_time_steps; ++iter) {
+      time_steps(iter) = time_steps(iter - 1) + time_intervals;
+      displacements(iter, 0) = x1_lambda(time_steps(iter), k1, beta1, m1, x1o, v1o);
     }
   }
 }
