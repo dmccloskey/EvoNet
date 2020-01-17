@@ -245,7 +245,7 @@ namespace SmartPeak
     // Analytical solutions to for each mass
     auto x1_lambda = [](const TensorT& t, const TensorT& k1, const TensorT& beta1, const TensorT& m1, const TensorT& x1o, const TensorT& v1o) {
       const TensorT w = sqrt(k1 / m1);
-      const TensorT check = sqrt(pow(beta1, 2) - 4 * pow(w, 2));
+      const TensorT check = pow(beta1, 2) - 4 * pow(w, 2);
       if (check < 0) {
         const TensorT gamma = 0.5 * sqrt(4 * pow(w, 2) - pow(beta1, 2));
         const TensorT A = x1o;

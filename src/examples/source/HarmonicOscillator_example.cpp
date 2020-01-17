@@ -113,7 +113,7 @@ public:
         Eigen::Tensor<float, 1> time_steps(memory_size);
         Eigen::Tensor<float, 2> displacements(memory_size, 1);
         WeightSpring.WeightSpring1W1S1DwDamping(time_steps, displacements, memory_size, 0.1,
-          1, 1, 1, dist(gen), 0);
+          1, 1, 0.5, dist(gen), 0);
 
         for (int memory_iter = 0; memory_iter < memory_size; ++memory_iter) {
           if (memory_iter == 0)	input_data(batch_iter, memory_size - 1 - memory_iter, 0, epochs_iter) = displacements(memory_iter, 0);
