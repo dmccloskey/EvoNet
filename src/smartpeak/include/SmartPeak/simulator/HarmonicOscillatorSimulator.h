@@ -245,8 +245,25 @@ namespace SmartPeak
     // Analytical solutions to for each mass
     auto x1_lambda = [](const TensorT& t, const TensorT& k1, const TensorT& beta1, const TensorT& m1, const TensorT& x1o, const TensorT& v1o) {
       const TensorT w = sqrt(k1 / m1);
-      const TensorT wd = w * sqrt(1 - pow(beta1, 2));
-      return exp(-beta1 * w * t * ((v1o + beta1 * w * x1o) / wd) * sin(wd * t) + x1o * cos(wd * t));
+      const TensorT check = sqrt(pow(beta1, 2) - 4 * pow(w, 2));
+      if (check < 0) {
+        const TensorT gamma = 0.5 * sqrt(4 * pow(w, 2) - pow(beta1, 2));
+        const TensorT A = x1o;
+        const TensorT B = beta1 * x1o / (2 * gamma) + v1o / gamma;
+        return exp(-beta1 * t / 2) * (A * cos(gamma * t) + B * sin(gamma * t));
+      }
+      else if (check == 0) {
+        const TensorT A = x1o;
+        const TensorT B = w * x1o + v1o;
+        return exp(-w * t) * (A + B * t);
+      }
+      else if (check > 0) {
+        const TensorT rneg = 0.5 * (-beta1 - sqrt(pow(beta1, 2) - 4 * pow(w, 2)));
+        const TensorT rpos = 0.5 * (-beta1 + sqrt(pow(beta1, 2) - 4 * pow(w, 2)));
+        const TensorT A = x1o - (rneg*x1o - v1o)/(rneg - rpos);
+        const TensorT B = (rneg * x1o - v1o) / (rneg - rpos);
+        return A*exp(rneg * t) + B * exp(rpos * t);
+      }
     };
 
     // Make the time-steps and displacements
