@@ -288,24 +288,26 @@ public:
     ModelBuilder<TensorT> model_builder;
 
     // Define the node activation
-    std::shared_ptr<ActivationOp<TensorT>> activation = std::make_shared<LinearOp<TensorT>>(LinearOp<TensorT>());
-    std::shared_ptr<ActivationOp<TensorT>> activation_grad = std::make_shared<LinearGradOp<TensorT>>(LinearGradOp<TensorT>());
+    auto activation = std::make_shared<SigmoidOp<TensorT>>(SigmoidOp<TensorT>());
+    auto activation_grad = std::make_shared<SigmoidGradOp<TensorT>>(SigmoidGradOp<TensorT>());
+    auto activation_masses = std::make_shared<LinearOp<TensorT>>(LinearOp<TensorT>());
+    auto activation_masses_grad = std::make_shared<LinearGradOp<TensorT>>(LinearGradOp<TensorT>());
 
     // Define the node integration
     auto integration_op = std::make_shared<SumOp<TensorT>>(SumOp<TensorT>());
     auto integration_error_op = std::make_shared<SumErrorOp<TensorT>>(SumErrorOp<TensorT>());
     auto integration_weight_grad_op = std::make_shared<SumWeightGradOp<TensorT>>(SumWeightGradOp<TensorT>());
 
-    // Define the solver
-    auto solver_op = std::make_shared<SGDOp<TensorT>>(SGDOp<TensorT>(1e-5, 0.9, 1));
+    // Define the solver and weight init
+    auto weight_init = std::make_shared<ConstWeightInitOp<TensorT>>(ConstWeightInitOp<TensorT>(1.0));
+    auto solver_op = std::make_shared<SGDOp<TensorT>>(SGDOp<TensorT>(1e-4, 0.9, 10));
 
     // Make the input nodes
     std::vector<std::string> node_names_input = model_builder.addInputNodes(model, "Input", "Input", n_masses, specify_layers);
 
     // Connect the input nodes to the masses
     std::vector<std::string> node_names_masses = model_builder.addSinglyConnected(model, "Mass", "Mass", node_names_input, n_masses,
-      std::make_shared<LinearOp<TensorT>>(LinearOp<TensorT>()),
-      std::make_shared<LinearGradOp<TensorT>>(LinearGradOp<TensorT>()),
+      activation_masses, activation_masses_grad,
       integration_op, integration_error_op, integration_weight_grad_op,
       std::make_shared<ConstWeightInitOp<TensorT>>(ConstWeightInitOp<TensorT>(1)),
       std::make_shared<DummySolverOp<TensorT>>(DummySolverOp<TensorT>()), 0.0f, 0.0f, add_biases, specify_layers);
@@ -321,7 +323,6 @@ public:
     // Manually define the output nodes
     for (const std::string& node_name : node_names_output)
       model.getNodesMap().at(node_name)->setType(NodeType::output);
-    model.setInputAndOutputNodes();
 
     // Make the deep learning layers between each of the masses (In the forward direction)
     for (int mass_iter = 1; mass_iter < n_masses; ++mass_iter) {
@@ -329,39 +330,60 @@ public:
       if (n_fc_1 > 0) {
         node_names = model_builder.addFullyConnected(model, "FC1Forward", "FC1Forward", node_names, n_fc_1,
           activation, activation_grad, integration_op, integration_error_op, integration_weight_grad_op,
-          std::make_shared<RandWeightInitOp<TensorT>>(RandWeightInitOp<TensorT>(node_names.size() + n_fc_1, 2)),
+          std::make_shared<RandWeightInitOp<TensorT>>(RandWeightInitOp<TensorT>(node_names.size() + n_fc_1, 2)), //weight_init, 
           solver_op, 0.0f, 0.0f, add_biases, specify_layers);
       }
       if (n_fc_2 > 0) {
         node_names = model_builder.addFullyConnected(model, "FC2Forward", "FC2Forward", node_names, n_fc_2,
           activation, activation_grad, integration_op, integration_error_op, integration_weight_grad_op,
-          std::make_shared<RandWeightInitOp<TensorT>>(RandWeightInitOp<TensorT>(node_names.size() + n_fc_2, 2)),
+          std::make_shared<RandWeightInitOp<TensorT>>(RandWeightInitOp<TensorT>(node_names.size() + n_fc_2, 2)), //weight_init,
           solver_op, 0.0f, 0.0f, add_biases, specify_layers);
       }
-      node_names = model_builder.addFullyConnected(model, "FC0Forward", "FC0Forward", node_names, std::vector<std::string>({ node_names_masses.at(mass_iter) }),
-        std::make_shared<RandWeightInitOp<TensorT>>(RandWeightInitOp<TensorT>(node_names.size() + 1, 2)),
+      model_builder.addFullyConnected(model, "FC0Forward", node_names, std::vector<std::string>({ node_names_masses.at(mass_iter) }),
+        std::make_shared<RandWeightInitOp<TensorT>>(RandWeightInitOp<TensorT>(node_names.size() + 1, 2)), //weight_init,
         solver_op, 0.0f, specify_layers);
     }
 
     // Make the deep learning layers between each of the masses (In the Reverse direction)
-    for (int mass_iter = n_masses - 1; mass_iter >= 0; --mass_iter) {
+    for (int mass_iter = n_masses - 2; mass_iter >= 0; --mass_iter) {
       std::vector<std::string> node_names = std::vector<std::string>({ node_names_masses.at(mass_iter + 1) });
       if (n_fc_1 > 0) {
         node_names = model_builder.addFullyConnected(model, "FC1Reverse", "FC1Reverse", node_names, n_fc_1,
           activation, activation_grad, integration_op, integration_error_op, integration_weight_grad_op,
-          std::make_shared<RandWeightInitOp<TensorT>>(RandWeightInitOp<TensorT>(node_names.size() + n_fc_1, 2)),
+          std::make_shared<RandWeightInitOp<TensorT>>(RandWeightInitOp<TensorT>(node_names.size() + n_fc_1, 2)), //weight_init,
           solver_op, 0.0f, 0.0f, add_biases, specify_layers);
       }
       if (n_fc_2 > 0) {
         node_names = model_builder.addFullyConnected(model, "FC2Reverse", "FC2Reverse", node_names, n_fc_2,
           activation, activation_grad, integration_op, integration_error_op, integration_weight_grad_op,
-          std::make_shared<RandWeightInitOp<TensorT>>(RandWeightInitOp<TensorT>(node_names.size() + n_fc_2, 2)),
+          std::make_shared<RandWeightInitOp<TensorT>>(RandWeightInitOp<TensorT>(node_names.size() + n_fc_2, 2)), //weight_init,
           solver_op, 0.0f, 0.0f, add_biases, specify_layers);
       }
-      node_names = model_builder.addFullyConnected(model, "FC0Reverse", "FC0Reverse", node_names, std::vector<std::string>({ node_names_masses.at(mass_iter) }),
-        std::make_shared<RandWeightInitOp<TensorT>>(RandWeightInitOp<TensorT>(node_names.size() + 1, 2)),
+      model_builder.addFullyConnected(model, "FC0Reverse", node_names, std::vector<std::string>({ node_names_masses.at(mass_iter) }),
+        std::make_shared<RandWeightInitOp<TensorT>>(RandWeightInitOp<TensorT>(node_names.size() + 1, 2)), //weight_init,
         solver_op, 0.0f, specify_layers);
     }
+
+    // Make the deep learning layers between each of the masses (Special case of n_masses = 1)
+    if (n_masses == 1) {
+      std::vector<std::string> node_names = std::vector<std::string>({ node_names_masses.at(0) });
+      if (n_fc_1 > 0) {
+        node_names = model_builder.addFullyConnected(model, "FC1Forward", "FC1Forward", node_names, n_fc_1,
+          activation, activation_grad, integration_op, integration_error_op, integration_weight_grad_op,
+          std::make_shared<RandWeightInitOp<TensorT>>(RandWeightInitOp<TensorT>(node_names.size() + n_fc_1, 2)), //weight_init,
+          solver_op, 0.0f, 0.0f, add_biases, specify_layers);
+      }
+      if (n_fc_2 > 0) {
+        node_names = model_builder.addFullyConnected(model, "FC2Forward", "FC2Forward", node_names, n_fc_2,
+          activation, activation_grad, integration_op, integration_error_op, integration_weight_grad_op,
+          std::make_shared<RandWeightInitOp<TensorT>>(RandWeightInitOp<TensorT>(node_names.size() + n_fc_2, 2)), //weight_init,
+          solver_op, 0.0f, 0.0f, add_biases, specify_layers);
+      }
+      model_builder.addFullyConnected(model, "FC0Forward", node_names, std::vector<std::string>({ node_names_masses.at(0) }),
+        std::make_shared<RandWeightInitOp<TensorT>>(RandWeightInitOp<TensorT>(node_names.size() + 1, 2)), //weight_init,
+        solver_op, 0.0f, specify_layers);
+    }
+    model.setInputAndOutputNodes();
   }
 	void adaptiveTrainerScheduler(
 		const int& n_generations,
@@ -489,7 +511,7 @@ public:
   }
 };
 
-void main_WeightSpring3W2S1D(const bool& make_model, const bool& train_model) {
+void main_HarmonicOscillator1D(const bool& make_model, const bool& train_model) {
 	// define the population trainer parameters
 	PopulationTrainerExt<float> population_trainer;
   population_trainer.setNGenerations(1); 
@@ -575,7 +597,7 @@ void main_WeightSpring3W2S1D(const bool& make_model, const bool& train_model) {
 	std::cout << "Initializing the population..." << std::endl;
 	Model<float> model;
 	if (make_model) {
-    ModelTrainerExt<float>().makeHarmonicOscillator1D(model, 1, 3, 0, false, true);
+    ModelTrainerExt<float>().makeHarmonicOscillator1D(model, 1, 0, 0, false, true);
     //ModelTrainerExt<float>().makeHarmonicOscillator1M1S(model, 1);
 		 //ModelTrainerExt<float>().makeHarmonicOscillator3M2S(model, 1);
 	}
@@ -613,6 +635,6 @@ void main_WeightSpring3W2S1D(const bool& make_model, const bool& train_model) {
 // Main
 int main(int argc, char** argv)
 {
-	main_WeightSpring3W2S1D(true, true);
+  main_HarmonicOscillator1D(true, true);
 	return 0;
 }
