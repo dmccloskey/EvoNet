@@ -168,33 +168,41 @@ public:
 
 		// Convert the interaction graph to a network model
 		ModelBuilderExperimental<TensorT> model_builder;
-		model_builder.addInteractionGraph(interaction_graph, model, "RBC", "RBC",
+		model_builder.addBiochemicalReactionsMLP(model, biochemical_reaction_model.biochemicalReactions_, "RBC",
+      {32, 32},
 			std::make_shared<ReLUOp<TensorT>>(ReLUOp<TensorT>()), std::make_shared<ReLUGradOp<TensorT>>(ReLUGradOp<TensorT>()),
 			std::make_shared<SumOp<TensorT>>(SumOp<TensorT>()), std::make_shared<SumErrorOp<TensorT>>(SumErrorOp<TensorT>()), std::make_shared<SumWeightGradOp<TensorT>>(SumWeightGradOp<TensorT>()),
 			std::make_shared<RangeWeightInitOp<TensorT>>(RangeWeightInitOp<TensorT>(0.0, 2.0)),
-      std::make_shared<AdamOp<TensorT>>(AdamOp<TensorT>(0.001, 0.9, 0.999, 1e-8))
-		);
+      std::make_shared<SGDOp<TensorT>>(SGDOp<TensorT>(1e-4, 0.9, 10)),
+      1, false, true);
 
     // Specify the layer for all nodes
     for (auto node_map : model.getNodesMap()) {
       node_map.second->setLayerName("IG");
     }
 
-		// Specify the output layer for metabolite nodes (20)
-		std::vector<std::string> output_nodes = { "13dpg","2pg","3pg","adp","amp","atp","dhap","f6p","fdp","g3p","g6p","glc__D","h","h2o","lac__L","nad","nadh","pep","pi","pyr" };
-		int iter = 0;
-		for (const std::string& node : output_nodes) {
-			model.nodes_.at(node + "_c")->setLayerName("Metabolites");
-		}
+	  // define the input/output for metabolite nodes (20)
+    auto add_c = [](std::string& met_id) { met_id += "_c"; };
+    std::vector<std::string> metabolite_nodes = { "13dpg","2pg","3pg","adp","amp","atp","dhap","f6p","fdp","g3p","g6p","glc__D","h","h2o","lac__L","nad","nadh","pep","pi","pyr" };
+    std::for_each(metabolite_nodes.begin(), metabolite_nodes.end(), add_c);
 
-		//// Specify the layer for the enzymes (f/r) (14)
-		//std::vector<std::string> enzymes_f_nodes = { "ENO","FBA","GAPD","HEX1","LDH_L","PFK","PGI","PGK","PGM","PYK","TPI","DM_nadh","ADK1","ATPh"};
-		//iter = 0;
-		//for (const std::string& node : enzymes_f_nodes) {
-		//	model.nodes_.at(node)->setLayerName("Enzymes");
-		//	//model.nodes_.at(node)->setTensorIndex(std::make_pair(1, iter));
-		//	++iter;
-		//}
+    // Add the input layer
+    std::vector<std::string> node_names = model_builder.addInputNodes(model, "Input", "Input", metabolite_nodes.size(), true);
+
+    // Connect the input layer to the metabolite nodes
+    model_builder.addSinglyConnected(model, "RBC", node_names, metabolite_nodes,std::make_shared<ConstWeightInitOp<TensorT>>(ConstWeightInitOp<TensorT>(1)),
+      std::make_shared<DummySolverOp<TensorT>>(DummySolverOp<TensorT>()), 0.0f, true);
+
+    // Connect the metabolite nodes to the output layer
+    node_names = model_builder.addSinglyConnected(model, "Output", "Output", metabolite_nodes, metabolite_nodes.size(),
+      std::make_shared<LinearOp<TensorT>>(LinearOp<TensorT>()),
+      std::make_shared<LinearGradOp<TensorT>>(LinearGradOp<TensorT>()),
+      std::make_shared<SumOp<TensorT>>(SumOp<TensorT>()), std::make_shared<SumErrorOp<TensorT>>(SumErrorOp<TensorT>()), std::make_shared<SumWeightGradOp<TensorT>>(SumWeightGradOp<TensorT>()),
+      std::make_shared<ConstWeightInitOp<TensorT>>(ConstWeightInitOp<TensorT>(1)),
+      std::make_shared<DummySolverOp<TensorT>>(DummySolverOp<TensorT>()), 0.0f, 0.0f, false, true);
+
+    for (const std::string& node_name : node_names)
+      model.getNodesMap().at(node_name)->setType(NodeType::output);
 
     model.setInputAndOutputNodes();
 	}
@@ -317,11 +325,26 @@ void main_KineticModel(const bool& make_model, const bool& train_model, const st
 
 	// define the input/output nodes
   auto add_c = [](std::string& met_id) { met_id += "_c"; };
-	std::vector<std::string> input_nodes = { "13dpg","2pg","3pg","adp","amp","atp","dhap","f6p","fdp","g3p","g6p","glc__D","h","h2o","lac__L","nad","nadh","pep","pi","pyr" };
-  std::for_each(input_nodes.begin(), input_nodes.end(), add_c);
-	// TODO: manually specify the tensor index ordering or update for correct tensor ordering
-	std::vector<std::string> output_nodes = { "13dpg","2pg","3pg","adp","amp","atp","dhap","f6p","fdp","g3p","g6p","glc__D","h","h2o","lac__L","nad","nadh","pep","pi","pyr" };
-  std::for_each(output_nodes.begin(), output_nodes.end(), add_c);
+	std::vector<std::string> metabolite_names = { "13dpg","2pg","3pg","adp","amp","atp","dhap","f6p","fdp","g3p","g6p","glc__D","h","h2o","lac__L","nad","nadh","pep","pi","pyr" };
+  std::for_each(metabolite_names.begin(), metabolite_names.end(), add_c);
+
+  // Make the input nodes
+  std::vector<std::string> input_nodes;
+  for (int i = 0; i < metabolite_names.size(); ++i) {
+    char name_char[512];
+    sprintf(name_char, "Input_%012d", i);
+    std::string name(name_char);
+    input_nodes.push_back(name);
+  }
+
+  // Make the output nodes
+  std::vector<std::string> output_nodes;
+  for (int i = 0; i < metabolite_names.size(); ++i) {
+    char name_char[512];
+    sprintf(name_char, "Output_%012d", i);
+    std::string name(name_char);
+    output_nodes.push_back(name);
+  }
 
 	// define the data simulator
 	DataSimulatorExt<float> data_simulator;
