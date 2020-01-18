@@ -728,7 +728,7 @@ public:
   template<typename TensorT>
   inline void ModelBuilderExperimental<TensorT>::addBiochemicalReactionsMLP(Model<TensorT>& model, const BiochemicalReactions & biochemicalReactions, const std::string & module_name, const std::vector<int>& n_fc, const std::shared_ptr<ActivationOp<TensorT>>& node_activation, const std::shared_ptr<ActivationOp<TensorT>>& node_activation_grad, const std::shared_ptr<IntegrationOp<TensorT>>& node_integration, const std::shared_ptr<IntegrationErrorOp<TensorT>>& node_integration_error, const std::shared_ptr<IntegrationWeightGradOp<TensorT>>& node_integration_weight_grad, const std::shared_ptr<WeightInitOp<TensorT>>& weight_init, const std::shared_ptr<SolverOp<TensorT>>& solver, const int & version, const bool& add_biases, bool specify_layers)
   {
-    // add all metabolite nodes to the model
+    // get all unique metabolite nodes in the model
     std::set<std::string> node_names_met;
     for (const auto& biochemicalReaction : biochemicalReactions) {
       if (!biochemicalReaction.second.used) continue; // Skip specified reactions
@@ -736,6 +736,7 @@ public:
       for (const std::string& met_id : biochemicalReaction.second.products_ids) node_names_met.insert(met_id);
     }
 
+    // add all metabolite nodes to the model
     for (const std::string& met_id : node_names_met) {
       Node<TensorT> met(met_id, NodeType::hidden, NodeStatus::initialized,
         node_activation, node_activation_grad, node_integration, node_integration_error, node_integration_weight_grad);
@@ -743,6 +744,8 @@ public:
       if (specify_layers) met.setLayerName(module_name + "-Met");
       model.addNodes({ met });
     }
+
+    // add self metabolite links to the model
 
     // add all reaction MLPs to the model
     for (const auto& biochemicalReaction : biochemicalReactions) {

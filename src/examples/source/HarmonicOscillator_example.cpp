@@ -47,7 +47,7 @@ public:
 					1);
 
 				for (int memory_iter = 0; memory_iter < memory_size; ++memory_iter) {
-          if (memory_iter >= memory_size - 4)	input_data(batch_iter, memory_iter, 0, epochs_iter) = displacements(memory_size - 1 - memory_iter, 1); // m2
+          if (memory_iter >= memory_size - 1)	input_data(batch_iter, memory_iter, 0, epochs_iter) = displacements(memory_size - 1 - memory_iter, 1); // m2
           else input_data(batch_iter, memory_iter, 0, epochs_iter) = TensorT(0);
 					output_data(batch_iter, memory_iter, 0, epochs_iter) = displacements(memory_size - 1 - memory_iter, 0); // m1
 					output_data(batch_iter, memory_iter, 1, epochs_iter) = displacements(memory_size - 1 - memory_iter, 2); // m3
@@ -82,7 +82,7 @@ public:
           1, 1, dist(gen), 0);
 
         for (int memory_iter = 0; memory_iter < memory_size; ++memory_iter) {
-          if (memory_iter >= memory_size - 4)	input_data(batch_iter, memory_iter, 0, epochs_iter) = displacements(memory_size - 1 - memory_iter, 0);
+          if (memory_iter >= memory_size - 1)	input_data(batch_iter, memory_iter, 0, epochs_iter) = displacements(memory_size - 1 - memory_iter, 0);
           else input_data(batch_iter, memory_iter, 0, epochs_iter) = TensorT(0);
           output_data(batch_iter, memory_iter, 0, epochs_iter) = displacements(memory_size - 1 - memory_iter, 0);
         }
@@ -116,7 +116,7 @@ public:
           1, 1, 0.5, dist(gen), 0);
 
         for (int memory_iter = 0; memory_iter < memory_size; ++memory_iter) {
-          if (memory_iter < 5)	input_data(batch_iter, memory_size - 1 - memory_iter, 0, epochs_iter) = displacements(memory_iter, 0);
+          if (memory_iter < 1)	input_data(batch_iter, memory_size - 1 - memory_iter, 0, epochs_iter) = displacements(memory_iter, 0);
           else input_data(batch_iter, memory_size - 1 - memory_iter, 0, epochs_iter) = TensorT(0);
           output_data(batch_iter, memory_size - 1 - memory_iter, 0, epochs_iter) = displacements(memory_iter, 0);
         }
@@ -185,6 +185,11 @@ public:
       integration_op, integration_error_op, integration_weight_grad_op,
       std::make_shared<ConstWeightInitOp<TensorT>>(ConstWeightInitOp<TensorT>(1)),
       std::make_shared<DummySolverOp<TensorT>>(DummySolverOp<TensorT>()), 0.0f, 0.0f, add_biases, specify_layers);
+
+    // Connect the masses to themselves
+    model_builder.addSinglyConnected(model, "Mass", node_names_masses, node_names_masses,
+      std::make_shared<ConstWeightInitOp<TensorT>>(ConstWeightInitOp<TensorT>(1)),
+      std::make_shared<DummySolverOp<TensorT>>(DummySolverOp<TensorT>()), 0.0f, specify_layers);
 
     // Connect the mass to the output nodes
     std::vector<std::string> node_names_output = model_builder.addSinglyConnected(model, "Output", "Output", node_names_masses, n_masses,
