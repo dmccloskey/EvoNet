@@ -173,13 +173,8 @@ public:
 			std::make_shared<ReLUOp<TensorT>>(ReLUOp<TensorT>()), std::make_shared<ReLUGradOp<TensorT>>(ReLUGradOp<TensorT>()),
 			std::make_shared<SumOp<TensorT>>(SumOp<TensorT>()), std::make_shared<SumErrorOp<TensorT>>(SumErrorOp<TensorT>()), std::make_shared<SumWeightGradOp<TensorT>>(SumWeightGradOp<TensorT>()),
 			std::make_shared<RangeWeightInitOp<TensorT>>(RangeWeightInitOp<TensorT>(0.0, 2.0)),
-      std::make_shared<SGDOp<TensorT>>(SGDOp<TensorT>(1e-4, 0.9, 10)),
+      std::make_shared<SGDOp<TensorT>>(SGDOp<TensorT>(1e-5, 0.9, 10)),
       1, false, true);
-
-    //// Specify the layer for all nodes
-    //for (auto node_map : model.getNodesMap()) {
-    //  node_map.second->setLayerName("IG");
-    //}
 
 	  // define the input/output for metabolite nodes (20)
     auto add_c = [](std::string& met_id) { met_id += "_c"; };
@@ -313,8 +308,8 @@ public:
 void main_KineticModel(const std::string& data_dir, const bool& make_model, const bool& train_model, const std::string& simulation_type) {
 	// define the population trainer parameters
 	PopulationTrainerExt<float> population_trainer;
-	population_trainer.setNGenerations(10);
-	population_trainer.setLogging(true);
+	population_trainer.setNGenerations(1);
+	population_trainer.setLogging(false);
 
 	// define the population logger
 	PopulationLogger<float> population_logger(true, true);
@@ -358,10 +353,9 @@ void main_KineticModel(const std::string& data_dir, const bool& make_model, cons
 		model_interpreters.push_back(model_interpreter);
 	}
 	ModelTrainerExt<float> model_trainer;
-	model_trainer.setBatchSize(1);
-  //model_trainer.setBatchSize(32);
-	model_trainer.setMemorySize(16);
-	model_trainer.setNEpochsTraining(500);
+  model_trainer.setBatchSize(32);
+	model_trainer.setMemorySize(64);
+	model_trainer.setNEpochsTraining(5000);
 	model_trainer.setNEpochsValidation(25);
 	model_trainer.setNTETTSteps(1);
   model_trainer.setNTBPTTSteps(model_trainer.getMemorySize() - 3);
