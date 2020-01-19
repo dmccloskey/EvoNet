@@ -176,10 +176,10 @@ public:
       std::make_shared<SGDOp<TensorT>>(SGDOp<TensorT>(1e-4, 0.9, 10)),
       1, false, true);
 
-    // Specify the layer for all nodes
-    for (auto node_map : model.getNodesMap()) {
-      node_map.second->setLayerName("IG");
-    }
+    //// Specify the layer for all nodes
+    //for (auto node_map : model.getNodesMap()) {
+    //  node_map.second->setLayerName("IG");
+    //}
 
 	  // define the input/output for metabolite nodes (20)
     auto add_c = [](std::string& met_id) { met_id += "_c"; };
@@ -310,7 +310,7 @@ public:
 	}
 };
 
-void main_KineticModel(const bool& make_model, const bool& train_model, const std::string& simulation_type) {
+void main_KineticModel(const std::string& data_dir, const bool& make_model, const bool& train_model, const std::string& simulation_type) {
 	// define the population trainer parameters
 	PopulationTrainerExt<float> population_trainer;
 	population_trainer.setNGenerations(10);
@@ -364,6 +364,7 @@ void main_KineticModel(const bool& make_model, const bool& train_model, const st
 	model_trainer.setNEpochsTraining(500);
 	model_trainer.setNEpochsValidation(25);
 	model_trainer.setNTETTSteps(1);
+  model_trainer.setNTBPTTSteps(model_trainer.getMemorySize() - 3);
 	model_trainer.setVerbosityLevel(1);
 	model_trainer.setLogging(true, false);
   //model_trainer.setLogging(false, false);
@@ -387,15 +388,12 @@ void main_KineticModel(const bool& make_model, const bool& train_model, const st
 	std::cout << "Initializing the population..." << std::endl;
 	Model<float> model;
 	if (make_model) {
-		const std::string data_dir = "C:/Users/dmccloskey/Dropbox (UCSD SBRG)/Project_EvoNet/";
-		//const std::string data_dir = "C:/Users/domccl/Dropbox (UCSD SBRG)/Project_EvoNet/";
 		const std::string model_filename = data_dir + "RBCGlycolysis.csv";
 		ModelTrainerExt<float>().makeRBCGlycolysis(model, model_filename);
 	}
 	else {
 		// read in the trained model
 		std::cout << "Reading in the model..." << std::endl;
-		const std::string data_dir = "C:/Users/domccl/GitHub/smartPeak_cpp/build_win_cuda/bin/Debug/";
 		const std::string model_filename = data_dir + "0_RBCGlycolysis_model.binary";
 		const std::string interpreter_filename = data_dir + "0_RBCGlycolysis_interpreter.binary";
 		ModelFile<float> model_file;
@@ -426,10 +424,24 @@ void main_KineticModel(const bool& make_model, const bool& train_model, const st
 // Main
 int main(int argc, char** argv)
 {
-	//main_KineticModel(true, true, "steady_state"); // Constant glucose from T = 0 to N, SS metabolite levels at T = 0 (maintenance of SS metabolite levels)
-	main_KineticModel(true, true, "glucose_pulse"); // Glucose pulse at T = 0, SS metabolite levels at T = 0 (maintenance of SS metabolite)
-	//main_KineticModel(true, true, "amp_sweep"); // AMP rise/fall at T = 0, SS metabolite levels at T = 0 (maintenance of SS metbolite levels)
-  //main_KineticModel(true, true, "TODO?"); // Glucose pulse at T = 0, SS metabolite levels at T = 0 (maintenance of SS pyr levels)
-  //main_KineticModel(true, true, "TODO?"); // AMP rise/fall at T = 0, SS metabolite levels at T = 0 (maintenance of SS ATP levels)
+  // Parse the user commands
+  //std::string data_dir = "C:/Users/dmccloskey/Dropbox (UCSD SBRG)/Project_EvoNet/";
+  std::string data_dir = "C:/Users/domccl/Dropbox (UCSD SBRG)/Project_EvoNet/";
+  //std::string data_dir = "C:/Users/domccl/GitHub/mnist/";
+  bool make_model = true, train_model = true;
+  if (argc >= 2) {
+    data_dir = argv[1];
+  }
+  if (argc >= 3) {
+    make_model = (argv[2] == std::string("true")) ? true : false;
+  }
+  if (argc >= 4) {
+    train_model = (argv[3] == std::string("true")) ? true : false;
+  }
+	//main_KineticModel(data_dir, true, true, "steady_state"); // Constant glucose from T = 0 to N, SS metabolite levels at T = 0 (maintenance of SS metabolite levels)
+	main_KineticModel(data_dir, true, true, "glucose_pulse"); // Glucose pulse at T = 0, SS metabolite levels at T = 0 (maintenance of SS metabolite)
+	//main_KineticModel(data_dir, true, true, "amp_sweep"); // AMP rise/fall at T = 0, SS metabolite levels at T = 0 (maintenance of SS metbolite levels)
+  //main_KineticModel(data_dir, true, true, "TODO?"); // Glucose pulse at T = 0, SS metabolite levels at T = 0 (maintenance of SS pyr levels)
+  //main_KineticModel(data_dir, true, true, "TODO?"); // AMP rise/fall at T = 0, SS metabolite levels at T = 0 (maintenance of SS ATP levels)
 	return 0;
 }
