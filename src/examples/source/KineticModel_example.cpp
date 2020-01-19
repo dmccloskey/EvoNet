@@ -163,15 +163,13 @@ public:
 		// Convert the COBRA model to an interaction graph
 		BiochemicalReactionModel<TensorT> biochemical_reaction_model;
 		biochemical_reaction_model.readBiochemicalReactions(biochem_rxns_filename);
-		std::map<std::string, std::vector<std::pair<std::string, std::string>>> interaction_graph;
-		biochemical_reaction_model.getInteractionGraph(interaction_graph);
 
 		// Convert the interaction graph to a network model
 		ModelBuilderExperimental<TensorT> model_builder;
 		model_builder.addBiochemicalReactionsMLP(model, biochemical_reaction_model.biochemicalReactions_, "RBC",
       {32, 32},
-			//std::make_shared<ReLUOp<TensorT>>(ReLUOp<TensorT>()), std::make_shared<ReLUGradOp<TensorT>>(ReLUGradOp<TensorT>()),
-      std::make_shared<SigmoidOp<TensorT>>(SigmoidOp<TensorT>()), std::make_shared<SigmoidGradOp<TensorT>>(SigmoidGradOp<TensorT>()),
+			std::make_shared<ReLUOp<TensorT>>(ReLUOp<TensorT>()), std::make_shared<ReLUGradOp<TensorT>>(ReLUGradOp<TensorT>()),
+      //std::make_shared<SigmoidOp<TensorT>>(SigmoidOp<TensorT>()), std::make_shared<SigmoidGradOp<TensorT>>(SigmoidGradOp<TensorT>()),
 			std::make_shared<SumOp<TensorT>>(SumOp<TensorT>()), std::make_shared<SumErrorOp<TensorT>>(SumErrorOp<TensorT>()), std::make_shared<SumWeightGradOp<TensorT>>(SumWeightGradOp<TensorT>()),
 			std::make_shared<RangeWeightInitOp<TensorT>>(RangeWeightInitOp<TensorT>(0.0, 2.0)),
       std::make_shared<SGDOp<TensorT>>(SGDOp<TensorT>(1e-5, 0.9, 10)),

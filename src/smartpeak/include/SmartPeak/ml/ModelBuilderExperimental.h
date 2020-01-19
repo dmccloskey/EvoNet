@@ -28,26 +28,6 @@ namespace SmartPeak
 public:
     ModelBuilderExperimental() = default; ///< Default constructor
     ~ModelBuilderExperimental() = default; ///< Default destructor
-
-		/*
-		@brief Convert a biochemical interaction graph into a network model
-
-    EXPERIMENTAL
-
-		@param[in] elementary_graph A map of vectores of source/sink pairs where the key is the connection name
-		@param[in, out] Model
-		@param[in] node_activation The activation function of the input node to create
-		@param[in] node_activation_grad The activation function gradient of the input node to create
-		@param[in] node_integration The integration function of the input node to create
-		@param[in] node_integration_error The integration function of the input node to create
-		@param[in] node_integration_weight_grad The integration function of the input node to create
-		**/
-		void addInteractionGraph(const std::map<std::string, std::vector<std::pair<std::string, std::string>>>& elementary_graph,
-			Model<TensorT> & model, const std::string & name, const std::string& module_name,
-			const std::shared_ptr<ActivationOp<TensorT>>& node_activation, const std::shared_ptr<ActivationOp<TensorT>>& node_activation_grad,
-			const std::shared_ptr<IntegrationOp<TensorT>>& node_integration, const std::shared_ptr<IntegrationErrorOp<TensorT>>& node_integration_error, const std::shared_ptr<IntegrationWeightGradOp<TensorT>>& node_integration_weight_grad,
-			const std::shared_ptr<WeightInitOp<TensorT>> & weight_init, const std::shared_ptr<SolverOp<TensorT>> & solver);
-
     /*
     @brief Convert and add Biochemical reactions to the network model
 
@@ -98,7 +78,8 @@ public:
       const std::shared_ptr<IntegrationOp<TensorT>>& node_integration,
       const std::shared_ptr<IntegrationErrorOp<TensorT>>& node_integration_error,
       const std::shared_ptr<IntegrationWeightGradOp<TensorT>>& node_integration_weight_grad,
-      const std::shared_ptr<WeightInitOp<TensorT>> & weight_init, const std::shared_ptr<SolverOp<TensorT>> & solver, const int& version, const bool& add_biases, bool specify_layers = false);
+      const std::shared_ptr<WeightInitOp<TensorT>> & weight_init, const std::shared_ptr<SolverOp<TensorT>> & solver, const bool& add_biases, const bool& specify_layers, 
+      const bool& add_met_self_links);
     void addReactantsMLP_1(Model<TensorT> & model, const BiochemicalReaction& reaction,
       const std::vector<int>& n_fc,
       const std::shared_ptr<ActivationOp<TensorT>>& node_activation,
@@ -107,32 +88,9 @@ public:
       const std::shared_ptr<IntegrationErrorOp<TensorT>>& node_integration_error,
       const std::shared_ptr<IntegrationWeightGradOp<TensorT>>& node_integration_weight_grad,
       const std::shared_ptr<WeightInitOp<TensorT>> & weight_init, const std::shared_ptr<SolverOp<TensorT>> & solver,
-      const bool& add_biases, const bool& is_reverse, bool specify_layers = false);
+      const bool& add_biases, const bool& specify_layers, const bool& is_reverse);
   };
 
-	template<typename TensorT>
-	inline void ModelBuilderExperimental<TensorT>::addInteractionGraph(const std::map<std::string, std::vector<std::pair<std::string, std::string>>>& elementary_graph,
-		Model<TensorT> & model, const std::string & name, const std::string& module_name,
-		const std::shared_ptr<ActivationOp<TensorT>>& node_activation, const std::shared_ptr<ActivationOp<TensorT>>& node_activation_grad,
-		const std::shared_ptr<IntegrationOp<TensorT>>& node_integration, const std::shared_ptr<IntegrationErrorOp<TensorT>>& node_integration_error, const std::shared_ptr<IntegrationWeightGradOp<TensorT>>& node_integration_weight_grad,
-		const std::shared_ptr<WeightInitOp<TensorT>> & weight_init, const std::shared_ptr<SolverOp<TensorT>> & solver)
-	{
-		for (const auto& element : elementary_graph) {
-			for (const std::pair<std::string, std::string>& source_sink : element.second) {
-				Node<TensorT> source_node(source_sink.first, NodeType::hidden, NodeStatus::initialized, node_activation, node_activation_grad, node_integration, node_integration_error, node_integration_weight_grad);
-				Node<TensorT> sink_node(source_sink.second, NodeType::hidden, NodeStatus::initialized, node_activation, node_activation_grad, node_integration, node_integration_error, node_integration_weight_grad);
-				source_node.setModuleName(module_name);
-				sink_node.setModuleName(module_name);
-				Weight<TensorT> weight(element.first, weight_init, solver);
-				weight.setModuleName(module_name);
-				Link link(element.first, source_sink.first, source_sink.second, element.first);
-				link.setModuleName(module_name);
-				model.addNodes({ source_node, sink_node });
-				model.addLinks({ link });
-				model.addWeights({ weight });
-			}
-		}
-	}
   template<typename TensorT>
   inline void ModelBuilderExperimental<TensorT>::addBiochemicalReactionsSequencialMin(Model<TensorT>& model, const BiochemicalReactions& biochemicalReactions, const std::string & name, const std::string & module_name, const std::shared_ptr<WeightInitOp<TensorT>>& weight_init, const std::shared_ptr<SolverOp<TensorT>>& solver, const int& version, bool specify_layers, bool specify_cycles)
   {
@@ -522,12 +480,12 @@ public:
     if (specify_cycles) model.getCyclicPairs().insert(std::make_pair(enzyme_complex_name, enzyme_complex_name));
 
     // Add "self" result link
-    std::string weight_name_result_self = enzyme_complex_name_result + "_to_" + enzyme_complex_name_result;
-    Weight<TensorT> weight_result_self(weight_name_result_self, std::make_shared<ConstWeightInitOp<TensorT>>(ConstWeightInitOp<TensorT>(1.0)), std::make_shared<DummySolverOp<TensorT>>(DummySolverOp<TensorT>()));
-    weight_result_self.setModuleName(module_name);
-    if (specify_layers) weight_result_self.setLayerName(module_name + "-Result_to_Result");
-    Link link_result_self(weight_name_result_self, enzyme_complex_name_result, enzyme_complex_name_result, weight_name_result_self);
-    link_result_self.setModuleName(module_name);
+    std::string weight_name = enzyme_complex_name_result + "_to_" + enzyme_complex_name_result;
+    Weight<TensorT> weight(weight_name, std::make_shared<ConstWeightInitOp<TensorT>>(ConstWeightInitOp<TensorT>(1.0)), std::make_shared<DummySolverOp<TensorT>>(DummySolverOp<TensorT>()));
+    weight.setModuleName(module_name);
+    if (specify_layers) weight.setLayerName(module_name + "-Result_to_Result");
+    Link link(weight_name, enzyme_complex_name_result, enzyme_complex_name_result, weight_name);
+    link.setModuleName(module_name);
     if (specify_cycles) model.getCyclicPairs().insert(std::make_pair(enzyme_complex_name_result, enzyme_complex_name_result));
 
     for (int i = 0; i < reaction.reactants_ids.size(); ++i) {
@@ -574,8 +532,8 @@ public:
 
     // Add all of the nodes, links, and weights to the model
     model.addNodes({ enzyme_complex, enzyme_complex_tmp1, enzyme_complex_tmp2, enzyme_complex_result });
-    model.addLinks({ link1, link3, link4, link_result, link1_self, link_result_self });
-    model.addWeights({ weight1, weight3, weight4, weight_result, weight1_self, weight_result_self });
+    model.addLinks({ link1, link3, link4, link_result, link1_self, link });
+    model.addWeights({ weight1, weight3, weight4, weight_result, weight1_self, weight });
 
     // Update the enzyme complex name with the result
     enzyme_complex_name = enzyme_complex_name_result;
@@ -674,12 +632,12 @@ public:
     if (specify_cycles) model.getCyclicPairs().insert(std::make_pair(enzyme_complex_name, enzyme_complex_name));
 
     // Add the result enzyme complex "self" link and weight
-    std::string weight_name_result_self = enzyme_complex_name_result + "_to_" + enzyme_complex_name_result;
-    Weight<TensorT> weight_result_self(weight_name_result_self, std::make_shared<ConstWeightInitOp<TensorT>>(ConstWeightInitOp<TensorT>(1.0)), std::make_shared<DummySolverOp<TensorT>>(DummySolverOp<TensorT>()));
-    weight_result_self.setModuleName(module_name);
-    if (specify_layers) weight_result_self.setLayerName(module_name + "-Result_to_Result");
-    Link link_result_self(weight_name_result_self, enzyme_complex_name_result, enzyme_complex_name_result, weight_name_result_self);
-    link_result_self.setModuleName(module_name);
+    std::string weight_name = enzyme_complex_name_result + "_to_" + enzyme_complex_name_result;
+    Weight<TensorT> weight(weight_name, std::make_shared<ConstWeightInitOp<TensorT>>(ConstWeightInitOp<TensorT>(1.0)), std::make_shared<DummySolverOp<TensorT>>(DummySolverOp<TensorT>()));
+    weight.setModuleName(module_name);
+    if (specify_layers) weight.setLayerName(module_name + "-Result_to_Result");
+    Link link(weight_name, enzyme_complex_name_result, enzyme_complex_name_result, weight_name);
+    link.setModuleName(module_name);
     if (specify_cycles) model.getCyclicPairs().insert(std::make_pair(enzyme_complex_name_result, enzyme_complex_name_result));
 
     // parse the products
@@ -719,14 +677,15 @@ public:
 
     // Add all of the nodes, links, and weights to the model
     model.addNodes({ enzyme_complex, enzyme_complex_tmp1, enzyme_complex_tmp2, enzyme_complex_result });
-    model.addLinks({ link1, link3, link4, link_result, link1_self, link_result_self });
-    model.addWeights({ weight1, weight3, weight4, weight_result, weight1_self, weight_result_self });
+    model.addLinks({ link1, link3, link4, link_result, link1_self, link });
+    model.addWeights({ weight1, weight3, weight4, weight_result, weight1_self, weight });
 
     // Update the enzyme complex name with the result
     enzyme_complex_name = enzyme_complex_name_result;
   }
   template<typename TensorT>
-  inline void ModelBuilderExperimental<TensorT>::addBiochemicalReactionsMLP(Model<TensorT>& model, const BiochemicalReactions & biochemicalReactions, const std::string & module_name, const std::vector<int>& n_fc, const std::shared_ptr<ActivationOp<TensorT>>& node_activation, const std::shared_ptr<ActivationOp<TensorT>>& node_activation_grad, const std::shared_ptr<IntegrationOp<TensorT>>& node_integration, const std::shared_ptr<IntegrationErrorOp<TensorT>>& node_integration_error, const std::shared_ptr<IntegrationWeightGradOp<TensorT>>& node_integration_weight_grad, const std::shared_ptr<WeightInitOp<TensorT>>& weight_init, const std::shared_ptr<SolverOp<TensorT>>& solver, const int & version, const bool& add_biases, bool specify_layers)
+  inline void ModelBuilderExperimental<TensorT>::addBiochemicalReactionsMLP(Model<TensorT>& model, const BiochemicalReactions & biochemicalReactions, const std::string & module_name, const std::vector<int>& n_fc, const std::shared_ptr<ActivationOp<TensorT>>& node_activation, const std::shared_ptr<ActivationOp<TensorT>>& node_activation_grad, const std::shared_ptr<IntegrationOp<TensorT>>& node_integration, const std::shared_ptr<IntegrationErrorOp<TensorT>>& node_integration_error, const std::shared_ptr<IntegrationWeightGradOp<TensorT>>& node_integration_weight_grad, const std::shared_ptr<WeightInitOp<TensorT>>& weight_init, const std::shared_ptr<SolverOp<TensorT>>& solver, 
+    const bool& add_biases, const bool& specify_layers, const bool& add_met_self_links)
   {
     // get all unique metabolite nodes in the model
     std::set<std::string> node_names_met;
@@ -747,17 +706,19 @@ public:
     }
 
     // add self metabolite links to the model
-    std::vector<std::string> node_names_met_vec(node_names_met.begin(), node_names_met.end());
-    this->addSinglyConnected(model, "module_name", node_names_met_vec, node_names_met_vec,
-      std::make_shared<ConstWeightInitOp<TensorT>>(ConstWeightInitOp<TensorT>(1)),
-      std::make_shared<DummySolverOp<TensorT>>(DummySolverOp<TensorT>()), 0.0f, specify_layers);
+    if (add_met_self_links) {
+      std::vector<std::string> node_names_met_vec(node_names_met.begin(), node_names_met.end());
+      this->addSinglyConnected(model, "module_name", node_names_met_vec, node_names_met_vec,
+        std::make_shared<ConstWeightInitOp<TensorT>>(ConstWeightInitOp<TensorT>(1)),
+        std::make_shared<DummySolverOp<TensorT>>(DummySolverOp<TensorT>()), 0.0f, specify_layers);
+    }
 
     // add all reaction MLPs to the model
     for (const auto& biochemicalReaction : biochemicalReactions) {
       if (!biochemicalReaction.second.used) continue; // Skip specified reactions
 
-      if (version == 1) addReactantsMLP_1(model, biochemicalReaction.second, n_fc, node_activation, node_activation_grad, node_integration, node_integration_error, node_integration_weight_grad, weight_init, solver, add_biases, false, specify_layers);
-      else if (version == 2) {}
+      addReactantsMLP_1(model, biochemicalReaction.second, n_fc, node_activation, node_activation_grad, node_integration, node_integration_error, node_integration_weight_grad, weight_init, solver, add_biases, specify_layers, 
+        false);
 
       if (biochemicalReaction.second.reversibility) {
         // flip the products and reactants and repeat the above
@@ -767,17 +728,18 @@ public:
         reverse_reaction.reactants_ids = biochemicalReaction.second.products_ids;
         reverse_reaction.reactants_stoichiometry = biochemicalReaction.second.products_stoichiometry;
 
-        if (version == 1) addReactantsMLP_1(model, biochemicalReaction.second, n_fc, node_activation, node_activation_grad, node_integration, node_integration_error, node_integration_weight_grad, weight_init, solver, add_biases, true, specify_layers);
-        else if (version == 2) {}
+        addReactantsMLP_1(model, biochemicalReaction.second, n_fc, node_activation, node_activation_grad, node_integration, node_integration_error, node_integration_weight_grad, weight_init, solver, add_biases, specify_layers, 
+          true);
       }
     }
   }
   template<typename TensorT>
-  inline void ModelBuilderExperimental<TensorT>::addReactantsMLP_1(Model<TensorT>& model, const BiochemicalReaction & reaction, const std::vector<int>& n_fc, const std::shared_ptr<ActivationOp<TensorT>>& node_activation, const std::shared_ptr<ActivationOp<TensorT>>& node_activation_grad, const std::shared_ptr<IntegrationOp<TensorT>>& node_integration, const std::shared_ptr<IntegrationErrorOp<TensorT>>& node_integration_error, const std::shared_ptr<IntegrationWeightGradOp<TensorT>>& node_integration_weight_grad, const std::shared_ptr<WeightInitOp<TensorT>>& weight_init, const std::shared_ptr<SolverOp<TensorT>>& solver, const bool& add_biases, const bool& is_reverse, bool specify_layers)
+  inline void ModelBuilderExperimental<TensorT>::addReactantsMLP_1(Model<TensorT>& model, const BiochemicalReaction & reaction, const std::vector<int>& n_fc, const std::shared_ptr<ActivationOp<TensorT>>& node_activation, const std::shared_ptr<ActivationOp<TensorT>>& node_activation_grad, const std::shared_ptr<IntegrationOp<TensorT>>& node_integration, const std::shared_ptr<IntegrationErrorOp<TensorT>>& node_integration_error, const std::shared_ptr<IntegrationWeightGradOp<TensorT>>& node_integration_weight_grad, const std::shared_ptr<WeightInitOp<TensorT>>& weight_init, const std::shared_ptr<SolverOp<TensorT>>& solver, 
+    const bool& add_biases, const bool& specify_layers, const bool& is_reverse)
   {
     // make the input nodes (reactants + products) and output nodes (products)
-    std::vector<std::string> node_names_input, node_names_output;
-    for (const std::string& met_id: reaction.reactants_ids) {
+    std::vector<std::string> node_names_reactants, node_names_products, node_names_input, node_names_output;
+    for (const std::string& met_id : reaction.reactants_ids) {
       node_names_input.push_back(met_id);
     }
     for (const std::string& met_id : reaction.products_ids) {
