@@ -88,44 +88,44 @@ public:
 				for (int memory_iter = 0; memory_iter<memory_size; ++memory_iter) {
 					for (int nodes_iter = 0; nodes_iter < n_input_nodes; ++nodes_iter) {
 						if (simulation_type_ == "glucose_pulse") {
-							if (nodes_iter != 11 && memory_iter <= 3)
+							if (nodes_iter != 11 && memory_iter == memory_size - 1)
 								input_data(batch_iter, memory_iter, nodes_iter, epochs_iter) = met_data_stst[nodes_iter];
-							else if (nodes_iter == 11 && memory_iter <= 3)
+							else if (nodes_iter == 11 && memory_iter == memory_size - 1)
 								input_data(batch_iter, memory_iter, nodes_iter, epochs_iter) = glu__D_rand(0, batch_iter*n_epochs + epochs_iter);
 							else
 								input_data(batch_iter, memory_iter, nodes_iter, epochs_iter) = 0;
 						}
 						else if (simulation_type_ == "amp_sweep") {
-							if (nodes_iter != 4 && memory_iter <= 3)
+							if (nodes_iter != 4 && memory_iter == memory_size - 1)
 								input_data(batch_iter, memory_iter, nodes_iter, epochs_iter) = met_data_stst[nodes_iter];
-							else if (nodes_iter == 4 && memory_iter <= 3)
+							else if (nodes_iter == 4 && memory_iter == memory_size - 1)
 								input_data(batch_iter, memory_iter, nodes_iter, epochs_iter) = amp_rand(0, batch_iter*n_epochs + epochs_iter);
 							else
 								input_data(batch_iter, memory_iter, nodes_iter, epochs_iter) = 0;
 						}
 						else if (simulation_type_ == "steady_state")
-							if (nodes_iter != 11 && memory_iter <= 3)
+							if (nodes_iter != 11 && memory_iter == memory_size - 1)
 								input_data(batch_iter, memory_iter, nodes_iter, epochs_iter) = met_data_stst[nodes_iter];
-							else if (nodes_iter == 11)
+							else if (nodes_iter == 11 && memory_iter == memory_size - 1)
 								input_data(batch_iter, memory_iter, nodes_iter, epochs_iter) = met_data_stst[nodes_iter];
 							else
 								input_data(batch_iter, memory_iter, nodes_iter, epochs_iter) = 0;
 					}
 					for (int nodes_iter = 0; nodes_iter < n_output_nodes; ++nodes_iter) {
 						if (simulation_type_ == "glucose_pulse") {
-							if (memory_iter == memory_size - 1)
+							if (memory_iter == 0)
 								output_data(batch_iter, memory_iter, nodes_iter, epochs_iter) = met_data_stst[nodes_iter];
 							else
 								output_data(batch_iter, memory_iter, nodes_iter, epochs_iter) = 0; // NOTE: TETT of 1
 						}
 						else if (simulation_type_ == "amp_sweep") {
-							if (memory_iter == memory_size - 1)
+							if (memory_iter == 0)
 								output_data(batch_iter, memory_iter, nodes_iter, epochs_iter) = met_data_stst[nodes_iter];
 							else
 								output_data(batch_iter, memory_iter, nodes_iter, epochs_iter) = 0; // NOTE: TETT of 1
 						}
 						else if (simulation_type_ == "steady_state")
-							if (memory_iter == memory_size - 1)
+							if (memory_iter == 0)
 								output_data(batch_iter, memory_iter, nodes_iter, epochs_iter) = met_data_stst[nodes_iter];
 							else
 								output_data(batch_iter, memory_iter, nodes_iter, epochs_iter) = 0; // NOTE: TETT of 1
@@ -213,20 +213,20 @@ public:
 		ModelInterpreterDefaultDevice<TensorT>& model_interpreter,
 		const std::vector<float>& model_errors) {
 		// Check point the model every 1000 epochs
-		if (n_epochs % 999 == 0 && n_epochs != 0) {
+		if (n_epochs % 1000 == 0 && n_epochs != 0) {
 			model_interpreter.getModelResults(model, false, true, false, false);
 			ModelFile<TensorT> data;
 			data.storeModelBinary(model.getName() + "_" + std::to_string(n_epochs) + "_model.binary", model);
 			ModelInterpreterFileDefaultDevice<TensorT> interpreter_data;
 			interpreter_data.storeModelInterpreterBinary(model.getName() + "_" + std::to_string(n_epochs) + "_interpreter.binary", model_interpreter);
 		}
-		// Record the nodes/links
-		if (n_epochs == 0) {
-			ModelFile<TensorT> data;
-			data.storeModelCsv(model.getName() + "_" + std::to_string(n_epochs) + "_nodes.csv",
-				model.getName() + "_" + std::to_string(n_epochs) + "_links.csv",
-				model.getName() + "_" + std::to_string(n_epochs) + "_weights.csv", model, true, true, false);
-		}
+		//// Record the nodes/links
+		//if (n_epochs == 0) {
+		//	ModelFile<TensorT> data;
+		//	data.storeModelCsv(model.getName() + "_" + std::to_string(n_epochs) + "_nodes.csv",
+		//		model.getName() + "_" + std::to_string(n_epochs) + "_links.csv",
+		//		model.getName() + "_" + std::to_string(n_epochs) + "_weights.csv", model, true, true, false);
+		//}
 	}
 };
 

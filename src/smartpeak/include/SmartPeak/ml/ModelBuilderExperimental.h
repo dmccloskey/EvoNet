@@ -746,6 +746,10 @@ public:
     }
 
     // add self metabolite links to the model
+    std::vector<std::string> node_names_met_vec(node_names_met.begin(), node_names_met.end());
+    this->addSinglyConnected(model, "module_name", node_names_met_vec, node_names_met_vec,
+      std::make_shared<ConstWeightInitOp<TensorT>>(ConstWeightInitOp<TensorT>(1)),
+      std::make_shared<DummySolverOp<TensorT>>(DummySolverOp<TensorT>()), 0.0f, specify_layers);
 
     // add all reaction MLPs to the model
     for (const auto& biochemicalReaction : biochemicalReactions) {
