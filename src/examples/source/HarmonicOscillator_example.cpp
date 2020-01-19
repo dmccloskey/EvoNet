@@ -324,20 +324,6 @@ public:
         std::make_pair(0, 0),
         std::make_pair(0, 0));
 		}
-    //this->setRandomModifications(
-    //  std::make_pair(1, 1),
-    //  std::make_pair(1, 1),
-    //  std::make_pair(0, 0),
-    //  std::make_pair(0, 0),
-    //  std::make_pair(1, 1),
-    //  std::make_pair(0, 0),
-    //  std::make_pair(1, 1),
-    //  std::make_pair(1, 1),
-    //  std::make_pair(1, 1),
-    //  std::make_pair(1, 1),
-    //  std::make_pair(0, 0),
-    //  std::make_pair(0, 0),
-    //  std::make_pair(0, 0));
 	}
 };
 

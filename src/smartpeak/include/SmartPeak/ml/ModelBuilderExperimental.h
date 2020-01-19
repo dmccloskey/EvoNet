@@ -739,7 +739,8 @@ public:
     // add all metabolite nodes to the model
     for (const std::string& met_id : node_names_met) {
       Node<TensorT> met(met_id, NodeType::hidden, NodeStatus::initialized,
-        node_activation, node_activation_grad, node_integration, node_integration_error, node_integration_weight_grad);
+        std::make_shared<ReLUOp<TensorT>>(ReLUOp<TensorT>()), std::make_shared<ReLUGradOp<TensorT>>(ReLUGradOp<TensorT>()), 
+        std::make_shared<SumOp<TensorT>>(SumOp<TensorT>()), std::make_shared<SumErrorOp<TensorT>>(SumErrorOp<TensorT>()), std::make_shared<SumWeightGradOp<TensorT>>(SumWeightGradOp<TensorT>()));
       met.setModuleName(module_name);
       if (specify_layers) met.setLayerName(module_name + "-Met");
       model.addNodes({ met });

@@ -223,6 +223,10 @@ public:
 		//		model.getName() + "_" + std::to_string(n_epochs) + "_links.csv",
 		//		model.getName() + "_" + std::to_string(n_epochs) + "_weights.csv", model, true, true, false);
 		//}
+    // Record the interpreter layer allocation
+    if (n_epochs == 0) {
+      ModelInterpreterFileDefaultDevice<TensorT>::storeModelInterpreterCsv(model.getName() + "_interpreterOps.csv", model_interpreter);
+    }
 	}
 };
 
