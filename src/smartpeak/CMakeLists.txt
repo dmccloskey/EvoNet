@@ -64,7 +64,7 @@ smartpeak_add_library(TARGET_NAME  SmartPeak
                                      ${CMAKE_CURRENT_BINARY_DIR}/include
                    EXTERNAL_INCLUDES ${EIGEN3_INCLUDE_DIR}
                                      ${CEREAL_INCLUDE_DIRS}
-									 ${CUB_INCLUDE_DIR}
+									 #${CUB_INCLUDE_DIR}
                    LINK_LIBRARIES ${APPLE_EXTRA_LIBS}
                                   ${SMARTPEAK_DEP_LIBRARIES}
                    DLL_EXPORT_PATH "SmartPeak/")

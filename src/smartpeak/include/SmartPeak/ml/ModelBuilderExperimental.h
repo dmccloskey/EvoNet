@@ -89,6 +89,14 @@ public:
       const std::shared_ptr<IntegrationWeightGradOp<TensorT>>& node_integration_weight_grad,
       const std::shared_ptr<WeightInitOp<TensorT>> & weight_init, const std::shared_ptr<SolverOp<TensorT>> & solver,
       const bool& add_biases, const bool& specify_layers, const bool& is_reverse);
+    void addReactantsSequencialMin_1(Model<TensorT> & model, const BiochemicalReaction& reaction,
+      const std::shared_ptr<ActivationOp<TensorT>>& node_activation,
+      const std::shared_ptr<ActivationOp<TensorT>>& node_activation_grad,
+      const std::shared_ptr<IntegrationOp<TensorT>>& node_integration,
+      const std::shared_ptr<IntegrationErrorOp<TensorT>>& node_integration_error,
+      const std::shared_ptr<IntegrationWeightGradOp<TensorT>>& node_integration_weight_grad,
+      const std::shared_ptr<WeightInitOp<TensorT>> & weight_init, const std::shared_ptr<SolverOp<TensorT>> & solver,
+      const bool& add_biases, const bool& specify_layers, const bool& is_reverse);
   };
 
   template<typename TensorT>
