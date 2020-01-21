@@ -746,17 +746,16 @@ public:
     const bool& add_biases, const bool& specify_layers, const bool& is_reverse)
   {
     // make the input nodes (reactants + products) and output nodes (products)
-    std::vector<std::string> node_names_reactants, node_names_products, node_names_input, node_names_output;
+    std::vector<std::string> node_names_all;
     for (const std::string& met_id : reaction.reactants_ids) {
-      node_names_input.push_back(met_id);
+      node_names_all.push_back(met_id);
     }
     for (const std::string& met_id : reaction.products_ids) {
-      node_names_input.push_back(met_id);
-      node_names_output.push_back(met_id);
+      node_names_all.push_back(met_id);
     }
 
     // make the internal FC layers
-    std::vector<std::string> node_names = node_names_input;
+    std::vector<std::string> node_names = node_names_all;
     int iter = 0;
     for (const int& fc_size: n_fc) {
       std::string node_name = reaction.reaction_name;
@@ -769,13 +768,44 @@ public:
       ++iter;
     }
 
-    // connect the final FC layer to the output nodes (products)
-    std::string node_name = reaction.reaction_name;
-    if (is_reverse) node_name += "_reverse";
-    node_name += "_Out";
-    this->addFullyConnected(model, node_name, node_names, node_names_output,
-      std::make_shared<RandWeightInitOp<TensorT>>(RandWeightInitOp<TensorT>(node_names.size() + node_names_output.size(), 2)), //weight_init,
-      solver, 0.0f, specify_layers);
+    // add a final output FC layer
+    std::string node_name_fc_output = reaction.reaction_name;
+    if (is_reverse) node_name_fc_output += "_reverse";
+    node_name_fc_output += "_FCOut";
+    node_names = this->addFullyConnected(model, node_name_fc_output, node_name_fc_output, node_names, node_names_all.size(),
+      node_activation, node_activation_grad, node_integration, node_integration_error, node_integration_weight_grad,
+      std::make_shared<RandWeightInitOp<TensorT>>(RandWeightInitOp<TensorT>(node_names.size() + node_names_all.size(), 2)), //weight_init, 
+      solver, 0.0f, 0.0f, add_biases, specify_layers);
+
+    // parse the node_names into reactant and products
+    std::vector<std::string> node_names_input, node_names_output, node_names_reactants, node_names_products;
+    iter = 0;
+    for (const std::string& met_id : reaction.reactants_ids) {
+      node_names_reactants.push_back(met_id);
+      node_names_input.push_back(node_names.at(iter));
+      ++iter;
+    }
+    for (const std::string& met_id : reaction.products_ids) {
+      node_names_products.push_back(met_id);
+      node_names_output.push_back(node_names.at(iter));
+      ++iter;
+    }
+
+    // connect the final SC layer to the input nodes (reactants)
+    std::string node_name_reactant_out = reaction.reaction_name;
+    if (is_reverse) node_name_reactant_out += "_reverse";
+    node_name_reactant_out += "_ReactantsOut";
+    this->addSinglyConnected(model, node_name_reactant_out, node_names_input, node_names_reactants,
+      std::make_shared<ConstWeightInitOp<TensorT>>(ConstWeightInitOp<TensorT>(-1)), // simulate inverse ReLU
+      std::make_shared<DummySolverOp<TensorT>>(DummySolverOp<TensorT>()), 0.0f, specify_layers);
+
+    // connect the final SC layer to the output nodes (products)
+    std::string node_name_product_out = reaction.reaction_name;
+    if (is_reverse) node_name_product_out += "_reverse";
+    node_name_product_out += "_ProductsOut";
+    this->addSinglyConnected(model, node_name_product_out, node_names_output, node_names_products,
+      std::make_shared<ConstWeightInitOp<TensorT>>(ConstWeightInitOp<TensorT>(1)),
+      std::make_shared<DummySolverOp<TensorT>>(DummySolverOp<TensorT>()), 0.0f, specify_layers);
   }
 }
 

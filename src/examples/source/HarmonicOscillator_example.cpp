@@ -186,6 +186,10 @@ public:
       std::make_shared<ConstWeightInitOp<TensorT>>(ConstWeightInitOp<TensorT>(1)),
       std::make_shared<DummySolverOp<TensorT>>(DummySolverOp<TensorT>()), 0.0f, 0.0f, add_biases, specify_layers);
 
+    // Manually define the mass nodes
+    for (const std::string& node_name : node_names_output)
+      model.getNodesMap().at(node_name)->setType(NodeType::unmodifiable);
+
     // Connect the masses to themselves
     model_builder.addSinglyConnected(model, "Mass", node_names_masses, node_names_masses,
       std::make_shared<ConstWeightInitOp<TensorT>>(ConstWeightInitOp<TensorT>(1)),
