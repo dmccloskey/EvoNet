@@ -857,8 +857,8 @@ void test_weightUpdateGpuDevice(){
 	expected_weights.setValues({ {1.002}, {1.2} });
 
 	Eigen::Tensor<float, 3> expected_params(source_layer_size, sink_layer_size, 3);
-	expected_params.setValues({ {{0.01, 0.99, 0.002}},
-		{{0.01, 0.99, 0.2}} });
+	expected_params.setValues({ {{0.01, 0.99, -0.002}},
+		{{0.01, 0.99, -0.2}} });
 
 	for (int source_iter = 0; source_iter < source_layer_size; ++source_iter) {
 		for (int sink_iter = 0; sink_iter < sink_layer_size; ++sink_iter) {

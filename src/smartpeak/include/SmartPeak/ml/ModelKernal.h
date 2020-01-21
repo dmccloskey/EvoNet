@@ -190,12 +190,35 @@ namespace SmartPeak
 			// Step 1: multiply the weight tensor by the shared weight tensor mask; sum all shared weights
 			auto weight_error_sum = (weight_error_tensor.broadcast(Eigen::array<int, 5>({ 1,1,1,1,n_shared_layers })) * shared_weight_tensor
 				).sum(Eigen::array<int, 2>({ 2, 3 })).eval().broadcast(Eigen::array<int, 3>({ source_layer_size, sink_layer_size, 1 })).eval();  // dims 3
-			// Step 2: multiply the weight error sum tensor by the shared weight tensor mask and subtract out the error tensor
-			auto weight_error_diff = (weight_error_sum * shared_weight_tensor.chip(0, 1).chip(0, 0) -
-				weight_error_tensor.chip(0, 1).chip(0, 0).broadcast(Eigen::array<int, 3>({ 1,1,n_shared_layers })) * shared_weight_tensor.chip(0, 1).chip(0, 0)
-				).eval().sum(Eigen::array<int, 1>({ 2 })); //dims 2
-			// Step 3: add the weight_error_diff
-			weight_error_tensor.chip(0, 4).chip(0, 1).chip(0, 0).device(device) += weight_error_diff;
+
+      // Step 2: multiply the weight error sum tensor by the shared weight tensor mask and subtract out the error tensor
+      TensorT* tmp_data;
+      if (typeid(device).name() == typeid(Eigen::DefaultDevice).name()) {
+        tmp_data = new TensorT[source_layer_size * sink_layer_size];
+      }
+#if COMPILE_WITH_CUDA
+      else if (typeid(device).name() == typeid(Eigen::GpuDevice).name()) {
+        size_t bytes = source_layer_size * sink_layer_size * sizeof(TensorT);
+        assert(cudaMalloc((void**)(&tmp_data), bytes) == cudaSuccess);
+      }
+#endif
+      Eigen::Tensor<TensorT, 2> weight_error_diff(source_layer_size, sink_layer_size);
+      weight_error_diff.device(device) = (weight_error_sum * shared_weight_tensor.chip(0, 1).chip(0, 0) -
+        weight_error_tensor.chip(0, 1).chip(0, 0).broadcast(Eigen::array<int, 3>({ 1,1,n_shared_layers })) * shared_weight_tensor.chip(0, 1).chip(0, 0)
+        ).eval().sum(Eigen::array<int, 1>({ 2 })); //dims 2
+
+      // Step 3: add the weight_error_diff
+      weight_error_tensor.chip(0, 4).chip(0, 1).chip(0, 0).device(device) += (weight_error_diff == weight_error_diff).select(weight_error_diff.clip(TensorT(-1e24), TensorT(1e24)), weight_error_diff.constant(TensorT(0)));
+
+      // Deallocate temporary memory
+      if (typeid(device).name() == typeid(Eigen::DefaultDevice).name()) {
+        delete[] tmp_data;
+      }
+#if COMPILE_WITH_CUDA
+      else if (typeid(device).name() == typeid(Eigen::GpuDevice).name()) {
+        assert(cudaFree(tmp_data) == cudaSuccess);
+      }
+#endif
 		}
 	};
 
