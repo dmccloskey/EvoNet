@@ -89,7 +89,7 @@ public:
               if (nodes_iter >= 0 && nodes_iter < endo_met_nodes.size() && memory_iter == memory_size - 1)
                 input_data(batch_iter, memory_iter, nodes_iter, epochs_iter) = met_nodes_rand(nodes_iter, memory_iter, batch_iter*n_epochs + epochs_iter);
               else if (nodes_iter >= endo_met_nodes.size() && nodes_iter < exo_met_nodes.size() + endo_met_nodes.size() && memory_iter == memory_size - 1)
-                input_data(batch_iter, memory_iter, nodes_iter, epochs_iter) = exo_met_nodes_rand(nodes_iter, memory_iter, batch_iter*n_epochs + epochs_iter);
+                input_data(batch_iter, memory_iter, nodes_iter, epochs_iter) = exo_met_nodes_rand(nodes_iter - endo_met_nodes.size(), memory_iter, batch_iter*n_epochs + epochs_iter);
               else
                 input_data(batch_iter, memory_iter, nodes_iter, epochs_iter) = 0;
             }
@@ -111,7 +111,7 @@ public:
               if (nodes_iter >= 0 && nodes_iter < endo_met_nodes.size())
                 output_data(batch_iter, memory_iter, nodes_iter, epochs_iter) = met_data_stst_trunc(nodes_iter, memory_iter, batch_iter*n_epochs + epochs_iter);
               else if (nodes_iter >= endo_met_nodes.size() && nodes_iter < exo_met_nodes.size() + endo_met_nodes.size())
-                output_data(batch_iter, memory_iter, nodes_iter, epochs_iter) = exomet_data_stst_trunc(nodes_iter, memory_iter, batch_iter*n_epochs + epochs_iter);
+                output_data(batch_iter, memory_iter, nodes_iter, epochs_iter) = exomet_data_stst_trunc(nodes_iter - endo_met_nodes.size(), memory_iter, batch_iter*n_epochs + epochs_iter);
             }
 					}
 				}
