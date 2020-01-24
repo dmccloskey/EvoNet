@@ -50,14 +50,15 @@ public:
     Eigen::Tensor<TensorT, 3> met_data_stst_trunc = met_data_stst.broadcast(Eigen::array<Eigen::Index, 3>({ 1, memory_size, batch_size * n_epochs }));
     auto met_nodes_rand_2d = GaussianSampler<TensorT>((int)met_data_stst_vec.size(), batch_size * n_epochs * memory_size);
     auto met_nodes_rand_3d = met_nodes_rand_2d.reshape(Eigen::array<Eigen::Index, 3>({ (int)met_data_stst_vec.size(), memory_size, batch_size * n_epochs }));
-    Eigen::Tensor<TensorT, 3> met_nodes_rand = met_data_stst_trunc + met_nodes_rand_3d * met_data_stst_trunc * met_nodes_rand_3d.constant(TensorT(0.1));
+    Eigen::Tensor<TensorT, 3> met_nodes_rand = (met_data_stst_trunc + met_nodes_rand_3d * met_data_stst_trunc * met_nodes_rand_3d.constant(TensorT(0.1))).clip(TensorT(0), TensorT(1e3));
 
     // Add random noise to the exo metabolomics data
-    Eigen::Tensor<TensorT, 3> exomet_data_stst_trunc = exomet_data_stst.shuffle(Eigen::array<Eigen::Index, 3>({ 1, 0, 2 })).slice(Eigen::array<Eigen::Index, 3>({ 0, 256 - memory_size, 0 }), Eigen::array<Eigen::Index, 3>({ 3, memory_size, 1 })).broadcast(Eigen::array<Eigen::Index, 3>({ 1, 1, batch_size * n_epochs }));
+    Eigen::Tensor<TensorT, 3> exomet_data_stst_trunc = exomet_data_stst.shuffle(Eigen::array<Eigen::Index, 3>({ 1, 0, 2 })).slice(Eigen::array<Eigen::Index, 3>({ 0, (int)exomet_data_stst_vec.size() / 3 - memory_size, 0 }), Eigen::array<Eigen::Index, 3>({ 3, memory_size, 1 })).broadcast(Eigen::array<Eigen::Index, 3>({ 1, 1, batch_size * n_epochs }));
     auto exo_met_nodes_rand_2d = GaussianSampler<TensorT>(3, batch_size * n_epochs * memory_size);
     auto exo_met_nodes_rand_3d = exo_met_nodes_rand_2d.reshape(Eigen::array<Eigen::Index, 3>({ 3, memory_size, batch_size * n_epochs }));
-    Eigen::Tensor<TensorT, 3> exo_met_nodes_rand = exomet_data_stst_trunc + exo_met_nodes_rand_3d * exo_met_nodes_rand_3d.constant(TensorT(0.1));
+    Eigen::Tensor<TensorT, 3> exo_met_nodes_rand = (exomet_data_stst_trunc + exo_met_nodes_rand_3d * exomet_data_stst_trunc * exo_met_nodes_rand_3d.constant(TensorT(0.1))).clip(TensorT(0), TensorT(1e3));
 
+    // Make glucose pulse and amp sweep data
     const int n_data = batch_size * n_epochs;
 		Eigen::Tensor<TensorT, 2> glu__D_rand = GaussianSampler<TensorT>(1, n_data);
 		glu__D_rand = (glu__D_rand + glu__D_rand.constant(1)) * glu__D_rand.constant(10);
@@ -156,7 +157,7 @@ public:
       //std::make_shared<SigmoidOp<TensorT>>(SigmoidOp<TensorT>()), std::make_shared<SigmoidGradOp<TensorT>>(SigmoidGradOp<TensorT>()),
 			std::make_shared<SumOp<TensorT>>(SumOp<TensorT>()), std::make_shared<SumErrorOp<TensorT>>(SumErrorOp<TensorT>()), std::make_shared<SumWeightGradOp<TensorT>>(SumWeightGradOp<TensorT>()),
 			std::make_shared<RangeWeightInitOp<TensorT>>(RangeWeightInitOp<TensorT>(0.0, 2.0)),
-      std::make_shared<SGDOp<TensorT>>(SGDOp<TensorT>(1e-5, 0.9, 10)), false, true, true);
+      std::make_shared<AdamOp<TensorT>>(AdamOp<TensorT>(5e-4, 0.9, 0.999, 1e-8, 10)), false, true, true);
 
 	  // define the internal metabolite nodes (20)
     auto add_c = [](std::string& met_id) { met_id += "_c"; };
