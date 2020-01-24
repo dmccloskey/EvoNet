@@ -29,25 +29,38 @@ public:
 
     // Node steady-state concentrations (N=20, mM ~ mmol*gDW-1)
 		std::vector<std::string> endo_met_nodes = { "13dpg","2pg","3pg","adp","amp","atp","dhap","f6p","fdp","g3p","g6p","glc__D","h","h2o","lac__L","nad","nadh","pep","pi","pyr" };
-		std::vector<TensorT> met_data_stst = { 0.00024,0.0113,0.0773,0.29,0.0867,1.6,0.16,0.0198,0.0146,0.00728,0.0486,1,1.00e-03,1,1.36,0.0589,0.0301,0.017,2.5,0.0603 };
+    std::vector<TensorT> met_data_stst_vec = { 0.00024,0.0113,0.0773,0.29,0.0867,1.6,0.16,0.0198,0.0146,0.00728,0.0486,1,1.00e-03,1,1.36,0.0589,0.0301,0.017,2.5,0.0603 };
+    Eigen::TensorMap<Eigen::Tensor<TensorT, 3>> met_data_stst(met_data_stst_vec.data(), (int)met_data_stst_vec.size(), 1, 1);
 
     // Node external steady-state concentrations (N=3, mmol*gDW-1) over 256 min
     // calculated using a starting concentration of 5, 0, 0 mmol*gDW-1 for glc__D, lac__L, and pyr, respectively 
     // with a rate of -1.12, 3.675593, 3.675599 mmol*gDW-1*hr-1 for for glc__D, lac__L, and pyr, respectively
     std::vector<std::string> exo_met_nodes = { "glc__D","lac__L","pyr" };
-    std::vector<std::vector<TensorT>> exomet_data_stst = { 
-      { 5.00,4.98,4.96,4.94,4.93,4.91,4.89,4.87,4.85,4.83,4.81,4.79,4.78,4.76,4.74,4.72,4.70,4.68,4.66,4.65,4.63,4.61,4.59,4.57,4.55,4.53,4.51,4.50,4.48,4.46,4.44,4.42,4.40,4.38,4.37,4.35,4.33,4.31,4.29,4.27,4.25,4.23,4.22,4.20,4.18,4.16,4.14,4.12,4.10,4.09,4.07,4.05,4.03,4.01,3.99,3.97,3.95,3.94,3.92,3.90,3.88,3.86,3.84,3.82,3.81,3.79,3.77,3.75,3.73,3.71,3.69,3.67,3.66,3.64,3.62,3.60,3.58,3.56,3.54,3.53,3.51,3.49,3.47,3.45,3.43,3.41,3.39,3.38,3.36,3.34,3.32,3.30,3.28,3.26,3.25,3.23,3.21,3.19,3.17,3.15,3.13,3.11,3.10,3.08,3.06,3.04,3.02,3.00,2.98,2.97,2.95,2.93,2.91,2.89,2.87,2.85,2.83,2.82,2.80,2.78,2.76,2.74,2.72,2.70,2.69,2.67,2.65,2.63,2.61,2.59,2.57,2.55,2.54,2.52,2.50,2.48,2.46,2.44,2.42,2.41,2.39,2.37,2.35,2.33,2.31,2.29,2.27,2.26,2.24,2.22,2.20,2.18,2.16,2.14,2.13,2.11,2.09,2.07,2.05,2.03,2.01,1.99,1.98,1.96,1.94,1.92,1.90,1.88,1.86,1.85,1.83,1.81,1.79,1.77,1.75,1.73,1.71,1.70,1.68,1.66,1.64,1.62,1.60,1.58,1.57,1.55,1.53,1.51,1.49,1.47,1.45,1.43,1.42,1.40,1.38,1.36,1.34,1.32,1.30,1.29,1.27,1.25,1.23,1.21,1.19,1.17,1.15,1.14,1.12,1.10,1.08,1.06,1.04,1.02,1.01,0.99,0.97,0.95,0.93,0.91,0.89,0.87,0.86,0.84,0.82,0.80,0.78,0.76,0.74,0.73,0.71,0.69,0.67,0.65,0.63,0.61,0.59,0.58,0.56,0.54,0.52,0.50,0.48,0.46,0.45,0.43,0.41,0.39,0.37,0.35,0.33,0.31,0.30,0.28,0.26,0.24,0.22},
-      { 0.00,0.06,0.12,0.18,0.25,0.31,0.37,0.43,0.49,0.55,0.61,0.67,0.74,0.80,0.86,0.92,0.98,1.04,1.10,1.16,1.23,1.29,1.35,1.41,1.47,1.53,1.59,1.65,1.72,1.78,1.84,1.90,1.96,2.02,2.08,2.14,2.21,2.27,2.33,2.39,2.45,2.51,2.57,2.63,2.70,2.76,2.82,2.88,2.94,3.00,3.06,3.12,3.19,3.25,3.31,3.37,3.43,3.49,3.55,3.61,3.68,3.74,3.80,3.86,3.92,3.98,4.04,4.10,4.17,4.23,4.29,4.35,4.41,4.47,4.53,4.59,4.66,4.72,4.78,4.84,4.90,4.96,5.02,5.08,5.15,5.21,5.27,5.33,5.39,5.45,5.51,5.57,5.64,5.70,5.76,5.82,5.88,5.94,6.00,6.06,6.13,6.19,6.25,6.31,6.37,6.43,6.49,6.55,6.62,6.68,6.74,6.80,6.86,6.92,6.98,7.04,7.11,7.17,7.23,7.29,7.35,7.41,7.47,7.53,7.60,7.66,7.72,7.78,7.84,7.90,7.96,8.03,8.09,8.15,8.21,8.27,8.33,8.39,8.45,8.52,8.58,8.64,8.70,8.76,8.82,8.88,8.94,9.01,9.07,9.13,9.19,9.25,9.31,9.37,9.43,9.50,9.56,9.62,9.68,9.74,9.80,9.86,9.92,9.99,10.05,10.11,10.17,10.23,10.29,10.35,10.41,10.48,10.54,10.60,10.66,10.72,10.78,10.84,10.90,10.97,11.03,11.09,11.15,11.21,11.27,11.33,11.39,11.46,11.52,11.58,11.64,11.70,11.76,11.82,11.88,11.95,12.01,12.07,12.13,12.19,12.25,12.31,12.37,12.44,12.50,12.56,12.62,12.68,12.74,12.80,12.86,12.93,12.99,13.05,13.11,13.17,13.23,13.29,13.35,13.42,13.48,13.54,13.60,13.66,13.72,13.78,13.84,13.91,13.97,14.03,14.09,14.15,14.21,14.27,14.33,14.40,14.46,14.52,14.58,14.64,14.70,14.76,14.82,14.89,14.95,15.01,15.07,15.13,15.19,15.25,15.31,15.38,15.44,15.50,15.56,15.62,15.68},
-      { 0.00,0.06,0.12,0.18,0.25,0.31,0.37,0.43,0.49,0.55,0.61,0.67,0.74,0.80,0.86,0.92,0.98,1.04,1.10,1.16,1.23,1.29,1.35,1.41,1.47,1.53,1.59,1.65,1.72,1.78,1.84,1.90,1.96,2.02,2.08,2.14,2.21,2.27,2.33,2.39,2.45,2.51,2.57,2.63,2.70,2.76,2.82,2.88,2.94,3.00,3.06,3.12,3.19,3.25,3.31,3.37,3.43,3.49,3.55,3.61,3.68,3.74,3.80,3.86,3.92,3.98,4.04,4.10,4.17,4.23,4.29,4.35,4.41,4.47,4.53,4.59,4.66,4.72,4.78,4.84,4.90,4.96,5.02,5.08,5.15,5.21,5.27,5.33,5.39,5.45,5.51,5.57,5.64,5.70,5.76,5.82,5.88,5.94,6.00,6.06,6.13,6.19,6.25,6.31,6.37,6.43,6.49,6.55,6.62,6.68,6.74,6.80,6.86,6.92,6.98,7.04,7.11,7.17,7.23,7.29,7.35,7.41,7.47,7.53,7.60,7.66,7.72,7.78,7.84,7.90,7.96,8.03,8.09,8.15,8.21,8.27,8.33,8.39,8.45,8.52,8.58,8.64,8.70,8.76,8.82,8.88,8.94,9.01,9.07,9.13,9.19,9.25,9.31,9.37,9.43,9.50,9.56,9.62,9.68,9.74,9.80,9.86,9.92,9.99,10.05,10.11,10.17,10.23,10.29,10.35,10.41,10.48,10.54,10.60,10.66,10.72,10.78,10.84,10.90,10.97,11.03,11.09,11.15,11.21,11.27,11.33,11.39,11.46,11.52,11.58,11.64,11.70,11.76,11.82,11.88,11.95,12.01,12.07,12.13,12.19,12.25,12.31,12.37,12.44,12.50,12.56,12.62,12.68,12.74,12.80,12.86,12.93,12.99,13.05,13.11,13.17,13.23,13.29,13.35,13.42,13.48,13.54,13.60,13.66,13.72,13.78,13.84,13.91,13.97,14.03,14.09,14.15,14.21,14.27,14.33,14.40,14.46,14.52,14.58,14.64,14.70,14.76,14.82,14.89,14.95,15.01,15.07,15.13,15.19,15.25,15.31,15.38,15.44,15.50,15.56,15.62,15.68}
-     };
+    std::vector<TensorT> exomet_data_stst_vec{ 
+      0.22,0.24,0.26,0.28,0.3,0.31,0.33,0.35,0.37,0.39,0.41,0.43,0.45,0.46,0.48,0.5,0.52,0.54,0.56,0.58,0.59,0.61,0.63,0.65,0.67,0.69,0.71,0.73,0.74,0.76,0.78,0.8,0.82,0.84,0.86,0.87,0.89,0.91,0.93,0.95,0.97,0.99,1.01,1.02,1.04,1.06,1.08,1.1,1.12,1.14,1.15,1.17,1.19,1.21,1.23,1.25,1.27,1.29,1.3,1.32,1.34,1.36,1.38,1.4,1.42,1.43,1.45,1.47,1.49,1.51,1.53,1.55,1.57,1.58,1.6,1.62,1.64,1.66,1.68,1.7,1.71,1.73,1.75,1.77,1.79,1.81,1.83,1.85,1.86,1.88,1.9,1.92,1.94,1.96,1.98,1.99,2.01,2.03,2.05,2.07,2.09,2.11,2.13,2.14,2.16,2.18,2.2,2.22,2.24,2.26,2.27,2.29,2.31,2.33,2.35,2.37,2.39,2.41,2.42,2.44,2.46,2.48,2.5,2.52,2.54,2.55,2.57,2.59,2.61,2.63,2.65,2.67,2.69,2.7,2.72,2.74,2.76,2.78,2.8,2.82,2.83,2.85,2.87,2.89,2.91,2.93,2.95,2.97,2.98,3,3.02,3.04,3.06,3.08,3.1,3.11,3.13,3.15,3.17,3.19,3.21,3.23,3.25,3.26,3.28,3.3,3.32,3.34,3.36,3.38,3.39,3.41,3.43,3.45,3.47,3.49,3.51,3.53,3.54,3.56,3.58,3.6,3.62,3.64,3.66,3.67,3.69,3.71,3.73,3.75,3.77,3.79,3.81,3.82,3.84,3.86,3.88,3.9,3.92,3.94,3.95,3.97,3.99,4.01,4.03,4.05,4.07,4.09,4.1,4.12,4.14,4.16,4.18,4.2,4.22,4.23,4.25,4.27,4.29,4.31,4.33,4.35,4.37,4.38,4.4,4.42,4.44,4.46,4.48,4.5,4.51,4.53,4.55,4.57,4.59,4.61,4.63,4.65,4.66,4.68,4.7,4.72,4.74,4.76,4.78,4.79,4.81,4.83,4.85,4.87,4.89,4.91,4.93,4.94,4.96,4.98,5,
+      15.68,15.62,15.56,15.5,15.44,15.38,15.31,15.25,15.19,15.13,15.07,15.01,14.95,14.89,14.82,14.76,14.7,14.64,14.58,14.52,14.46,14.4,14.33,14.27,14.21,14.15,14.09,14.03,13.97,13.91,13.84,13.78,13.72,13.66,13.6,13.54,13.48,13.42,13.35,13.29,13.23,13.17,13.11,13.05,12.99,12.93,12.86,12.8,12.74,12.68,12.62,12.56,12.5,12.44,12.37,12.31,12.25,12.19,12.13,12.07,12.01,11.95,11.88,11.82,11.76,11.7,11.64,11.58,11.52,11.46,11.39,11.33,11.27,11.21,11.15,11.09,11.03,10.97,10.9,10.84,10.78,10.72,10.66,10.6,10.54,10.48,10.41,10.35,10.29,10.23,10.17,10.11,10.05,9.99,9.92,9.86,9.8,9.74,9.68,9.62,9.56,9.5,9.43,9.37,9.31,9.25,9.19,9.13,9.07,9.01,8.94,8.88,8.82,8.76,8.7,8.64,8.58,8.52,8.45,8.39,8.33,8.27,8.21,8.15,8.09,8.03,7.96,7.9,7.84,7.78,7.72,7.66,7.6,7.53,7.47,7.41,7.35,7.29,7.23,7.17,7.11,7.04,6.98,6.92,6.86,6.8,6.74,6.68,6.62,6.55,6.49,6.43,6.37,6.31,6.25,6.19,6.13,6.06,6,5.94,5.88,5.82,5.76,5.7,5.64,5.57,5.51,5.45,5.39,5.33,5.27,5.21,5.15,5.08,5.02,4.96,4.9,4.84,4.78,4.72,4.66,4.59,4.53,4.47,4.41,4.35,4.29,4.23,4.17,4.1,4.04,3.98,3.92,3.86,3.8,3.74,3.68,3.61,3.55,3.49,3.43,3.37,3.31,3.25,3.19,3.12,3.06,3,2.94,2.88,2.82,2.76,2.7,2.63,2.57,2.51,2.45,2.39,2.33,2.27,2.21,2.14,2.08,2.02,1.96,1.9,1.84,1.78,1.72,1.65,1.59,1.53,1.47,1.41,1.35,1.29,1.23,1.16,1.1,1.04,0.98,0.92,0.86,0.8,0.74,0.67,0.61,0.55,0.49,0.43,0.37,0.31,0.25,0.18,0.12,0.06,0,
+      15.68,15.62,15.56,15.5,15.44,15.38,15.31,15.25,15.19,15.13,15.07,15.01,14.95,14.89,14.82,14.76,14.7,14.64,14.58,14.52,14.46,14.4,14.33,14.27,14.21,14.15,14.09,14.03,13.97,13.91,13.84,13.78,13.72,13.66,13.6,13.54,13.48,13.42,13.35,13.29,13.23,13.17,13.11,13.05,12.99,12.93,12.86,12.8,12.74,12.68,12.62,12.56,12.5,12.44,12.37,12.31,12.25,12.19,12.13,12.07,12.01,11.95,11.88,11.82,11.76,11.7,11.64,11.58,11.52,11.46,11.39,11.33,11.27,11.21,11.15,11.09,11.03,10.97,10.9,10.84,10.78,10.72,10.66,10.6,10.54,10.48,10.41,10.35,10.29,10.23,10.17,10.11,10.05,9.99,9.92,9.86,9.8,9.74,9.68,9.62,9.56,9.5,9.43,9.37,9.31,9.25,9.19,9.13,9.07,9.01,8.94,8.88,8.82,8.76,8.7,8.64,8.58,8.52,8.45,8.39,8.33,8.27,8.21,8.15,8.09,8.03,7.96,7.9,7.84,7.78,7.72,7.66,7.6,7.53,7.47,7.41,7.35,7.29,7.23,7.17,7.11,7.04,6.98,6.92,6.86,6.8,6.74,6.68,6.62,6.55,6.49,6.43,6.37,6.31,6.25,6.19,6.13,6.06,6,5.94,5.88,5.82,5.76,5.7,5.64,5.57,5.51,5.45,5.39,5.33,5.27,5.21,5.15,5.08,5.02,4.96,4.9,4.84,4.78,4.72,4.66,4.59,4.53,4.47,4.41,4.35,4.29,4.23,4.17,4.1,4.04,3.98,3.92,3.86,3.8,3.74,3.68,3.61,3.55,3.49,3.43,3.37,3.31,3.25,3.19,3.12,3.06,3,2.94,2.88,2.82,2.76,2.7,2.63,2.57,2.51,2.45,2.39,2.33,2.27,2.21,2.14,2.08,2.02,1.96,1.9,1.84,1.78,1.72,1.65,1.59,1.53,1.47,1.41,1.35,1.29,1.23,1.16,1.1,1.04,0.98,0.92,0.86,0.8,0.74,0.67,0.61,0.55,0.49,0.43,0.37,0.31,0.25,0.18,0.12,0.06,0
+    };
+    Eigen::TensorMap<Eigen::Tensor<TensorT, 3>> exomet_data_stst(exomet_data_stst_vec.data(), (int)exomet_data_stst_vec.size() / 3, 3, 1);
     
     assert(n_input_nodes == endo_met_nodes.size() + exo_met_nodes.size());
     assert(n_output_nodes == endo_met_nodes.size() + exo_met_nodes.size());
 
-		const int n_data = batch_size * n_epochs;
+    // Add random noise to the endo metabolomics data
+    Eigen::Tensor<TensorT, 3> met_data_stst_trunc = met_data_stst.broadcast(Eigen::array<Eigen::Index, 3>({ 1, memory_size, batch_size * n_epochs }));
+    auto met_nodes_rand_2d = GaussianSampler<TensorT>((int)met_data_stst_vec.size(), batch_size * n_epochs * memory_size);
+    auto met_nodes_rand_3d = met_nodes_rand_2d.reshape(Eigen::array<Eigen::Index, 3>({ (int)met_data_stst_vec.size(), memory_size, batch_size * n_epochs }));
+    Eigen::Tensor<TensorT, 3> met_nodes_rand = met_data_stst_trunc + met_nodes_rand_3d * met_data_stst_trunc * met_nodes_rand_3d.constant(TensorT(0.1));
+
+    // Add random noise to the exo metabolomics data
+    Eigen::Tensor<TensorT, 3> exomet_data_stst_trunc = exomet_data_stst.shuffle(Eigen::array<Eigen::Index, 3>({ 1, 0, 2 })).slice(Eigen::array<Eigen::Index, 3>({ 0, 256 - memory_size, 0 }), Eigen::array<Eigen::Index, 3>({ 3, memory_size, 1 })).broadcast(Eigen::array<Eigen::Index, 3>({ 1, 1, batch_size * n_epochs }));
+    auto exo_met_nodes_rand_2d = GaussianSampler<TensorT>(3, batch_size * n_epochs * memory_size);
+    auto exo_met_nodes_rand_3d = exo_met_nodes_rand_2d.reshape(Eigen::array<Eigen::Index, 3>({ 3, memory_size, batch_size * n_epochs }));
+    Eigen::Tensor<TensorT, 3> exo_met_nodes_rand = exomet_data_stst_trunc + exo_met_nodes_rand_3d * exo_met_nodes_rand_3d.constant(TensorT(0.1));
+
+    const int n_data = batch_size * n_epochs;
 		Eigen::Tensor<TensorT, 2> glu__D_rand = GaussianSampler<TensorT>(1, n_data);
 		glu__D_rand = (glu__D_rand + glu__D_rand.constant(1)) * glu__D_rand.constant(10);
-
 		Eigen::Tensor<TensorT, 2> amp_rand = GaussianSampler<TensorT>(1, n_data);
 		amp_rand = (amp_rand + amp_rand.constant(1)) * amp_rand.constant(5);
 
@@ -58,7 +71,7 @@ public:
 					for (int nodes_iter = 0; nodes_iter < n_input_nodes; ++nodes_iter) {
 						if (simulation_type_ == "glucose_pulse") {
 							if (nodes_iter != 11 && memory_iter == memory_size - 1)
-								input_data(batch_iter, memory_iter, nodes_iter, epochs_iter) = met_data_stst.at(nodes_iter);
+								input_data(batch_iter, memory_iter, nodes_iter, epochs_iter) = met_nodes_rand(nodes_iter, memory_iter, batch_iter*n_epochs + epochs_iter);
 							else if (nodes_iter == 11 && memory_iter == memory_size - 1)
 								input_data(batch_iter, memory_iter, nodes_iter, epochs_iter) = glu__D_rand(0, batch_iter*n_epochs + epochs_iter);
 							else
@@ -66,7 +79,7 @@ public:
 						}
 						else if (simulation_type_ == "amp_sweep") {
 							if (nodes_iter != 4 && memory_iter == memory_size - 1)
-								input_data(batch_iter, memory_iter, nodes_iter, epochs_iter) = met_data_stst.at(nodes_iter);
+								input_data(batch_iter, memory_iter, nodes_iter, epochs_iter) = met_nodes_rand(nodes_iter, memory_iter, batch_iter*n_epochs + epochs_iter);
 							else if (nodes_iter == 4 && memory_iter == memory_size - 1)
 								input_data(batch_iter, memory_iter, nodes_iter, epochs_iter) = amp_rand(0, batch_iter*n_epochs + epochs_iter);
 							else
@@ -74,9 +87,9 @@ public:
 						}
             else if (simulation_type_ == "steady_state") {
               if (nodes_iter >= 0 && nodes_iter < endo_met_nodes.size() && memory_iter == memory_size - 1)
-                input_data(batch_iter, memory_iter, nodes_iter, epochs_iter) = met_data_stst.at(nodes_iter);
+                input_data(batch_iter, memory_iter, nodes_iter, epochs_iter) = met_nodes_rand(nodes_iter, memory_iter, batch_iter*n_epochs + epochs_iter);
               else if (nodes_iter >= endo_met_nodes.size() && nodes_iter < exo_met_nodes.size() + endo_met_nodes.size() && memory_iter == memory_size - 1)
-                input_data(batch_iter, memory_iter, nodes_iter, epochs_iter) = exomet_data_stst.at(nodes_iter - endo_met_nodes.size()).at(memory_size - 1 - memory_iter);
+                input_data(batch_iter, memory_iter, nodes_iter, epochs_iter) = exo_met_nodes_rand(nodes_iter, memory_iter, batch_iter*n_epochs + epochs_iter);
               else
                 input_data(batch_iter, memory_iter, nodes_iter, epochs_iter) = 0;
             }
@@ -84,21 +97,21 @@ public:
 					for (int nodes_iter = 0; nodes_iter < n_output_nodes; ++nodes_iter) {
 						if (simulation_type_ == "glucose_pulse") {
 							if (memory_iter == 0)
-								output_data(batch_iter, memory_iter, nodes_iter, epochs_iter) = met_data_stst.at(nodes_iter);
+								output_data(batch_iter, memory_iter, nodes_iter, epochs_iter) = met_nodes_rand(nodes_iter, memory_iter, batch_iter*n_epochs + epochs_iter);
 							else
 								output_data(batch_iter, memory_iter, nodes_iter, epochs_iter) = 0; // NOTE: TETT of 1
 						}
 						else if (simulation_type_ == "amp_sweep") {
 							if (memory_iter == 0)
-								output_data(batch_iter, memory_iter, nodes_iter, epochs_iter) = met_data_stst.at(nodes_iter);
+								output_data(batch_iter, memory_iter, nodes_iter, epochs_iter) = met_nodes_rand(nodes_iter, memory_iter, batch_iter*n_epochs + epochs_iter);
 							else
 								output_data(batch_iter, memory_iter, nodes_iter, epochs_iter) = 0; // NOTE: TETT of 1
 						}
 						else if (simulation_type_ == "steady_state") {
               if (nodes_iter >= 0 && nodes_iter < endo_met_nodes.size())
-                output_data(batch_iter, memory_iter, nodes_iter, epochs_iter) = met_data_stst.at(nodes_iter);
+                output_data(batch_iter, memory_iter, nodes_iter, epochs_iter) = met_data_stst_trunc(nodes_iter, memory_iter, batch_iter*n_epochs + epochs_iter);
               else if (nodes_iter >= endo_met_nodes.size() && nodes_iter < exo_met_nodes.size() + endo_met_nodes.size())
-                output_data(batch_iter, memory_iter, nodes_iter, epochs_iter) = exomet_data_stst.at(nodes_iter - endo_met_nodes.size()).at(memory_size - 1 - memory_iter);
+                output_data(batch_iter, memory_iter, nodes_iter, epochs_iter) = exomet_data_stst_trunc(nodes_iter, memory_iter, batch_iter*n_epochs + epochs_iter);
             }
 					}
 				}
