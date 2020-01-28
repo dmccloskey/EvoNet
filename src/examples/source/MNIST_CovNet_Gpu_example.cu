@@ -64,7 +64,7 @@ public:
     auto integration_weight_grad_op = std::make_shared<SumWeightGradOp<TensorT>>(SumWeightGradOp<TensorT>());
 
     // Define the solver
-    auto solver_op = std::make_shared<AdamOp<TensorT>>(AdamOp<TensorT>(1e-3, 0.9, 0.999, 1e-8, 10));
+    auto solver_op = std::make_shared<AdamOp<TensorT>>(AdamOp<TensorT>(1e-4, 0.9, 0.999, 1e-8, 10));
 
     // Add the first convolution -> max pool -> ReLU layers
     std::vector<std::vector<std::string>> node_names_l0;
@@ -216,35 +216,39 @@ public:
     }
 
     // Add the first FC layer
-    node_names = model_builder.addFullyConnected(model, "FC0", "FC0", node_names, n_fc_1,
-      activation, activation_grad, integration_op, integration_error_op, integration_weight_grad_op,
-      std::make_shared<RandWeightInitOp<TensorT>>(RandWeightInitOp<TensorT>(node_names.size() + n_fc_1, 2)),
-      solver_op, 0.0f, 0.0f, false, specify_layers);
-    if (add_feature_norm) {
-      node_names = model_builder.addNormalization(model, "FC0-FeatureNorm", "FC0-FeatureNorm", node_names, true);
-      node_names = model_builder.addSinglyConnected(model, "FC0-FeatureNorm-gain", "FC0-FeatureNorm-gain", node_names, node_names.size(),
-        std::make_shared<LeakyReLUOp<TensorT>>(LeakyReLUOp<TensorT>()), // Nonlinearity occures after the normalization
-        std::make_shared<LeakyReLUGradOp<TensorT>>(LeakyReLUGradOp<TensorT>()),
-        integration_op, integration_error_op, integration_weight_grad_op,
-        std::make_shared<ConstWeightInitOp<TensorT>>(ConstWeightInitOp<TensorT>(1)),
-        solver_op,
-        0.0, 0.0, true, specify_layers);
+    if (n_fc_1 > 0) {
+      node_names = model_builder.addFullyConnected(model, "FC0", "FC0", node_names, n_fc_1,
+        activation, activation_grad, integration_op, integration_error_op, integration_weight_grad_op,
+        std::make_shared<RandWeightInitOp<TensorT>>(RandWeightInitOp<TensorT>(node_names.size() + n_fc_1, 2)),
+        solver_op, 0.0f, 0.0f, false, specify_layers);
+      if (add_feature_norm) {
+        node_names = model_builder.addNormalization(model, "FC0-FeatureNorm", "FC0-FeatureNorm", node_names, true);
+        node_names = model_builder.addSinglyConnected(model, "FC0-FeatureNorm-gain", "FC0-FeatureNorm-gain", node_names, node_names.size(),
+          std::make_shared<LeakyReLUOp<TensorT>>(LeakyReLUOp<TensorT>()), // Nonlinearity occures after the normalization
+          std::make_shared<LeakyReLUGradOp<TensorT>>(LeakyReLUGradOp<TensorT>()),
+          integration_op, integration_error_op, integration_weight_grad_op,
+          std::make_shared<ConstWeightInitOp<TensorT>>(ConstWeightInitOp<TensorT>(1)),
+          solver_op,
+          0.0, 0.0, true, specify_layers);
+      }
     }
 
     // Add the second FC layer
-    node_names = model_builder.addFullyConnected(model, "FC1", "FC1", node_names, n_fc_2,
-      activation, activation_grad, integration_op, integration_error_op, integration_weight_grad_op,
-      std::make_shared<RandWeightInitOp<TensorT>>(RandWeightInitOp<TensorT>(node_names.size() + n_fc_2, 2)),
-      solver_op, 0.0f, 0.0f, false, specify_layers);
-    if (add_feature_norm) {
-      node_names = model_builder.addNormalization(model, "FC1-FeatureNorm", "FC1-FeatureNorm", node_names, true);
-      node_names = model_builder.addSinglyConnected(model, "FC1-FeatureNorm-gain", "FC1-FeatureNorm-gain", node_names, node_names.size(),
-        std::make_shared<LeakyReLUOp<TensorT>>(LeakyReLUOp<TensorT>()), // Nonlinearity occures after the normalization
-        std::make_shared<LeakyReLUGradOp<TensorT>>(LeakyReLUGradOp<TensorT>()),
-        integration_op, integration_error_op, integration_weight_grad_op,
-        std::make_shared<ConstWeightInitOp<TensorT>>(ConstWeightInitOp<TensorT>(1)),
-        solver_op,
-        0.0, 0.0, true, specify_layers);
+    if (n_fc_2 > 0) {
+      node_names = model_builder.addFullyConnected(model, "FC1", "FC1", node_names, n_fc_2,
+        activation, activation_grad, integration_op, integration_error_op, integration_weight_grad_op,
+        std::make_shared<RandWeightInitOp<TensorT>>(RandWeightInitOp<TensorT>(node_names.size() + n_fc_2, 2)),
+        solver_op, 0.0f, 0.0f, false, specify_layers);
+      if (add_feature_norm) {
+        node_names = model_builder.addNormalization(model, "FC1-FeatureNorm", "FC1-FeatureNorm", node_names, true);
+        node_names = model_builder.addSinglyConnected(model, "FC1-FeatureNorm-gain", "FC1-FeatureNorm-gain", node_names, node_names.size(),
+          std::make_shared<LeakyReLUOp<TensorT>>(LeakyReLUOp<TensorT>()), // Nonlinearity occures after the normalization
+          std::make_shared<LeakyReLUGradOp<TensorT>>(LeakyReLUGradOp<TensorT>()),
+          integration_op, integration_error_op, integration_weight_grad_op,
+          std::make_shared<ConstWeightInitOp<TensorT>>(ConstWeightInitOp<TensorT>(1)),
+          solver_op,
+          0.0, 0.0, true, specify_layers);
+      }
     }
 
     // Add the final output layer
@@ -430,17 +434,17 @@ public:
     Model<TensorT>& model,
     ModelInterpreterGpu<TensorT>& model_interpreter,
     const std::vector<float>& model_errors) {
-    if (n_epochs % 1000 == 0 /*&& n_epochs != 0*/) {
+    if (n_epochs % 1000 == 0 && n_epochs != 0) {
       // save the model every 1000 epochs
       model_interpreter.getModelResults(model, false, true, false, false);
+      ModelFile<TensorT> data;
 
-      //// Save to .csv
+      //// Save weights to .csv
       //data.storeModelCsv(model.getName() + "_" + std::to_string(n_epochs) + "_nodes.csv",
       //	model.getName() + "_" + std::to_string(n_epochs) + "_links.csv",
-      //	model.getName() + "_" + std::to_string(n_epochs) + "_weights.csv", model);
+      //	model.getName() + "_" + std::to_string(n_epochs) + "_weights.csv", model, false, false, true);
 
       // Save to binary
-      ModelFile<TensorT> data;
       data.storeModelBinary(model.getName() + "_" + std::to_string(n_epochs) + "_model.binary", model);
       ModelInterpreterFileGpu<TensorT> interpreter_data;
       interpreter_data.storeModelInterpreterBinary(model.getName() + "_" + std::to_string(n_epochs) + "_interpreter.binary", model_interpreter);
@@ -725,8 +729,8 @@ void main_MNIST(const std::string& data_dir, const bool& make_model, const bool&
     std::cout << "Making the model..." << std::endl;
     //model_trainer.makeFullyConn(model, input_nodes.size(), output_nodes.size(), 512, 0, 0, true, false, true);  // Baseline
     //model_trainer.makeCovNet(model, input_nodes.size(), output_nodes.size(), 2, 2, 0, 32, 4, 7, 1, 2, 2, false, true, true);  // Sanity test
-    //model_trainer.makeCovNet(model, input_nodes.size(), output_nodes.size(), 8, 2, 128, 32, 5, 2, false, true);  // Minimal solving model
-    model_trainer.makeCovNet(model, input_nodes.size(), output_nodes.size(), 32, 2, 0, 512, 32, 5, 1, 2, 2, true, true, true, true); // Recommended model
+    model_trainer.makeCovNet(model, input_nodes.size(), output_nodes.size(), 4, 2, 0, 32, 0, 7, 1, 2, 2, false, false, true, true); // Sanity test
+    //model_trainer.makeCovNet(model, input_nodes.size(), output_nodes.size(), 32, 2, 0, 512, 32, 5, 1, 2, 2, true, false, true, true); // Recommended model
     //model_trainer.makeCovNet(model, input_nodes.size(), output_nodes.size(), 32, 2, 0, 512, 32, 7, 1, 2, 2, false, false, true, true); // Recommended model
   }
   else {
@@ -741,13 +745,13 @@ void main_MNIST(const std::string& data_dir, const bool& make_model, const bool&
     ModelInterpreterFileGpu<float> model_interpreter_file;
     model_interpreter_file.loadModelInterpreterBinary(interpreter_filename, model_interpreters[0]);
 
-    // Modify the learning rate
-    std::cout << "Modifying the learning rate..." << std::endl;
-    for (auto& weight_map : model.weights_) {
-      if (weight_map.second->getSolverOp()->getName() == "AdamOp") {
-        weight_map.second->getSolverOpShared()->setLearningRate(5e-4);
-      }
-    }
+    //// Modify the learning rate
+    //std::cout << "Modifying the learning rate..." << std::endl;
+    //for (auto& weight_map : model.weights_) {
+    //  if (weight_map.second->getSolverOp()->getName() == "AdamOp") {
+    //    weight_map.second->getSolverOpShared()->setLearningRate(1e-5);
+    //  }
+    //}
   }
   //std::vector<Model<float>> population = { model };
 
