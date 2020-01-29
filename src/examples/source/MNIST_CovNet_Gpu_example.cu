@@ -434,7 +434,8 @@ public:
     Model<TensorT>& model,
     ModelInterpreterGpu<TensorT>& model_interpreter,
     const std::vector<float>& model_errors) {
-    if (n_epochs % 1000 == 0 && n_epochs != 0) {
+    if (n_epochs % 1000 == 0) { // store on n_epochs == 0
+    //if (n_epochs % 1000 == 0 && n_epochs != 0) {
       // save the model every 1000 epochs
       model_interpreter.getModelResults(model, false, true, false, false);
       ModelFile<TensorT> data;

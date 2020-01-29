@@ -317,9 +317,6 @@ public:
 
 		// write the headers to the first line
 		std::vector<std::string> headers = { "weight_name", "weight_init_op", "weight_init_params", "solver_op", "solver_params", "weight_value", "module_name", "layer_name", "tensor_index"};
-		int n_operations = 0;
-		if (weights.size() != 0)
-			n_operations = weights.begin()->second->getTensorIndex().size();
 		csvwriter.writeDataInRow(headers.begin(), headers.end());
 
 		for (const auto& weight : weights)
@@ -351,11 +348,11 @@ public:
 			// parse the tensor indexing
 			row.push_back(weight.second->getLayerName());
 			std::string tensor_index = "";
-			for (int i = 0; i < n_operations; ++i) {
+			for (int i = 0; i < weight.second->getTensorIndex().size(); ++i) {
 				tensor_index += "{" + std::to_string(std::get<0>(weight.second->getTensorIndex()[i])) + ";"
 					+ std::to_string(std::get<1>(weight.second->getTensorIndex()[i])) + ";"
 					+ std::to_string(std::get<2>(weight.second->getTensorIndex()[i])) + "}";
-				if (i < n_operations - 1)	tensor_index += "|";
+				if (i < weight.second->getTensorIndex().size() - 1)	tensor_index += "|";
 			}
 			row.push_back(tensor_index);
 
