@@ -77,7 +77,7 @@ public:
     auto integration_weight_grad_op = std::make_shared<SumWeightGradOp<TensorT>>(SumWeightGradOp<TensorT>());
 
     // Define the solver
-    auto solver_op = std::make_shared<AdamOp<TensorT>>(AdamOp<TensorT>(1e-3, 0.9, 0.999, 1e-8, 10));
+    auto solver_op = std::make_shared<AdamOp<TensorT>>(AdamOp<TensorT>(1e-5, 0.9, 0.999, 1e-8, 10));
 
     // Add the LSTM layer(s)
     std::vector<std::string> node_names = model_builder.addLSTM(model, "LSTM-01", "LSTM-01", node_names_input, n_blocks_1, n_cells_1,
@@ -185,7 +185,7 @@ public:
     auto integration_weight_grad_op = std::make_shared<SumWeightGradOp<TensorT>>(SumWeightGradOp<TensorT>());
 
     // Define the solver
-    auto solver_op = std::make_shared<AdamOp<TensorT>>(AdamOp<TensorT>(1e-3, 0.9, 0.999, 1e-8, 10));
+    auto solver_op = std::make_shared<AdamOp<TensorT>>(AdamOp<TensorT>(1e-5, 0.9, 0.999, 1e-8, 10));
 
     // Add the 1st RNN layer
     if (n_hidden_0 > 0) {
@@ -456,7 +456,7 @@ void main_MNIST(const std::string& data_dir, const bool& make_model, const bool&
   const std::size_t n_blocks_2 = 0;
   const std::size_t n_cells_2 = 1;
   const bool add_forget_gate = false;
-  const std::size_t n_hidden = 0;
+  const std::size_t n_hidden = 32;
   //// Model architecture config 1
   //const std::size_t n_blocks_1 = 128;
   //const std::size_t n_cells_1 = 1;
@@ -542,8 +542,8 @@ void main_MNIST(const std::string& data_dir, const bool& make_model, const bool&
   std::cout << "Initializing the population..." << std::endl;
   Model<float> model;
   if (make_model) {
-    //model_trainer.makeRNN(model, input_nodes.size(), output_nodes.size(), 128, 128, true, true, true);
-    model_trainer.makeLSTM(model, input_nodes.size(), output_nodes.size(), n_blocks_1, n_cells_1, n_blocks_2, n_cells_2, n_hidden, add_forget_gate, true, true);
+    model_trainer.makeRNN(model, input_nodes.size(), output_nodes.size(), 128, 0, false, false, true);
+    //model_trainer.makeLSTM(model, input_nodes.size(), output_nodes.size(), n_blocks_1, n_cells_1, n_blocks_2, n_cells_2, n_hidden, add_forget_gate, false, true);
   }
   else {
     // read in the trained model
