@@ -456,7 +456,7 @@ void main_MNIST(const std::string& data_dir, const bool& make_model, const bool&
   const std::size_t n_blocks_2 = 0;
   const std::size_t n_cells_2 = 1;
   const bool add_forget_gate = false;
-  const std::size_t n_hidden = 32;
+  const std::size_t n_hidden = 0;
   //// Model architecture config 1
   //const std::size_t n_blocks_1 = 128;
   //const std::size_t n_cells_1 = 1;
@@ -542,8 +542,8 @@ void main_MNIST(const std::string& data_dir, const bool& make_model, const bool&
   std::cout << "Initializing the population..." << std::endl;
   Model<float> model;
   if (make_model) {
-    model_trainer.makeRNN(model, input_nodes.size(), output_nodes.size(), 128, 0, false, false, true);
-    //model_trainer.makeLSTM(model, input_nodes.size(), output_nodes.size(), n_blocks_1, n_cells_1, n_blocks_2, n_cells_2, n_hidden, add_forget_gate, false, true);
+    //model_trainer.makeRNN(model, input_nodes.size(), output_nodes.size(), 128, 0, false, false, true);
+    model_trainer.makeLSTM(model, input_nodes.size(), output_nodes.size(), n_blocks_1, n_cells_1, n_blocks_2, n_cells_2, n_hidden, add_forget_gate, true, true);
   }
   else {
     // read in the trained model
