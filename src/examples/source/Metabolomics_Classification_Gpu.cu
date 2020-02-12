@@ -13,14 +13,6 @@ using namespace SmartPeak;
 
 // Other extended classes
 template<typename TensorT>
-class ModelReplicatorExt : public ModelReplicator<TensorT>
-{};
-
-template<typename TensorT>
-class PopulationTrainerExt : public PopulationTrainerGpu<TensorT>
-{};
-
-template<typename TensorT>
 class MetDataSimClassification : public DataSimulator<TensorT>
 {
 public:
@@ -348,7 +340,7 @@ public:
   /*
   @brief Fully connected classifier
   */
-  void makeModelFCClass(Model<TensorT>& model, const int& n_inputs, const int& n_outputs, const bool& linear_scale_input, const bool& log_transform_input, const bool& standardize_input, const bool& add_norm = true,
+  void makeModelFCClass(Model<TensorT>& model, const int& n_inputs, const int& n_outputs, const bool& linear_scale_input, const bool& log_transform_input, const bool& standardize_input,
     const int& n_hidden_0 = 32, const int& n_hidden_1 = 0, const int& n_hidden_2 = 0) {
     model.setId(0);
     model.setName("Classifier");
@@ -357,283 +349,60 @@ public:
     // Add the inputs
     std::vector<std::string> node_names = model_builder.addInputNodes(model, "Input", "Input", n_inputs, true);
 
-    // Data pre-processing steps
+    // Data online pre-processing steps
     this->addDataPreproccessingSteps(model, node_names, linear_scale_input, log_transform_input, standardize_input);
+
+    // Define the activation based on `add_feature_norm`
+    auto activation = std::make_shared<LeakyReLUOp<TensorT>>(LeakyReLUOp<TensorT>());
+    auto activation_grad = std::make_shared<LeakyReLUGradOp<TensorT>>(LeakyReLUGradOp<TensorT>());
+
+    // Define the node integration
+    auto integration_op = std::make_shared<SumOp<TensorT>>(SumOp<TensorT>());
+    auto integration_error_op = std::make_shared<SumErrorOp<TensorT>>(SumErrorOp<TensorT>());
+    auto integration_weight_grad_op = std::make_shared<SumWeightGradOp<TensorT>>(SumWeightGradOp<TensorT>());
+
+    // Define the solver
+    auto solver_op = std::make_shared<AdamOp<TensorT>>(AdamOp<TensorT>(1e-4, 0.9, 0.999, 1e-8, 10));
 
     // Add the hidden layers
     if (n_hidden_0 > 0) {
       node_names = model_builder.addFullyConnected(model, "FC0", "FC0", node_names, n_hidden_0,
-        std::make_shared<LeakyReLUOp<TensorT>>(LeakyReLUOp<TensorT>()),
-        std::make_shared<LeakyReLUGradOp<TensorT>>(LeakyReLUGradOp<TensorT>()),
-        //std::make_shared<LinearOp<TensorT>>(LinearOp<TensorT>()),
-        //std::make_shared<LinearGradOp<TensorT>>(LinearGradOp<TensorT>()),
-        std::make_shared<SumOp<TensorT>>(SumOp<TensorT>()),
-        std::make_shared<SumErrorOp<TensorT>>(SumErrorOp<TensorT>()),
-        std::make_shared<SumWeightGradOp<TensorT>>(SumWeightGradOp<TensorT>()),
+        activation, activation_grad, integration_op, integration_error_op, integration_weight_grad_op,
         std::make_shared<RandWeightInitOp<TensorT>>(RandWeightInitOp<TensorT>((int)(node_names.size() + n_hidden_0) / 2, 1)),
-        std::make_shared<AdamOp<TensorT>>(AdamOp<TensorT>(5e-4, 0.9, 0.999, 1e-8)), 0.0f, 0.0f, false, true);
-      if (add_norm) {
-        node_names = model_builder.addNormalization(model, "FC0-Norm", "FC0-Norm", node_names, true);
-        node_names = model_builder.addSinglyConnected(model, "FC0-Norm-gain", "FC0-Norm-gain", node_names, node_names.size(),
-          std::make_shared<LeakyReLUOp<TensorT>>(LeakyReLUOp<TensorT>()), // Nonlinearity occures after the normalization
-          std::make_shared<LeakyReLUGradOp<TensorT>>(LeakyReLUGradOp<TensorT>()),
-          std::make_shared<SumOp<TensorT>>(SumOp<TensorT>()),
-          std::make_shared<SumErrorOp<TensorT>>(SumErrorOp<TensorT>()),
-          std::make_shared<SumWeightGradOp<TensorT>>(SumWeightGradOp<TensorT>()),
-          std::make_shared<ConstWeightInitOp<TensorT>>(ConstWeightInitOp<TensorT>(1)),
-          std::make_shared<AdamOp<TensorT>>(AdamOp<TensorT>(5e-4, 0.9, 0.999, 1e-8)),
-          0.0, 0.0, true, true);
-      }
+        solver_op, 0.0f, 0.0f, false, true);
     }
     if (n_hidden_1 > 0) {
       node_names = model_builder.addFullyConnected(model, "FC1", "FC1", node_names, n_hidden_1,
-        std::make_shared<LeakyReLUOp<TensorT>>(LeakyReLUOp<TensorT>()),
-        std::make_shared<LeakyReLUGradOp<TensorT>>(LeakyReLUGradOp<TensorT>()),
-        //std::make_shared<LinearOp<TensorT>>(LinearOp<TensorT>()),
-        //std::make_shared<LinearGradOp<TensorT>>(LinearGradOp<TensorT>()),
-        std::make_shared<SumOp<TensorT>>(SumOp<TensorT>()),
-        std::make_shared<SumErrorOp<TensorT>>(SumErrorOp<TensorT>()),
-        std::make_shared<SumWeightGradOp<TensorT>>(SumWeightGradOp<TensorT>()),
+        activation, activation_grad, integration_op, integration_error_op, integration_weight_grad_op,
         std::make_shared<RandWeightInitOp<TensorT>>(RandWeightInitOp<TensorT>((int)(node_names.size() + n_hidden_1) / 2, 1)),
-        std::make_shared<AdamOp<TensorT>>(AdamOp<TensorT>(5e-4, 0.9, 0.999, 1e-8)), 0.0f, 0.0f, false, true);
-      if (add_norm) {
-        node_names = model_builder.addNormalization(model, "FC1-Norm", "FC1-Norm", node_names, true);
-        node_names = model_builder.addSinglyConnected(model, "FC1-Norm-gain", "FC1-Norm-gain", node_names, node_names.size(),
-          std::make_shared<LeakyReLUOp<TensorT>>(LeakyReLUOp<TensorT>()), // Nonlinearity occures after the normalization
-          std::make_shared<LeakyReLUGradOp<TensorT>>(LeakyReLUGradOp<TensorT>()),
-          std::make_shared<SumOp<TensorT>>(SumOp<TensorT>()),
-          std::make_shared<SumErrorOp<TensorT>>(SumErrorOp<TensorT>()),
-          std::make_shared<SumWeightGradOp<TensorT>>(SumWeightGradOp<TensorT>()),
-          std::make_shared<ConstWeightInitOp<TensorT>>(ConstWeightInitOp<TensorT>(1)),
-          std::make_shared<AdamOp<TensorT>>(AdamOp<TensorT>(5e-4, 0.9, 0.999, 1e-8)),
-          0.0, 0.0, true, true);
-      }
+        solver_op, 0.0f, 0.0f, false, true);
     }
     if (n_hidden_2 > 0) {
       node_names = model_builder.addFullyConnected(model, "FC2", "FC2", node_names, n_hidden_2,
-        std::make_shared<LeakyReLUOp<TensorT>>(LeakyReLUOp<TensorT>()),
-        std::make_shared<LeakyReLUGradOp<TensorT>>(LeakyReLUGradOp<TensorT>()),
-        //std::make_shared<LinearOp<TensorT>>(LinearOp<TensorT>()),
-        //std::make_shared<LinearGradOp<TensorT>>(LinearGradOp<TensorT>()),
-        std::make_shared<SumOp<TensorT>>(SumOp<TensorT>()),
-        std::make_shared<SumErrorOp<TensorT>>(SumErrorOp<TensorT>()),
-        std::make_shared<SumWeightGradOp<TensorT>>(SumWeightGradOp<TensorT>()),
+        activation, activation_grad, integration_op, integration_error_op, integration_weight_grad_op,
         std::make_shared<RandWeightInitOp<TensorT>>(RandWeightInitOp<TensorT>((int)(node_names.size() + n_hidden_2) / 2, 1)),
-        std::make_shared<AdamOp<TensorT>>(AdamOp<TensorT>(5e-4, 0.9, 0.999, 1e-8)), 0.0f, 0.0f, false, true);
-      if (add_norm) {
-        node_names = model_builder.addNormalization(model, "FC2-Norm", "FC2-Norm", node_names, true);
-        node_names = model_builder.addSinglyConnected(model, "FC2-Norm-gain", "FC2-Norm-gain", node_names, node_names.size(),
-          std::make_shared<LeakyReLUOp<TensorT>>(LeakyReLUOp<TensorT>()), // Nonlinearity occures after the normalization
-          std::make_shared<LeakyReLUGradOp<TensorT>>(LeakyReLUGradOp<TensorT>()),
-          std::make_shared<SumOp<TensorT>>(SumOp<TensorT>()),
-          std::make_shared<SumErrorOp<TensorT>>(SumErrorOp<TensorT>()),
-          std::make_shared<SumWeightGradOp<TensorT>>(SumWeightGradOp<TensorT>()),
-          std::make_shared<ConstWeightInitOp<TensorT>>(ConstWeightInitOp<TensorT>(1)),
-          std::make_shared<AdamOp<TensorT>>(AdamOp<TensorT>(5e-4, 0.9, 0.999, 1e-8)),
-          0.0, 0.0, true, true);
-      }
-    }
-    node_names = model_builder.addFullyConnected(model, "Output", "Output", node_names, n_outputs,
-      std::make_shared<LeakyReLUOp<TensorT>>(LeakyReLUOp<TensorT>()),
-      std::make_shared<LeakyReLUGradOp<TensorT>>(LeakyReLUGradOp<TensorT>()),
-      std::make_shared<SumOp<TensorT>>(SumOp<TensorT>()),
-      std::make_shared<SumErrorOp<TensorT>>(SumErrorOp<TensorT>()),
-      std::make_shared<SumWeightGradOp<TensorT>>(SumWeightGradOp<TensorT>()),
-      std::make_shared<RandWeightInitOp<TensorT>>(RandWeightInitOp<TensorT>((int)(node_names.size() + n_outputs) / 2, 1)),
-      std::make_shared<AdamOp<TensorT>>(AdamOp<TensorT>(5e-4, 0.9, 0.999, 1e-8)), 0.0f, 0.0f, true, true);
-
-    // Specify the output node types manually
-    for (const std::string& node_name : node_names)
-      model.getNodesMap().at(node_name)->setType(NodeType::output);
-    model.setInputAndOutputNodes();
-  }
-
-  /*
-  @brief CovNet classifier
-  */
-  void makeModelCovNetClass(Model<TensorT>& model, const int& n_inputs, const int& n_outputs, const bool& linear_scale_input, const bool& log_transform_input, const bool& standardize_input,
-    int n_hidden_0 = 64, int n_depth_1 = 32, int n_depth_2 = 2, int n_fc = 16, bool add_norm = false, bool specify_layers = false) {
-    model.setId(0);
-    model.setName("CovNet");
-
-    ModelBuilder<TensorT> model_builder;
-
-    // Add the inputs
-    std::vector<std::string> node_names_input = model_builder.addInputNodes(model, "Input", "Input", n_inputs, specify_layers);
-
-    // Data pre-processing steps
-    this->addDataPreproccessingSteps(model, node_names_input, linear_scale_input, log_transform_input, standardize_input);
-
-    // Add the hidden layers
-    if (n_hidden_0 > 0) {
-      node_names_input = model_builder.addFullyConnected(model, "FC0", "FC0", node_names_input, n_hidden_0,
-        std::make_shared<LeakyReLUOp<TensorT>>(LeakyReLUOp<TensorT>()),
-        std::make_shared<LeakyReLUGradOp<TensorT>>(LeakyReLUGradOp<TensorT>()),
-        //std::make_shared<LinearOp<TensorT>>(LinearOp<TensorT>()),
-        //std::make_shared<LinearGradOp<TensorT>>(LinearGradOp<TensorT>()),
-        std::make_shared<SumOp<TensorT>>(SumOp<TensorT>()),
-        std::make_shared<SumErrorOp<TensorT>>(SumErrorOp<TensorT>()),
-        std::make_shared<SumWeightGradOp<TensorT>>(SumWeightGradOp<TensorT>()),
-        std::make_shared<RandWeightInitOp<TensorT>>(RandWeightInitOp<TensorT>((int)(node_names_input.size() + n_hidden_0) / 2, 1)),
-        std::make_shared<AdamOp<TensorT>>(AdamOp<TensorT>(5e-4, 0.9, 0.999, 1e-8, 10)), 0.0f, 0.0f, false, true);
-      if (add_norm) {
-        node_names_input = model_builder.addNormalization(model, "FC0-Norm", "FC0-Norm", node_names_input, true);
-        node_names_input = model_builder.addSinglyConnected(model, "FC0-Norm-gain", "FC0-Norm-gain", node_names_input, node_names_input.size(),
-          std::make_shared<LeakyReLUOp<TensorT>>(LeakyReLUOp<TensorT>()), // Nonlinearity occures after the normalization
-          std::make_shared<LeakyReLUGradOp<TensorT>>(LeakyReLUGradOp<TensorT>()),
-          std::make_shared<SumOp<TensorT>>(SumOp<TensorT>()),
-          std::make_shared<SumErrorOp<TensorT>>(SumErrorOp<TensorT>()),
-          std::make_shared<SumWeightGradOp<TensorT>>(SumWeightGradOp<TensorT>()),
-          std::make_shared<ConstWeightInitOp<TensorT>>(ConstWeightInitOp<TensorT>(1)),
-          std::make_shared<AdamOp<TensorT>>(AdamOp<TensorT>(5e-4, 0.9, 0.999, 1e-8, 10)),
-          0.0, 0.0, true, true);
-      }
+        solver_op, 0.0f, 0.0f, false, true);
     }
 
-    // Add the first convolution -> max pool -> LeakyReLU layers
-    std::vector<std::vector<std::string>> node_names_l0;
-    for (size_t d = 0; d < n_depth_1; ++d) {
-      std::vector<std::string> node_names;
-      std::string conv_name = "Conv0-" + std::to_string(d);
-      node_names = model_builder.addConvolution(model, conv_name, conv_name, node_names_input,
-        sqrt(node_names_input.size()), sqrt(node_names_input.size()), 0, 0,
-        2, 2, 1, 0, 0,
-        std::make_shared<LeakyReLUOp<TensorT>>(LeakyReLUOp<TensorT>()),
-        std::make_shared<LeakyReLUGradOp<TensorT>>(LeakyReLUGradOp<TensorT>()),
-        //std::make_shared<LinearOp<TensorT>>(LinearOp<TensorT>()),
-        //std::make_shared<LinearGradOp<TensorT>>(LinearGradOp<TensorT>()),
-        std::make_shared<SumOp<TensorT>>(SumOp<TensorT>()),
-        std::make_shared<SumErrorOp<TensorT>>(SumErrorOp<TensorT>()),
-        std::make_shared<SumWeightGradOp<TensorT>>(SumWeightGradOp<TensorT>()),
-        std::make_shared<RandWeightInitOp<TensorT>>(RandWeightInitOp<TensorT>(5, 1)),
-        std::make_shared<AdamOp<TensorT>>(AdamOp<TensorT>(5e-4, 0.9, 0.999, 1e-8, 10)), 0.0f, 0.0f, false, specify_layers);
-      if (add_norm) {
-        std::string norm_name = "Norm0-" + std::to_string(d);
-        node_names = model_builder.addNormalization(model, norm_name, norm_name, node_names, true);
-        std::string gain_name = "Gain0-" + std::to_string(d);
-        node_names = model_builder.addSinglyConnected(model, gain_name, gain_name, node_names, node_names.size(),
-          std::make_shared<LeakyReLUOp<TensorT>>(LeakyReLUOp<TensorT>()), // Nonlinearity occures after the normalization
-          std::make_shared<LeakyReLUGradOp<TensorT>>(LeakyReLUGradOp<TensorT>()),
-          std::make_shared<SumOp<TensorT>>(SumOp<TensorT>()),
-          std::make_shared<SumErrorOp<TensorT>>(SumErrorOp<TensorT>()),
-          std::make_shared<SumWeightGradOp<TensorT>>(SumWeightGradOp<TensorT>()),
-          std::make_shared<ConstWeightInitOp<TensorT>>(ConstWeightInitOp<TensorT>(1)),
-          std::make_shared<AdamOp<TensorT>>(AdamOp<TensorT>(5e-4, 0.9, 0.999, 1e-8, 10)),
-          0.0, 0.0, true, true);
-      }
-      //std::string pool_name = "Pool0-" + std::to_string(d);
-      //node_names = model_builder.addConvolution(model, pool_name, pool_name, node_names,
-      //  sqrt(node_names.size()), sqrt(node_names.size()), 1, 1,
-      //  2, 2, 2, 0, 0,
-      //  std::make_shared<LinearOp<TensorT>>(LinearOp<TensorT>()),
-      //  std::make_shared<LinearGradOp<TensorT>>(LinearGradOp<TensorT>()),
-      //  std::make_shared<MaxOp<TensorT>>(MaxOp<float>()),
-      //  std::make_shared<MaxErrorOp<TensorT>>(MaxErrorOp<TensorT>()),
-      //  std::make_shared<MaxWeightGradOp<TensorT>>(MaxWeightGradOp<TensorT>()),
-      //  std::make_shared<ConstWeightInitOp<TensorT>>(ConstWeightInitOp<TensorT>(1.0)),
-      //  std::make_shared<DummySolverOp<TensorT>>(DummySolverOp<TensorT>()), 0.0, 0.0, false, specify_layers);
-      node_names_l0.push_back(node_names);
-    }
-
-    // Add the second convolution -> max pool -> LeakyReLU layers
-    std::vector<std::vector<std::string>> node_names_l1;
-    int l_cnt = 0;
-    for (const std::vector<std::string> &node_names_l : node_names_l0) {
-      for (size_t d = 0; d < n_depth_2; ++d) {
-        std::vector<std::string> node_names;
-        std::string conv_name = "Conv1-" + std::to_string(l_cnt) + "-" + std::to_string(d);
-        node_names = model_builder.addConvolution(model, conv_name, conv_name, node_names_l,
-          sqrt(node_names_l.size()), sqrt(node_names_l.size()), 0, 0,
-          2, 2, 1, 0, 0,
-          std::make_shared<LinearOp<TensorT>>(LinearOp<TensorT>()),
-          std::make_shared<LinearGradOp<TensorT>>(LinearGradOp<TensorT>()),
-          std::make_shared<SumOp<TensorT>>(SumOp<TensorT>()),
-          std::make_shared<SumErrorOp<TensorT>>(SumErrorOp<TensorT>()),
-          std::make_shared<SumWeightGradOp<TensorT>>(SumWeightGradOp<TensorT>()),
-          std::make_shared<RandWeightInitOp<TensorT>>(RandWeightInitOp<TensorT>(5, 1)),
-          std::make_shared<AdamOp<TensorT>>(AdamOp<TensorT>(5e-4, 0.9, 0.999, 1e-8, 10)), 0.0f, 0.0f, false, specify_layers);
-        if (add_norm) {
-          std::string norm_name = "Norm1-" + std::to_string(l_cnt) + "-" + std::to_string(d);
-          node_names = model_builder.addNormalization(model, norm_name, norm_name, node_names, true);
-          std::string gain_name = "Gain1-" + std::to_string(l_cnt) + "-" + std::to_string(d);
-          node_names = model_builder.addSinglyConnected(model, gain_name, gain_name, node_names, node_names.size(),
-            std::make_shared<LeakyReLUOp<TensorT>>(LeakyReLUOp<TensorT>()), // Nonlinearity occures after the normalization
-            std::make_shared<LeakyReLUGradOp<TensorT>>(LeakyReLUGradOp<TensorT>()),
-            std::make_shared<SumOp<TensorT>>(SumOp<TensorT>()),
-            std::make_shared<SumErrorOp<TensorT>>(SumErrorOp<TensorT>()),
-            std::make_shared<SumWeightGradOp<TensorT>>(SumWeightGradOp<TensorT>()),
-            std::make_shared<ConstWeightInitOp<TensorT>>(ConstWeightInitOp<TensorT>(1)),
-            std::make_shared<AdamOp<TensorT>>(AdamOp<TensorT>(5e-4, 0.9, 0.999, 1e-8, 10)),
-            0.0, 0.0, true, true);
-        }
-        //std::string pool_name = "Pool1-" + std::to_string(l_cnt) + "-" + std::to_string(d);
-        //node_names = model_builder.addConvolution(model, pool_name, pool_name, node_names,
-        //  sqrt(node_names.size()), sqrt(node_names.size()), 1, 1,
-        //  2, 2, 2, 0, 0,
-        //  std::make_shared<LinearOp<TensorT>>(LinearOp<TensorT>()),
-        //  std::make_shared<LinearGradOp<TensorT>>(LinearGradOp<TensorT>()),
-        //  std::make_shared<MaxOp<TensorT>>(MaxOp<float>()),
-        //  std::make_shared<MaxErrorOp<TensorT>>(MaxErrorOp<TensorT>()),
-        //  std::make_shared<MaxWeightGradOp<TensorT>>(MaxWeightGradOp<TensorT>()),
-        //  std::make_shared<ConstWeightInitOp<TensorT>>(ConstWeightInitOp<TensorT>(1.0)),
-        //  std::make_shared<DummySolverOp<TensorT>>(DummySolverOp<TensorT>()), 0.0, 0.0, false, specify_layers);
-        node_names_l1.push_back(node_names);
-      }
-      ++l_cnt;
-    }
-
-    // Linearize the node names
-    std::vector<std::string> node_names;
-    if (node_names_l1.size()) {
-      for (const std::vector<std::string> &node_names_l : node_names_l1) {
-        for (const std::string &node_name : node_names_l) {
-          node_names.push_back(node_name);
-        }
-      }
-    }
-    else {
-      for (const std::vector<std::string> &node_names_l : node_names_l0) {
-        for (const std::string &node_name : node_names_l) {
-          node_names.push_back(node_name);
-        }
-      }
-    }
-
-    // Add the FC layers
-    node_names = model_builder.addFullyConnected(model, "FC1", "FC1", node_names, n_fc,
-      std::make_shared<LeakyReLUOp<TensorT>>(LeakyReLUOp<TensorT>()),
-      std::make_shared<LeakyReLUGradOp<TensorT>>(LeakyReLUGradOp<TensorT>()),
-      std::make_shared<SumOp<TensorT>>(SumOp<TensorT>()),
-      std::make_shared<SumErrorOp<TensorT>>(SumErrorOp<TensorT>()),
-      std::make_shared<SumWeightGradOp<TensorT>>(SumWeightGradOp<TensorT>()),
-      std::make_shared<RandWeightInitOp<TensorT>>(RandWeightInitOp<TensorT>(node_names.size() + n_fc, 2)),
-      std::make_shared<AdamOp<TensorT>>(AdamOp<TensorT>(5e-4, 0.9, 0.999, 1e-8, 10)), 0.0f, 0.0f, false, specify_layers);
-    if (add_norm) {
-      node_names = model_builder.addNormalization(model, "FC1-Norm", "FC1-Norm", node_names, true);
-      node_names = model_builder.addSinglyConnected(model, "FC1-Norm-gain", "FC1-Norm-gain", node_names, node_names.size(),
-        std::make_shared<LeakyReLUOp<TensorT>>(LeakyReLUOp<TensorT>()), // Nonlinearity occures after the normalization
-        std::make_shared<LeakyReLUGradOp<TensorT>>(LeakyReLUGradOp<TensorT>()),
-        std::make_shared<SumOp<TensorT>>(SumOp<TensorT>()),
-        std::make_shared<SumErrorOp<TensorT>>(SumErrorOp<TensorT>()),
-        std::make_shared<SumWeightGradOp<TensorT>>(SumWeightGradOp<TensorT>()),
-        std::make_shared<ConstWeightInitOp<TensorT>>(ConstWeightInitOp<TensorT>(1)),
-        std::make_shared<AdamOp<TensorT>>(AdamOp<TensorT>(5e-4, 0.9, 0.999, 1e-8, 10)),
-        0.0, 0.0, true, true);
-    }
-    node_names = model_builder.addFullyConnected(model, "Output", "Output", node_names, n_outputs,
-      std::make_shared<LeakyReLUOp<TensorT>>(LeakyReLUOp<TensorT>()),
-      std::make_shared<LeakyReLUGradOp<TensorT>>(LeakyReLUGradOp<TensorT>()),
-      std::make_shared<SumOp<TensorT>>(SumOp<TensorT>()),
-      std::make_shared<SumErrorOp<TensorT>>(SumErrorOp<TensorT>()),
-      std::make_shared<SumWeightGradOp<TensorT>>(SumWeightGradOp<TensorT>()),
+    // Add the final output layer
+    node_names = model_builder.addFullyConnected(model, "FC-Output", "FC-Output", node_names, n_outputs,
+      activation, activation_grad, integration_op, integration_error_op, integration_weight_grad_op,
       std::make_shared<RandWeightInitOp<TensorT>>(RandWeightInitOp<TensorT>(node_names.size(), 2)),
-      std::make_shared<AdamOp<TensorT>>(AdamOp<TensorT>(5e-4, 0.9, 0.999, 1e-8, 10)), 0.0f, 0.0f, false, true);
+      solver_op, 0.0f, 0.0f, false, true);
 
+    // Add the dummy output layer
+    node_names = model_builder.addSinglyConnected(model, "Output", "Output", node_names, n_outputs,
+      std::make_shared<LinearOp<TensorT>>(LinearOp<TensorT>()),
+      std::make_shared<LinearGradOp<TensorT>>(LinearGradOp<TensorT>()),
+      integration_op, integration_error_op, integration_weight_grad_op,
+      std::make_shared<ConstWeightInitOp<TensorT>>(ConstWeightInitOp<TensorT>(1)),
+      std::make_shared<DummySolverOp<TensorT>>(DummySolverOp<TensorT>()), 0.0f, 0.0f, false, true);
+
+    // Manually define the output nodes
     for (const std::string& node_name : node_names)
       model.getNodesMap().at(node_name)->setType(NodeType::output);
     model.setInputAndOutputNodes();
   }
-
   /*
   @brief Add data preprocessing steps
   */
@@ -642,8 +411,8 @@ public:
     // Data pre-processing steps
     if (log_transform_input) {
       node_names = model_builder.addSinglyConnected(model, "LogScaleInput", "LogScaleInput", node_names, node_names.size(),
-        std::shared_ptr<ActivationOp<TensorT>>(new LogOp<TensorT>()),
-        std::shared_ptr<ActivationOp<TensorT>>(new LogGradOp<TensorT>()),
+        std::make_shared<LogOp<TensorT>>(LogOp<TensorT>()),
+        std::make_shared<LogGradOp<TensorT>>(LogGradOp<TensorT>()),
         std::make_shared<SumOp<TensorT>>(SumOp<TensorT>()),
         std::make_shared<SumErrorOp<TensorT>>(SumErrorOp<TensorT>()),
         std::make_shared<SumWeightGradOp<TensorT>>(SumWeightGradOp<TensorT>()),
@@ -663,38 +432,46 @@ public:
     Model<TensorT>& model,
     ModelInterpreterGpu<TensorT>& model_interpreter,
     const std::vector<float>& model_errors) {
-    // Check point the model every 1000 epochs
-    if (n_epochs % 1000 == 0 && n_epochs != 0) {
+    if (n_epochs % 1000 == 0) { // store on n_epochs == 0
+    //if (n_epochs % 1000 == 0 && n_epochs != 0) {
+      // save the model every 1000 epochs
       model_interpreter.getModelResults(model, false, true, false, false);
-      // save the model weights
-      WeightFile<float> weight_data;
-      weight_data.storeWeightValuesCsv(model.getName() + "_" + std::to_string(n_epochs) + "_weights.csv", model.weights_);
-      //// save the model and interpreter in binary format
-      //ModelFile<TensorT> data;
-      //data.storeModelBinary(model.getName() + "_" + std::to_string(n_epochs) + "_model.binary", model);
-      //ModelInterpreterFileGpu<TensorT> interpreter_data;
-      //interpreter_data.storeModelInterpreterBinary(model.getName() + "_" + std::to_string(n_epochs) + "_interpreter.binary", model_interpreter);
+      ModelFile<TensorT> data;
+
+      //// Save weights to .csv
+      //data.storeModelCsv(model.getName() + "_" + std::to_string(n_epochs) + "_nodes.csv",
+      //	model.getName() + "_" + std::to_string(n_epochs) + "_links.csv",
+      //	model.getName() + "_" + std::to_string(n_epochs) + "_weights.csv", model, false, false, true);
+
+      // Save to binary
+      data.storeModelBinary(model.getName() + "_" + std::to_string(n_epochs) + "_model.binary", model);
+      ModelInterpreterFileGpu<TensorT> interpreter_data;
+      interpreter_data.storeModelInterpreterBinary(model.getName() + "_" + std::to_string(n_epochs) + "_interpreter.binary", model_interpreter);
     }
   }
-  void trainingModelLogger(const int & n_epochs, Model<TensorT>& model, ModelInterpreterGpu<TensorT>& model_interpreter, ModelLogger<TensorT>& model_logger,
-    const Eigen::Tensor<TensorT, 3>& expected_values, const std::vector<std::string>& output_nodes, const TensorT & model_error_train, const TensorT & model_error_test,
-    const Eigen::Tensor<TensorT, 1> & model_metrics_train, const Eigen::Tensor<TensorT, 1> & model_metrics_test)
+  void trainingModelLogger(const int& n_epochs, Model<TensorT>& model, ModelInterpreterGpu<TensorT>& model_interpreter, ModelLogger<TensorT>& model_logger,
+    const Eigen::Tensor<TensorT, 3>& expected_values, const std::vector<std::string>& output_nodes, const std::vector<std::string>& input_nodes, const TensorT& model_error_train, const TensorT& model_error_test,
+    const Eigen::Tensor<TensorT, 1>& model_metrics_train, const Eigen::Tensor<TensorT, 1>& model_metrics_test) override
   {
     // Set the defaults
     model_logger.setLogTimeEpoch(true);
     model_logger.setLogTrainValMetricEpoch(true);
-    model_logger.setLogExpectedPredictedEpoch(false);
+    model_logger.setLogExpectedEpoch(false);
+    model_logger.setLogNodeOutputsEpoch(false);
+    model_logger.setLogNodeInputsEpoch(false);
 
     // initialize all logs
     if (n_epochs == 0) {
-      model_logger.setLogExpectedPredictedEpoch(true);
+      model_logger.setLogExpectedEpoch(true);
+      model_logger.setLogNodeOutputsEpoch(true);
       model_logger.initLogs(model);
     }
 
     // Per n epoch logging
     if (n_epochs % 1000 == 0) {
-      model_logger.setLogExpectedPredictedEpoch(true);
-      model_interpreter.getModelResults(model, true, false, false);
+      model_logger.setLogExpectedEpoch(true);
+      model_logger.setLogNodeOutputsEpoch(true);
+      model_interpreter.getModelResults(model, true, false, false, false);
     }
 
     // Create the metric headers and data arrays
@@ -710,7 +487,7 @@ public:
       log_test_values.push_back(model_metrics_test(metric_iter));
       ++metric_iter;
     }
-    model_logger.writeLogs(model, n_epochs, log_train_headers, log_test_headers, log_train_values, log_test_values, output_nodes, expected_values);
+    model_logger.writeLogs(model, n_epochs, log_train_headers, log_test_headers, log_train_values, log_test_values, output_nodes, expected_values, {}, output_nodes, {}, input_nodes, {});
   }
 };
 
@@ -718,28 +495,8 @@ public:
 void main_classification(const std::string& biochem_rxns_filename,
   const std::string& metabo_data_filename_train, const std::string& meta_data_filename_train,
   const std::string& metabo_data_filename_test, const std::string& meta_data_filename_test,
-  bool make_model = true, bool simulate_MARs = true, bool sample_concs = true)
+  const bool& make_model = true, const bool& train_model = true, const bool& simulate_MARs = true, const bool& sample_concs = true, const int& norm_method = 0)
 {
-  // define the population trainer parameters
-  PopulationTrainerExt<float> population_trainer;
-  population_trainer.setNGenerations(1);
-  population_trainer.setNTop(3);
-  population_trainer.setNRandom(3);
-  population_trainer.setNReplicatesPerModel(3);
-  population_trainer.setLogging(true);
-
-  // define the population logger
-  PopulationLogger<float> population_logger(true, true);
-
-  // define the multithreading parameters
-  const int n_hard_threads = std::thread::hardware_concurrency();
-  //const int n_threads = n_hard_threads / 2; // the number of threads
-  //char threads_cout[512];
-  //sprintf(threads_cout, "Threads for population training: %d, Threads for model training/validation: %d\n",
-  //	n_hard_threads, 2);
-  //std::cout << threads_cout;
-  const int n_threads = 1;
-
   // define the data simulator
   BiochemicalReactionModel<float> reaction_model;
   MetDataSimClassification<float> metabolomics_data;
@@ -808,16 +565,12 @@ void main_classification(const std::string& biochem_rxns_filename,
   }
 
   // define the model trainers and resources for the trainers
-  std::vector<ModelInterpreterGpu<float>> model_interpreters;
-  for (size_t i = 0; i < n_threads; ++i) {
-    ModelResources model_resources = { ModelDevice(0, 1) };
-    ModelInterpreterGpu<float> model_interpreter(model_resources);
-    model_interpreters.push_back(model_interpreter);
-  }
+  ModelResources model_resources = { ModelDevice(0, 1) };
+  ModelInterpreterGpu<float> model_interpreter(model_resources);
   ModelTrainerExt<float> model_trainer;
   model_trainer.setBatchSize(64);
   model_trainer.setMemorySize(1);
-  model_trainer.setNEpochsTraining(10000);
+  model_trainer.setNEpochsTraining(100000);
   model_trainer.setNEpochsValidation(0);
   model_trainer.setVerbosityLevel(1);
   model_trainer.setLogging(true, false, false);
@@ -825,54 +578,83 @@ void main_classification(const std::string& biochem_rxns_filename,
   model_trainer.setFastInterpreter(true);
   model_trainer.setPreserveOoO(true);
   model_trainer.setLossFunctions({
-    std::make_shared<CrossEntropyWithLogitsLossOp<float>>(CrossEntropyWithLogitsLossOp<float>()),
-    std::make_shared<MSELossOp<float>>(MSELossOp<float>()) });
+    std::make_shared<MSELossOp<float>>(MSELossOp<float>(1e-8, 0)),
+    std::make_shared<CrossEntropyWithLogitsLossOp<float>>(CrossEntropyWithLogitsLossOp<float>(1e-8, 1)) });
   model_trainer.setLossFunctionGrads({
-    std::make_shared<CrossEntropyWithLogitsLossGradOp<float>>(CrossEntropyWithLogitsLossGradOp<float>()),
-    std::make_shared<MSELossGradOp<float>>(MSELossGradOp<float>()) });
+    std::make_shared<MSELossGradOp<float>>(MSELossGradOp<float>(1e-8, 0)),
+    std::make_shared<CrossEntropyWithLogitsLossGradOp<float>>(CrossEntropyWithLogitsLossGradOp<float>(1e-8, 1)) });
   model_trainer.setLossOutputNodes({
     output_nodes,
     output_nodes });
-  model_trainer.setMetricFunctions({ std::shared_ptr<MetricFunctionOp<float>>(new AccuracyMCMicroOp<float>()), std::make_shared<PrecisionMCMicroOp<float>>(PrecisionMCMicroOp<float>()) });
+  model_trainer.setMetricFunctions({ std::make_shared<AccuracyMCMicroOp<float>>(AccuracyMCMicroOp<float>()), std::make_shared<PrecisionMCMicroOp<float>>(PrecisionMCMicroOp<float>())
+    });
   model_trainer.setMetricOutputNodes({ output_nodes, output_nodes });
   model_trainer.setMetricNames({ "AccuracyMCMicro", "PrecisionMCMicro" });
 
   // define the model logger
-  ModelLogger<float> model_logger(true, true, false, false, false, false, false);
+  ModelLogger<float> model_logger(true, true, false, false, false, false, false, false);
 
-  // initialize the model replicator
-  ModelReplicatorExt<float> model_replicator;
-
-  // define the initial population
-  std::cout << "Initializing the population..." << std::endl;
-  //std::vector<Model<float>> population;
   Model<float> model;
   if (make_model) {
-    //model_trainer.makeModelFCClass(model, n_input_nodes, n_output_nodes, false, false, false, false, 64, 64, 0); // normalization type 0
-    model_trainer.makeModelFCClass(model, n_input_nodes, n_output_nodes, true, false, false, false, 64, 64, 0); // normalization type 1
-    //model_trainer.makeModelFCClass(model, n_input_nodes, n_output_nodes, true, false, true, false, 64, 64, 0); // normalization type 2
-    //model_trainer.makeModelFCClass(model, n_input_nodes, n_output_nodes, true, true, false, false, 64, 64, 0); // normalization type 3
-    //model_trainer.makeModelFCClass(model, n_input_nodes, n_output_nodes, true, true, true, false, 64, 64, 0); // normalization type 4
-
-    //model_trainer.makeModelCovNetClass(model, n_input_nodes, n_output_nodes, true, true, false, 64, 16, 0, 32, false, true); // normalization type 3
-
-    //population = { model };
+    std::cout << "Making the model..." << std::endl;
+    bool linear_scale_input = false;
+    bool log_transform_input = false;
+    bool standardize_input = false;
+    if (norm_method == 0) {// normalization type 0 (No normalization)
+    }
+    else if (norm_method == 1) {// normalization type 1 (Projection)
+      bool linear_scale_input = true;
+    }
+    else if (norm_method == 2) {// normalization type 2 (Standardization + Projection)
+      bool linear_scale_input = true;
+      bool standardize_input = true;
+    }
+    else if (norm_method == 3) {// normalization type 3 (Log transformation + Projection)
+      bool linear_scale_input = true;
+      bool log_transform_input = true;
+    }
+    else if (norm_method == 4) {// normalization type 4 (Log transformation + Standardization + Projection)
+      bool linear_scale_input = true;
+      bool log_transform_input = true;
+      bool standardize_input = true;
+    }
+    //model_trainer.makeModelFCClass(model, n_input_nodes, n_output_nodes, true, true, true, 64, 64, 0); // normalization type 4 (Log transformation + Standardization + Projection)
+    model_trainer.makeModelFCClass(model, n_input_nodes, n_output_nodes, linear_scale_input, log_transform_input, standardize_input, 32, 0, 0);
   }
   else {
     // TODO
   }
 
   // Train the model
+  std::cout << "Training the model..." << std::endl;
   std::pair<std::vector<float>, std::vector<float>> model_errors = model_trainer.trainModel(model, metabolomics_data,
-    input_nodes, model_logger, model_interpreters.front());
+    input_nodes, model_logger, model_interpreter);
+}
 
-  //// Evolve the population
-  //std::vector<std::vector<std::tuple<int, std::string, float>>> models_validation_errors_per_generation = population_trainer.evolveModels(
-  //	population, model_trainer, model_interpreters, model_replicator, metabolomics_data, model_logger, population_logger, input_nodes);
+template<typename TensorT>
+void calculateInputLayer0Correlation() {
+  // Read in the weights
+  Model<TensorT> model;
 
-  //PopulationTrainerFile<float> population_trainer_file;
-  //population_trainer_file.storeModels(population, "Metabolomics");
-  //population_trainer_file.storeModelValidations("MetabolomicsValidationErrors.csv", models_validation_errors_per_generation);
+  // Calculate the average per node weight magnitude for the first layer
+  const int n_fc_0 = 64;
+  const int n_input = 92;
+  Eigen::Tensor<TensorT, 1> weight_ave_values(n_input);
+  for (int i = 0; i < n_input; ++i) {
+    TensorT weight_sum = 0;
+    for (int j = 0; j < n_fc_0; ++j) {
+      char weight_name_char[512];
+      sprintf(weight_name_char, "Input_%012d_to_FC%012d", i, j);
+      std::string weight_name(weight_name_char);
+      TensorT weight_value = model.getWeightsMap().at(weight_name)->getWeight();
+      weight_sum += weight_value;
+    }
+    weight_ave_values(i) = weight_sum / n_fc_0;
+  }
+
+  // Generate a large sample of input
+
+  // Calculate the Pearson Correlation
 }
 
 // Main
@@ -880,25 +662,80 @@ int main(int argc, char** argv)
 {
   // Set the data directories
   //const std::string data_dir = "C:/Users/dmccloskey/Dropbox (UCSD SBRG)/Metabolomics_KALE/";
-  const std::string data_dir = "C:/Users/domccl/Dropbox (UCSD SBRG)/Metabolomics_KALE/";
-  //const std::string data_dir = "/home/user/Data/";
+  //const std::string data_dir = "C:/Users/domccl/Dropbox (UCSD SBRG)/Metabolomics_KALE/";
+  //std::string data_dir = "C:/Users/dmccloskey/Documents/GitHub/mnist/";
 
-  // Make the filenames
-  const std::string biochem_rxns_filename = data_dir + "iJO1366.csv";
+  // Initialize the defaults
+  std::string data_dir = "";
+  std::string biochem_rxns_filename = data_dir + "iJO1366.csv";
+  std::string metabo_data_filename_train = data_dir + "ALEsKOs01_Metabolomics_train.csv"; // IndustrialStrains0103_
+  std::string meta_data_filename_train = data_dir + "ALEsKOs01_MetaData_train.csv";
+  std::string metabo_data_filename_test = data_dir + "ALEsKOs01_Metabolomics_test.csv";
+  std::string meta_data_filename_test = data_dir + "ALEsKOs01_MetaData_test.csv";
+  bool make_model = true;
+  bool train_model = true;
+  bool simulate_MARs = false;
+  bool sample_concs = true;
+  int norm_method = 0;
 
-  // ALEsKOs01
-  const std::string metabo_data_filename_train = data_dir + "ALEsKOs01_Metabolomics_train.csv";
-  const std::string meta_data_filename_train = data_dir + "ALEsKOs01_MetaData_train.csv";
-  const std::string metabo_data_filename_test = data_dir + "ALEsKOs01_Metabolomics_test.csv";
-  const std::string meta_data_filename_test = data_dir + "ALEsKOs01_MetaData_test.csv";
+  // Parse the input
+  std::cout << "Parsing the user input..." << std::endl;
+  if (argc >= 2) {
+    data_dir = argv[1];
+  }
+  if (argc >= 3) {
+    biochem_rxns_filename = data_dir + argv[2];
+  }
+  if (argc >= 4) {
+    metabo_data_filename_train = data_dir + argv[3];
+  }
+  if (argc >= 5) {
+    meta_data_filename_train = data_dir + argv[4];
+  }
+  if (argc >= 6) {
+    metabo_data_filename_test = data_dir + argv[5];
+  }
+  if (argc >= 7) {
+    meta_data_filename_test = data_dir + argv[6];
+  }
+  if (argc >= 8) {
+    make_model = (argv[7] == std::string("true")) ? true : false;
+  }
+  if (argc >= 9) {
+    train_model = (argv[8] == std::string("true")) ? true : false;
+  }
+  if (argc >= 10) {
+    simulate_MARs = (argv[9] == std::string("true")) ? true : false;
+  }
+  if (argc >= 11) {
+    sample_concs = (argv[10] == std::string("true")) ? true : false;
+  }
+  if (argc >= 12) {
+    try {
+      norm_method = (std::stoi(argv[11]) >= 0 && std::stoi(argv[11]) <= 4) ? std::stoi(argv[11]) : 0;
+    }
+    catch (std::exception & e) {
+      std::cout << e.what() << std::endl;
+    }
+  }
 
-  //// IndustrialStrains0103
-  //const std::string metabo_data_filename_train = data_dir + "IndustrialStrains0103_Metabolomics_train.csv";
-  //const std::string meta_data_filename_train = data_dir + "IndustrialStrains0103_MetaData_train.csv";
-  //const std::string metabo_data_filename_test = data_dir + "IndustrialStrains0103_Metabolomics_test.csv";
-  //const std::string meta_data_filename_test = data_dir + "IndustrialStrains0103_MetaData_test.csv";
+  // Cout the parsed input
+  std::cout << "data_dir: " << data_dir << std::endl;
+  std::cout << "biochem_rxns_filename: " << biochem_rxns_filename << std::endl;
+  std::cout << "metabo_data_filename_train: " << metabo_data_filename_train << std::endl;
+  std::cout << "meta_data_filename_train: " << meta_data_filename_train << std::endl;
+  std::cout << "metabo_data_filename_test: " << metabo_data_filename_test << std::endl;
+  std::cout << "meta_data_filename_test: " << meta_data_filename_test << std::endl;
+  std::cout << "make_model: " << make_model << std::endl;
+  std::cout << "train_model: " << train_model << std::endl;
+  std::cout << "simulate_MARs: " << simulate_MARs << std::endl;
+  std::cout << "sample_concs: " << sample_concs << std::endl;
+  std::cout << "norm_method: " << norm_method << std::endl;
 
+  // Run the classification
   main_classification(biochem_rxns_filename, metabo_data_filename_train, meta_data_filename_train,
-    metabo_data_filename_test, meta_data_filename_test, true, false, true);
+    metabo_data_filename_test, meta_data_filename_test,
+    make_model, train_model, simulate_MARs, sample_concs, norm_method
+  );
   return 0;
 }
