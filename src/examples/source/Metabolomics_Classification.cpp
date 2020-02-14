@@ -104,7 +104,7 @@ public:
             }
             // Log10 is used with the assumption that the larges fold change will be on an order of ~10
             // thus, all values will be between -1 and 1
-            TensorT fold_change = minFunc(maxFunc(std::log(value / ref) / std::log(100), -1), 1);
+            TensorT fold_change = minFunc(maxFunc(std::log(value / ref) / std::log(10), -1), 1);
             input_data(batch_iter, memory_iter, nodes_iter) = fold_change;
           }
         }
@@ -188,7 +188,7 @@ public:
             }
             // Log10 is used with the assumption that the larges fold change will be on an order of ~10
             // thus, all values will be between -1 and 1
-            TensorT fold_change = minFunc(maxFunc(std::log(value / ref) / std::log(100), -1), 1);
+            TensorT fold_change = minFunc(maxFunc(std::log(value / ref) / std::log(10), -1), 1);
             input_data(batch_iter, memory_iter, nodes_iter) = fold_change;
           }
         }
@@ -275,7 +275,7 @@ public:
             }
             // Log10 is used with the assumption that the largest fold change will be on an order of ~10
             // thus, all values will be between -1 and 1
-            TensorT fold_change = minFunc(maxFunc(std::log(value / ref) / std::log(100), -1), 1);
+            TensorT fold_change = minFunc(maxFunc(std::log(value / ref) / std::log(10), -1), 1);
             input_data(batch_iter, memory_iter, nodes_iter) = fold_change;
           }
         }
@@ -665,10 +665,10 @@ int main(int argc, char** argv)
   std::string meta_data_filename_test = data_dir + "ALEsKOs01_MetaData_test.csv";
   bool make_model = true;
   bool train_model = true;
+  int norm_method = 0;
   bool simulate_MARs = false;
   bool sample_concs = true;
-  int norm_method = 0;
-  bool use_fold_change = false;
+  bool use_fold_change = true;
   std::string fold_change_ref = "Evo04";
 
   // Parse the input
