@@ -16,68 +16,6 @@ template<typename TensorT>
 class MetDataSimClassification : public DataSimulator<TensorT>
 {
 public:
-  void simulateData(Eigen::Tensor<TensorT, 4>& input_data, Eigen::Tensor<TensorT, 4>& output_data, Eigen::Tensor<TensorT, 3>& time_steps)
-  {
-    // infer data dimensions based on the input tensors
-    const int batch_size = input_data.dimension(0);
-    const int memory_size = input_data.dimension(1);
-    const int n_input_nodes = input_data.dimension(2);
-    const int n_output_nodes = output_data.dimension(2);
-    const int n_epochs = input_data.dimension(3);
-
-    // NOTE: used for testing
-    //std::string sample_group_name = sample_group_names_[0];
-    //std::vector<float> mars;
-    //for (int nodes_iter = 0; nodes_iter < n_input_nodes; ++nodes_iter) {
-    //	float mar = calculateMAR(metabolomicsData_.at(sample_group_name),
-    //		biochemicalReactions_.at(reaction_ids_[nodes_iter]));
-    //	mars.push_back(mar);
-    //	//std::cout << "OutputNode: "<<nodes_iter<< " = " << mar << std::endl;
-    //}
-
-    for (int batch_iter = 0; batch_iter < batch_size; ++batch_iter) {
-      for (int memory_iter = 0; memory_iter < memory_size; ++memory_iter) {
-        for (int epochs_iter = 0; epochs_iter < n_epochs; ++epochs_iter) {
-
-          // pick a random sample group name
-          std::string sample_group_name = selectRandomElement(this->model_training_.sample_group_names_);
-
-          for (int nodes_iter = 0; nodes_iter < n_input_nodes; ++nodes_iter) {
-            input_data(batch_iter, memory_iter, nodes_iter, epochs_iter) = this->model_training_.calculateMAR(
-              this->model_training_.metabolomicsData_.at(sample_group_name),
-              this->model_training_.biochemicalReactions_.at(this->model_training_.reaction_ids_[nodes_iter]));
-            //input_data(batch_iter, memory_iter, nodes_iter, epochs_iter) = mars[nodes_iter]; // NOTE: used for testing
-          }
-
-          // convert the label to a one hot vector
-          Eigen::Tensor<TensorT, 1> one_hot_vec = OneHotEncoder<std::string, TensorT>(this->model_training_.metaData_.at(sample_group_name).condition, this->model_training_.labels_);
-          Eigen::Tensor<TensorT, 1> one_hot_vec_smoothed = one_hot_vec.unaryExpr(LabelSmoother<TensorT>(0.01, 0.01));
-
-          //// MSE + LogLoss
-          //for (int nodes_iter = 0; nodes_iter < n_output_nodes/2; ++nodes_iter) {
-          //	output_data(batch_iter, memory_iter, nodes_iter, epochs_iter) = one_hot_vec(nodes_iter);
-          //	output_data(batch_iter, memory_iter, nodes_iter + n_output_nodes/2, epochs_iter) = one_hot_vec(nodes_iter);
-          //	//output_data(batch_iter, memory_iter, nodes_iter, epochs_iter) = one_hot_vec_smoothed(nodes_iter);
-          //}
-
-          // MSE or LogLoss only
-          for (int nodes_iter = 0; nodes_iter < n_output_nodes; ++nodes_iter) {
-            output_data(batch_iter, memory_iter, nodes_iter, epochs_iter) = one_hot_vec(nodes_iter);
-            //output_data(batch_iter, memory_iter, nodes_iter, epochs_iter) = one_hot_vec_smoothed(nodes_iter);
-          }
-        }
-      }
-    }
-
-    // update the time_steps
-    time_steps.setConstant(1.0f);
-  }
-  void simulateTrainingData(Eigen::Tensor<TensorT, 4>& input_data, Eigen::Tensor<TensorT, 4>& output_data, Eigen::Tensor<TensorT, 3>& time_steps) {
-    simulateData(input_data, output_data, time_steps);
-  }
-  void simulateValidationData(Eigen::Tensor<TensorT, 4>& input_data, Eigen::Tensor<TensorT, 4>& output_data, Eigen::Tensor<TensorT, 3>& time_steps) {
-    simulateData(input_data, output_data, time_steps);
-  }
   void simulateDataClassMARs(Eigen::Tensor<TensorT, 3>& input_data, Eigen::Tensor<TensorT, 3>& loss_output_data, Eigen::Tensor<TensorT, 3>& metric_output_data, Eigen::Tensor<TensorT, 2>& time_steps, const bool& train)
   {
     // infer data dimensions based on the input tensors
@@ -107,8 +45,8 @@ public:
         //for (int nodes_iter = 0; nodes_iter < n_input_nodes; ++nodes_iter) {
         //  conc_data(nodes_iter) = this->model_training_.calculateMAR(
         //    this->model_training_.metabolomicsData_.at(sample_group_name),
-        //    this->model_training_.biochemicalReactions_.at(this->model_training_.reaction_ids_[nodes_iter]));
-        //  //input_data(batch_iter, memory_iter, nodes_iter) = mars[nodes_iter]; // NOTE: used for testing
+        //    this->model_training_.biochemicalReactions_.at(this->model_training_.reaction_ids_.at(nodes_iter)));
+        //  //input_data(batch_iter, memory_iter, nodes_iter) = mars.at(nodes_iter); // NOTE: used for testing
         //}
 
         //// pre-process the data
@@ -138,7 +76,7 @@ public:
 
         // assign the input data
         for (int nodes_iter = 0; nodes_iter < n_input_nodes; ++nodes_iter) {
-          //input_data(batch_iter, memory_iter, nodes_iter) = conc_data(nodes_iter);
+          // Get the value and assign the input
           TensorT value;
           if (train)
             value = this->model_training_.calculateMAR(
@@ -149,6 +87,26 @@ public:
               this->model_validation_.metabolomicsData_.at(sample_group_name),
               this->model_validation_.biochemicalReactions_.at(this->model_validation_.reaction_ids_.at(nodes_iter)));
           input_data(batch_iter, memory_iter, nodes_iter) = value;
+
+          // Determine the fold change (if enabled) and update the input
+          if (this->use_fold_change_) {
+            TensorT ref;
+            if (train)
+              ref = this->model_training_.calculateMAR(
+                this->model_training_.metabolomicsData_.at(this->ref_fold_change_),
+                this->model_training_.biochemicalReactions_.at(this->model_training_.reaction_ids_.at(nodes_iter)));
+            else
+              ref = this->model_validation_.calculateMAR(
+                this->model_validation_.metabolomicsData_.at(this->ref_fold_change_),
+                this->model_validation_.biochemicalReactions_.at(this->model_validation_.reaction_ids_.at(nodes_iter)));
+            if (ref == 0 || value == 0) {
+              input_data(batch_iter, memory_iter, nodes_iter) = 0;
+            }
+            // Log10 is used with the assumption that the larges fold change will be on an order of ~10
+            // thus, all values will be between -1 and 1
+            TensorT fold_change = minFunc(maxFunc(std::log(value / ref) / std::log(100), -1), 1);
+            input_data(batch_iter, memory_iter, nodes_iter) = fold_change;
+          }
         }
 
         // convert the label to a one hot vector        
@@ -167,7 +125,6 @@ public:
           n_labels = this->model_validation_.labels_.size();
         for (int nodes_iter = 0; nodes_iter < n_labels; ++nodes_iter) {
           loss_output_data(batch_iter, memory_iter, nodes_iter) = one_hot_vec(nodes_iter);
-          loss_output_data(batch_iter, memory_iter, nodes_iter + (int)n_labels) = one_hot_vec(nodes_iter);
           metric_output_data(batch_iter, memory_iter, nodes_iter) = one_hot_vec(nodes_iter);
           metric_output_data(batch_iter, memory_iter, nodes_iter + (int)n_labels) = one_hot_vec(nodes_iter);
         }
@@ -203,6 +160,7 @@ public:
 
         // assign the input data
         for (int nodes_iter = 0; nodes_iter < n_input_nodes; ++nodes_iter) {
+          // Get the value and assign the input
           TensorT value;
           if (train)
             value = this->model_training_.getRandomConcentration(
@@ -213,6 +171,26 @@ public:
               this->model_validation_.metabolomicsData_.at(sample_group_name),
               this->model_validation_.component_group_names_.at(nodes_iter));
           input_data(batch_iter, memory_iter, nodes_iter) = value;
+
+          // Determine the fold change (if enabled) and update the input
+          if (this->use_fold_change_) {
+            TensorT ref;
+            if (train)
+              ref = this->model_training_.getRandomConcentration(
+                this->model_training_.metabolomicsData_.at(this->ref_fold_change_),
+                this->model_training_.component_group_names_.at(nodes_iter));
+            else
+              ref = this->model_validation_.getRandomConcentration(
+                this->model_validation_.metabolomicsData_.at(this->ref_fold_change_),
+                this->model_validation_.component_group_names_.at(nodes_iter));
+            if (ref == 0 || value == 0) {
+              input_data(batch_iter, memory_iter, nodes_iter) = 0;
+            }
+            // Log10 is used with the assumption that the larges fold change will be on an order of ~10
+            // thus, all values will be between -1 and 1
+            TensorT fold_change = minFunc(maxFunc(std::log(value / ref) / std::log(100), -1), 1);
+            input_data(batch_iter, memory_iter, nodes_iter) = fold_change;
+          }
         }
 
         // convert the label to a one hot vector      
@@ -231,7 +209,6 @@ public:
           n_labels = this->model_validation_.labels_.size();
         for (int nodes_iter = 0; nodes_iter < n_labels; ++nodes_iter) {
           loss_output_data(batch_iter, memory_iter, nodes_iter) = one_hot_vec_smoothed(nodes_iter);
-          loss_output_data(batch_iter, memory_iter, nodes_iter + (int)n_labels) = one_hot_vec(nodes_iter);
           metric_output_data(batch_iter, memory_iter, nodes_iter) = one_hot_vec_smoothed(nodes_iter);
           metric_output_data(batch_iter, memory_iter, nodes_iter + (int)n_labels) = one_hot_vec_smoothed(nodes_iter);
         }
@@ -285,6 +262,22 @@ public:
           else
             value = this->model_validation_.metabolomicsData_.at(sample_group_name).at(this->model_validation_.component_group_names_.at(nodes_iter)).at(replicate).calculated_concentration;
           input_data(batch_iter, memory_iter, nodes_iter) = value;
+
+          // Determine the fold change (if enabled) and update the input
+          if (this->use_fold_change_) {
+            TensorT ref;
+            if (train)
+              ref = this->model_training_.metabolomicsData_.at(this->ref_fold_change_).at(this->model_training_.component_group_names_.at(nodes_iter)).at(replicate).calculated_concentration;
+            else
+              ref = this->model_validation_.metabolomicsData_.at(this->ref_fold_change_).at(this->model_validation_.component_group_names_.at(nodes_iter)).at(replicate).calculated_concentration;
+            if (ref == 0 || value == 0) {
+              input_data(batch_iter, memory_iter, nodes_iter) = 0;
+            }
+            // Log10 is used with the assumption that the largest fold change will be on an order of ~10
+            // thus, all values will be between -1 and 1
+            TensorT fold_change = minFunc(maxFunc(std::log(value / ref) / std::log(100), -1), 1);
+            input_data(batch_iter, memory_iter, nodes_iter) = fold_change;
+          }
         }
 
         // convert the label to a one hot vector      
@@ -303,7 +296,6 @@ public:
           n_labels = this->model_validation_.labels_.size();
         for (int nodes_iter = 0; nodes_iter < n_labels; ++nodes_iter) {
           loss_output_data(batch_iter, memory_iter, nodes_iter) = one_hot_vec_smoothed(nodes_iter);
-          loss_output_data(batch_iter, memory_iter, nodes_iter + (int)n_labels) = one_hot_vec(nodes_iter);
           metric_output_data(batch_iter, memory_iter, nodes_iter) = one_hot_vec_smoothed(nodes_iter);
           metric_output_data(batch_iter, memory_iter, nodes_iter + (int)n_labels) = one_hot_vec_smoothed(nodes_iter);
         }
@@ -331,6 +323,8 @@ public:
   //bool standardize_input_ = false;
   bool sample_concs_ = false;
   bool simulate_MARs_ = true;
+  bool use_fold_change_ = false;
+  std::string ref_fold_change_ = "";
 };
 
 template<typename TensorT>
@@ -495,7 +489,8 @@ public:
 void main_classification(const std::string& biochem_rxns_filename,
   const std::string& metabo_data_filename_train, const std::string& meta_data_filename_train,
   const std::string& metabo_data_filename_test, const std::string& meta_data_filename_test,
-  const bool& make_model = true, const bool& train_model = true, const bool& simulate_MARs = true, const bool& sample_concs = true, const int& norm_method = 0)
+  const bool& make_model = true, const bool& train_model = true, const int& norm_method = 0,
+  const bool& simulate_MARs = true, const bool& sample_concs = true, const bool& use_fold_change = false, const std::string& fold_change_ref = "Evo04")
 {
   // define the data simulator
   BiochemicalReactionModel<float> reaction_model;
@@ -534,6 +529,8 @@ void main_classification(const std::string& biochem_rxns_filename,
   metabolomics_data.model_validation_ = reaction_model;
   metabolomics_data.simulate_MARs_ = simulate_MARs;
   metabolomics_data.sample_concs_ = sample_concs;
+  metabolomics_data.use_fold_change_ = use_fold_change;
+  metabolomics_data.ref_fold_change_ = "Evo04";
 
   // Checks for the training and validation data
   assert(metabolomics_data.model_validation_.reaction_ids_.size() == metabolomics_data.model_training_.reaction_ids_.size());
@@ -570,22 +567,16 @@ void main_classification(const std::string& biochem_rxns_filename,
   ModelTrainerExt<float> model_trainer;
   model_trainer.setBatchSize(64);
   model_trainer.setMemorySize(1);
-  model_trainer.setNEpochsTraining(10000);
+  model_trainer.setNEpochsTraining(100000);
   model_trainer.setNEpochsValidation(0);
   model_trainer.setVerbosityLevel(1);
   model_trainer.setLogging(true, false, false);
   model_trainer.setFindCycles(false);
   model_trainer.setFastInterpreter(true);
   model_trainer.setPreserveOoO(true);
-  model_trainer.setLossFunctions({
-    std::make_shared<MSELossOp<float>>(MSELossOp<float>(1e-8, 0)),
-    std::make_shared<CrossEntropyWithLogitsLossOp<float>>(CrossEntropyWithLogitsLossOp<float>(1e-8, 1))});
-  model_trainer.setLossFunctionGrads({
-    std::make_shared<MSELossGradOp<float>>(MSELossGradOp<float>(1e-8, 0)),
-    std::make_shared<CrossEntropyWithLogitsLossGradOp<float>>(CrossEntropyWithLogitsLossGradOp<float>(1e-8, 1))});
-  model_trainer.setLossOutputNodes({
-    output_nodes,
-    output_nodes });
+  model_trainer.setLossFunctions({std::make_shared<CrossEntropyWithLogitsLossOp<float>>(CrossEntropyWithLogitsLossOp<float>(1e-8, 1))});
+  model_trainer.setLossFunctionGrads({std::make_shared<CrossEntropyWithLogitsLossGradOp<float>>(CrossEntropyWithLogitsLossGradOp<float>(1e-8, 1))});
+  model_trainer.setLossOutputNodes({ output_nodes });
   model_trainer.setMetricFunctions({ std::make_shared<AccuracyMCMicroOp<float>>(AccuracyMCMicroOp<float>()), std::make_shared<PrecisionMCMicroOp<float>>(PrecisionMCMicroOp<float>())
     });
   model_trainer.setMetricOutputNodes({ output_nodes, output_nodes });
@@ -603,23 +594,23 @@ void main_classification(const std::string& biochem_rxns_filename,
     if (norm_method == 0) {// normalization type 0 (No normalization)
     }
     else if (norm_method == 1) {// normalization type 1 (Projection)
-      bool linear_scale_input = true;
+      linear_scale_input = true;
     }
     else if (norm_method == 2) {// normalization type 2 (Standardization + Projection)
-      bool linear_scale_input = true;
-      bool standardize_input = true;
+      linear_scale_input = true;
+      standardize_input = true;
     }
     else if (norm_method == 3) {// normalization type 3 (Log transformation + Projection)
-      bool linear_scale_input = true;
-      bool log_transform_input = true;
+      linear_scale_input = true;
+      log_transform_input = true;
     }
     else if (norm_method == 4) {// normalization type 4 (Log transformation + Standardization + Projection)
-      bool linear_scale_input = true;
-      bool log_transform_input = true;
-      bool standardize_input = true;
+      linear_scale_input = true;
+      log_transform_input = true;
+      standardize_input = true;
     }
     //model_trainer.makeModelFCClass(model, n_input_nodes, n_output_nodes, true, true, true, 64, 64, 0); // normalization type 4 (Log transformation + Standardization + Projection)
-    model_trainer.makeModelFCClass(model, n_input_nodes, n_output_nodes, linear_scale_input, log_transform_input, standardize_input, 8, 8, 0);
+    model_trainer.makeModelFCClass(model, n_input_nodes, n_output_nodes, linear_scale_input, log_transform_input, standardize_input, 8, 0, 0);
   }
   else {
     // TODO
@@ -677,6 +668,8 @@ int main(int argc, char** argv)
   bool simulate_MARs = false;
   bool sample_concs = true;
   int norm_method = 0;
+  bool use_fold_change = false;
+  std::string fold_change_ref = "Evo04";
 
   // Parse the input
   std::cout << "Parsing the user input..." << std::endl;
@@ -705,18 +698,24 @@ int main(int argc, char** argv)
     train_model = (argv[8] == std::string("true")) ? true : false;
   }
   if (argc >= 10) {
-    simulate_MARs = (argv[9] == std::string("true")) ? true : false;
-  }
-  if (argc >= 11) {
-    sample_concs = (argv[10] == std::string("true")) ? true : false;
-  }
-  if (argc >= 12) {
     try {
-      norm_method = (std::stoi(argv[11]) >= 0 && std::stoi(argv[11]) <= 4) ? std::stoi(argv[11]) : 0;
+      norm_method = (std::stoi(argv[9]) >= 0 && std::stoi(argv[9]) <= 4) ? std::stoi(argv[9]) : 0;
     }
     catch (std::exception & e) {
       std::cout << e.what() << std::endl;
     }
+  }
+  if (argc >= 11) {
+    simulate_MARs = (argv[10] == std::string("true")) ? true : false;
+  }
+  if (argc >= 12) {
+    sample_concs = (argv[11] == std::string("true")) ? true : false;
+  }
+  if (argc >= 13) {
+    use_fold_change = (argv[12] == std::string("true")) ? true : false;
+  }
+  if (argc >= 14) {
+    fold_change_ref = argv[13];
   }
 
   // Cout the parsed input
@@ -728,14 +727,17 @@ int main(int argc, char** argv)
   std::cout << "meta_data_filename_test: " << meta_data_filename_test << std::endl;
   std::cout << "make_model: " << make_model << std::endl;
   std::cout << "train_model: " << train_model << std::endl;
+  std::cout << "norm_method: " << norm_method << std::endl;
   std::cout << "simulate_MARs: " << simulate_MARs << std::endl;
   std::cout << "sample_concs: " << sample_concs << std::endl;
-  std::cout << "norm_method: " << norm_method << std::endl;
+  std::cout << "use_fold_change: " << use_fold_change << std::endl;
+  std::cout << "fold_change_ref: " << fold_change_ref << std::endl;
 
   // Run the classification
   main_classification(biochem_rxns_filename, metabo_data_filename_train, meta_data_filename_train,
     metabo_data_filename_test, meta_data_filename_test, 
-    make_model, train_model, simulate_MARs, sample_concs, norm_method
+    make_model, train_model, norm_method, 
+    simulate_MARs, sample_concs, use_fold_change, fold_change_ref
   );
   return 0;
 }

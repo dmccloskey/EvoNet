@@ -154,9 +154,9 @@ public:
                 this->model_training_.metabolomicsData_.at(this->ref_fold_change_),
                 this->model_training_.component_group_names_.at(nodes_iter));
             else
-              ref = this->model_training_.getRandomConcentration(
-                this->model_training_.metabolomicsData_.at(this->ref_fold_change_),
-                this->model_training_.component_group_names_.at(nodes_iter));
+              ref = this->model_validation_.getRandomConcentration(
+                this->model_validation_.metabolomicsData_.at(this->ref_fold_change_),
+                this->model_validation_.component_group_names_.at(nodes_iter));
             if (ref == 0 || value == 0) {
               input_data(batch_iter, memory_iter, nodes_iter) = 0;
             }

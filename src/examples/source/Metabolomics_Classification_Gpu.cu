@@ -603,23 +603,23 @@ void main_classification(const std::string& biochem_rxns_filename,
     if (norm_method == 0) {// normalization type 0 (No normalization)
     }
     else if (norm_method == 1) {// normalization type 1 (Projection)
-      bool linear_scale_input = true;
+      linear_scale_input = true;
     }
     else if (norm_method == 2) {// normalization type 2 (Standardization + Projection)
-      bool linear_scale_input = true;
-      bool standardize_input = true;
+      linear_scale_input = true;
+      standardize_input = true;
     }
     else if (norm_method == 3) {// normalization type 3 (Log transformation + Projection)
-      bool linear_scale_input = true;
-      bool log_transform_input = true;
+      linear_scale_input = true;
+      log_transform_input = true;
     }
     else if (norm_method == 4) {// normalization type 4 (Log transformation + Standardization + Projection)
-      bool linear_scale_input = true;
-      bool log_transform_input = true;
-      bool standardize_input = true;
+      linear_scale_input = true;
+      log_transform_input = true;
+      standardize_input = true;
     }
     //model_trainer.makeModelFCClass(model, n_input_nodes, n_output_nodes, true, true, true, 64, 64, 0); // normalization type 4 (Log transformation + Standardization + Projection)
-    model_trainer.makeModelFCClass(model, n_input_nodes, n_output_nodes, linear_scale_input, log_transform_input, standardize_input, 32, 0, 0);
+    model_trainer.makeModelFCClass(model, n_input_nodes, n_output_nodes, linear_scale_input, log_transform_input, standardize_input, 2, 64, 2);
   }
   else {
     // TODO
