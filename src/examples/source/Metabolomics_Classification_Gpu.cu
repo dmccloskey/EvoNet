@@ -486,7 +486,7 @@ public:
 };
 
 /// Script to run the classification network
-void main_classification(const std::string& biochem_rxns_filename,
+void main_classification(const std::string& data_dir, const std::string& biochem_rxns_filename,
   const std::string& metabo_data_filename_train, const std::string& meta_data_filename_train,
   const std::string& metabo_data_filename_test, const std::string& meta_data_filename_test,
   const bool& make_model = true, const bool& train_model = true, const int& norm_method = 0,
@@ -615,6 +615,7 @@ void main_classification(const std::string& biochem_rxns_filename,
   else {
     // TODO
   }
+  model.setName(data_dir + "Classifier"); //So that all output will be written to a specific directory
 
   // Train the model
   std::cout << "Training the model..." << std::endl;
@@ -734,7 +735,7 @@ int main(int argc, char** argv)
   std::cout << "fold_change_ref: " << fold_change_ref << std::endl;
 
   // Run the classification
-  main_classification(biochem_rxns_filename, metabo_data_filename_train, meta_data_filename_train,
+  main_classification(data_dir, biochem_rxns_filename, metabo_data_filename_train, meta_data_filename_train,
     metabo_data_filename_test, meta_data_filename_test,
     make_model, train_model, norm_method,
     simulate_MARs, sample_concs, use_fold_change, fold_change_ref
