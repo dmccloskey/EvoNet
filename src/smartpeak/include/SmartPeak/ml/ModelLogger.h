@@ -38,6 +38,7 @@ public:
 		void setLogExpectedEpoch(const bool& log_expected_epoch) { log_expected_epoch_ = log_expected_epoch; }
     void setLogNodeOutputsEpoch(const bool& log_node_outputs_epoch) { log_node_outputs_epoch_ = log_node_outputs_epoch; }
     void setLogNodeInputsEpoch(const bool& log_node_inputs_epoch) { log_node_inputs_epoch_ = log_node_inputs_epoch; }
+    void setLogDir(const std::string& log_dir) { log_dir_ = log_dir; }
 
 		bool getLogTimeEpoch() { return log_time_epoch_; }
 		bool getLogTrainValMetricEpoch() { return log_train_val_metric_epoch_; }
@@ -47,6 +48,7 @@ public:
 		bool getLogNodeOutputsEpoch() { return log_node_outputs_epoch_; }
 		bool getLogNodeDerivativesEpoch() { return log_node_derivatives_epoch_; }
     bool getLogNodeInputsEpoch() { return log_node_inputs_epoch_; }
+    std::string getLogDir() { return log_dir_; }
 
 		CSVWriter getLogTimeEpochCSVWriter() { return log_time_epoch_csvwriter_; }
 		CSVWriter getLogTrainValMetricEpochCSVWriter() { return log_train_val_metric_epoch_csvwriter_; }
@@ -165,9 +167,10 @@ public:
     bool logNodeInputsPerEpoch(Model<TensorT>& model, const int& n_epoch, const std::vector<std::string>& node_names);
 
 	private:
-		bool log_time_epoch_ = false; ///< log ...
+    std::string log_dir_ = "";
+		bool log_time_epoch_ = false;
 		CSVWriter log_time_epoch_csvwriter_;
-		bool log_train_val_metric_epoch_ = false; ///< log 
+		bool log_train_val_metric_epoch_ = false;
 		CSVWriter log_train_val_metric_epoch_csvwriter_;
 		bool log_expected_epoch_ = false;
 		CSVWriter log_expected_epoch_csvwriter_;
@@ -198,42 +201,42 @@ public:
 	bool ModelLogger<TensorT>::initLogs(Model<TensorT>& model)
 	{
 		if (log_time_epoch_) {
-			std::string filename = model.getName() + "_TimePerEpoch.csv";
+			std::string filename = log_dir_ + model.getName() + "_TimePerEpoch.csv";
 			CSVWriter csvwriter(filename);
 			log_time_epoch_csvwriter_ = csvwriter;
 		}
 		if (log_train_val_metric_epoch_) {
-			std::string filename = model.getName() + "_TrainValMetricsPerEpoch.csv";
+			std::string filename = log_dir_ + model.getName() + "_TrainValMetricsPerEpoch.csv";
 			CSVWriter csvwriter(filename);
 			log_train_val_metric_epoch_csvwriter_ = csvwriter;
 		}
 		if (log_expected_epoch_) {
-			std::string filename = model.getName() + "_ExpectedPerEpoch.csv";
+			std::string filename = log_dir_ + model.getName() + "_ExpectedPerEpoch.csv";
 			CSVWriter csvwriter(filename);
 			log_expected_epoch_csvwriter_ = csvwriter;
 		}
 		if (log_weights_epoch_) {
-			std::string filename = model.getName() + "_WeightsPerEpoch.csv";
+			std::string filename = log_dir_ + model.getName() + "_WeightsPerEpoch.csv";
 			CSVWriter csvwriter(filename);
 			log_weights_epoch_csvwriter_ = csvwriter;
 		}
 		if (log_node_errors_epoch_) {
-			std::string filename = model.getName() + "_NodeErrorsPerEpoch.csv";
+			std::string filename = log_dir_ + model.getName() + "_NodeErrorsPerEpoch.csv";
 			CSVWriter csvwriter(filename);
 			log_node_errors_epoch_csvwriter_ = csvwriter;
 		}
 		if (log_node_outputs_epoch_) {
-			std::string filename = model.getName() + "_NodeOutputsPerEpoch.csv";
+			std::string filename = log_dir_ + model.getName() + "_NodeOutputsPerEpoch.csv";
 			CSVWriter csvwriter(filename);
 			log_node_outputs_epoch_csvwriter_ = csvwriter;
 		}
 		if (log_node_derivatives_epoch_) {
-			std::string filename = model.getName() + "_NodeDerivativesPerEpoch.csv";
+			std::string filename = log_dir_ + model.getName() + "_NodeDerivativesPerEpoch.csv";
 			CSVWriter csvwriter(filename);
 			log_node_derivatives_epoch_csvwriter_ = csvwriter;
 		}
     if (log_node_inputs_epoch_) {
-      std::string filename = model.getName() + "_NodeInputsPerEpoch.csv";
+      std::string filename = log_dir_ + model.getName() + "_NodeInputsPerEpoch.csv";
       CSVWriter csvwriter(filename);
       log_node_inputs_epoch_csvwriter_ = csvwriter;
     }

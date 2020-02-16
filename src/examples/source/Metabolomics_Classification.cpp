@@ -574,8 +574,8 @@ void main_classification(const std::string& biochem_rxns_filename,
   model_trainer.setFindCycles(false);
   model_trainer.setFastInterpreter(true);
   model_trainer.setPreserveOoO(true);
-  model_trainer.setLossFunctions({std::make_shared<CrossEntropyWithLogitsLossOp<float>>(CrossEntropyWithLogitsLossOp<float>(1e-8, 1))});
-  model_trainer.setLossFunctionGrads({std::make_shared<CrossEntropyWithLogitsLossGradOp<float>>(CrossEntropyWithLogitsLossGradOp<float>(1e-8, 1))});
+  model_trainer.setLossFunctions({ std::make_shared<CrossEntropyWithLogitsLossOp<float>>(CrossEntropyWithLogitsLossOp<float>(1e-8, 1)) });
+  model_trainer.setLossFunctionGrads({ std::make_shared<CrossEntropyWithLogitsLossGradOp<float>>(CrossEntropyWithLogitsLossGradOp<float>(1e-8, 1)) });
   model_trainer.setLossOutputNodes({ output_nodes });
   model_trainer.setMetricFunctions({ std::make_shared<AccuracyMCMicroOp<float>>(AccuracyMCMicroOp<float>()), std::make_shared<PrecisionMCMicroOp<float>>(PrecisionMCMicroOp<float>())
     });
@@ -668,7 +668,7 @@ int main(int argc, char** argv)
   int norm_method = 0;
   bool simulate_MARs = false;
   bool sample_concs = true;
-  bool use_fold_change = true;
+  bool use_fold_change = false;
   std::string fold_change_ref = "Evo04";
 
   // Parse the input
@@ -735,8 +735,8 @@ int main(int argc, char** argv)
 
   // Run the classification
   main_classification(biochem_rxns_filename, metabo_data_filename_train, meta_data_filename_train,
-    metabo_data_filename_test, meta_data_filename_test, 
-    make_model, train_model, norm_method, 
+    metabo_data_filename_test, meta_data_filename_test,
+    make_model, train_model, norm_method,
     simulate_MARs, sample_concs, use_fold_change, fold_change_ref
   );
   return 0;

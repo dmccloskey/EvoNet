@@ -38,11 +38,12 @@ BOOST_AUTO_TEST_CASE(gettersAndSetters1)
   BOOST_CHECK(!model_logger.getLogNodeOutputsEpoch());
   BOOST_CHECK(!model_logger.getLogNodeDerivativesEpoch());
   BOOST_CHECK(!model_logger.getLogNodeInputsEpoch());
+  BOOST_CHECK_EQUAL(model_logger.getLogDir(), "");
 }
 
 BOOST_AUTO_TEST_CASE(gettersAndSetters2) 
 {
-   ModelLogger<float> model_logger(true, true, true, true, true, true, true, true);
+  ModelLogger<float> model_logger(true, true, true, true, true, true, true, true);
 	BOOST_CHECK(model_logger.getLogTimeEpoch());
 	BOOST_CHECK(model_logger.getLogTrainValMetricEpoch());
 	BOOST_CHECK(model_logger.getLogExpectedEpoch());
@@ -51,6 +52,8 @@ BOOST_AUTO_TEST_CASE(gettersAndSetters2)
 	BOOST_CHECK(model_logger.getLogNodeOutputsEpoch());
 	BOOST_CHECK(model_logger.getLogNodeDerivativesEpoch());
   BOOST_CHECK(model_logger.getLogNodeInputsEpoch());
+  model_logger.setLogDir("NotHere!");
+  BOOST_CHECK_EQUAL(model_logger.getLogDir(), "NotHere!");
 }
 
 BOOST_AUTO_TEST_CASE(initLogs)
