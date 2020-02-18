@@ -180,7 +180,7 @@ public:
                 this->model_training_.metabolomicsData_.at(this->ref_fold_change_),
                 this->model_training_.component_group_names_.at(nodes_iter));
             else
-              ref = this->model_validation_.getRandomConcentration(
+               ref = this->model_validation_.getRandomConcentration(
                 this->model_validation_.metabolomicsData_.at(this->ref_fold_change_),
                 this->model_validation_.component_group_names_.at(nodes_iter));
             if (ref == 0 || value == 0) {
@@ -530,7 +530,7 @@ void main_classification(const std::string& data_dir, const std::string& biochem
   metabolomics_data.simulate_MARs_ = simulate_MARs;
   metabolomics_data.sample_concs_ = sample_concs;
   metabolomics_data.use_fold_change_ = use_fold_change;
-  metabolomics_data.ref_fold_change_ = "Evo04";
+  metabolomics_data.ref_fold_change_ = fold_change_ref;
 
   // Checks for the training and validation data
   assert(metabolomics_data.model_validation_.reaction_ids_.size() == metabolomics_data.model_training_.reaction_ids_.size());
@@ -562,7 +562,7 @@ void main_classification(const std::string& data_dir, const std::string& biochem
   }
 
   // define the model trainers and resources for the trainers
-  ModelResources model_resources = { ModelDevice(0, 1) };
+  ModelResources model_resources = { ModelDevice(1, 1) };
   ModelInterpreterGpu<float> model_interpreter(model_resources);
   ModelTrainerExt<float> model_trainer;
   model_trainer.setBatchSize(64);
