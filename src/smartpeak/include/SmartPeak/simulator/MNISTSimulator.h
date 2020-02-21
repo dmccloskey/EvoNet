@@ -185,14 +185,14 @@ public:
 
   template<typename TensorT>
   inline void MNISTSimulator<TensorT>::unitScaleData() {
-    this->training_data = this->training_data.unaryExpr(UnitScale<TensorT>(this->training_data));
-    this->validation_data = this->validation_data.unaryExpr(UnitScale<TensorT>(this->validation_data));
+    this->training_data = this->training_data.unaryExpr(UnitScaleFunctor<TensorT>(this->training_data));
+    this->validation_data = this->validation_data.unaryExpr(UnitScaleFunctor<TensorT>(this->validation_data));
   };
 
   template<typename TensorT>
   inline void MNISTSimulator<TensorT>::centerUnitScaleData() {
-    this->training_data = this->training_data.unaryExpr(LinearScale<TensorT>(0, 255, -1, 1));
-    this->validation_data = this->validation_data.unaryExpr(LinearScale<TensorT>(0, 255, -1, 1));
+    this->training_data = this->training_data.unaryExpr(LinearScaleFunctor<TensorT>(0, 255, -1, 1));
+    this->validation_data = this->validation_data.unaryExpr(LinearScaleFunctor<TensorT>(0, 255, -1, 1));
   }
 
   template<typename TensorT>

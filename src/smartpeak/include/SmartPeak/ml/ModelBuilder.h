@@ -2066,17 +2066,17 @@ public:
       dScaleToRMaxMinScale_link.setModuleName(module_name);
       model.addLinks({ dScaleToRMaxMinScale_link });
 
-      // Make the LinearScale node
+      // Make the LinearScaleFunctor node
       char linearScale_name_char[512];
-      sprintf(linearScale_name_char, "%s-LinearScale", node_name.data());
+      sprintf(linearScale_name_char, "%s-LinearScaleFunctor", node_name.data());
       std::string linearScale_name(linearScale_name_char);
       Node<TensorT> linearScale(linearScale_name, NodeType::hidden, NodeStatus::initialized, std::make_shared<LinearOp<TensorT>>(LinearOp<TensorT>()), std::make_shared<LinearGradOp<TensorT>>(LinearGradOp<TensorT>()), std::make_shared<SumOp<TensorT>>(SumOp<TensorT>()), std::make_shared<SumErrorOp<TensorT>>(SumErrorOp<TensorT>()), std::make_shared<SumWeightGradOp<TensorT>>(SumWeightGradOp<TensorT>()));
       linearScale.setModuleName(module_name);
-      if (specify_layers) linearScale.setLayerName(module_name + "-LinearScale");
+      if (specify_layers) linearScale.setLayerName(module_name + "-LinearScaleFunctor");
       model.addNodes({ linearScale });
       node_names.push_back(linearScale_name);
 
-      // Make the links/weights from the rangeMin node to the LinearScale node
+      // Make the links/weights from the rangeMin node to the LinearScaleFunctor node
       char rangeMinToLinearScale_weight_name_char[512];
       sprintf(rangeMinToLinearScale_weight_name_char, "%s_to_%s", rangeMinBias_name.data(), linearScale_name.data());
       std::string rangeMinToLinearScale_weight_name(rangeMinToLinearScale_weight_name_char);
@@ -2093,7 +2093,7 @@ public:
       rangeMinToLinearScale_link.setModuleName(module_name);
       model.addLinks({ rangeMinToLinearScale_link });
 
-      // Make the links/weights from the rangeMaxMinScale node to the LinearScale node
+      // Make the links/weights from the rangeMaxMinScale node to the LinearScaleFunctor node
       unity_weight_name = makeUnityWeight(model, 1.0, module_name, "%s_to_%s", rangeMaxMinScale_name, linearScale_name, specify_layers);
       char rMaxMinScaleToLinearScale_link_name_char[512];
       sprintf(rMaxMinScaleToLinearScale_link_name_char, "%s_to_%s", rangeMaxMinScale_name.data(), linearScale_name.data());

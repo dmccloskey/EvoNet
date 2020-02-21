@@ -528,11 +528,11 @@ BOOST_AUTO_TEST_CASE(addLinearScale1)
   // test for the expected weights
   std::vector<std::string> weight_names = {
     "Input_000000000000-DomainMinOffset_to_Input_000000000000-DomainScaled","Input_000000000000-DomainScaled_to_Input_000000000000-RangeMaxMinScale",
-    "Input_000000000000-RangeMaxMinScale_to_Input_000000000000-LinearScale","Input_000000000000_to_Input_000000000000-DomainMinOffset",
+    "Input_000000000000-RangeMaxMinScale_to_Input_000000000000-LinearScaleFunctor","Input_000000000000_to_Input_000000000000-DomainMinOffset",
     "Input_000000000000_to_Norm-Max","Input_000000000000_to_Norm-Min","Input_000000000001-DomainMinOffset_to_Input_000000000001-DomainScaled",
-    "Input_000000000001-DomainScaled_to_Input_000000000001-RangeMaxMinScale","Input_000000000001-RangeMaxMinScale_to_Input_000000000001-LinearScale",
+    "Input_000000000001-DomainScaled_to_Input_000000000001-RangeMaxMinScale","Input_000000000001-RangeMaxMinScale_to_Input_000000000001-LinearScaleFunctor",
     "Input_000000000001_to_Input_000000000001-DomainMinOffset","Input_000000000001_to_Norm-Max","Input_000000000001_to_Norm-Min",
-    "Mod1-RangeMinBias_to_Input_000000000000-LinearScale","Mod1-RangeMinBias_to_Input_000000000001-LinearScale","Norm-Max_to_Norm-Scalar",
+    "Mod1-RangeMinBias_to_Input_000000000000-LinearScaleFunctor","Mod1-RangeMinBias_to_Input_000000000001-LinearScaleFunctor","Norm-Max_to_Norm-Scalar",
     "Norm-Min_to_Input_000000000000-DomainMinOffset","Norm-Min_to_Input_000000000001-DomainMinOffset","Norm-Min_to_Norm-Scalar",
     "Norm-Scalar_to_Input_000000000000-DomainScaled","Norm-Scalar_to_Input_000000000001-DomainScaled","Mod1-RangeMaxMinBias_to_Input_000000000000-RangeMaxMinScale",
     "Mod1-RangeMaxMinBias_to_Input_000000000001-RangeMaxMinScale" };

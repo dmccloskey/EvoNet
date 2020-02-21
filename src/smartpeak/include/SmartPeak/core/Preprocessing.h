@@ -41,12 +41,12 @@ namespace SmartPeak
 	@brief Scale by magnitude of the data
 	*/
 	template<typename T>
-	class UnitScale
+	class UnitScaleFunctor
 	{
 	public:
-		UnitScale() {};
-		UnitScale(const Eigen::Tensor<T, 2>& data) { setUnitScale(data); };
-		~UnitScale() {};
+		UnitScaleFunctor() {};
+		UnitScaleFunctor(const Eigen::Tensor<T, 2>& data) { setUnitScale(data); };
+		~UnitScaleFunctor() {};
 		void setUnitScale(const Eigen::Tensor<T, 2>& data)
 		{
 			const Eigen::Tensor<T, 0> max_value = data.maximum();
@@ -63,13 +63,13 @@ namespace SmartPeak
 	@brief Project the data onto a specific range
 	*/
 	template<typename T>
-	class LinearScale
+	class LinearScaleFunctor
 	{
 	public:
-		LinearScale() = default;
-		LinearScale(const T& domain_min, const T& domain_max, const T& range_min, const T& range_max):
+		LinearScaleFunctor() = default;
+		LinearScaleFunctor(const T& domain_min, const T& domain_max, const T& range_min, const T& range_max):
 			domain_min_(domain_min), domain_max_(domain_max), range_min_(range_min), range_max_(range_max){};
-		~LinearScale() = default;
+		~LinearScaleFunctor() = default;
 		T operator()(const T& x_I) const { 
 			T t = (x_I - domain_min_) / (domain_max_ - domain_min_);
 			return (range_min_ + (range_max_ - range_min_) * t); 
@@ -80,6 +80,66 @@ namespace SmartPeak
 		T range_min_;
 		T range_max_;
 	};
+
+  /*
+  @brief Project the data onto a specific range
+  */
+  template<typename T>
+  class LinearScale
+  {
+  public:
+    LinearScale() = default;
+    LinearScale(const T& domain_min, const T& domain_max, const T& range_min, const T& range_max) :
+      domain_min_(domain_min), domain_max_(domain_max), range_min_(range_min), range_max_(range_max) {};
+    ~LinearScale() = default;
+    Eigen::Tensor<T, 2> operator()(const Eigen::Tensor<T, 2>& data) const {
+      auto t = (data - data.constant(domain_min_)) / data.constant(domain_max_ - domain_min_);
+      const Eigen::Tensor<T, 2> data_linear = data.constant(range_min_) + data.constant(range_max_ - range_min_) * t;
+      return data_linear;
+    };
+  private:
+    T domain_min_;
+    T domain_max_;
+    T range_min_;
+    T range_max_;
+  };
+
+  /*
+  @brief Standardize the data using the Mean and Standard Deviation where
+    the features are assumed to be across dim0 and the samples are assumed to be across dim1
+  */
+  template<typename T>
+  class Standardize
+  {
+  public:
+    Standardize() = default;
+    Standardize(const Eigen::Tensor<T, 2>& data) { setMeanAndVar(data); };
+    ~Standardize() = default;
+    void setMeanAndVar(const Eigen::Tensor<T, 2>& data)
+    {
+      // calculate the mean
+      auto sum_1d = data.sum(Eigen::array<Eigen::Index, 1>({ 1 }));
+      Eigen::Tensor<T, 1> mean_1d = sum_1d/sum_1d.constant(T(data.dimension(1)));
+      Eigen::TensorMap<Eigen::Tensor<T, 2>> mean_2d(mean_1d.data(), data.dimension(0), 1);
+      means_ = mean_2d;
+
+      // calculate the var
+      auto residuals = data - mean_2d.broadcast(Eigen::array<Eigen::Index, 2>({ 1, data.dimension(1) }));
+      auto ssr = residuals.pow(2).sum(Eigen::array<Eigen::Index, 1>({ 1 }));
+      Eigen::Tensor<T, 1> var_1d = ssr / ssr.constant(T(data.dimension(1) - 1));
+      Eigen::TensorMap<Eigen::Tensor<T, 2>> var_2d(var_1d.data(), data.dimension(0), 1);
+      vars_ = var_2d;
+    }
+    Eigen::Tensor<T, 2> getMeans() { return means_; }
+    Eigen::Tensor<T, 2> getVars() { return vars_; }
+    Eigen::Tensor<T, 2> operator()(const Eigen::Tensor<T, 2>& data) const {
+      const Eigen::Tensor<T, 2> data_stand = (data - means_.broadcast(Eigen::array<Eigen::Index, 2>({ 1, data.dimension(1) }))) / vars_.broadcast(Eigen::array<Eigen::Index, 2>({ 1, data.dimension(1) })).pow(T(0.5));
+      return data_stand;
+    };
+  private:
+    Eigen::Tensor<T, 2> means_; ///< means of length n features
+    Eigen::Tensor<T, 2> vars_; ///< vars of length n features
+  };
 
 	/*
 	@brief "Smooth" binary labels 0 and 1 by a certain offset

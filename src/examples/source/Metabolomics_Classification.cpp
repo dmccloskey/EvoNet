@@ -57,7 +57,7 @@ public:
         //if (this->linear_scale_input_) {
         //  Eigen::Tensor<TensorT, 0> min_v = conc_data.minimum();
         //  Eigen::Tensor<TensorT, 0> max_v = conc_data.maximum();
-        //  conc_data = conc_data.unaryExpr(LinearScale<TensorT>(min_v(0), max_v(0), 0, 1));
+        //  conc_data = conc_data.unaryExpr(LinearScaleFunctor<TensorT>(min_v(0), max_v(0), 0, 1));
         //  //std::cout << "Linear scaled: \n"<< conc_data << std::endl;
         //}
         //if (this->standardize_input_) {
@@ -530,7 +530,7 @@ void main_classification(const std::string& data_dir, const std::string& biochem
   metabolomics_data.simulate_MARs_ = simulate_MARs;
   metabolomics_data.sample_concs_ = sample_concs;
   metabolomics_data.use_fold_change_ = use_fold_change;
-  metabolomics_data.ref_fold_change_ = "Evo04";
+  metabolomics_data.ref_fold_change_ = fold_change_ref;
 
   // Checks for the training and validation data
   assert(metabolomics_data.model_validation_.reaction_ids_.size() == metabolomics_data.model_training_.reaction_ids_.size());
@@ -562,7 +562,7 @@ void main_classification(const std::string& data_dir, const std::string& biochem
   }
 
   // define the model trainers and resources for the trainers
-  ModelResources model_resources = { ModelDevice(0, 1) };
+  ModelResources model_resources = { ModelDevice(1, 1) };
   ModelInterpreterDefaultDevice<float> model_interpreter(model_resources);
   ModelTrainerExt<float> model_trainer;
   model_trainer.setBatchSize(64);
@@ -584,7 +584,6 @@ void main_classification(const std::string& data_dir, const std::string& biochem
 
   // define the model logger
   ModelLogger<float> model_logger(true, true, false, false, false, false, false, false);
-  model_logger.setLogDir(data_dir);
 
   Model<float> model;
   if (make_model) {
@@ -616,6 +615,7 @@ void main_classification(const std::string& data_dir, const std::string& biochem
   else {
     // TODO
   }
+  model.setName(data_dir + "Classifier"); //So that all output will be written to a specific directory
 
   // Train the model
   std::cout << "Training the model..." << std::endl;
