@@ -89,9 +89,17 @@ namespace SmartPeak
   {
   public:
     LinearScale() = default;
+    LinearScale(const Eigen::Tensor<T, 3>& data, const T& range_min, const T& range_max) :
+      range_min_(range_min), range_max_(range_max) { setDomain(data); }
     LinearScale(const T& domain_min, const T& domain_max, const T& range_min, const T& range_max) :
-      domain_min_(domain_min), domain_max_(domain_max), range_min_(range_min), range_max_(range_max) {};
+      domain_min_(domain_min), domain_max_(domain_max), range_min_(range_min), range_max_(range_max) {}
     ~LinearScale() = default;
+    void setDomain(const Eigen::Tensor<T, 3>& data) {
+      const Eigen::Tensor<T, 0> max_value = data.maximum();
+      const Eigen::Tensor<T, 0> min_value = data.minimum();
+      domain_max_ = max_value(0);
+      domain_min_ = min_value(0);
+    }
     Eigen::Tensor<T, 3> operator()(const Eigen::Tensor<T, 3>& data) const {
       auto t = (data - data.constant(domain_min_)) / data.constant(domain_max_ - domain_min_);
       const Eigen::Tensor<T, 3> data_linear = data.constant(range_min_) + data.constant(range_max_ - range_min_) * t;
@@ -124,15 +132,15 @@ namespace SmartPeak
       means_ = mean_3d;
 
       // calculate the var
-      auto residuals = data - mean_2d.broadcast(Eigen::array<Eigen::Index, 3>({ 1, 1, data.dimension(2) }));
+      auto residuals = data - mean_3d.broadcast(Eigen::array<Eigen::Index, 3>({ 1, 1, data.dimension(2) }));
       auto ssr = residuals.pow(2).sum(Eigen::array<Eigen::Index, 1>({ 2 }));
-      Eigen::Tensor<T, 2> var_1d = ssr / ssr.constant(T(data.dimension(2) - 1));
-      Eigen::TensorMap<Eigen::Tensor<T, 3>> var_2d(var_1d.data(), data.dimension(0), 1);
-      vars_ = var_2d;
+      Eigen::Tensor<T, 2> var_2d = ssr / ssr.constant(T(data.dimension(2) - 1));
+      Eigen::TensorMap<Eigen::Tensor<T, 3>> var_3d(var_2d.data(), data.dimension(0), data.dimension(1), 1);
+      vars_ = var_3d;
     }
-    Eigen::Tensor<T, 2> getMeans() { return means_; }
-    Eigen::Tensor<T, 2> getVars() { return vars_; }
-    Eigen::Tensor<T, 2> operator()(const Eigen::Tensor<T, 3>& data) const {
+    Eigen::Tensor<T, 3> getMeans() { return means_; }
+    Eigen::Tensor<T, 3> getVars() { return vars_; }
+    Eigen::Tensor<T, 3> operator()(const Eigen::Tensor<T, 3>& data) const {
       const Eigen::Tensor<T, 3> data_stand = (data - means_.broadcast(Eigen::array<Eigen::Index, 3>({ 1, 1, data.dimension(2) }))) / 
         vars_.broadcast(Eigen::array<Eigen::Index, 3>({ 1, 1, data.dimension(2) })).pow(T(0.5));
       return data_stand;

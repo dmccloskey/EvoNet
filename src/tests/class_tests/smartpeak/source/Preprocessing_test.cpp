@@ -42,35 +42,65 @@ BOOST_AUTO_TEST_CASE(P_LinearScaleFunctor)
 
 BOOST_AUTO_TEST_CASE(P_LinearScale)
 {
-  Eigen::Tensor<float, 2> data(2, 2);
-  data.setValues({ { 0, 2 }, { 4, 8 } });
+  Eigen::Tensor<float, 3> data(2, 2, 2);
+  data.setValues({
+    {{ 0, 2 }, { 4, 8 }},
+    {{ 1, 1 }, { 3, 5 }}
+    });
 
   LinearScale<float> linearScale(0, 8, -1, 1);
-  Eigen::Tensor<float, 2> data_test = linearScale(data);
+  Eigen::Tensor<float, 3> data_test = linearScale(data);
 
-  BOOST_CHECK_CLOSE(data_test(0, 0), -1.0, 1e-6);
-  BOOST_CHECK_CLOSE(data_test(0, 1), -0.5, 1e-6);
-  BOOST_CHECK_CLOSE(data_test(1, 0), 0.0, 1e-6);
-  BOOST_CHECK_CLOSE(data_test(1, 1), 1.0, 1e-6);
+  BOOST_CHECK_CLOSE(data_test(0, 0, 0), -1.0, 1e-6);
+  BOOST_CHECK_CLOSE(data_test(0, 0, 1), -0.5, 1e-6);
+  BOOST_CHECK_CLOSE(data_test(0, 1, 0), 0.0, 1e-6);
+  BOOST_CHECK_CLOSE(data_test(0, 1, 1), 1.0, 1e-6);
+  BOOST_CHECK_CLOSE(data_test(1, 0, 0), -0.75, 1e-6);
+  BOOST_CHECK_CLOSE(data_test(1, 0, 1), -0.75, 1e-6);
+  BOOST_CHECK_CLOSE(data_test(1, 1, 0), -0.25, 1e-6);
+  BOOST_CHECK_CLOSE(data_test(1, 1, 1), 0.25, 1e-6);
+
+  LinearScale<float> linearScale2(data, -1, 1);
+  data_test = linearScale2(data);
+
+  BOOST_CHECK_CLOSE(data_test(0, 0, 0), -1.0, 1e-6);
+  BOOST_CHECK_CLOSE(data_test(0, 0, 1), -0.5, 1e-6);
+  BOOST_CHECK_CLOSE(data_test(0, 1, 0), 0.0, 1e-6);
+  BOOST_CHECK_CLOSE(data_test(0, 1, 1), 1.0, 1e-6);
+  BOOST_CHECK_CLOSE(data_test(1, 0, 0), -0.75, 1e-6);
+  BOOST_CHECK_CLOSE(data_test(1, 0, 1), -0.75, 1e-6);
+  BOOST_CHECK_CLOSE(data_test(1, 1, 0), -0.25, 1e-6);
+  BOOST_CHECK_CLOSE(data_test(1, 1, 1), 0.25, 1e-6);
 }
 
 BOOST_AUTO_TEST_CASE(P_Standardize)
 {
-  Eigen::Tensor<float, 2> data(2, 2);
-  data.setValues({ { 0, 2 }, { 4, 8 } });
+  Eigen::Tensor<float, 3> data(2, 2, 2);
+  data.setValues({ 
+    {{ 0, 2 }, { 4, 8 }},
+    {{ 1, 3 }, { 3, 5 }}
+    });
 
   Standardize<float> standardize(data);
-  Eigen::Tensor<float, 2> data_test = standardize(data);
+  Eigen::Tensor<float, 3> data_test = standardize(data);
 
-  BOOST_CHECK_CLOSE(standardize.getMeans()(0, 0), 1, 1e-6);
-  BOOST_CHECK_CLOSE(standardize.getMeans()(1, 0), 6, 1e-6);
-  BOOST_CHECK_CLOSE(standardize.getVars()(0, 0), 2, 1e-6);
-  BOOST_CHECK_CLOSE(standardize.getVars()(1, 0), 8, 1e-6);
+  BOOST_CHECK_CLOSE(standardize.getMeans()(0, 0, 0), 1, 1e-6);
+  BOOST_CHECK_CLOSE(standardize.getMeans()(0, 1, 0), 6, 1e-6);
+  BOOST_CHECK_CLOSE(standardize.getMeans()(1, 0, 0), 2, 1e-6);
+  BOOST_CHECK_CLOSE(standardize.getMeans()(1, 1, 0), 4, 1e-6);
+  BOOST_CHECK_CLOSE(standardize.getVars()(0, 0, 0), 2, 1e-6);
+  BOOST_CHECK_CLOSE(standardize.getVars()(0, 1, 0), 8, 1e-6);
+  BOOST_CHECK_CLOSE(standardize.getVars()(1, 0, 0), 2, 1e-6);
+  BOOST_CHECK_CLOSE(standardize.getVars()(1, 1, 0), 2, 1e-6);
 
-  BOOST_CHECK_CLOSE(data_test(0, 0), -0.707106769, 1e-6);
-  BOOST_CHECK_CLOSE(data_test(0, 1), 0.707106769, 1e-6);
-  BOOST_CHECK_CLOSE(data_test(1, 0), -0.707106769, 1e-6);
-  BOOST_CHECK_CLOSE(data_test(1, 1), 0.707106769, 1e-6);
+  BOOST_CHECK_CLOSE(data_test(0, 0, 0), -0.707106769, 1e-6);
+  BOOST_CHECK_CLOSE(data_test(0, 0, 1), 0.707106769, 1e-6);
+  BOOST_CHECK_CLOSE(data_test(0, 1, 0), -0.707106769, 1e-6);
+  BOOST_CHECK_CLOSE(data_test(0, 1, 1), 0.707106769, 1e-6);
+  BOOST_CHECK_CLOSE(data_test(1, 0, 0), -0.707106769, 1e-6);
+  BOOST_CHECK_CLOSE(data_test(1, 0, 1), 0.707106769, 1e-6);
+  BOOST_CHECK_CLOSE(data_test(1, 1, 0), -0.707106769, 1e-6);
+  BOOST_CHECK_CLOSE(data_test(1, 1, 1), 0.707106769, 1e-6);
 }
 
 BOOST_AUTO_TEST_CASE(P_LabelSmoother)

@@ -240,15 +240,8 @@ namespace SmartPeak
 
     @return The matrix of metabolomics data
     **/
-    Eigen::Tensor<TensorT, 3> getMetDataAsMatrix(const MetabolomicsData& metabolomicsData, const std::vector<std::string>& sample_group_names, const std::vector<std::string>& component_group_names,
+    Eigen::Tensor<TensorT, 3> getMetDataAsTensor(const std::vector<std::string>& sample_group_names, const std::vector<std::string>& component_group_names,
       const int& n_replicates, const bool& use_concentrations, const bool& use_MARs, const bool& fill_sampling, const bool& fill_mean, const bool& fill_zero) const;
-
-    /*
-    @brief Apply a set of pre-processing routines to the metabolomics data
-
-    @param[in, out] metabolomicsData The metabolomics data to preprocess
-    **/
-    static preProcessMetData(Eigen::Tensor<TensorT, 3>& metabolomicsData, const bool& linear_scale, const bool& log_transform, const bool& standardize);
 
     /*
     @brief Clear all data structures
@@ -697,47 +690,64 @@ namespace SmartPeak
     return currency_mets;
   }
   template<typename TensorT>
-  inline Eigen::Tensor<TensorT, 3> BiochemicalReactionModel<TensorT>::getMetDataAsMatrix(const MetabolomicsData & metabolomicsData, const std::vector<std::string>& sample_group_names, const std::vector<std::string>& component_group_names, const int& n_replicates, const bool & use_concentrations, const bool & use_MARs, const bool & fill_sampling, const bool & fill_mean, const bool & fill_zero) const
+  inline Eigen::Tensor<TensorT, 3> BiochemicalReactionModel<TensorT>::getMetDataAsTensor(const std::vector<std::string>& sample_group_names, const std::vector<std::string>& component_group_names, const int& n_replicates, const bool & use_concentrations, const bool & use_MARs, const bool & fill_sampling, const bool & fill_mean, const bool & fill_zero) const
   {
     // initialize the needed data structures
     Eigen::Tensor<TensorT, 3> met_data_matrix(int(component_group_names.size()), int(sample_group_names.size()), n_replicates);
     met_data_matrix.setZero();
-    auto makeIndices = [](const int& n_indices){
-      std::vector<int> indices;
-      for (int i = 0; i < n_indices; ++i) {
-        indices.push_back(i);
+    auto calcMean = [](const std::vector<MetabolomicsDatum>& met_data){
+      TensorT sum = 0;
+      for (const MetabolomicsDatum& met_datum: met_data) {
+        sum+=met_datum.calculated_concentration;
       }
-      return indices;
+      TensorT mean = sum / met_data.size();
+      return mean;
     }
-    std::vector<int> replicates = makeIndices(n_replicates);
 
     // create the data matrix
     int sample_iter = 0;
     int feature_iter = 0;
-    for (const std::string& sample_group_name : sample_group_names) {
-      for (const std::string& component_group_name : component_group_names) {
-        for (const int& rep : replicates) {
-          int replicate_number = selectRandomElement(replicates);
+    int rep_iter = 0;
+    // optimization: create a cache for the means
+    for (int rep = 0; rep < n_replicates; ++rep) {
+      for (const std::string& sample_group_name : sample_group_names) {
+        for (const std::string& component_group_name : component_group_names) {
           TensorT value;
-          if (replicate_number > metabolomicsData.at(sample_group_name).at(component_group_name).size()) {
+          if (use_concentrations) {
             if (fill_sampling) {
-              std::vector<int> less_replicates = makeIndices(metabolomicsData.at(sample_group_name).at(component_group_name).size());
-              replicate_number = selectRandomElement(less_replicates);
-              // TODO
+              MetabolomicsDatum random_met = selectRandomElement(metabolomicsData_.at(sample_group_name).at(component_group_name));
+              value = random_met.calculated_concentration;
             }
-            // TODO
+            else {
+              if (rep_iter > metabolomicsData_.at(sample_group_name).at(component_group_name).size() && fill_mean) {
+                value = calcMean(metabolomicsData_.at(sample_group_name).at(component_group_name));
+              }
+              else if (rep_iter > metabolomicsData_.at(sample_group_name).at(component_group_name).size() && fill_zero) {
+                value = 1e-6;
+              }
+              else {
+                value = metabolomicsData_.at(sample_group_name).at(component_group_name).at(rep_iter).calculated_concentration;
+              }
+            }
+          }
+          else if (use_MARs) {
+            value = calculateMAR(metabolomicsData_.at(sample_group_name), biochemicalReactions_.at(component_group_name));
           }
           met_data_matrix(feature_iter, sample_iter, rep) = value;
+          ++feature_iter;
         }
-        ++feature_iter;
+        ++sample_iter;
       }
-      ++sample_iter;
+
+      // Increment the replicate iter or restart
+      if (rep_iter == n_replicates - 1) {
+        rep_iter = 0;
+      }
+      else {
+        ++rep_iter
+      }
     }
     return met_data_matrix;
-  }
-  template<typename TensorT>
-  inline BiochemicalReactionModel<TensorT>::preProcessMetData(Eigen::Tensor<TensorT, 3>& metabolomicsData, const bool & linear_scale, const bool & log_transform, const bool & standardize)
-  {
   }
   template<typename TensorT>
   inline void BiochemicalReactionModel<TensorT>::clear() {
