@@ -63,7 +63,20 @@ namespace SmartPeak
     float time_point;
     float calculated_concentration;
     bool used;
+    std::string print() const;
   };
+  std::string MetabolomicsDatum::print() const {
+    std::string met_datum_str = "";
+    met_datum_str += "sample_name = " + sample_name;
+    met_datum_str += "; sample_group_name = " + sample_group_name;
+    met_datum_str += "; component_name = " + component_name;
+    met_datum_str += "; component_group_name = " + component_group_name;
+    met_datum_str += "; calculated_concentration_units = " + calculated_concentration_units;
+    met_datum_str += "; time_point = " + std::to_string(time_point);
+    met_datum_str += "; calculated_concentration = " + std::to_string(calculated_concentration);
+    met_datum_str += "; used = " + std::to_string(used);
+    return met_datum_str;
+  }
   typedef std::map<std::string, std::map<std::string, std::vector<MetabolomicsDatum>>> MetabolomicsData;
 
   struct BiochemicalReaction {
@@ -77,18 +90,55 @@ namespace SmartPeak
     std::vector<float> products_stoichiometry;
     std::vector<std::string> reactants_ids;
     std::vector<std::string> products_ids;
-    std::string component_group_name;
-    std::string calculated_concentration_units;
     // others if needed
     bool reversibility;
     bool used;
     void updateEquation();
+    std::string print() const;
   };
+  std::string BiochemicalReaction::print() const {
+    auto stringifyFloatVec = [](const std::vector<float>& vec) {
+      std::string vec_str = "{";
+      if (vec.size()) {
+        vec_str += std::to_string(vec.at(0));
+        for (int i = 1; i < vec.size(); ++i) {
+          vec_str += ", " + std::to_string(vec.at(i));
+        }
+      }
+      vec_str += "}";
+      return vec_str;
+    };
+    auto stringifyStrVec = [](const std::vector<std::string>& vec) {
+      std::string vec_str = "{";
+      if (vec.size()) {
+        vec_str += vec.at(0);
+        for (int i = 1; i < vec.size(); ++i) {
+          vec_str += ", " + vec.at(i);
+        }
+      }
+      vec_str += "}";
+      return vec_str;
+    };
+    std::string react_str = "";
+    react_str += "model_id = " + model_id;
+    react_str += "; reaction_id = " + reaction_id;
+    react_str += "; reaction_name = " + reaction_name;
+    react_str += "; equation = " + equation;
+    react_str += "; subsystem = " + subsystem;
+    react_str += "; gpr = " + gpr;
+    react_str += "; reactants_stoichiometry = " + stringifyFloatVec(reactants_stoichiometry);
+    react_str += "; products_stoichiometry = " + stringifyFloatVec(products_stoichiometry);
+    react_str += "; reactants_ids = " + stringifyStrVec(reactants_ids);
+    react_str += "; products_ids = " + stringifyStrVec(products_ids);
+    react_str += "; reversibility = " + std::to_string(reversibility);
+    react_str += "; used = " + std::to_string(used);
+    return react_str;
+  }
   void BiochemicalReaction::updateEquation() {
     std::string new_equation = "";
     for (int i = 0; i < reactants_ids.size(); ++i) {
       if (i > 0) new_equation += " + ";
-      if (reactants_stoichiometry[i] > 1) new_equation += std::to_string((int)reactants_stoichiometry[i]) + " ";
+      if (std::abs(reactants_stoichiometry[i]) > 1) new_equation += std::to_string((int)std::abs(reactants_stoichiometry[i])) + " ";
       new_equation += reactants_ids[i];
     }
     new_equation += " = ";
@@ -107,7 +157,17 @@ namespace SmartPeak
     std::string time;
     std::string subject;
     std::string temperature;
+    std::string print() const;
   };
+  std::string MetaDatum::print() const {
+    std::string met_datum_str = "";
+    met_datum_str += "sample_group_name = " + sample_group_name;
+    met_datum_str += "; condition = " + condition;
+    met_datum_str += "; time = " + time;
+    met_datum_str += "; subject = " + subject;
+    met_datum_str += "; temperature = " + temperature;
+    return met_datum_str;
+  }
   typedef std::map<std::string, MetaDatum> MetaData;
 
   template<typename TensorT>
@@ -128,8 +188,6 @@ namespace SmartPeak
     /*
     @brief Read in the biochemical reactsion from .csv file
 
-    [TODO: add unit tests]
-
     @param[in] filename
     @param[in, out] biochemicalReactions
     **/
@@ -137,8 +195,6 @@ namespace SmartPeak
 
     /*
     @brief Read in the meta data from .csv file
-
-    [TODO: add unit tests]
 
     @param[in] filename
     @param[in, out] metaData
@@ -152,8 +208,6 @@ namespace SmartPeak
     /*
     @brief Find candidate reactions that can be used to calculate the MAR
 
-    [TODO: add unit tests]
-
     @param[in] biochemicalReactions
     @param[in] include_currency_mets Boolean to indicate whether or not to include currency metabolites in the MAR
     @param[in] exclude_non_currency_mets Boolean to indicate whether or not to include only currency metabolites in the MAR
@@ -166,8 +220,6 @@ namespace SmartPeak
     /*
     @brief Remove MARs that involve the same set of metabolites
 
-    [TODO: add unit tests]
-
     @returns a vector of reaction_ids
     **/
     void removeRedundantMARs();
@@ -175,16 +227,12 @@ namespace SmartPeak
     /*
     @brief Find all unique component group names in the data set
 
-    [TODO: add unit tests]
-
     @returns a vector of component_group_names
     **/
     void findComponentGroupNames();
 
     /*
     @brief Find all unique component group names in the data set
-
-    [TODO: add unit tests]
 
     @returns a vector of labels
     **/
@@ -702,16 +750,42 @@ namespace SmartPeak
       }
       TensorT mean = sum / met_data.size();
       return mean;
+    };
+
+    // determine the largest number of replicates
+    int max_reps = 0;
+    for (const std::string& sample_group_name : sample_group_names) {
+      if (metabolomicsData_.count(sample_group_name) <= 0) continue;
+      for (const std::string& component_group_name : component_group_names) {
+        if (metabolomicsData_.at(sample_group_name).count(component_group_name) <= 0) continue;
+        if (max_reps < metabolomicsData_.at(sample_group_name).at(component_group_name).size()) 
+          max_reps = metabolomicsData_.at(sample_group_name).at(component_group_name).size();
+      }
     }
 
     // create the data matrix
-    int sample_iter = 0;
-    int feature_iter = 0;
     int rep_iter = 0;
     // optimization: create a cache for the means
     for (int rep = 0; rep < n_replicates; ++rep) {
+      int sample_iter = -1;
       for (const std::string& sample_group_name : sample_group_names) {
+        ++sample_iter;
+        // Check for missing sample_group_names
+        if (metabolomicsData_.count(sample_group_name) <= 0) {
+          std::cout << "sample_group_name " << sample_group_name << " is missing." << std::endl;
+          continue;
+        }
+
+        int feature_iter = -1;
         for (const std::string& component_group_name : component_group_names) {
+          ++feature_iter;
+          // Check for missing component_group_names
+          if (use_concentrations && metabolomicsData_.at(sample_group_name).count(component_group_name) <= 0) {
+            std::cout << "component_group_name " << component_group_name << " is missing from sample_group_name " << sample_group_name << "." << std::endl;
+            continue;
+          }
+
+          // Assign the value based on user input
           TensorT value;
           if (use_concentrations) {
             if (fill_sampling) {
@@ -719,10 +793,10 @@ namespace SmartPeak
               value = random_met.calculated_concentration;
             }
             else {
-              if (rep_iter > metabolomicsData_.at(sample_group_name).at(component_group_name).size() && fill_mean) {
+              if (rep_iter >= metabolomicsData_.at(sample_group_name).at(component_group_name).size() && fill_mean) {
                 value = calcMean(metabolomicsData_.at(sample_group_name).at(component_group_name));
               }
-              else if (rep_iter > metabolomicsData_.at(sample_group_name).at(component_group_name).size() && fill_zero) {
+              else if (rep_iter >= metabolomicsData_.at(sample_group_name).at(component_group_name).size() && fill_zero) {
                 value = 1e-6;
               }
               else {
@@ -733,18 +807,18 @@ namespace SmartPeak
           else if (use_MARs) {
             value = calculateMAR(metabolomicsData_.at(sample_group_name), biochemicalReactions_.at(component_group_name));
           }
+
+          // Assign the value
           met_data_matrix(feature_iter, sample_iter, rep) = value;
-          ++feature_iter;
         }
-        ++sample_iter;
       }
 
       // Increment the replicate iter or restart
-      if (rep_iter == n_replicates - 1) {
+      if (rep_iter == max_reps - 1) {
         rep_iter = 0;
       }
       else {
-        ++rep_iter
+        ++rep_iter;
       }
     }
     return met_data_matrix;
