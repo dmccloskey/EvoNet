@@ -249,6 +249,21 @@ BOOST_AUTO_TEST_CASE(getCurrencyMets)
   // NO TEST
 }
 
+BOOST_AUTO_TEST_CASE(getMaxReplicates)
+{
+  BiochemicalReactionModel<float> biochemReactModel;
+  biochemReactModel.readMetabolomicsData(SMARTPEAK_GET_TEST_DATA_PATH("PLT_timeCourse_Metabolomics_train.csv"));
+  biochemReactModel.readBiochemicalReactions(SMARTPEAK_GET_TEST_DATA_PATH("RBCGlycolysis.csv"), true);
+  biochemReactModel.readMetaData(SMARTPEAK_GET_TEST_DATA_PATH("PLT_timeCourse_MetaData_train.csv"));
+  biochemReactModel.findComponentGroupNames();
+  biochemReactModel.findMARs();
+  biochemReactModel.findLabels("condition");
+
+  int n_replicates = 6;
+  int max_reps = biochemReactModel.getMaxReplicates(biochemReactModel.sample_group_names_, biochemReactModel.component_group_names_);
+  BOOST_CHECK_EQUAL(max_reps, 6);
+}
+
 BOOST_AUTO_TEST_CASE(getMetDataAsTensor)
 {
   BiochemicalReactionModel<float> biochemReactModel;
@@ -261,9 +276,10 @@ BOOST_AUTO_TEST_CASE(getMetDataAsTensor)
   
   // use_concentrations, fill_zero
   int n_replicates = 6;
+  int max_reps = 6;
   Eigen::Tensor<float, 3> metabo_concs(int(biochemReactModel.component_group_names_.size()), int(biochemReactModel.sample_group_names_.size()), n_replicates);
   metabo_concs = biochemReactModel.getMetDataAsTensor(biochemReactModel.sample_group_names_, biochemReactModel.component_group_names_,
-    n_replicates, true, false, false, false, true);
+    n_replicates, max_reps, true, false, false, false, true);
   BOOST_CHECK_CLOSE(metabo_concs(24, 1, 0), 0, 1e-4); // component_group_name dctp is missing from sample_group_name S01_D01_PLT_25C_22hr
   BOOST_CHECK_CLOSE(metabo_concs(0, 0, 0), 0.926901623, 1e-4); // 2pg and S01_D01_PLT_25C_0hr
   BOOST_CHECK_CLOSE(metabo_concs(int(biochemReactModel.component_group_names_.size()) - 1, int(biochemReactModel.sample_group_names_.size()) - 1, n_replicates - 1), 2.105641075, 1e-4); // utp and S01_D01_PLT_25C_6.5hr
@@ -271,7 +287,7 @@ BOOST_AUTO_TEST_CASE(getMetDataAsTensor)
 
   // use_concentrations, fill_mean
   metabo_concs = biochemReactModel.getMetDataAsTensor(biochemReactModel.sample_group_names_, biochemReactModel.component_group_names_,
-    n_replicates, true, false, false, true, false);
+    n_replicates, max_reps, true, false, false, true, false);
   BOOST_CHECK_CLOSE(metabo_concs(24, 1, 0), 0, 1e-4); // component_group_name dctp is missing from sample_group_name S01_D01_PLT_25C_22hr
   BOOST_CHECK_CLOSE(metabo_concs(0, 0, 0), 0.926901623, 1e-4); // 2pg and S01_D01_PLT_25C_0hr
   BOOST_CHECK_CLOSE(metabo_concs(int(biochemReactModel.component_group_names_.size()) - 1, int(biochemReactModel.sample_group_names_.size()) - 1, n_replicates - 1), 2.105641075, 1e-4); // utp and S01_D01_PLT_25C_6.5hr
@@ -279,20 +295,19 @@ BOOST_AUTO_TEST_CASE(getMetDataAsTensor)
 
   // use_concentrations, fill_sampling
   metabo_concs = biochemReactModel.getMetDataAsTensor(biochemReactModel.sample_group_names_, biochemReactModel.component_group_names_,
-    n_replicates, true, false, true, false, false);
+    n_replicates, max_reps, true, false, true, false, false);
   BOOST_CHECK_CLOSE(metabo_concs(24, 1, 0), 0, 1e-4); // component_group_name dctp is missing from sample_group_name S01_D01_PLT_25C_22hr
-  BOOST_CHECK_GE(metabo_concs(0, 0, 0), 0.9); // 2pg and S01_D01_PLT_25C_0hr
-  BOOST_CHECK_LE(metabo_concs(0, 0, 0), 1.04); // 2pg and S01_D01_PLT_25C_0hr
-  BOOST_CHECK_GE(metabo_concs(int(biochemReactModel.component_group_names_.size()) - 1, int(biochemReactModel.sample_group_names_.size()) - 1, n_replicates - 1), 2.0); // utp and S01_D01_PLT_25C_6.5hr
-  BOOST_CHECK_LE(metabo_concs(int(biochemReactModel.component_group_names_.size()) - 1, int(biochemReactModel.sample_group_names_.size()) - 1, n_replicates - 1), 2.4); // utp and S01_D01_PLT_25C_6.5hr
-  BOOST_CHECK_NE(metabo_concs(19, 1, 5), 1e-6); // cmp and S01_D01_PLT_25C_22hr
+  BOOST_CHECK_CLOSE(metabo_concs(0, 0, 0), 0.926901623, 1e-4); // 2pg and S01_D01_PLT_25C_0hr
+  BOOST_CHECK_CLOSE(metabo_concs(int(biochemReactModel.component_group_names_.size()) - 1, int(biochemReactModel.sample_group_names_.size()) - 1, n_replicates - 1), 2.105641075, 1e-4); // utp and S01_D01_PLT_25C_6.5hr
+  BOOST_CHECK_GE(metabo_concs(19, 1, 5), 0.018); // cmp and S01_D01_PLT_25C_22hr
+  BOOST_CHECK_LE(metabo_concs(19, 1, 5), 0.025); // cmp and S01_D01_PLT_25C_22hr
 
   // use_MARs
   Eigen::Tensor<float, 3> mars_values(int(biochemReactModel.reaction_ids_.size()), int(biochemReactModel.sample_group_names_.size()), n_replicates);
   mars_values = biochemReactModel.getMetDataAsTensor(biochemReactModel.sample_group_names_, biochemReactModel.reaction_ids_,
-    n_replicates, false, true, false, false, false);
+    n_replicates, max_reps, false, true, false, false, false);
   BOOST_CHECK_GE(mars_values(0, 0, 0), 0.03);
-  BOOST_CHECK_LE(mars_values(0, 0, 0), 0.05);
+  BOOST_CHECK_LE(mars_values(0, 0, 0), 0.06);
   BOOST_CHECK_GE(mars_values(int(biochemReactModel.reaction_ids_.size()) - 1, int(biochemReactModel.sample_group_names_.size()) - 1, n_replicates - 1), 800);
   BOOST_CHECK_LE(mars_values(int(biochemReactModel.reaction_ids_.size()) - 1, int(biochemReactModel.sample_group_names_.size()) - 1, n_replicates - 1), 1000);
 }

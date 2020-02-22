@@ -284,12 +284,33 @@ namespace SmartPeak
     @brief Convert the metabolomics data structure into a 2D tensor
     with dim0 = features and dim1 = samples and dim2 = replicates
 
+    Use cases for use_concentrations:
+    1. Tensor with the same number of replicates equal to the maximum number of replicates in the data set
+      n_replicates >= max_replicates with fill_sampling, fill_mean, or fill_zero = true
+    2. Tensor with the same number of replicates and randomly sampled concentration values
+      n_replicates = max_replicates (where max_replicates is >> the real number of max replicates) with fill_sampling = true
+
+    Use cases for use_MARs:
+    1. Tensor with the same number of replicates and randomly sampled MAR values
+      n_replicates = max_replicates (where max_replicates is >> the real number of max replicates) with fill_sampling = true
+      Assume min of 1e-3 and max of 1e3 when performing any kind of data standardization or transformation
+
     @param[in] metabolomicsData The metabolomics data to convert
 
     @return The matrix of metabolomics data
     **/
     Eigen::Tensor<TensorT, 3> getMetDataAsTensor(const std::vector<std::string>& sample_group_names, const std::vector<std::string>& component_group_names,
-      const int& n_replicates, const bool& use_concentrations, const bool& use_MARs, const bool& fill_sampling, const bool& fill_mean, const bool& fill_zero) const;
+      const int& n_replicates, const int& max_replicates, const bool& use_concentrations, const bool& use_MARs, const bool& fill_sampling, const bool& fill_mean, const bool& fill_zero) const;
+
+    /*
+    @brief Estimate the maximum number of replicates in the data set
+
+    @param[in] sample_group_names The sample group names
+    @param[in] component_group_names The component group names
+
+    @return The maximum number of replicates
+    **/
+    int getMaxReplicates(const std::vector<std::string>& sample_group_names, const std::vector<std::string>& component_group_names) const;
 
     /*
     @brief Clear all data structures
@@ -738,7 +759,7 @@ namespace SmartPeak
     return currency_mets;
   }
   template<typename TensorT>
-  inline Eigen::Tensor<TensorT, 3> BiochemicalReactionModel<TensorT>::getMetDataAsTensor(const std::vector<std::string>& sample_group_names, const std::vector<std::string>& component_group_names, const int& n_replicates, const bool & use_concentrations, const bool & use_MARs, const bool & fill_sampling, const bool & fill_mean, const bool & fill_zero) const
+  inline Eigen::Tensor<TensorT, 3> BiochemicalReactionModel<TensorT>::getMetDataAsTensor(const std::vector<std::string>& sample_group_names, const std::vector<std::string>& component_group_names, const int& n_replicates, const int& max_replicates, const bool & use_concentrations, const bool & use_MARs, const bool & fill_sampling, const bool & fill_mean, const bool & fill_zero) const
   {
     // initialize the needed data structures
     Eigen::Tensor<TensorT, 3> met_data_matrix(int(component_group_names.size()), int(sample_group_names.size()), n_replicates);
@@ -751,17 +772,6 @@ namespace SmartPeak
       TensorT mean = sum / met_data.size();
       return mean;
     };
-
-    // determine the largest number of replicates
-    int max_reps = 0;
-    for (const std::string& sample_group_name : sample_group_names) {
-      if (metabolomicsData_.count(sample_group_name) <= 0) continue;
-      for (const std::string& component_group_name : component_group_names) {
-        if (metabolomicsData_.at(sample_group_name).count(component_group_name) <= 0) continue;
-        if (max_reps < metabolomicsData_.at(sample_group_name).at(component_group_name).size()) 
-          max_reps = metabolomicsData_.at(sample_group_name).at(component_group_name).size();
-      }
-    }
 
     // create the data matrix
     int rep_iter = 0;
@@ -788,20 +798,18 @@ namespace SmartPeak
           // Assign the value based on user input
           TensorT value;
           if (use_concentrations) {
-            if (fill_sampling) {
+            if (rep_iter >= metabolomicsData_.at(sample_group_name).at(component_group_name).size() && fill_sampling) {
               MetabolomicsDatum random_met = selectRandomElement(metabolomicsData_.at(sample_group_name).at(component_group_name));
               value = random_met.calculated_concentration;
             }
+            else if (rep_iter >= metabolomicsData_.at(sample_group_name).at(component_group_name).size() && fill_mean) {
+              value = calcMean(metabolomicsData_.at(sample_group_name).at(component_group_name));
+            }
+            else if (rep_iter >= metabolomicsData_.at(sample_group_name).at(component_group_name).size() && fill_zero) {
+              value = 1e-6;
+            }
             else {
-              if (rep_iter >= metabolomicsData_.at(sample_group_name).at(component_group_name).size() && fill_mean) {
-                value = calcMean(metabolomicsData_.at(sample_group_name).at(component_group_name));
-              }
-              else if (rep_iter >= metabolomicsData_.at(sample_group_name).at(component_group_name).size() && fill_zero) {
-                value = 1e-6;
-              }
-              else {
-                value = metabolomicsData_.at(sample_group_name).at(component_group_name).at(rep_iter).calculated_concentration;
-              }
+              value = metabolomicsData_.at(sample_group_name).at(component_group_name).at(rep_iter).calculated_concentration;
             }
           }
           else if (use_MARs) {
@@ -814,7 +822,7 @@ namespace SmartPeak
       }
 
       // Increment the replicate iter or restart
-      if (rep_iter == max_reps - 1) {
+      if (rep_iter == max_replicates - 1) {
         rep_iter = 0;
       }
       else {
@@ -822,6 +830,21 @@ namespace SmartPeak
       }
     }
     return met_data_matrix;
+  }
+  template<typename TensorT>
+  inline int BiochemicalReactionModel<TensorT>::getMaxReplicates(const std::vector<std::string>& sample_group_names, const std::vector<std::string>& component_group_names) const
+  {
+    // determine the largest number of replicates
+    int max_reps = 0;
+    for (const std::string& sample_group_name : sample_group_names) {
+      if (metabolomicsData_.count(sample_group_name) <= 0) continue;
+      for (const std::string& component_group_name : component_group_names) {
+        if (metabolomicsData_.at(sample_group_name).count(component_group_name) <= 0) continue;
+        if (max_reps < metabolomicsData_.at(sample_group_name).at(component_group_name).size())
+          max_reps = metabolomicsData_.at(sample_group_name).at(component_group_name).size();
+      }
+    }
+    return max_reps;
   }
   template<typename TensorT>
   inline void BiochemicalReactionModel<TensorT>::clear() {
