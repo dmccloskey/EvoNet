@@ -340,7 +340,7 @@ BOOST_AUTO_TEST_CASE(getMetDataAsTensors)
   BOOST_CHECK_GE(metabo_concs(int(biochemReactModel.component_group_names_.size()) - 1, max_reps_n_labels.second - 1), 2.07); // utp and S01_D01_PLT_25C_6.5hr
   BOOST_CHECK_LE(metabo_concs(int(biochemReactModel.component_group_names_.size()) - 1, max_reps_n_labels.second - 1), 2.32); // utp and S01_D01_PLT_25C_6.5hr
   BOOST_CHECK_GE(metabo_concs(19, 11), 0.018); // cmp and S01_D01_PLT_25C_22hr
-  BOOST_CHECK_LE(metabo_concs(19, 11), 0.025); // cmp and S01_D01_PLT_25C_22hr
+  BOOST_CHECK_LE(metabo_concs(19, 11), 0.072); // cmp and S01_D01_PLT_25C_22hr
   BOOST_CHECK_EQUAL(metabo_labels.size(), max_reps_n_labels.second);
   BOOST_CHECK_EQUAL(metabo_labels.at(0), "D01");
 
