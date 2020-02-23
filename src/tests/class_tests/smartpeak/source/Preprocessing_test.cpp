@@ -48,8 +48,10 @@ BOOST_AUTO_TEST_CASE(P_LinearScale)
     {{ 1, 1 }, { 3, 5 }}
     });
 
-  LinearScale<float, 3> linearScale(0, 8, -1, 1);
-  Eigen::Tensor<float, 3> data_test = linearScale(data);
+  // Test default initialization for the domain and setters
+  LinearScale<float, 3> linearScale1(-1, 1);
+  linearScale1.setDomain(0, 8);
+  Eigen::Tensor<float, 3> data_test = linearScale1(data);
 
   BOOST_CHECK_CLOSE(data_test(0, 0, 0), -1.0, 1e-6);
   BOOST_CHECK_CLOSE(data_test(0, 0, 1), -0.5, 1e-6);
@@ -60,6 +62,20 @@ BOOST_AUTO_TEST_CASE(P_LinearScale)
   BOOST_CHECK_CLOSE(data_test(1, 1, 0), -0.25, 1e-6);
   BOOST_CHECK_CLOSE(data_test(1, 1, 1), 0.25, 1e-6);
 
+  // Test with manual domain and range initialization
+  LinearScale<float, 3> linearScale(0, 8, -1, 1);
+  data_test = linearScale(data);
+
+  BOOST_CHECK_CLOSE(data_test(0, 0, 0), -1.0, 1e-6);
+  BOOST_CHECK_CLOSE(data_test(0, 0, 1), -0.5, 1e-6);
+  BOOST_CHECK_CLOSE(data_test(0, 1, 0), 0.0, 1e-6);
+  BOOST_CHECK_CLOSE(data_test(0, 1, 1), 1.0, 1e-6);
+  BOOST_CHECK_CLOSE(data_test(1, 0, 0), -0.75, 1e-6);
+  BOOST_CHECK_CLOSE(data_test(1, 0, 1), -0.75, 1e-6);
+  BOOST_CHECK_CLOSE(data_test(1, 1, 0), -0.25, 1e-6);
+  BOOST_CHECK_CLOSE(data_test(1, 1, 1), 0.25, 1e-6);
+
+  // Test with domain calculation and range initialization
   LinearScale<float, 3> linearScale2(data, -1, 1);
   data_test = linearScale2(data);
 
@@ -76,17 +92,27 @@ BOOST_AUTO_TEST_CASE(P_LinearScale)
 BOOST_AUTO_TEST_CASE(P_Standardize)
 {
   Eigen::Tensor<float, 3> data(2, 2, 2);
-  data.setValues({ 
+  data.setValues({
     {{ 0, 2 }, { 4, 8 }},
     {{ 1, 3 }, { 3, 5 }}
     });
 
-  Standardize<float, 3> standardize(data);
-  Eigen::Tensor<float, 3> data_test = standardize(data);
+  // Test default initialization with setters and getters
+  Standardize<float, 3> standardize1;
+  standardize1.setMeanAndVar(1, 2);
+  BOOST_CHECK_CLOSE(standardize1.getMean(), 1, 1e-6);
+  BOOST_CHECK_CLOSE(standardize1.getVar(), 2, 1e-6);
+  standardize1.setMeanAndVar(data);
+  BOOST_CHECK_CLOSE(standardize1.getMean(), 3.25, 1e-6);
+  BOOST_CHECK_CLOSE(standardize1.getVar(), 6.21428585, 1e-6);
 
+  // Test with data initialization and getters
+  Standardize<float, 3> standardize(data);
   BOOST_CHECK_CLOSE(standardize.getMean(), 3.25, 1e-6);
   BOOST_CHECK_CLOSE(standardize.getVar(), 6.21428585, 1e-6);
 
+  // Test operator
+  Eigen::Tensor<float, 3> data_test = standardize(data);
   BOOST_CHECK_CLOSE(data_test(0, 0, 0), -1.30373025, 1e-6);
   BOOST_CHECK_CLOSE(data_test(0, 0, 1), -0.501434684, 1e-6);
   BOOST_CHECK_CLOSE(data_test(0, 1, 0), 0.300860822, 1e-6);

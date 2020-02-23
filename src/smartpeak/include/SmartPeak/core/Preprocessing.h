@@ -128,7 +128,7 @@ namespace SmartPeak
   public:
     Standardize() = default;
     Standardize(const Eigen::Tensor<T, N>& data) { setMeanAndVar(data); };
-    Standardize(const T& mean, const T& var) mean_(mean), var_(var) {};
+    Standardize(const T& mean, const T& var): mean_(mean), var_(var) {};
     ~Standardize() = default;
     void setMeanAndVar(const T& mean, const T& var) {
       mean_ = mean;
