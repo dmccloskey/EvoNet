@@ -91,9 +91,15 @@ namespace SmartPeak
     LinearScale() = default;
     LinearScale(const Eigen::Tensor<T, N>& data, const T& range_min, const T& range_max) :
       range_min_(range_min), range_max_(range_max) { setDomain(data); }
+    LinearScale(const T& range_min, const T& range_max) :
+      range_min_(range_min), range_max_(range_max) {}
     LinearScale(const T& domain_min, const T& domain_max, const T& range_min, const T& range_max) :
       domain_min_(domain_min), domain_max_(domain_max), range_min_(range_min), range_max_(range_max) {}
     ~LinearScale() = default;
+    void setDomain(const T& domain_min, const T& domain_max) {
+      domain_min_ = domain_min;
+      domain_max_ = domain_max;
+    }
     void setDomain(const Eigen::Tensor<T, N>& data) {
       const Eigen::Tensor<T, 0> max_value = data.maximum();
       const Eigen::Tensor<T, 0> min_value = data.minimum();
@@ -122,7 +128,12 @@ namespace SmartPeak
   public:
     Standardize() = default;
     Standardize(const Eigen::Tensor<T, N>& data) { setMeanAndVar(data); };
+    Standardize(const T& mean, const T& var) mean_(mean), var_(var) {};
     ~Standardize() = default;
+    void setMeanAndVar(const T& mean, const T& var) {
+      mean_ = mean;
+      var_ = var;
+    }
     void setMeanAndVar(const Eigen::Tensor<T, N>& data)
     {
       // calculate the total dimensions

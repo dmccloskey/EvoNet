@@ -129,25 +129,23 @@ namespace SmartPeak
   inline void BiochemicalDataSimulator<TensorT>::transformTrainingAndValidationDataOffline(const bool & linear_scale, const bool & log_transform, const bool & standardize)
   {
     // Estimate the parameters from the training data and apply to the training data
-    if (log_transform) {
-      this->data_training_ = this->data_training_.log();
-    }
-    Standardize<TensorT, 2> standardizeTrans(this->data_training_);
-    if (standardize) {
-      this->data_training_ = standardizeTrans(this->data_training_);
-    }
-    LinearScale<TensorT, 2> linearScaleTrans(this->data_training_, 0, 1);
-    if (linear_scale) {
-      this->data_training_ = linearScaleTrans(this->data_training_);
-    }
     // Apply the training data paremeters to the validation data
     if (log_transform) {
+      this->data_training_ = this->data_training_.log();
       this->data_validation_ = this->data_validation_.log();
     }
     if (standardize) {
+      Standardize<TensorT, 2> standardizeTrans;
+      if (this->mean_value_training_ != -1 && this->var_value_training_ != -1) standardizeTrans.setMeanAndVar(this->mean_value_training_, this->var_value_training_)
+      else standardizeTrans.setMeanAndVar(this->data_training_);
+      this->data_training_ = standardizeTrans(this->data_training_);
       this->data_validation_ = standardizeTrans(this->data_validation_);
     }
     if (linear_scale) {
+      LinearScale<TensorT, 2> linearScaleTrans(0, 1);
+      if (this->min_value_training_ != -1 && this->max_value_training_ != -1) linearScaleTrans.setDomain(this->min_value_training_, this->max_value_training_)
+      else linearScaleTrans.setDomain(this->data_training_);
+      this->data_training_ = linearScaleTrans(this->data_training_);
       this->data_validation_ = linearScaleTrans(this->data_validation_);
     }
   }
