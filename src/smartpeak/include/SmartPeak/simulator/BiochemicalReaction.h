@@ -305,7 +305,8 @@ namespace SmartPeak
       const std::map<std::string, int>& sample_group_name_to_reps, 
       const bool& use_concentrations, const bool& use_MARs, 
       const bool& sample_values, const bool& iter_values,
-      const bool& fill_sampling, const bool& fill_mean, const bool& fill_zero) const;
+      const bool& fill_sampling, const bool& fill_mean, const bool& fill_zero,
+      const bool& apply_fold_change, const std::string& fold_change_ref) const;
 
     /*
     @brief Estimate the maximum number of replicates in the data set
@@ -776,7 +777,8 @@ namespace SmartPeak
     const std::map<std::string, int>& sample_group_name_to_reps,
     const bool& use_concentrations, const bool& use_MARs,
     const bool& sample_values, const bool& iter_values,
-    const bool& fill_sampling, const bool& fill_mean, const bool& fill_zero) const {
+    const bool& fill_sampling, const bool& fill_mean, const bool& fill_zero,
+    const bool& apply_fold_change, const std::string& fold_change_ref) const {
     // clear the data structures
     data.setZero();
     labels.clear();
@@ -819,6 +821,10 @@ namespace SmartPeak
             // Assign the value for each replicate through random sampling of the replicates
             MetabolomicsDatum random_met = selectRandomElement(metabolomicsData_.at(sample_group_name).at(component_group_name));
             value = random_met.calculated_concentration;
+            if (apply_fold_change) {
+              random_met = selectRandomElement(metabolomicsData_.at(fold_change_ref).at(component_group_name));
+              value /= random_met.calculated_concentration;
+            }
           }
           else if (use_concentrations && iter_values) {
             // Or by iterating through the replicates filling in missing values as needed
@@ -835,10 +841,28 @@ namespace SmartPeak
             else {
               value = metabolomicsData_.at(sample_group_name).at(component_group_name).at(rep_iter).calculated_concentration;
             }
+            if (apply_fold_change) {
+              if (rep_iter >= metabolomicsData_.at(fold_change_ref).at(component_group_name).size() && fill_sampling) {
+                MetabolomicsDatum random_met = selectRandomElement(metabolomicsData_.at(fold_change_ref).at(component_group_name));
+                value /= random_met.calculated_concentration;
+              }
+              else if (rep_iter >= metabolomicsData_.at(fold_change_ref).at(component_group_name).size() && fill_mean) {
+                value /= calcMean(metabolomicsData_.at(fold_change_ref).at(component_group_name));
+              }
+              else if (rep_iter >= metabolomicsData_.at(fold_change_ref).at(component_group_name).size() && fill_zero) {
+                value /= 1e-6;
+              }
+              else {
+                value /= metabolomicsData_.at(fold_change_ref).at(component_group_name).at(rep_iter).calculated_concentration;
+              }
+            }
           }
           else if (use_MARs && sample_values) {
             // OR by sampling mass action ratios
             value = calculateMAR(metabolomicsData_.at(sample_group_name), biochemicalReactions_.at(component_group_name));
+            if (apply_fold_change) {
+              value /= calculateMAR(metabolomicsData_.at(fold_change_ref), biochemicalReactions_.at(component_group_name));
+            }
           }
           data(feature_iter, label_iter) = value;
           ++label_iter;
