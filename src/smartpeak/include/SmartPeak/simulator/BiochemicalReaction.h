@@ -306,7 +306,7 @@ namespace SmartPeak
       const bool& use_concentrations, const bool& use_MARs, 
       const bool& sample_values, const bool& iter_values,
       const bool& fill_sampling, const bool& fill_mean, const bool& fill_zero,
-      const bool& apply_fold_change, const std::string& fold_change_ref) const;
+      const bool& apply_fold_change, const std::string& fold_change_ref, const TensorT& fold_change_log_base) const;
 
     /*
     @brief Estimate the maximum number of replicates in the data set
@@ -778,7 +778,7 @@ namespace SmartPeak
     const bool& use_concentrations, const bool& use_MARs,
     const bool& sample_values, const bool& iter_values,
     const bool& fill_sampling, const bool& fill_mean, const bool& fill_zero,
-    const bool& apply_fold_change, const std::string& fold_change_ref) const {
+    const bool& apply_fold_change, const std::string& fold_change_ref, const TensorT& fold_change_log_base) const {
     // clear the data structures
     data.setZero();
     labels.clear();
@@ -824,6 +824,7 @@ namespace SmartPeak
             if (apply_fold_change) {
               random_met = selectRandomElement(metabolomicsData_.at(fold_change_ref).at(component_group_name));
               value /= random_met.calculated_concentration;
+              value = minFunc(maxFunc(std::log(value) / std::log(fold_change_log_base), -1), 1);
             }
           }
           else if (use_concentrations && iter_values) {
@@ -845,15 +846,19 @@ namespace SmartPeak
               if (rep_iter >= metabolomicsData_.at(fold_change_ref).at(component_group_name).size() && fill_sampling) {
                 MetabolomicsDatum random_met = selectRandomElement(metabolomicsData_.at(fold_change_ref).at(component_group_name));
                 value /= random_met.calculated_concentration;
+                value = minFunc(maxFunc(std::log(value) / std::log(fold_change_log_base), -1), 1);
               }
               else if (rep_iter >= metabolomicsData_.at(fold_change_ref).at(component_group_name).size() && fill_mean) {
                 value /= calcMean(metabolomicsData_.at(fold_change_ref).at(component_group_name));
+                value = minFunc(maxFunc(std::log(value) / std::log(fold_change_log_base), -1), 1);
               }
               else if (rep_iter >= metabolomicsData_.at(fold_change_ref).at(component_group_name).size() && fill_zero) {
                 value /= 1e-6;
+                value = minFunc(maxFunc(std::log(value) / std::log(fold_change_log_base), -1), 1);
               }
               else {
                 value /= metabolomicsData_.at(fold_change_ref).at(component_group_name).at(rep_iter).calculated_concentration;
+                value = minFunc(maxFunc(std::log(value) / std::log(fold_change_log_base), -1), 1);
               }
             }
           }
@@ -862,6 +867,7 @@ namespace SmartPeak
             value = calculateMAR(metabolomicsData_.at(sample_group_name), biochemicalReactions_.at(component_group_name));
             if (apply_fold_change) {
               value /= calculateMAR(metabolomicsData_.at(fold_change_ref), biochemicalReactions_.at(component_group_name));
+              value = minFunc(maxFunc(std::log(value) / std::log(fold_change_log_base), -1), 1);
             }
           }
           data(feature_iter, label_iter) = value;

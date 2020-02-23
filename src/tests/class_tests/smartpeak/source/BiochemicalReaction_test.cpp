@@ -300,7 +300,7 @@ BOOST_AUTO_TEST_CASE(getMetDataAsTensors)
   // use_concentrations, iter_values, fill_zero
   biochemReactModel.getMetDataAsTensors(metabo_concs, metabo_labels,
     biochemReactModel.sample_group_names_, biochemReactModel.component_group_names_, biochemReactModel.sample_group_name_to_label_, sample_group_name_to_reps,
-    true, false, false, true, false, false, true, false, "S01_D01_PLT_25C_0hr");
+    true, false, false, true, false, false, true, false, "S01_D01_PLT_25C_0hr", 10);
   BOOST_CHECK_CLOSE(metabo_concs(24, 6), 0, 1e-4); // component_group_name dctp is missing from sample_group_name S01_D01_PLT_25C_22hr
   BOOST_CHECK_CLOSE(metabo_concs(0, 0), 0.926901623, 1e-4); // 2pg and S01_D01_PLT_25C_0hr
   BOOST_CHECK_CLOSE(metabo_concs(int(biochemReactModel.component_group_names_.size()) - 1, max_reps_n_labels.second - 1), 2.105641075, 1e-4); // utp and S01_D01_PLT_25C_6.5hr
@@ -311,7 +311,7 @@ BOOST_AUTO_TEST_CASE(getMetDataAsTensors)
   // use_concentrations, iter_values, fill_mean
   biochemReactModel.getMetDataAsTensors(metabo_concs, metabo_labels,
     biochemReactModel.sample_group_names_, biochemReactModel.component_group_names_, biochemReactModel.sample_group_name_to_label_, sample_group_name_to_reps,
-    true, false, false, true, false, true, false, false, "S01_D01_PLT_25C_0hr");
+    true, false, false, true, false, true, false, false, "S01_D01_PLT_25C_0hr", 10);
   BOOST_CHECK_CLOSE(metabo_concs(24, 6), 0, 1e-4); // component_group_name dctp is missing from sample_group_name S01_D01_PLT_25C_22hr
   BOOST_CHECK_CLOSE(metabo_concs(0, 0), 0.926901623, 1e-4); // 2pg and S01_D01_PLT_25C_0hr
   BOOST_CHECK_CLOSE(metabo_concs(int(biochemReactModel.component_group_names_.size()) - 1, max_reps_n_labels.second - 1), 2.105641075, 1e-4); // utp and S01_D01_PLT_25C_6.5hr
@@ -322,19 +322,19 @@ BOOST_AUTO_TEST_CASE(getMetDataAsTensors)
   // use_concentrations, iter_values, fill_sampling
   biochemReactModel.getMetDataAsTensors(metabo_concs, metabo_labels,
     biochemReactModel.sample_group_names_, biochemReactModel.component_group_names_, biochemReactModel.sample_group_name_to_label_, sample_group_name_to_reps,
-    true, false, false, true, true, false, false, false, "S01_D01_PLT_25C_0hr");
+    true, false, false, true, true, false, false, false, "S01_D01_PLT_25C_0hr", 10);
   BOOST_CHECK_CLOSE(metabo_concs(24, 6), 0, 1e-4); // component_group_name dctp is missing from sample_group_name S01_D01_PLT_25C_22hr
   BOOST_CHECK_CLOSE(metabo_concs(0, 0), 0.926901623, 1e-4); // 2pg and S01_D01_PLT_25C_0hr
   BOOST_CHECK_CLOSE(metabo_concs(int(biochemReactModel.component_group_names_.size()) - 1, max_reps_n_labels.second - 1), 2.105641075, 1e-4); // utp and S01_D01_PLT_25C_6.5hr
   BOOST_CHECK_GE(metabo_concs(19, 11), 0.018); // cmp and S01_D01_PLT_25C_22hr
-  BOOST_CHECK_LE(metabo_concs(19, 11), 0.025); // cmp and S01_D01_PLT_25C_22hr
+  BOOST_CHECK_LE(metabo_concs(19, 11), 0.072); // cmp and S01_D01_PLT_25C_22hr
   BOOST_CHECK_EQUAL(metabo_labels.size(), max_reps_n_labels.second);
   BOOST_CHECK_EQUAL(metabo_labels.at(0), "D01");
 
   // use_concentrations, sample_values
   biochemReactModel.getMetDataAsTensors(metabo_concs, metabo_labels,
     biochemReactModel.sample_group_names_, biochemReactModel.component_group_names_, biochemReactModel.sample_group_name_to_label_, sample_group_name_to_reps,
-    true, false, true, false, false, false, false, false, "S01_D01_PLT_25C_0hr");
+    true, false, true, false, false, false, false, false, "S01_D01_PLT_25C_0hr", 10);
   BOOST_CHECK_CLOSE(metabo_concs(24, 6), 0, 1e-4); // component_group_name dctp is missing from sample_group_name S01_D01_PLT_25C_22hr
   BOOST_CHECK_GE(metabo_concs(0, 0), 0.92); // 2pg and S01_D01_PLT_25C_0hr
   BOOST_CHECK_LE(metabo_concs(0, 0), 1.04); // 2pg and S01_D01_PLT_25C_0hr
@@ -348,10 +348,10 @@ BOOST_AUTO_TEST_CASE(getMetDataAsTensors)
   // use_MARs, sample_values
   biochemReactModel.getMetDataAsTensors(mars_values, metabo_labels,
     biochemReactModel.sample_group_names_, biochemReactModel.reaction_ids_, biochemReactModel.sample_group_name_to_label_, sample_group_name_to_reps,
-    false, true, true, false, false, false, false, false, "S01_D01_PLT_25C_0hr");
+    false, true, true, false, false, false, false, false, "S01_D01_PLT_25C_0hr", 10);
   BOOST_CHECK_GE(mars_values(0, 0), 0.03);
   BOOST_CHECK_LE(mars_values(0, 0), 0.06);
-  BOOST_CHECK_GE(mars_values(int(biochemReactModel.reaction_ids_.size()) - 1, max_reps_n_labels.second - 1), 800);
+  BOOST_CHECK_GE(mars_values(int(biochemReactModel.reaction_ids_.size()) - 1, max_reps_n_labels.second - 1), 600);
   BOOST_CHECK_LE(mars_values(int(biochemReactModel.reaction_ids_.size()) - 1, max_reps_n_labels.second - 1), 1000);
   BOOST_CHECK_EQUAL(metabo_labels.size(), max_reps_n_labels.second);
   BOOST_CHECK_EQUAL(metabo_labels.at(0), "D01");
@@ -359,59 +359,59 @@ BOOST_AUTO_TEST_CASE(getMetDataAsTensors)
   // use_concentrations, iter_values, fill_zero, apply_fold_change
   biochemReactModel.getMetDataAsTensors(metabo_concs, metabo_labels,
     biochemReactModel.sample_group_names_, biochemReactModel.component_group_names_, biochemReactModel.sample_group_name_to_label_, sample_group_name_to_reps,
-    true, false, false, true, false, false, true, true, "S01_D01_PLT_25C_0hr");
+    true, false, false, true, false, false, true, true, "S01_D01_PLT_25C_0hr", 10);
   BOOST_CHECK_CLOSE(metabo_concs(24, 6), 0, 1e-4); // component_group_name dctp is missing from sample_group_name S01_D01_PLT_25C_22hr
-  BOOST_CHECK_CLOSE(metabo_concs(0, 0), 0.926901623, 1e-4); // 2pg and S01_D01_PLT_25C_0hr
-  BOOST_CHECK_CLOSE(metabo_concs(int(biochemReactModel.component_group_names_.size()) - 1, max_reps_n_labels.second - 1), 2.105641075, 1e-4); // utp and S01_D01_PLT_25C_6.5hr
-  BOOST_CHECK_CLOSE(metabo_concs(19, 11), 1e-6, 1e-4); // cmp and S01_D01_PLT_25C_22hr
+  BOOST_CHECK_CLOSE(metabo_concs(0, 0), 0, 1e-4); // 2pg and S01_D01_PLT_25C_0hr
+  BOOST_CHECK_CLOSE(metabo_concs(int(biochemReactModel.component_group_names_.size()) - 1, max_reps_n_labels.second - 1), -0.0343664847, 1e-4); // utp and S01_D01_PLT_25C_6.5hr
+  BOOST_CHECK_CLOSE(metabo_concs(19, 11), -1, 1e-4); // cmp and S01_D01_PLT_25C_22hr
   BOOST_CHECK_EQUAL(metabo_labels.size(), max_reps_n_labels.second);
   BOOST_CHECK_EQUAL(metabo_labels.at(0), "D01");
 
   // use_concentrations, iter_values, fill_mean, apply_fold_change
   biochemReactModel.getMetDataAsTensors(metabo_concs, metabo_labels,
     biochemReactModel.sample_group_names_, biochemReactModel.component_group_names_, biochemReactModel.sample_group_name_to_label_, sample_group_name_to_reps,
-    true, false, false, true, false, true, false, true, "S01_D01_PLT_25C_0hr");
+    true, false, false, true, false, true, false, true, "S01_D01_PLT_25C_0hr", 10);
   BOOST_CHECK_CLOSE(metabo_concs(24, 6), 0, 1e-4); // component_group_name dctp is missing from sample_group_name S01_D01_PLT_25C_22hr
-  BOOST_CHECK_CLOSE(metabo_concs(0, 0), 0.926901623, 1e-4); // 2pg and S01_D01_PLT_25C_0hr
-  BOOST_CHECK_CLOSE(metabo_concs(int(biochemReactModel.component_group_names_.size()) - 1, max_reps_n_labels.second - 1), 2.105641075, 1e-4); // utp and S01_D01_PLT_25C_6.5hr
-  BOOST_CHECK_CLOSE(metabo_concs(19, 11), 0.0314822569, 1e-4); // cmp and S01_D01_PLT_25C_22hr
+  BOOST_CHECK_CLOSE(metabo_concs(0, 0), 0, 1e-4); // 2pg and S01_D01_PLT_25C_0hr
+  BOOST_CHECK_CLOSE(metabo_concs(int(biochemReactModel.component_group_names_.size()) - 1, max_reps_n_labels.second - 1), -0.0343664847, 1e-4); // utp and S01_D01_PLT_25C_6.5hr
+  BOOST_CHECK_CLOSE(metabo_concs(19, 11), -0.404844701, 1e-4); // cmp and S01_D01_PLT_25C_22hr
   BOOST_CHECK_EQUAL(metabo_labels.size(), max_reps_n_labels.second);
   BOOST_CHECK_EQUAL(metabo_labels.at(0), "D01");
 
   // use_concentrations, iter_values, fill_sampling, apply_fold_change
   biochemReactModel.getMetDataAsTensors(metabo_concs, metabo_labels,
     biochemReactModel.sample_group_names_, biochemReactModel.component_group_names_, biochemReactModel.sample_group_name_to_label_, sample_group_name_to_reps,
-    true, false, false, true, true, false, false, true, "S01_D01_PLT_25C_0hr");
+    true, false, false, true, true, false, false, true, "S01_D01_PLT_25C_0hr", 10);
   BOOST_CHECK_CLOSE(metabo_concs(24, 6), 0, 1e-4); // component_group_name dctp is missing from sample_group_name S01_D01_PLT_25C_22hr
-  BOOST_CHECK_CLOSE(metabo_concs(0, 0), 0.926901623, 1e-4); // 2pg and S01_D01_PLT_25C_0hr
-  BOOST_CHECK_CLOSE(metabo_concs(int(biochemReactModel.component_group_names_.size()) - 1, max_reps_n_labels.second - 1), 2.105641075, 1e-4); // utp and S01_D01_PLT_25C_6.5hr
-  BOOST_CHECK_GE(metabo_concs(19, 11), 0.018); // cmp and S01_D01_PLT_25C_22hr
-  BOOST_CHECK_LE(metabo_concs(19, 11), 0.025); // cmp and S01_D01_PLT_25C_22hr
+  BOOST_CHECK_CLOSE(metabo_concs(0, 0), 0, 1e-4); // 2pg and S01_D01_PLT_25C_0hr
+  BOOST_CHECK_CLOSE(metabo_concs(int(biochemReactModel.component_group_names_.size()) - 1, max_reps_n_labels.second - 1), -0.0343664847, 1e-4); // utp and S01_D01_PLT_25C_6.5hr
+  BOOST_CHECK_GE(metabo_concs(19, 11), -0.7); // cmp and S01_D01_PLT_25C_22hr
+  BOOST_CHECK_LE(metabo_concs(19, 11), -0.3); // cmp and S01_D01_PLT_25C_22hr
   BOOST_CHECK_EQUAL(metabo_labels.size(), max_reps_n_labels.second);
   BOOST_CHECK_EQUAL(metabo_labels.at(0), "D01");
 
   // use_concentrations, sample_values, apply_fold_change
   biochemReactModel.getMetDataAsTensors(metabo_concs, metabo_labels,
     biochemReactModel.sample_group_names_, biochemReactModel.component_group_names_, biochemReactModel.sample_group_name_to_label_, sample_group_name_to_reps,
-    true, false, true, false, false, false, false, true, "S01_D01_PLT_25C_0hr");
+    true, false, true, false, false, false, false, true, "S01_D01_PLT_25C_0hr", 10);
   BOOST_CHECK_CLOSE(metabo_concs(24, 6), 0, 1e-4); // component_group_name dctp is missing from sample_group_name S01_D01_PLT_25C_22hr
-  BOOST_CHECK_GE(metabo_concs(0, 0), 0.92); // 2pg and S01_D01_PLT_25C_0hr
-  BOOST_CHECK_LE(metabo_concs(0, 0), 1.04); // 2pg and S01_D01_PLT_25C_0hr
-  BOOST_CHECK_GE(metabo_concs(int(biochemReactModel.component_group_names_.size()) - 1, max_reps_n_labels.second - 1), 2.07); // utp and S01_D01_PLT_25C_6.5hr
-  BOOST_CHECK_LE(metabo_concs(int(biochemReactModel.component_group_names_.size()) - 1, max_reps_n_labels.second - 1), 2.32); // utp and S01_D01_PLT_25C_6.5hr
-  BOOST_CHECK_GE(metabo_concs(19, 11), 0.018); // cmp and S01_D01_PLT_25C_22hr
-  BOOST_CHECK_LE(metabo_concs(19, 11), 0.072); // cmp and S01_D01_PLT_25C_22hr
+  BOOST_CHECK_GE(metabo_concs(0, 0), -0.1); // 2pg and S01_D01_PLT_25C_0hr
+  BOOST_CHECK_LE(metabo_concs(0, 0), 0.1); // 2pg and S01_D01_PLT_25C_0hr
+  BOOST_CHECK_GE(metabo_concs(int(biochemReactModel.component_group_names_.size()) - 1, max_reps_n_labels.second - 1), -0.3); // utp and S01_D01_PLT_25C_6.5hr
+  BOOST_CHECK_LE(metabo_concs(int(biochemReactModel.component_group_names_.size()) - 1, max_reps_n_labels.second - 1), 0.3); // utp and S01_D01_PLT_25C_6.5hr
+  BOOST_CHECK_GE(metabo_concs(19, 11), -0.8); // cmp and S01_D01_PLT_25C_22hr
+  BOOST_CHECK_LE(metabo_concs(19, 11), -0.4); // cmp and S01_D01_PLT_25C_22hr
   BOOST_CHECK_EQUAL(metabo_labels.size(), max_reps_n_labels.second);
   BOOST_CHECK_EQUAL(metabo_labels.at(0), "D01");
 
   // use_MARs, sample_values, apply_fold_change
   biochemReactModel.getMetDataAsTensors(mars_values, metabo_labels,
     biochemReactModel.sample_group_names_, biochemReactModel.reaction_ids_, biochemReactModel.sample_group_name_to_label_, sample_group_name_to_reps,
-    false, true, true, false, false, false, false, true, "S01_D01_PLT_25C_0hr");
-  BOOST_CHECK_GE(mars_values(0, 0), 0.03);
-  BOOST_CHECK_LE(mars_values(0, 0), 0.06);
-  BOOST_CHECK_GE(mars_values(int(biochemReactModel.reaction_ids_.size()) - 1, max_reps_n_labels.second - 1), 800);
-  BOOST_CHECK_LE(mars_values(int(biochemReactModel.reaction_ids_.size()) - 1, max_reps_n_labels.second - 1), 1000);
+    false, true, true, false, false, false, false, true, "S01_D01_PLT_25C_0hr", 10);
+  BOOST_CHECK_GE(mars_values(0, 0), -0.5);
+  BOOST_CHECK_LE(mars_values(0, 0), 0.1);
+  BOOST_CHECK_GE(mars_values(int(biochemReactModel.reaction_ids_.size()) - 1, max_reps_n_labels.second - 1), 0.6);
+  BOOST_CHECK_LE(mars_values(int(biochemReactModel.reaction_ids_.size()) - 1, max_reps_n_labels.second - 1), 1.0);
   BOOST_CHECK_EQUAL(metabo_labels.size(), max_reps_n_labels.second);
   BOOST_CHECK_EQUAL(metabo_labels.at(0), "D01");
 }
