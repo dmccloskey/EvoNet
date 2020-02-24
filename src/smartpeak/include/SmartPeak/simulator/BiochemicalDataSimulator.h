@@ -39,26 +39,42 @@ namespace SmartPeak
     Member variables for min, max, mean, and var values can be optionally specified by the user when these values are known ahead of time (e.g., MARs min/max = 1e-3/1e3)
     transformation will be applied to the entire training data set and the parameters from the training data set will be applied to the validation data set
 
+    @param[in, out] data_training training data set where dim 0 = features and dim 1 = samples
+    @param[in, out] data_validation validation data set where dim 0 = features and dim 1 = samples
     @param[in] linear_scale
     @param[in] log_transform
     @param[in] standardize
+    @param[in] min_value_training linear scale min value for offline normalization
+    @param[in] max_value_training linear scale max value for offline normalization
+    @param[in] mean_value_training standardize mean value for offline normalization
+    @param[in] var_value_training standardize var value for offline normalization
     */
-    void transformTrainingAndValidationDataOffline(const bool& linear_scale, const bool & log_transform, const bool& standardize);
+    void transformTrainingAndValidationDataOffline(Eigen::Tensor<TensorT, 2>& data_training, Eigen::Tensor<TensorT, 2>& data_validation, 
+      const bool& linear_scale, const bool & log_transform, const bool& standardize,
+      const int& min_value_training = -1,
+      const int& max_value_training = -1,
+      const int& mean_value_training = -1,
+      const int& var_value_training = -1);
 
     /*
     @brief Transform the training and validation data.
     Transformation will be applied sample by sample to the training and validation data
 
+    @param[in, out] data_training training data set where dim 0 = features and dim 1 = samples
+    @param[in, out] data_validation validation data set where dim 0 = features and dim 1 = samples
     @param[in] linear_scale
     @param[in] log_transform
     @param[in] standardize
     */
-    void transformTrainingAndValidationDataOnline(const bool& linear_scale, const bool & log_transform, const bool& standardize);
+    void transformTrainingAndValidationDataOnline(Eigen::Tensor<TensorT, 2>& data_training, Eigen::Tensor<TensorT, 2>& data_validation, const bool& linear_scale, const bool & log_transform, const bool& standardize);
 
     /*
     @brief Make the training data cache from the training data.  The classification and reconstruction version of this method will be different,
     and it is intended for these methods to be overridden when a classification or reconstruction derived class is made.
 
+    @param[in] features The data set features along dim 0
+    @param[in] data_training training data set where dim 0 = features and dim 1 = samples
+    @param[in] labels_training The data set labels along dim 1
     @param[in] n_epochs
     @param[in] batch_size
     @param[in] memory_size
@@ -66,13 +82,17 @@ namespace SmartPeak
     @param[in] n_loss_output_nodes
     @param[in] n_metric_output_nodes
     */
-    virtual void makeTrainingDataForCache(const int& n_epochs, const int& batch_size, const int& memory_size,
+    virtual void makeTrainingDataForCache(const std::vector<std::string>& features, const Eigen::Tensor<TensorT, 2>& data_training, const std::vector<std::string>& labels_training,
+      const int& n_epochs, const int& batch_size, const int& memory_size,
       const int& n_input_nodes, const int& n_loss_output_nodes, const int& n_metric_output_nodes) = 0;
 
     /*
     @brief Make the validation data cache from the validation data.  The classification and reconstruction version of this method will be different,
     and it is intended for these methods to be overridden when a classification or reconstruction derived class is made.
 
+    @param[in] features The data set features along dim 0
+    @param[in] data_validation validation data set where dim 0 = features and dim 1 = samples
+    @param[in] labels_validation The data set labels along dim 1
     @param[in] n_epochs
     @param[in] batch_size
     @param[in] memory_size
@@ -80,19 +100,9 @@ namespace SmartPeak
     @param[in] n_loss_output_nodes
     @param[in] n_metric_output_nodes
     */
-    virtual void makeValidationDataForCache(const int& n_epochs, const int& batch_size, const int& memory_size,
+    virtual void makeValidationDataForCache(const std::vector<std::string>& features, const Eigen::Tensor<TensorT, 2>& data_validation, const std::vector<std::string>& labels_validation, 
+      const int& n_epochs, const int& batch_size, const int& memory_size,
       const int& n_input_nodes, const int& n_loss_output_nodes, const int& n_metric_output_nodes) = 0;
-
-    std::vector<std::string> features_; ///< dim 0
-    Eigen::Tensor<TensorT, 2> data_training_; ///< training data set where dim 0 = features and dim 1 = samples
-    Eigen::Tensor<TensorT, 2> data_validation_; ///< validation data set where dim 0 = features and dim 1 = samples
-    std::vector<std::string> labels_training_; ///< training labels corresonding to dim 1 of the data set
-    std::vector<std::string> labels_validation_; ///< validation labels corresonding to dim 1 of the data set
-
-    int min_value_training_ = -1; ///< linear scale min value for offline normalization
-    int max_value_training_ = -1; ///< linear scale max value for offline normalization
-    int mean_value_training_ = -1; ///< standardize mean value for offline normalization
-    int var_value_training_ = -1; ///< standardize var value for offline normalization
 
     bool use_train_for_eval_ = true;
   protected:
@@ -126,67 +136,72 @@ namespace SmartPeak
     this->getValidationDataFromCache_(input_data, loss_output_data, metric_output_data, time_steps);
   }
   template<typename TensorT>
-  inline void BiochemicalDataSimulator<TensorT>::transformTrainingAndValidationDataOffline(const bool & linear_scale, const bool & log_transform, const bool & standardize)
+  inline void BiochemicalDataSimulator<TensorT>::transformTrainingAndValidationDataOffline(Eigen::Tensor<TensorT, 2>& data_training, Eigen::Tensor<TensorT, 2>& data_validation, 
+    const bool & linear_scale, const bool & log_transform, const bool & standardize,
+    const int& min_value_training,
+    const int& max_value_training,
+    const int& mean_value_training,
+    const int& var_value_training)
   {
     // Estimate the parameters from the training data and apply to the training data
     // Apply the training data paremeters to the validation data
     if (log_transform) {
-      this->data_training_ = this->data_training_.log();
-      this->data_validation_ = this->data_validation_.log();
+      data_training = data_training.log();
+      data_validation = data_validation.log();
     }
     if (standardize) {
       Standardize<TensorT, 2> standardizeTrans;
-      if (this->mean_value_training_ != -1 && this->var_value_training_ != -1) standardizeTrans.setMeanAndVar(this->mean_value_training_, this->var_value_training_)
-      else standardizeTrans.setMeanAndVar(this->data_training_);
-      this->data_training_ = standardizeTrans(this->data_training_);
-      this->data_validation_ = standardizeTrans(this->data_validation_);
+      if (mean_value_training != -1 && var_value_training != -1) standardizeTrans.setMeanAndVar(mean_value_training, var_value_training);
+      else standardizeTrans.setMeanAndVar(data_training);
+      data_training = standardizeTrans(data_training);
+      data_validation = standardizeTrans(data_validation);
     }
     if (linear_scale) {
       LinearScale<TensorT, 2> linearScaleTrans(0, 1);
-      if (this->min_value_training_ != -1 && this->max_value_training_ != -1) linearScaleTrans.setDomain(this->min_value_training_, this->max_value_training_)
-      else linearScaleTrans.setDomain(this->data_training_);
-      this->data_training_ = linearScaleTrans(this->data_training_);
-      this->data_validation_ = linearScaleTrans(this->data_validation_);
+      if (min_value_training != -1 && max_value_training != -1) linearScaleTrans.setDomain(min_value_training, max_value_training);
+      else linearScaleTrans.setDomain(data_training);
+      data_training = linearScaleTrans(data_training);
+      data_validation = linearScaleTrans(data_validation);
     }
   }
   template<typename TensorT>
-  inline void BiochemicalDataSimulator<TensorT>::transformTrainingAndValidationDataOnline(const bool & linear_scale, const bool & log_transform, const bool & standardize)
+  inline void BiochemicalDataSimulator<TensorT>::transformTrainingAndValidationDataOnline(Eigen::Tensor<TensorT, 2>& data_training, Eigen::Tensor<TensorT, 2>& data_validation, const bool & linear_scale, const bool & log_transform, const bool & standardize)
   {
     // Apply the transformation to both training and test set on a per sample basis
     if (log_transform) {
-      this->data_training_ = this->data_training_.log();
-      this->data_validation_ = this->data_validation_.log();
+      data_training = data_training.log();
+      data_validation = data_validation.log();
     }
     if (standardize) {
-      for (int sample_iter = 0; sample_iter < this->data_training_.dimension(1); ++sample_iter) {
+      for (int sample_iter = 0; sample_iter < data_training.dimension(1); ++sample_iter) {
         Eigen::array<Eigen::Index, 2> offset = {0, sample_iter};
-        Eigen::array<Eigen::Index, 2> span = { this->data_training_.dimension(0), 1 };
-        Eigen::Tensor<TensorT, 2> data_slice = this->data_training_.slice(offset, span);
+        Eigen::array<Eigen::Index, 2> span = { data_training.dimension(0), 1 };
+        Eigen::Tensor<TensorT, 2> data_slice = data_training.slice(offset, span);
         Standardize<TensorT, 2> standardizeTrans(data_slice);
-        this->data_training_.slice(offset, span) = standardizeTrans(data_slice);
+        data_training.slice(offset, span) = standardizeTrans(data_slice);
       }
-      for (int sample_iter = 0; sample_iter < this->data_validation_.dimension(1); ++sample_iter) {
+      for (int sample_iter = 0; sample_iter < data_validation.dimension(1); ++sample_iter) {
         Eigen::array<Eigen::Index, 2> offset = { 0, sample_iter };
-        Eigen::array<Eigen::Index, 2> span = { this->data_validation_.dimension(0), 1 };
-        Eigen::Tensor<TensorT, 2> data_slice = this->data_validation_.slice(offset, span);
+        Eigen::array<Eigen::Index, 2> span = { data_validation.dimension(0), 1 };
+        Eigen::Tensor<TensorT, 2> data_slice = data_validation.slice(offset, span);
         Standardize<TensorT, 2> standardizeTrans(data_slice);
-        this->data_validation_.slice(offset, span) = standardizeTrans(data_slice);
+        data_validation.slice(offset, span) = standardizeTrans(data_slice);
       }
     }
     if (linear_scale) {
-      for (int sample_iter = 0; sample_iter < this->data_training_.dimension(1); ++sample_iter) {
+      for (int sample_iter = 0; sample_iter < data_training.dimension(1); ++sample_iter) {
         Eigen::array<Eigen::Index, 2> offset = {0, sample_iter};
-        Eigen::array<Eigen::Index, 2> span = { this->data_training_.dimension(0), 1 };
-        Eigen::Tensor<TensorT, 2> data_slice = this->data_training_.slice(offset, span);
+        Eigen::array<Eigen::Index, 2> span = { data_training.dimension(0), 1 };
+        Eigen::Tensor<TensorT, 2> data_slice = data_training.slice(offset, span);
         LinearScale<TensorT, 2> linearScaleTrans(data_slice, 0, 1);
-        this->data_training_.slice(offset, span) = linearScaleTrans(data_slice);
+        data_training.slice(offset, span) = linearScaleTrans(data_slice);
       }
-      for (int sample_iter = 0; sample_iter < this->data_validation_.dimension(1); ++sample_iter) {
+      for (int sample_iter = 0; sample_iter < data_validation.dimension(1); ++sample_iter) {
         Eigen::array<Eigen::Index, 2> offset = { 0, sample_iter };
-        Eigen::array<Eigen::Index, 2> span = { this->data_validation_.dimension(0), 1 };
-        Eigen::Tensor<TensorT, 2> data_slice = this->data_validation_.slice(offset, span);
+        Eigen::array<Eigen::Index, 2> span = { data_validation.dimension(0), 1 };
+        Eigen::Tensor<TensorT, 2> data_slice = data_validation.slice(offset, span);
         LinearScale<TensorT, 2> linearScaleTrans(data_slice, 0, 1);
-        this->data_validation_.slice(offset, span) = linearScaleTrans(data_slice);
+        data_validation.slice(offset, span) = linearScaleTrans(data_slice);
       }
     }
   }
