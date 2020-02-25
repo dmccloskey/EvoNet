@@ -6,325 +6,186 @@
 #include <SmartPeak/ml/ModelBuilder.h>
 #include <SmartPeak/io/PopulationTrainerFile.h>
 #include <SmartPeak/io/ModelInterpreterFileDefaultDevice.h>
-#include <SmartPeak/simulator/BiochemicalReaction.h>
+#include <SmartPeak/simulator/BiochemicalDataSimulator.h>
 #include <unsupported/Eigen/CXX11/Tensor>
 
 using namespace SmartPeak;
 
 // Other extended classes
 template<typename TensorT>
-class MetDataSimClassification : public DataSimulator<TensorT>
+class MetDataSimClassification : public BiochemicalDataSimulator<TensorT>
 {
 public:
-  void simulateDataClassMARs(Eigen::Tensor<TensorT, 3>& input_data, Eigen::Tensor<TensorT, 3>& loss_output_data, Eigen::Tensor<TensorT, 3>& metric_output_data, Eigen::Tensor<TensorT, 2>& time_steps, const bool& train)
-  {
-    // infer data dimensions based on the input tensors
-    const int batch_size = input_data.dimension(0);
-    const int memory_size = input_data.dimension(1);
-    const int n_input_nodes = input_data.dimension(2);
-    const int n_loss_output_nodes = loss_output_data.dimension(2);
-    const int n_metric_output_nodes = metric_output_data.dimension(2);
+  std::vector<std::string> labels_training_;
+  std::vector<std::string> labels_validation_;
+  void makeTrainingDataForCache(const std::vector<std::string>& features, const Eigen::Tensor<TensorT, 2>& data_training, const std::vector<std::string>& labels_training,
+    const int& n_epochs, const int& batch_size, const int& memory_size,
+    const int& n_input_nodes, const int& n_loss_output_nodes, const int& n_metric_output_nodes) override {
 
-    if (train)
-      assert(n_input_nodes == this->model_training_.reaction_ids_.size());
-    else
-      assert(n_input_nodes == this->model_validation_.reaction_ids_.size());
+    // infer the input sizes
+    const int input_nodes = data_training.dimension(0);
+    assert(n_input_nodes == input_nodes);
+    assert(n_loss_output_nodes == labels_training_.size());
+    assert(n_metric_output_nodes == 2* labels_training_.size()); // accuracy and precision
+    assert(data_training.dimension(0) == features.size());
+    assert(data_training.dimension(1) == labels_training.size());
 
-    for (int batch_iter = 0; batch_iter < batch_size; ++batch_iter) {
-      for (int memory_iter = 0; memory_iter < memory_size; ++memory_iter) {
+    // initialize the Tensors
+    this->input_data_training_.resize(batch_size, memory_size, n_input_nodes, n_epochs);
+    this->loss_output_data_training_.resize(batch_size, memory_size, n_loss_output_nodes, n_epochs);
+    this->metric_output_data_training_.resize(batch_size, memory_size, n_metric_output_nodes, n_epochs);
+    this->time_steps_training_.resize(batch_size, memory_size, n_epochs);
 
-        // pick a random sample group name
-        std::string sample_group_name;
-        if (train)
-          sample_group_name = selectRandomElement(this->model_training_.sample_group_names_);
-        else
-          sample_group_name = selectRandomElement(this->model_validation_.sample_group_names_);
+    // expand the training data to fit into the requested input size
+    const int expansion_factor = maxFunc(std::ceil(TensorT(batch_size * n_epochs) / TensorT(data_training.dimension(1))), 1);
+    const int over_expanded = data_training.dimension(1)*expansion_factor - batch_size * n_epochs;
+    assert(batch_size * memory_size * n_epochs == data_training.dimension(1)*expansion_factor - over_expanded);
+    Eigen::Tensor<TensorT, 2> data_training_expanded(data_training.dimension(0), data_training.dimension(1)*expansion_factor);
+    Eigen::Tensor<std::string, 2> labels_training_expanded(data_training.dimension(1)*expansion_factor, 1);
+    for (int i = 0; i < expansion_factor; ++i) {
+      // Slices for the data
+      Eigen::array<Eigen::Index, 2> offset1 = {0, i*data_training.dimension(1) };
+      Eigen::array<Eigen::Index, 2> span1 = { data_training.dimension(0), data_training.dimension(1) };
+      data_training_expanded.slice(offset1, span1) = data_training;
 
-        //// generate the input data
-        //Eigen::Tensor<TensorT, 1> conc_data(n_input_nodes);
-        //for (int nodes_iter = 0; nodes_iter < n_input_nodes; ++nodes_iter) {
-        //  conc_data(nodes_iter) = this->model_training_.calculateMAR(
-        //    this->model_training_.metabolomicsData_.at(sample_group_name),
-        //    this->model_training_.biochemicalReactions_.at(this->model_training_.reaction_ids_.at(nodes_iter)));
-        //  //input_data(batch_iter, memory_iter, nodes_iter) = mars.at(nodes_iter); // NOTE: used for testing
-        //}
-
-        //// pre-process the data
-        //if (this->log_transform_input_) {
-        //  conc_data = conc_data.log();
-        //  //std::cout << "Log transformed: \n" << conc_data << std::endl;
-        //}
-        //if (this->linear_scale_input_) {
-        //  Eigen::Tensor<TensorT, 0> min_v = conc_data.minimum();
-        //  Eigen::Tensor<TensorT, 0> max_v = conc_data.maximum();
-        //  conc_data = conc_data.unaryExpr(LinearScaleFunctor<TensorT>(min_v(0), max_v(0), 0, 1));
-        //  //std::cout << "Linear scaled: \n"<< conc_data << std::endl;
-        //}
-        //if (this->standardize_input_) {
-        //  // Calculate the mean
-        //  Eigen::Tensor<TensorT, 0> mean_v = conc_data.mean();
-        //  //std::cout << "Mean" << mean_v << std::endl;
-        //  // Calculate the variance
-        //  auto residuals = conc_data - conc_data.constant(mean_v(0));
-        //  auto ssr = residuals.pow(2).sum();
-        //  Eigen::Tensor<TensorT, 0> var_v = ssr / ssr.constant(n_input_nodes - 1);
-        //  //std::cout << "Var" << var_v << std::endl;
-        //  // Standardize
-        //  conc_data = residuals / conc_data.constant(var_v(0)).pow(0.5);
-        //  //std::cout << "Standardized: \n" << conc_data << std::endl;
-        //}
-
-        // assign the input data
-        for (int nodes_iter = 0; nodes_iter < n_input_nodes; ++nodes_iter) {
-          // Get the value and assign the input
-          TensorT value;
-          if (train)
-            value = this->model_training_.calculateMAR(
-              this->model_training_.metabolomicsData_.at(sample_group_name),
-              this->model_training_.biochemicalReactions_.at(this->model_training_.reaction_ids_.at(nodes_iter)));
-          else
-            value = this->model_validation_.calculateMAR(
-              this->model_validation_.metabolomicsData_.at(sample_group_name),
-              this->model_validation_.biochemicalReactions_.at(this->model_validation_.reaction_ids_.at(nodes_iter)));
-          input_data(batch_iter, memory_iter, nodes_iter) = value;
-
-          // Determine the fold change (if enabled) and update the input
-          if (this->use_fold_change_) {
-            TensorT ref;
-            if (train)
-              ref = this->model_training_.calculateMAR(
-                this->model_training_.metabolomicsData_.at(this->ref_fold_change_),
-                this->model_training_.biochemicalReactions_.at(this->model_training_.reaction_ids_.at(nodes_iter)));
-            else
-              ref = this->model_validation_.calculateMAR(
-                this->model_validation_.metabolomicsData_.at(this->ref_fold_change_),
-                this->model_validation_.biochemicalReactions_.at(this->model_validation_.reaction_ids_.at(nodes_iter)));
-            if (ref == 0 || value == 0) {
-              input_data(batch_iter, memory_iter, nodes_iter) = 0;
-            }
-            // Log10 is used with the assumption that the larges fold change will be on an order of ~10
-            // thus, all values will be between -1 and 1
-            TensorT fold_change = minFunc(maxFunc(std::log(value / ref) / std::log(10), -1), 1);
-            input_data(batch_iter, memory_iter, nodes_iter) = fold_change;
-          }
-        }
-
-        // convert the label to a one hot vector        
-        Eigen::Tensor<TensorT, 1> one_hot_vec((int)this->model_training_.labels_.size());
-        if (train)
-          one_hot_vec = OneHotEncoder<std::string, TensorT>(this->model_training_.metaData_.at(sample_group_name).condition, this->model_training_.labels_);
-        else
-          one_hot_vec = OneHotEncoder<std::string, TensorT>(this->model_validation_.metaData_.at(sample_group_name).condition, this->model_validation_.labels_);
-        Eigen::Tensor<TensorT, 1> one_hot_vec_smoothed = one_hot_vec.unaryExpr(LabelSmoother<TensorT>(0.01, 0.01));
-
-        // MSE or LogLoss only
-        size_t n_labels;
-        if (train)
-          n_labels = this->model_training_.labels_.size();
-        else
-          n_labels = this->model_validation_.labels_.size();
-        for (int nodes_iter = 0; nodes_iter < n_labels; ++nodes_iter) {
-          loss_output_data(batch_iter, memory_iter, nodes_iter) = one_hot_vec(nodes_iter);
-          metric_output_data(batch_iter, memory_iter, nodes_iter) = one_hot_vec(nodes_iter);
-          metric_output_data(batch_iter, memory_iter, nodes_iter + (int)n_labels) = one_hot_vec(nodes_iter);
-        }
+      // Slices for the labels
+      for (int j = 0; j < data_training.dimension(1); ++j) {
+        labels_training_expanded(i*data_training.dimension(1) + j, 0) = labels_training.at(j);
       }
+      //Eigen::array<Eigen::Index, 2> offset2 = { i*data_training.dimension(1), 0 };
+      //Eigen::array<Eigen::Index, 2> span2 = { data_training.dimension(1), 1 };
+      //Eigen::TensorMap<Eigen::Tensor<std::string, 2>> labels_2d(labels_training.data(), data_training.dimension(1), 1);
+      //labels_training_expanded.slice(offset2, span2) = labels_2d;
     }
 
-    // update the time_steps
-    time_steps.setConstant(1.0f);
-  }
-  void simulateDataClassSampleConcs(Eigen::Tensor<TensorT, 3>& input_data, Eigen::Tensor<TensorT, 3>& loss_output_data, Eigen::Tensor<TensorT, 3>& metric_output_data, Eigen::Tensor<TensorT, 2>& time_steps, const bool& train)
-  {
-    // infer data dimensions based on the input tensors
-    const int batch_size = input_data.dimension(0);
-    const int memory_size = input_data.dimension(1);
-    const int n_input_nodes = input_data.dimension(2);
-    const int n_loss_output_nodes = loss_output_data.dimension(2);
-    const int n_metric_output_nodes = metric_output_data.dimension(2);
+    // assign the input tensors
+    auto data_training_expanded_4d = data_training_expanded.slice(Eigen::array<Eigen::Index, 2>({ 0, 0 }),
+      Eigen::array<Eigen::Index, 2>({ data_training.dimension(0), data_training.dimension(1)*expansion_factor - over_expanded })
+    ).reshape(Eigen::array<Eigen::Index, 4>({ data_training.dimension(0), batch_size, memory_size, n_epochs })
+    ).shuffle(Eigen::array<Eigen::Index, 4>({1,2,0,3}));
+    this->input_data_training_ = data_training_expanded_4d;
 
-    if (train)
-      assert(n_input_nodes == this->model_training_.component_group_names_.size());
-    else
-      assert(n_input_nodes == this->model_validation_.component_group_names_.size());
-
-    for (int batch_iter = 0; batch_iter < batch_size; ++batch_iter) {
-      for (int memory_iter = 0; memory_iter < memory_size; ++memory_iter) {
-
-        // pick a random sample group name
-        std::string sample_group_name;
-        if (train)
-          sample_group_name = selectRandomElement(this->model_training_.sample_group_names_);
-        else
-          sample_group_name = selectRandomElement(this->model_validation_.sample_group_names_);
-
-        // assign the input data
-        for (int nodes_iter = 0; nodes_iter < n_input_nodes; ++nodes_iter) {
-          // Get the value and assign the input
-          TensorT value;
-          if (train)
-            value = this->model_training_.getRandomConcentration(
-              this->model_training_.metabolomicsData_.at(sample_group_name),
-              this->model_training_.component_group_names_.at(nodes_iter));
-          else
-            value = this->model_validation_.getRandomConcentration(
-              this->model_validation_.metabolomicsData_.at(sample_group_name),
-              this->model_validation_.component_group_names_.at(nodes_iter));
-          input_data(batch_iter, memory_iter, nodes_iter) = value;
-
-          // Determine the fold change (if enabled) and update the input
-          if (this->use_fold_change_) {
-            TensorT ref;
-            if (train)
-              ref = this->model_training_.getRandomConcentration(
-                this->model_training_.metabolomicsData_.at(this->ref_fold_change_),
-                this->model_training_.component_group_names_.at(nodes_iter));
-            else
-              ref = this->model_validation_.getRandomConcentration(
-                this->model_validation_.metabolomicsData_.at(this->ref_fold_change_),
-                this->model_validation_.component_group_names_.at(nodes_iter));
-            if (ref == 0 || value == 0) {
-              input_data(batch_iter, memory_iter, nodes_iter) = 0;
-            }
-            // Log10 is used with the assumption that the larges fold change will be on an order of ~10
-            // thus, all values will be between -1 and 1
-            TensorT fold_change = minFunc(maxFunc(std::log(value / ref) / std::log(10), -1), 1);
-            input_data(batch_iter, memory_iter, nodes_iter) = fold_change;
-          }
-        }
-
-        // convert the label to a one hot vector      
-        Eigen::Tensor<TensorT, 1> one_hot_vec((int)this->model_training_.labels_.size());
-        if (train)
-          one_hot_vec = OneHotEncoder<std::string, TensorT>(this->model_training_.metaData_.at(sample_group_name).condition, this->model_training_.labels_);
-        else
-          one_hot_vec = OneHotEncoder<std::string, TensorT>(this->model_validation_.metaData_.at(sample_group_name).condition, this->model_validation_.labels_);
-        Eigen::Tensor<TensorT, 1> one_hot_vec_smoothed = one_hot_vec.unaryExpr(LabelSmoother<TensorT>(0.01, 0.01));
-
-        // MSE or LogLoss only
-        size_t n_labels;
-        if (train)
-          n_labels = this->model_training_.labels_.size();
-        else
-          n_labels = this->model_validation_.labels_.size();
-        for (int nodes_iter = 0; nodes_iter < n_labels; ++nodes_iter) {
-          loss_output_data(batch_iter, memory_iter, nodes_iter) = one_hot_vec_smoothed(nodes_iter);
-          metric_output_data(batch_iter, memory_iter, nodes_iter) = one_hot_vec_smoothed(nodes_iter);
-          metric_output_data(batch_iter, memory_iter, nodes_iter + (int)n_labels) = one_hot_vec_smoothed(nodes_iter);
-        }
-      }
+    // Check that values of the data and input tensors are correctly aligned
+    Eigen::Tensor<TensorT, 1> data_training_head = data_training_expanded.slice(Eigen::array<Eigen::Index, 2>({ 0, 0 }),
+      Eigen::array<Eigen::Index, 2>({ data_training.dimension(0), 1 })
+    ).reshape(Eigen::array<Eigen::Index, 1>({ data_training.dimension(0) }));
+    Eigen::Tensor<TensorT, 1> data_training_tail = data_training_expanded.slice(Eigen::array<Eigen::Index, 2>({ 0, 0 }),
+      Eigen::array<Eigen::Index, 2>({ data_training.dimension(0), data_training.dimension(1)*expansion_factor - over_expanded })
+    ).slice(Eigen::array<Eigen::Index, 2>({ 0, batch_size * memory_size * n_epochs - 1 }),
+      Eigen::array<Eigen::Index, 2>({ data_training.dimension(0), 1 })
+    ).reshape(Eigen::array<Eigen::Index, 1>({ data_training.dimension(0) }));
+    Eigen::Tensor<TensorT, 1> input_training_head = this->input_data_training_.slice(Eigen::array<Eigen::Index, 4>({ 0, 0, 0, 0 }),
+      Eigen::array<Eigen::Index, 4>({ 1, 1, data_training.dimension(0), 1 })
+    ).reshape(Eigen::array<Eigen::Index, 1>({ data_training.dimension(0) }));
+    Eigen::Tensor<TensorT, 1> input_training_tail = this->input_data_training_.slice(Eigen::array<Eigen::Index, 4>({ batch_size - 1, memory_size - 1, 0, n_epochs - 1 }),
+      Eigen::array<Eigen::Index, 4>({ 1, 1, data_training.dimension(0), 1 })
+    ).reshape(Eigen::array<Eigen::Index, 1>({ data_training.dimension(0) }));
+    for (int i = 0; i < data_training.dimension(0); ++i) {
+      assert(data_training_head(i) == input_training_head(i));
+      assert(data_training_tail(i) == input_training_tail(i));
     }
 
-    // update the time_steps
-    time_steps.setConstant(1.0f);
-  }
-  void simulateDataClassConcs(Eigen::Tensor<TensorT, 3>& input_data, Eigen::Tensor<TensorT, 3>& loss_output_data, Eigen::Tensor<TensorT, 3>& metric_output_data, Eigen::Tensor<TensorT, 2>& time_steps, const bool& train)
-  {
-    // infer data dimensions based on the input tensors
-    const int batch_size = input_data.dimension(0);
-    const int memory_size = input_data.dimension(1);
-    const int n_input_nodes = input_data.dimension(2);
-    const int n_loss_output_nodes = loss_output_data.dimension(2);
-    const int n_metric_output_nodes = metric_output_data.dimension(2);
+    // make the one-hot encodings       
+    Eigen::Tensor<TensorT, 2> one_hot_vec = OneHotEncoder<std::string, TensorT>(labels_training_expanded, this->labels_training_);
+    //Eigen::Tensor<TensorT, 2> one_hot_vec_smoothed = one_hot_vec.unaryExpr(LabelSmoother<TensorT>(0.01, 0.01));
 
-    if (train)
-      assert(n_input_nodes == this->model_training_.component_group_names_.size());
-    else
-      assert(n_input_nodes == this->model_validation_.component_group_names_.size());
+    // assign the loss tensors
+    auto one_hot_vec_4d = one_hot_vec.slice(Eigen::array<Eigen::Index, 2>({ 0, 0 }),
+      Eigen::array<Eigen::Index, 2>({ data_training.dimension(1)*expansion_factor - over_expanded, one_hot_vec.dimension(1) })
+    ).reshape(Eigen::array<Eigen::Index, 4>({ batch_size, memory_size, n_epochs, int(labels_training_.size()) })
+    ).shuffle(Eigen::array<Eigen::Index, 4>({ 0,1,3,2 }));
+    this->loss_output_data_training_ = one_hot_vec_4d;
 
-    for (int batch_iter = 0; batch_iter < batch_size; ++batch_iter) {
-      for (int memory_iter = 0; memory_iter < memory_size; ++memory_iter) {
-
-        // pick a random sample group name
-        std::string sample_group_name;
-        int max_replicates = 0;
-        if (train) {
-          sample_group_name = selectRandomElement(this->model_training_.sample_group_names_);
-          max_replicates = this->model_training_.metabolomicsData_.at(sample_group_name).at(this->model_training_.component_group_names_.at(0)).size();
-        }
-        else {
-          sample_group_name = selectRandomElement(this->model_validation_.sample_group_names_);
-          max_replicates = this->model_validation_.metabolomicsData_.at(sample_group_name).at(this->model_validation_.component_group_names_.at(0)).size();
-        }
-
-        // pick a random replicate
-        std::vector<int> replicates;
-        for (int i = 0; i < max_replicates; ++i) {
-          replicates.push_back(i);
-        }
-        const int replicate = selectRandomElement(replicates);
-
-        // assign the input data
-        for (int nodes_iter = 0; nodes_iter < n_input_nodes; ++nodes_iter) {
-          TensorT value;
-          if (train)
-            value = this->model_training_.metabolomicsData_.at(sample_group_name).at(this->model_training_.component_group_names_.at(nodes_iter)).at(replicate).calculated_concentration;
-          else
-            value = this->model_validation_.metabolomicsData_.at(sample_group_name).at(this->model_validation_.component_group_names_.at(nodes_iter)).at(replicate).calculated_concentration;
-          input_data(batch_iter, memory_iter, nodes_iter) = value;
-
-          // Determine the fold change (if enabled) and update the input
-          if (this->use_fold_change_) {
-            TensorT ref;
-            if (train)
-              ref = this->model_training_.metabolomicsData_.at(this->ref_fold_change_).at(this->model_training_.component_group_names_.at(nodes_iter)).at(replicate).calculated_concentration;
-            else
-              ref = this->model_validation_.metabolomicsData_.at(this->ref_fold_change_).at(this->model_validation_.component_group_names_.at(nodes_iter)).at(replicate).calculated_concentration;
-            if (ref == 0 || value == 0) {
-              input_data(batch_iter, memory_iter, nodes_iter) = 0;
-            }
-            // Log10 is used with the assumption that the largest fold change will be on an order of ~10
-            // thus, all values will be between -1 and 1
-            TensorT fold_change = minFunc(maxFunc(std::log(value / ref) / std::log(10), -1), 1);
-            input_data(batch_iter, memory_iter, nodes_iter) = fold_change;
-          }
-        }
-
-        // convert the label to a one hot vector      
-        Eigen::Tensor<TensorT, 1> one_hot_vec((int)this->model_training_.labels_.size());
-        if (train)
-          one_hot_vec = OneHotEncoder<std::string, TensorT>(this->model_training_.metaData_.at(sample_group_name).condition, this->model_training_.labels_);
-        else
-          one_hot_vec = OneHotEncoder<std::string, TensorT>(this->model_validation_.metaData_.at(sample_group_name).condition, this->model_validation_.labels_);
-        Eigen::Tensor<TensorT, 1> one_hot_vec_smoothed = one_hot_vec.unaryExpr(LabelSmoother<TensorT>(0.01, 0.01));
-
-        // MSE or LogLoss only
-        size_t n_labels;
-        if (train)
-          n_labels = this->model_training_.labels_.size();
-        else
-          n_labels = this->model_validation_.labels_.size();
-        for (int nodes_iter = 0; nodes_iter < n_labels; ++nodes_iter) {
-          loss_output_data(batch_iter, memory_iter, nodes_iter) = one_hot_vec_smoothed(nodes_iter);
-          metric_output_data(batch_iter, memory_iter, nodes_iter) = one_hot_vec_smoothed(nodes_iter);
-          metric_output_data(batch_iter, memory_iter, nodes_iter + (int)n_labels) = one_hot_vec_smoothed(nodes_iter);
-        }
-      }
+    // Check that values of the labels and output tensors are correctly aligned
+    Eigen::Tensor<TensorT, 1> labels_training_head = one_hot_vec.slice(Eigen::array<Eigen::Index, 2>({ 0, 0 }),
+      Eigen::array<Eigen::Index, 2>({ 1, int(labels_training_.size()) })
+    ).reshape(Eigen::array<Eigen::Index, 1>({ int(labels_training_.size()) }));
+    Eigen::Tensor<TensorT, 1> labels_training_tail = one_hot_vec.slice(Eigen::array<Eigen::Index, 2>({ 0, 0 }),
+      Eigen::array<Eigen::Index, 2>({ data_training.dimension(1)*expansion_factor - over_expanded, one_hot_vec.dimension(1) })
+    ).slice(Eigen::array<Eigen::Index, 2>({ batch_size * memory_size * n_epochs - 1, 0 }),
+      Eigen::array<Eigen::Index, 2>({ 1, int(labels_training_.size()) })
+    ).reshape(Eigen::array<Eigen::Index, 1>({ int(labels_training_.size()) }));
+    Eigen::Tensor<TensorT, 1> loss_training_head = this->loss_output_data_training_.slice(Eigen::array<Eigen::Index, 4>({ 0, 0, 0, 0 }),
+      Eigen::array<Eigen::Index, 4>({ 1, 1, int(labels_training_.size()), 1 })
+    ).reshape(Eigen::array<Eigen::Index, 1>({ int(labels_training_.size()) }));
+    Eigen::Tensor<TensorT, 1> loss_training_tail = this->loss_output_data_training_.slice(Eigen::array<Eigen::Index, 4>({ batch_size - 1, memory_size - 1, 0, n_epochs - 1 }),
+      Eigen::array<Eigen::Index, 4>({ 1, 1, int(labels_training_.size()), 1 })
+    ).reshape(Eigen::array<Eigen::Index, 1>({ int(labels_training_.size()) }));
+    for (int i = 0; i < int(labels_training_.size()); ++i) {
+      assert(labels_training_head(i) == loss_training_head(i));
+      assert(labels_training_tail(i) == loss_training_tail(i));
     }
 
-    // update the time_steps
-    time_steps.setConstant(1.0f);
+    // assign the metric tensors
+    this->metric_output_data_training_.slice(Eigen::array<Eigen::Index, 4>({ 0, 0, 0, 0 }),
+      Eigen::array<Eigen::Index, 4>({ batch_size, memory_size, int(labels_training_.size()), n_epochs })) = one_hot_vec_4d;
+    this->metric_output_data_training_.slice(Eigen::array<Eigen::Index, 4>({ 0, 0, int(labels_training_.size()), 0 }),
+      Eigen::array<Eigen::Index, 4>({ batch_size, memory_size, int(labels_training_.size()), n_epochs })) = one_hot_vec_4d;
   }
-  void simulateTrainingData(Eigen::Tensor<TensorT, 3>& input_data, Eigen::Tensor<TensorT, 3>& loss_output_data, Eigen::Tensor<TensorT, 3>& metric_output_data, Eigen::Tensor<TensorT, 2>& time_steps) {
-    if (simulate_MARs_) simulateDataClassMARs(input_data, loss_output_data, metric_output_data, time_steps, true);
-    else if (sample_concs_) simulateDataClassSampleConcs(input_data, loss_output_data, metric_output_data, time_steps, true);
-    else simulateDataClassConcs(input_data, loss_output_data, metric_output_data, time_steps, true);
-  }
-  void simulateValidationData(Eigen::Tensor<TensorT, 3>& input_data, Eigen::Tensor<TensorT, 3>& loss_output_data, Eigen::Tensor<TensorT, 3>& metric_output_data, Eigen::Tensor<TensorT, 2>& time_steps) {
-    if (simulate_MARs_) simulateDataClassMARs(input_data, loss_output_data, metric_output_data, time_steps, false);
-    else if (sample_concs_) simulateDataClassSampleConcs(input_data, loss_output_data, metric_output_data, time_steps, false);
-    else simulateDataClassConcs(input_data, loss_output_data, metric_output_data, time_steps, false);
-  }
+  void makeValidationDataForCache(const std::vector<std::string>& features, const Eigen::Tensor<TensorT, 2>& data_validation, const std::vector<std::string>& labels_validation,
+    const int& n_epochs, const int& batch_size, const int& memory_size,
+    const int& n_input_nodes, const int& n_loss_output_nodes, const int& n_metric_output_nodes) override {
 
-  BiochemicalReactionModel<TensorT> model_training_;
-  BiochemicalReactionModel<TensorT> model_validation_;
-  //bool log_transform_input_ = false;
-  //bool linear_scale_input_ = false;
-  //bool standardize_input_ = false;
-  bool sample_concs_ = false;
-  bool simulate_MARs_ = true;
-  bool use_fold_change_ = false;
-  std::string ref_fold_change_ = "";
+    // infer the input sizes
+    const int input_nodes = data_validation.dimension(0);
+    assert(n_input_nodes == input_nodes);
+    assert(n_loss_output_nodes == labels_validation_.size());
+    assert(n_metric_output_nodes == 2 * labels_validation_.size()); // accuracy and precision
+    assert(data_validation.dimension(0) == features.size());
+    assert(data_validation.dimension(1) == labels_validation.size());
+
+    // initialize the Tensors
+    this->input_data_validation_.resize(batch_size, memory_size, n_input_nodes, n_epochs);
+    this->loss_output_data_validation_.resize(batch_size, memory_size, n_loss_output_nodes, n_epochs);
+    this->metric_output_data_validation_.resize(batch_size, memory_size, n_metric_output_nodes, n_epochs);
+    this->time_steps_validation_.resize(batch_size, memory_size, n_epochs);
+
+    // expand the validation data to fit into the requested input size
+    const int expansion_factor = maxFunc(std::ceil(TensorT(batch_size * n_epochs) / TensorT(data_validation.dimension(1))), 1);
+    const int over_expanded = data_validation.dimension(1)*expansion_factor - batch_size * n_epochs;
+    assert(batch_size * memory_size * n_epochs == data_validation.dimension(1)*expansion_factor - over_expanded);
+    Eigen::Tensor<TensorT, 2> data_validation_expanded(data_validation.dimension(0), data_validation.dimension(1)*expansion_factor);
+    Eigen::Tensor<std::string, 2> labels_validation_expanded(data_validation.dimension(1)*expansion_factor, 1);
+    for (int i = 0; i < expansion_factor; ++i) {
+      // Slices for the data
+      Eigen::array<Eigen::Index, 2> offset1 = { 0, i*data_validation.dimension(1) };
+      Eigen::array<Eigen::Index, 2> span1 = { data_validation.dimension(0), data_validation.dimension(1) };
+      data_validation_expanded.slice(offset1, span1) = data_validation;
+
+      // Slices for the labels
+      for (int j = 0; j < data_validation.dimension(1); ++j) {
+        labels_validation_expanded(i*data_validation.dimension(1) + j, 0) = labels_validation.at(j);
+      }
+      //Eigen::array<Eigen::Index, 2> offset2 = { i*data_validation.dimension(1), 0 };
+      //Eigen::array<Eigen::Index, 2> span2 = { data_validation.dimension(1), 1 };
+      //Eigen::TensorMap<Eigen::Tensor<std::string, 2>> labels_2d(labels_validation.data(), data_validation.dimension(1), 1);
+      //labels_validation_expanded.slice(offset2, span2) = labels_2d;
+    }
+
+    // assign the input tensors
+    auto data_validation_expanded_4d = data_validation_expanded.slice(Eigen::array<Eigen::Index, 2>({ 0, 0 }),
+      Eigen::array<Eigen::Index, 2>({ data_validation.dimension(0), data_validation.dimension(1)*expansion_factor - over_expanded })
+    ).reshape(Eigen::array<Eigen::Index, 4>({ data_validation.dimension(0), batch_size, memory_size, n_epochs })
+    ).shuffle(Eigen::array<Eigen::Index, 4>({ 1,2,0,3 }));
+    this->input_data_validation_ = data_validation_expanded_4d;
+
+    // make the one-hot encodings       
+    Eigen::Tensor<TensorT, 2> one_hot_vec = OneHotEncoder<std::string, TensorT>(labels_validation_expanded, this->labels_validation_);
+    //Eigen::Tensor<TensorT, 2> one_hot_vec_smoothed = one_hot_vec.unaryExpr(LabelSmoother<TensorT>(0.01, 0.01));
+
+    // assign the loss tensors
+    auto one_hot_vec_4d = one_hot_vec.slice(Eigen::array<Eigen::Index, 2>({ 0, 0 }),
+      Eigen::array<Eigen::Index, 2>({ data_validation.dimension(1)*expansion_factor - over_expanded, one_hot_vec.dimension(1) })
+    ).reshape(Eigen::array<Eigen::Index, 4>({ batch_size, memory_size, n_epochs, int(labels_validation_.size()) })
+    ).shuffle(Eigen::array<Eigen::Index, 4>({ 0,1,3,2 }));
+    this->loss_output_data_validation_ = one_hot_vec_4d;
+
+    // assign the metric tensors
+    this->metric_output_data_validation_.slice(Eigen::array<Eigen::Index, 4>({ 0, 0, 0, 0 }),
+      Eigen::array<Eigen::Index, 4>({ batch_size, memory_size, int(labels_validation_.size()), n_epochs })) = one_hot_vec_4d;
+    this->metric_output_data_validation_.slice(Eigen::array<Eigen::Index, 4>({ 0, 0, int(labels_validation_.size()), 0 }),
+      Eigen::array<Eigen::Index, 4>({ batch_size, memory_size, int(labels_validation_.size()), n_epochs })) = one_hot_vec_4d;
+  }
 };
 
 template<typename TensorT>
@@ -492,14 +353,21 @@ void main_classification(const std::string& data_dir, const std::string& biochem
   const bool& make_model = true, const bool& train_model = true, const int& norm_method = 0,
   const bool& simulate_MARs = true, const bool& sample_concs = true, const bool& use_fold_change = false, const std::string& fold_change_ref = "Evo04")
 {
+  // global local variables
+  const int n_epochs = 100;// 100000;
+  const int batch_size = 64;
+  const int memory_size = 1;
+  const bool fill_sampling = false;
+  const bool fill_mean = false;
+  const bool fill_zero = true;
+  const int n_reps_per_sample = n_epochs * batch_size / 4;
+
   // define the data simulator
   BiochemicalReactionModel<float> reaction_model;
   MetDataSimClassification<float> metabolomics_data;
   std::string model_name = "0_Metabolomics";
 
-  // Read in the training and validation data
-
-  // Training data
+  // Read in the training data
   reaction_model.readBiochemicalReactions(biochem_rxns_filename, true);
   reaction_model.readMetabolomicsData(metabo_data_filename_train);
   reaction_model.readMetaData(meta_data_filename_train);
@@ -511,9 +379,48 @@ void main_classification(const std::string& data_dir, const std::string& biochem
     reaction_model.removeRedundantMARs();
   }
   reaction_model.findLabels();
-  metabolomics_data.model_training_ = reaction_model;
+  const int n_reaction_ids_training = reaction_model.reaction_ids_.size();
+  const int n_labels_training = reaction_model.labels_.size();
+  const int n_component_group_names_training = reaction_model.component_group_names_.size();
+  metabolomics_data.labels_training_ = reaction_model.labels_;
 
-  // Validation data
+  // Make the training data caches
+  std::map<std::string, int> sample_group_name_to_reps;
+  std::pair<int, int> max_reps_n_labels = reaction_model.getMaxReplicatesAndNLabels(sample_group_name_to_reps, reaction_model.sample_group_names_, reaction_model.component_group_names_);
+  if (sample_concs) {
+    for (auto& sample_group_name_to_rep : sample_group_name_to_reps) sample_group_name_to_rep.second = n_reps_per_sample;
+    std::vector<std::string> metabo_labels;
+    metabo_labels.reserve(n_reps_per_sample * sample_group_name_to_reps.size());
+    Eigen::Tensor<float, 2> metabo_data(int(reaction_model.component_group_names_.size()), n_reps_per_sample * sample_group_name_to_reps.size());
+    reaction_model.getMetDataAsTensors(metabo_data, metabo_labels,
+      reaction_model.sample_group_names_, reaction_model.component_group_names_, reaction_model.sample_group_name_to_label_, sample_group_name_to_reps,
+      true, false, true, false, false, false, false, use_fold_change, fold_change_ref, 10);
+    metabolomics_data.makeTrainingDataForCache(reaction_model.component_group_names_, metabo_data, metabo_labels, n_epochs, batch_size, memory_size,
+      reaction_model.component_group_names_.size(), reaction_model.labels_.size(), 2 * reaction_model.labels_.size());
+  }
+  else if (simulate_MARs) {
+    for (auto& sample_group_name_to_rep : sample_group_name_to_reps) sample_group_name_to_rep.second = n_reps_per_sample;
+    std::vector<std::string> metabo_labels;
+    metabo_labels.reserve(n_reps_per_sample * sample_group_name_to_reps.size());
+    Eigen::Tensor<float, 2> metabo_data(int(reaction_model.reaction_ids_.size()), n_reps_per_sample * sample_group_name_to_reps.size());
+    reaction_model.getMetDataAsTensors(metabo_data, metabo_labels,
+      reaction_model.sample_group_names_, reaction_model.reaction_ids_, reaction_model.sample_group_name_to_label_, sample_group_name_to_reps,
+      false, true, true, false, false, false, false, use_fold_change, fold_change_ref, 10);
+    metabolomics_data.makeTrainingDataForCache(reaction_model.reaction_ids_, metabo_data, metabo_labels, n_epochs, batch_size, memory_size,
+      reaction_model.reaction_ids_.size(), reaction_model.labels_.size(), 2 * reaction_model.labels_.size());
+  }
+  else {
+    std::vector<std::string> metabo_labels;
+    metabo_labels.reserve(max_reps_n_labels.second);
+    Eigen::Tensor<float, 2> metabo_data(int(reaction_model.component_group_names_.size()), max_reps_n_labels.second);
+    reaction_model.getMetDataAsTensors(metabo_data, metabo_labels,
+      reaction_model.sample_group_names_, reaction_model.component_group_names_, reaction_model.sample_group_name_to_label_, sample_group_name_to_reps,
+      true, false, false, true, fill_sampling, fill_mean, fill_zero, use_fold_change, fold_change_ref, 10);
+    metabolomics_data.makeTrainingDataForCache(reaction_model.component_group_names_, metabo_data, metabo_labels, n_epochs, batch_size, memory_size,
+      reaction_model.component_group_names_.size(), reaction_model.labels_.size(), 2 * reaction_model.labels_.size());
+  }
+
+  // Read in the validation data
   reaction_model.clear();
   reaction_model.readBiochemicalReactions(biochem_rxns_filename, true);
   reaction_model.readMetabolomicsData(metabo_data_filename_test);
@@ -526,16 +433,51 @@ void main_classification(const std::string& data_dir, const std::string& biochem
     reaction_model.removeRedundantMARs();
   }
   reaction_model.findLabels();
-  metabolomics_data.model_validation_ = reaction_model;
-  metabolomics_data.simulate_MARs_ = simulate_MARs;
-  metabolomics_data.sample_concs_ = sample_concs;
-  metabolomics_data.use_fold_change_ = use_fold_change;
-  metabolomics_data.ref_fold_change_ = fold_change_ref;
+  const int n_reaction_ids_validation = reaction_model.reaction_ids_.size();
+  const int n_labels_validation = reaction_model.labels_.size();
+  const int n_component_group_names_validation = reaction_model.component_group_names_.size();
+  metabolomics_data.labels_validation_ = reaction_model.labels_;
+
+  // Make the validation data caches
+  sample_group_name_to_reps.clear();
+  max_reps_n_labels = reaction_model.getMaxReplicatesAndNLabels(sample_group_name_to_reps, reaction_model.sample_group_names_, reaction_model.component_group_names_);
+  if (sample_concs) {
+    for (auto& sample_group_name_to_rep : sample_group_name_to_reps) sample_group_name_to_rep.second = n_reps_per_sample;
+    std::vector<std::string> metabo_labels;
+    metabo_labels.reserve(n_reps_per_sample * sample_group_name_to_reps.size());
+    Eigen::Tensor<float, 2> metabo_data(int(reaction_model.component_group_names_.size()), n_reps_per_sample * sample_group_name_to_reps.size());
+    reaction_model.getMetDataAsTensors(metabo_data, metabo_labels,
+      reaction_model.sample_group_names_, reaction_model.component_group_names_, reaction_model.sample_group_name_to_label_, sample_group_name_to_reps,
+      true, false, true, false, false, false, false, use_fold_change, fold_change_ref, 10);
+    metabolomics_data.makeValidationDataForCache(reaction_model.component_group_names_, metabo_data, metabo_labels, n_epochs, batch_size, memory_size,
+      reaction_model.component_group_names_.size(), reaction_model.labels_.size(), 2 * reaction_model.labels_.size());
+  }
+  else if (simulate_MARs) {
+    for (auto& sample_group_name_to_rep : sample_group_name_to_reps) sample_group_name_to_rep.second = n_reps_per_sample;
+    std::vector<std::string> metabo_labels;
+    metabo_labels.reserve(n_reps_per_sample * sample_group_name_to_reps.size());
+    Eigen::Tensor<float, 2> metabo_data(int(reaction_model.reaction_ids_.size()), n_reps_per_sample * sample_group_name_to_reps.size());
+    reaction_model.getMetDataAsTensors(metabo_data, metabo_labels,
+      reaction_model.sample_group_names_, reaction_model.reaction_ids_, reaction_model.sample_group_name_to_label_, sample_group_name_to_reps,
+      false, true, true, false, false, false, false, use_fold_change, fold_change_ref, 10);
+    metabolomics_data.makeValidationDataForCache(reaction_model.reaction_ids_, metabo_data, metabo_labels, n_epochs, batch_size, memory_size,
+      reaction_model.reaction_ids_.size(), reaction_model.labels_.size(), 2 * reaction_model.labels_.size());
+  }
+  else {
+    std::vector<std::string> metabo_labels;
+    metabo_labels.reserve(max_reps_n_labels.second);
+    Eigen::Tensor<float, 2> metabo_data(int(reaction_model.component_group_names_.size()), max_reps_n_labels.second);
+    reaction_model.getMetDataAsTensors(metabo_data, metabo_labels,
+      reaction_model.sample_group_names_, reaction_model.component_group_names_, reaction_model.sample_group_name_to_label_, sample_group_name_to_reps,
+      true, false, false, true, fill_sampling, fill_mean, fill_zero, use_fold_change, fold_change_ref, 10);
+    metabolomics_data.makeValidationDataForCache(reaction_model.component_group_names_, metabo_data, metabo_labels, n_epochs, batch_size, memory_size,
+      reaction_model.component_group_names_.size(), reaction_model.labels_.size(), 2 * reaction_model.labels_.size());
+  }
 
   // Checks for the training and validation data
-  assert(metabolomics_data.model_validation_.reaction_ids_.size() == metabolomics_data.model_training_.reaction_ids_.size());
-  assert(metabolomics_data.model_validation_.labels_.size() == metabolomics_data.model_training_.labels_.size());
-  assert(metabolomics_data.model_validation_.component_group_names_.size() == metabolomics_data.model_training_.component_group_names_.size());
+  assert(n_reaction_ids_training == n_reaction_ids_validation);
+  assert(n_labels_training == n_labels_validation);
+  assert(n_component_group_names_training == n_component_group_names_validation);
 
   // define the model input/output nodes
   int n_input_nodes;
@@ -565,9 +507,9 @@ void main_classification(const std::string& data_dir, const std::string& biochem
   ModelResources model_resources = { ModelDevice(1, 1) };
   ModelInterpreterDefaultDevice<float> model_interpreter(model_resources);
   ModelTrainerExt<float> model_trainer;
-  model_trainer.setBatchSize(64);
-  model_trainer.setMemorySize(1);
-  model_trainer.setNEpochsTraining(100000);
+  model_trainer.setBatchSize(batch_size);
+  model_trainer.setMemorySize(memory_size);
+  model_trainer.setNEpochsTraining(n_epochs);
   model_trainer.setNEpochsValidation(0);
   model_trainer.setVerbosityLevel(1);
   model_trainer.setLogging(true, false, false);
@@ -653,12 +595,12 @@ void calculateInputLayer0Correlation() {
 int main(int argc, char** argv)
 {
   // Set the data directories
-  //const std::string data_dir = "C:/Users/dmccloskey/Dropbox (UCSD SBRG)/Metabolomics_KALE/";
+  std::string data_dir = "C:/Users/dmccloskey/Dropbox (UCSD SBRG)/Metabolomics_KALE/";
   //const std::string data_dir = "C:/Users/domccl/Dropbox (UCSD SBRG)/Metabolomics_KALE/";
   //std::string data_dir = "C:/Users/dmccloskey/Documents/GitHub/mnist/";
 
   // Initialize the defaults
-  std::string data_dir = "";
+  //std::string data_dir = "";
   std::string biochem_rxns_filename = data_dir + "iJO1366.csv";
   std::string metabo_data_filename_train = data_dir + "ALEsKOs01_Metabolomics_train.csv"; // IndustrialStrains0103_
   std::string meta_data_filename_train = data_dir + "ALEsKOs01_MetaData_train.csv";
