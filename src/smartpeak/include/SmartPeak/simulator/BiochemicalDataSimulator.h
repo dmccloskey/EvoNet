@@ -51,10 +51,8 @@ namespace SmartPeak
     */
     void transformTrainingAndValidationDataOffline(Eigen::Tensor<TensorT, 2>& data_training, Eigen::Tensor<TensorT, 2>& data_validation, 
       const bool& linear_scale, const bool & log_transform, const bool& standardize,
-      const int& min_value_training = -1,
-      const int& max_value_training = -1,
-      const int& mean_value_training = -1,
-      const int& var_value_training = -1);
+      const bool& use_min_max_linear_scale = false, const int& min_value_training = -1, const int& max_value_training = -1,
+      const bool& use_mean_var_standardize = false, const int& mean_value_training = -1, const int& var_value_training = -1);
 
     /*
     @brief Transform the training and validation data.
@@ -138,10 +136,8 @@ namespace SmartPeak
   template<typename TensorT>
   inline void BiochemicalDataSimulator<TensorT>::transformTrainingAndValidationDataOffline(Eigen::Tensor<TensorT, 2>& data_training, Eigen::Tensor<TensorT, 2>& data_validation, 
     const bool & linear_scale, const bool & log_transform, const bool & standardize,
-    const int& min_value_training,
-    const int& max_value_training,
-    const int& mean_value_training,
-    const int& var_value_training)
+    const bool& use_min_max_linear_scale, const int& min_value_training, const int& max_value_training,
+    const bool& use_mean_var_standardize, const int& mean_value_training, const int& var_value_training)
   {
     // Estimate the parameters from the training data and apply to the training data
     // Apply the training data paremeters to the validation data
@@ -151,14 +147,14 @@ namespace SmartPeak
     }
     if (standardize) {
       Standardize<TensorT, 2> standardizeTrans;
-      if (mean_value_training != -1 && var_value_training != -1) standardizeTrans.setMeanAndVar(mean_value_training, var_value_training);
+      if (use_mean_var_standardize) standardizeTrans.setMeanAndVar(mean_value_training, var_value_training);
       else standardizeTrans.setMeanAndVar(data_training);
       data_training = standardizeTrans(data_training);
       data_validation = standardizeTrans(data_validation);
     }
     if (linear_scale) {
       LinearScale<TensorT, 2> linearScaleTrans(0, 1);
-      if (min_value_training != -1 && max_value_training != -1) linearScaleTrans.setDomain(min_value_training, max_value_training);
+      if (use_min_max_linear_scale) linearScaleTrans.setDomain(min_value_training, max_value_training);
       else linearScaleTrans.setDomain(data_training);
       data_training = linearScaleTrans(data_training);
       data_validation = linearScaleTrans(data_validation);
