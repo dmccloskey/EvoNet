@@ -104,7 +104,7 @@ public:
             }
             // Log10 is used with the assumption that the larges fold change will be on an order of ~10
             // thus, all values will be between -1 and 1
-            TensorT fold_change = minFunc(maxFunc(std::log(value / ref) / std::log(10), -1), 1);
+            TensorT fold_change = minFunc(maxFunc(std::log(value / ref) / std::log(100), -1), 1);
             input_data(batch_iter, memory_iter, nodes_iter) = fold_change;
           }
         }
@@ -188,7 +188,7 @@ public:
             }
             // Log10 is used with the assumption that the larges fold change will be on an order of ~10
             // thus, all values will be between -1 and 1
-            TensorT fold_change = minFunc(maxFunc(std::log(value / ref) / std::log(10), -1), 1);
+            TensorT fold_change = minFunc(maxFunc(std::log(value / ref) / std::log(100), -1), 1);
             input_data(batch_iter, memory_iter, nodes_iter) = fold_change;
           }
         }
@@ -275,7 +275,7 @@ public:
             }
             // Log10 is used with the assumption that the largest fold change will be on an order of ~10
             // thus, all values will be between -1 and 1
-            TensorT fold_change = minFunc(maxFunc(std::log(value / ref) / std::log(10), -1), 1);
+            TensorT fold_change = minFunc(maxFunc(std::log(value / ref) / std::log(100), -1), 1);
             input_data(batch_iter, memory_iter, nodes_iter) = fold_change;
           }
         }

@@ -1822,7 +1822,7 @@ namespace SmartPeak
 			int iter = 0;
 			std::vector<OperationList<TensorT>> FP_operations_expanded;
 			if (preserve_OoO) 
-				getFPOpsOoO_(model, FP_operations_expanded, iter); // TODO: remove `find_cycles`
+				getFPOpsOoO_(model, FP_operations_expanded, iter);
 			else
 				getFPOpsGraph_(model, FP_operations_expanded, iter);
 
