@@ -47,6 +47,7 @@ BOOST_AUTO_TEST_CASE(constructor2)
 
 BOOST_AUTO_TEST_CASE(gettersAndSetters) 
 {
+  // TODO: This is not complete (e.g., cyclic_pairs_ getter/setter)
   Model<float> model;
   model.setId(1);
   model.setName("model1");

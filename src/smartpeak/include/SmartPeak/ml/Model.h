@@ -250,7 +250,8 @@ public:
 		std::list<int>* convertToAdjacencyList(std::map<int, std::string>& node_id_map, int& node_cnt);
 		void findCycles();
 
-		std::set<std::pair<std::string, std::string>>& getCyclicPairs();
+    void addCyclicPairs(const std::pair<std::string, std::string>& cyclic_pair);
+		std::set<std::pair<std::string, std::string>> getCyclicPairs() const;
 
 		void setError(const Eigen::Tensor<TensorT, 2> model_error); ///< model_error setter
 		Eigen::Tensor<TensorT, 2> getError() const; ///< model_error getter
@@ -966,8 +967,14 @@ public:
 		}
 	}
 
-	template<typename TensorT>
-	inline std::set<std::pair<std::string, std::string>>& Model<TensorT>::getCyclicPairs()
+  template<typename TensorT>
+  inline void Model<TensorT>::addCyclicPairs(const std::pair<std::string, std::string>& cyclic_pair)
+  {
+    cyclic_pairs_.insert(cyclic_pair);
+  }
+
+  template<typename TensorT>
+	inline std::set<std::pair<std::string, std::string>> Model<TensorT>::getCyclicPairs() const
 	{
 		return cyclic_pairs_;
 	}

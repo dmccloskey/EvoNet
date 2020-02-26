@@ -451,7 +451,7 @@ void main_MNIST(const std::string& data_dir, const bool& make_model, const bool&
   data_simulator.n_input_nodes_ = n_input_nodes;
 
   // Model architecture config 0
-  const std::size_t n_blocks_1 = 128;
+  const std::size_t n_blocks_1 = 2;
   const std::size_t n_cells_1 = 1;
   const std::size_t n_blocks_2 = 0;
   const std::size_t n_cells_2 = 1;
