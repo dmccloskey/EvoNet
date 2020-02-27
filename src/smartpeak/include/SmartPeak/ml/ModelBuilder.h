@@ -2696,6 +2696,7 @@ public:
 
 			model.addWeights({ weight_OMultToI });
 			model.addLinks({ link_OMultToI });
+      if (specify_cyclic_pairs) model.addCyclicPairs(std::make_pair(blockOutput_name, blockInput_name));
 
 			// Make the link between the output multiplier node and the input gate
 			char weight_OMultToIGate_name_char[512];
@@ -2715,6 +2716,7 @@ public:
 
 			model.addWeights({ weight_OMultToIGate });
 			model.addLinks({ link_OMultToIGate });
+      if (specify_cyclic_pairs) model.addCyclicPairs(std::make_pair(blockOutput_name, blockGateInput_name));
 
       // Make the forget gate multiplier node
       char blockMultForget_name_char[512];
@@ -2753,6 +2755,7 @@ public:
 
 				model.addWeights({ weight_OMultToFGate });
 				model.addLinks({ link_OMultToFGate });
+        if (specify_cyclic_pairs) model.addCyclicPairs(std::make_pair(blockOutput_name, blockGateForget_name));
 			}
 
       // Make the link from forget gate multiplier node to memory cell
@@ -2763,6 +2766,7 @@ public:
       Link link_fMultToMemCell(link_fMultToMemCell_name, blockMultForget_name, blockMemoryCell_name, unity_weight_name);
       link_fMultToMemCell.setModuleName(module_name);
       model.addLinks({ link_fMultToMemCell });
+      if (specify_cyclic_pairs) model.addCyclicPairs(std::make_pair(blockMultForget_name, blockMemoryCell_name));
 
       // Make the link from memory cell to forget gate multiplier node
       unity_weight_name = makeUnityWeight(model, 1.0, module_name, "%s_to_%s", blockMemoryCell_name, blockMultForget_name);
@@ -2791,6 +2795,7 @@ public:
 
 			model.addWeights({ weight_OMultToOGate });
 			model.addLinks({ link_OMultToOGate });
+      if (specify_cyclic_pairs) model.addCyclicPairs(std::make_pair(blockOutput_name, blockGateOutput_name));
 
 			if (biases) {  // biases, links, and weights for input
 				// Make the input bias nodes
