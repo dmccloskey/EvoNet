@@ -187,7 +187,11 @@ void main_classification(const std::string& data_dir, const std::string& biochem
   const int batch_size = 64;
   const int memory_size = 1;
   const int n_reps_per_sample = 1000;
-  std::string model_name = "0_Metabolomics";
+  //std::string model_name = "MetClass_" + std::to_string(use_concentrations) + "-" + std::to_string(use_MARs) + "-" + std::to_string(sample_values) + "-" + std::to_string(iter_values) + "-"
+  //  + std::to_string(fill_sampling) + "-" + std::to_string(fill_mean) + "-" + std::to_string(fill_zero) + "-" + std::to_string(apply_fold_change) + "-" + std::to_string(fold_change_log_base) + "-"
+  //  + std::to_string(offline_linear_scale_input) + "-" + std::to_string(offline_log_transform_input) + "-" + std::to_string(offline_standardize_input) + "-"
+  //  + std::to_string(online_linear_scale_input) + "-" + std::to_string(online_log_transform_input) + "-" + std::to_string(online_standardize_input);
+  std::string model_name = "Classifier";
 
   // define the data simulator
   std::cout << "Making the training and validation data..." << std::endl;
@@ -258,7 +262,7 @@ void main_classification(const std::string& data_dir, const std::string& biochem
   else {
     // TODO
   }
-  model.setName(data_dir + "Classifier"); //So that all output will be written to a specific directory
+  model.setName(data_dir + model_name); //So that all output will be written to a specific directory
 
   // Train the model
   std::cout << "Training the model..." << std::endl;
@@ -296,12 +300,12 @@ void calculateInputLayer0Correlation() {
 int main(int argc, char** argv)
 {
   // Set the data directories
-  std::string data_dir = "C:/Users/dmccloskey/Dropbox (UCSD SBRG)/Metabolomics_KALE/";
+  //std::string data_dir = "C:/Users/dmccloskey/Dropbox (UCSD SBRG)/Metabolomics_KALE/";
   //const std::string data_dir = "C:/Users/domccl/Dropbox (UCSD SBRG)/Metabolomics_KALE/";
   //std::string data_dir = "C:/Users/dmccloskey/Documents/GitHub/mnist/";
 
   // Initialize the defaults
-  //std::string data_dir = "";
+  std::string data_dir = "";
   std::string biochem_rxns_filename = data_dir + "iJO1366.csv";
   std::string metabo_data_filename_train = data_dir + "ALEsKOs01_Metabolomics_train.csv"; // IndustrialStrains0103_
   std::string meta_data_filename_train = data_dir + "ALEsKOs01_MetaData_train.csv";
@@ -332,19 +336,19 @@ int main(int argc, char** argv)
     data_dir = argv[1];
   }
   if (argc >= 3) {
-    biochem_rxns_filename = data_dir + argv[2];
+    biochem_rxns_filename = argv[2];
   }
   if (argc >= 4) {
-    metabo_data_filename_train = data_dir + argv[3];
+    metabo_data_filename_train = argv[3];
   }
   if (argc >= 5) {
-    meta_data_filename_train = data_dir + argv[4];
+    meta_data_filename_train = argv[4];
   }
   if (argc >= 6) {
-    metabo_data_filename_test = data_dir + argv[5];
+    metabo_data_filename_test = argv[5];
   }
   if (argc >= 7) {
-    meta_data_filename_test = data_dir + argv[6];
+    meta_data_filename_test = argv[6];
   }
   if (argc >= 8) {
     make_model = (argv[7] == std::string("true")) ? true : false;
