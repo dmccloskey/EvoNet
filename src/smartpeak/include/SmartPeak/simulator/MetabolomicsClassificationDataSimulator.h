@@ -103,27 +103,27 @@ namespace SmartPeak
     ).shuffle(Eigen::array<Eigen::Index, 4>({ 1,2,0,3 }));
     this->input_data_training_ = data_training_expanded_4d;
 
-    // Check that values of the data and input tensors are correctly aligned
-    Eigen::Tensor<TensorT, 1> data_training_head = data_training_expanded.slice(Eigen::array<Eigen::Index, 2>({ 0, 0 }),
-      Eigen::array<Eigen::Index, 2>({ data_training.dimension(0), 1 })
-    ).reshape(Eigen::array<Eigen::Index, 1>({ data_training.dimension(0) }));
-    Eigen::Tensor<TensorT, 1> data_training_tail = data_training_expanded.slice(Eigen::array<Eigen::Index, 2>({ 0, 0 }),
-      Eigen::array<Eigen::Index, 2>({ data_training.dimension(0), data_training.dimension(1)*expansion_factor - over_expanded })
-    ).slice(Eigen::array<Eigen::Index, 2>({ 0, batch_size * memory_size * n_epochs - 1 }),
-      Eigen::array<Eigen::Index, 2>({ data_training.dimension(0), 1 })
-    ).reshape(Eigen::array<Eigen::Index, 1>({ data_training.dimension(0) }));
-    Eigen::Tensor<TensorT, 1> input_training_head = this->input_data_training_.slice(Eigen::array<Eigen::Index, 4>({ 0, 0, 0, 0 }),
-      Eigen::array<Eigen::Index, 4>({ 1, 1, data_training.dimension(0), 1 })
-    ).reshape(Eigen::array<Eigen::Index, 1>({ data_training.dimension(0) }));
-    Eigen::Tensor<TensorT, 1> input_training_tail = this->input_data_training_.slice(Eigen::array<Eigen::Index, 4>({ batch_size - 1, memory_size - 1, 0, n_epochs - 1 }),
-      Eigen::array<Eigen::Index, 4>({ 1, 1, data_training.dimension(0), 1 })
-    ).reshape(Eigen::array<Eigen::Index, 1>({ data_training.dimension(0) }));
-    std::cout << "data_training_head\n" << data_training_head << std::endl;
-    std::cout << "data_training_tail\n" << data_training_tail << std::endl;
-    for (int i = 0; i < data_training.dimension(0); ++i) {
-      assert(data_training_head(i) == input_training_head(i));
-      assert(data_training_tail(i) == input_training_tail(i));
-    }
+    //// Check that values of the data and input tensors are correctly aligned
+    //Eigen::Tensor<TensorT, 1> data_training_head = data_training_expanded.slice(Eigen::array<Eigen::Index, 2>({ 0, 0 }),
+    //  Eigen::array<Eigen::Index, 2>({ data_training.dimension(0), 1 })
+    //).reshape(Eigen::array<Eigen::Index, 1>({ data_training.dimension(0) }));
+    //Eigen::Tensor<TensorT, 1> data_training_tail = data_training_expanded.slice(Eigen::array<Eigen::Index, 2>({ 0, 0 }),
+    //  Eigen::array<Eigen::Index, 2>({ data_training.dimension(0), data_training.dimension(1)*expansion_factor - over_expanded })
+    //).slice(Eigen::array<Eigen::Index, 2>({ 0, batch_size * memory_size * n_epochs - 1 }),
+    //  Eigen::array<Eigen::Index, 2>({ data_training.dimension(0), 1 })
+    //).reshape(Eigen::array<Eigen::Index, 1>({ data_training.dimension(0) }));
+    //Eigen::Tensor<TensorT, 1> input_training_head = this->input_data_training_.slice(Eigen::array<Eigen::Index, 4>({ 0, 0, 0, 0 }),
+    //  Eigen::array<Eigen::Index, 4>({ 1, 1, data_training.dimension(0), 1 })
+    //).reshape(Eigen::array<Eigen::Index, 1>({ data_training.dimension(0) }));
+    //Eigen::Tensor<TensorT, 1> input_training_tail = this->input_data_training_.slice(Eigen::array<Eigen::Index, 4>({ batch_size - 1, memory_size - 1, 0, n_epochs - 1 }),
+    //  Eigen::array<Eigen::Index, 4>({ 1, 1, data_training.dimension(0), 1 })
+    //).reshape(Eigen::array<Eigen::Index, 1>({ data_training.dimension(0) }));
+    //std::cout << "data_training_head\n" << data_training_head << std::endl;
+    //std::cout << "data_training_tail\n" << data_training_tail << std::endl;
+    //for (int i = 0; i < data_training.dimension(0); ++i) {
+    //  assert(data_training_head(i) == input_training_head(i));
+    //  assert(data_training_tail(i) == input_training_tail(i));
+    //}
 
     // make the one-hot encodings       
     Eigen::Tensor<TensorT, 2> one_hot_vec = OneHotEncoder<std::string, TensorT>(labels_training_expanded, this->labels_training_);
@@ -136,27 +136,27 @@ namespace SmartPeak
     ).shuffle(Eigen::array<Eigen::Index, 4>({ 0,1,3,2 }));
     this->loss_output_data_training_ = one_hot_vec_4d;
 
-    // Check that values of the labels and output tensors are correctly aligned
-    Eigen::Tensor<TensorT, 1> labels_training_head = one_hot_vec.slice(Eigen::array<Eigen::Index, 2>({ 0, 0 }),
-      Eigen::array<Eigen::Index, 2>({ 1, int(labels_training_.size()) })
-    ).reshape(Eigen::array<Eigen::Index, 1>({ int(labels_training_.size()) }));
-    Eigen::Tensor<TensorT, 1> labels_training_tail = one_hot_vec.slice(Eigen::array<Eigen::Index, 2>({ 0, 0 }),
-      Eigen::array<Eigen::Index, 2>({ data_training.dimension(1)*expansion_factor - over_expanded, one_hot_vec.dimension(1) })
-    ).slice(Eigen::array<Eigen::Index, 2>({ batch_size * memory_size * n_epochs - 1, 0 }),
-      Eigen::array<Eigen::Index, 2>({ 1, int(labels_training_.size()) })
-    ).reshape(Eigen::array<Eigen::Index, 1>({ int(labels_training_.size()) }));
-    Eigen::Tensor<TensorT, 1> loss_training_head = this->loss_output_data_training_.slice(Eigen::array<Eigen::Index, 4>({ 0, 0, 0, 0 }),
-      Eigen::array<Eigen::Index, 4>({ 1, 1, int(labels_training_.size()), 1 })
-    ).reshape(Eigen::array<Eigen::Index, 1>({ int(labels_training_.size()) }));
-    Eigen::Tensor<TensorT, 1> loss_training_tail = this->loss_output_data_training_.slice(Eigen::array<Eigen::Index, 4>({ batch_size - 1, memory_size - 1, 0, n_epochs - 1 }),
-      Eigen::array<Eigen::Index, 4>({ 1, 1, int(labels_training_.size()), 1 })
-    ).reshape(Eigen::array<Eigen::Index, 1>({ int(labels_training_.size()) }));
-    std::cout << "labels_training_head\n" << labels_training_head << std::endl;
-    std::cout << "labels_training_tail\n" << labels_training_tail << std::endl;
-    for (int i = 0; i < int(labels_training_.size()); ++i) {
-      assert(labels_training_head(i) == loss_training_head(i));
-      assert(labels_training_tail(i) == loss_training_tail(i));
-    }
+    //// Check that values of the labels and output tensors are correctly aligned
+    //Eigen::Tensor<TensorT, 1> labels_training_head = one_hot_vec.slice(Eigen::array<Eigen::Index, 2>({ 0, 0 }),
+    //  Eigen::array<Eigen::Index, 2>({ 1, int(labels_training_.size()) })
+    //).reshape(Eigen::array<Eigen::Index, 1>({ int(labels_training_.size()) }));
+    //Eigen::Tensor<TensorT, 1> labels_training_tail = one_hot_vec.slice(Eigen::array<Eigen::Index, 2>({ 0, 0 }),
+    //  Eigen::array<Eigen::Index, 2>({ data_training.dimension(1)*expansion_factor - over_expanded, one_hot_vec.dimension(1) })
+    //).slice(Eigen::array<Eigen::Index, 2>({ batch_size * memory_size * n_epochs - 1, 0 }),
+    //  Eigen::array<Eigen::Index, 2>({ 1, int(labels_training_.size()) })
+    //).reshape(Eigen::array<Eigen::Index, 1>({ int(labels_training_.size()) }));
+    //Eigen::Tensor<TensorT, 1> loss_training_head = this->loss_output_data_training_.slice(Eigen::array<Eigen::Index, 4>({ 0, 0, 0, 0 }),
+    //  Eigen::array<Eigen::Index, 4>({ 1, 1, int(labels_training_.size()), 1 })
+    //).reshape(Eigen::array<Eigen::Index, 1>({ int(labels_training_.size()) }));
+    //Eigen::Tensor<TensorT, 1> loss_training_tail = this->loss_output_data_training_.slice(Eigen::array<Eigen::Index, 4>({ batch_size - 1, memory_size - 1, 0, n_epochs - 1 }),
+    //  Eigen::array<Eigen::Index, 4>({ 1, 1, int(labels_training_.size()), 1 })
+    //).reshape(Eigen::array<Eigen::Index, 1>({ int(labels_training_.size()) }));
+    //std::cout << "labels_training_head\n" << labels_training_head << std::endl;
+    //std::cout << "labels_training_tail\n" << labels_training_tail << std::endl;
+    //for (int i = 0; i < int(labels_training_.size()); ++i) {
+    //  assert(labels_training_head(i) == loss_training_head(i));
+    //  assert(labels_training_tail(i) == loss_training_tail(i));
+    //}
 
     // assign the metric tensors
     this->metric_output_data_training_.slice(Eigen::array<Eigen::Index, 4>({ 0, 0, 0, 0 }),
@@ -210,27 +210,27 @@ namespace SmartPeak
     ).shuffle(Eigen::array<Eigen::Index, 4>({ 1,2,0,3 }));
     this->input_data_validation_ = data_validation_expanded_4d;
 
-    // Check that values of the data and input tensors are correctly aligned
-    Eigen::Tensor<TensorT, 1> data_validation_head = data_validation_expanded.slice(Eigen::array<Eigen::Index, 2>({ 0, 0 }),
-      Eigen::array<Eigen::Index, 2>({ data_validation.dimension(0), 1 })
-    ).reshape(Eigen::array<Eigen::Index, 1>({ data_validation.dimension(0) }));
-    Eigen::Tensor<TensorT, 1> data_validation_tail = data_validation_expanded.slice(Eigen::array<Eigen::Index, 2>({ 0, 0 }),
-      Eigen::array<Eigen::Index, 2>({ data_validation.dimension(0), data_validation.dimension(1)*expansion_factor - over_expanded })
-    ).slice(Eigen::array<Eigen::Index, 2>({ 0, batch_size * memory_size * n_epochs - 1 }),
-      Eigen::array<Eigen::Index, 2>({ data_validation.dimension(0), 1 })
-    ).reshape(Eigen::array<Eigen::Index, 1>({ data_validation.dimension(0) }));
-    Eigen::Tensor<TensorT, 1> input_validation_head = this->input_data_validation_.slice(Eigen::array<Eigen::Index, 4>({ 0, 0, 0, 0 }),
-      Eigen::array<Eigen::Index, 4>({ 1, 1, data_validation.dimension(0), 1 })
-    ).reshape(Eigen::array<Eigen::Index, 1>({ data_validation.dimension(0) }));
-    Eigen::Tensor<TensorT, 1> input_validation_tail = this->input_data_validation_.slice(Eigen::array<Eigen::Index, 4>({ batch_size - 1, memory_size - 1, 0, n_epochs - 1 }),
-      Eigen::array<Eigen::Index, 4>({ 1, 1, data_validation.dimension(0), 1 })
-    ).reshape(Eigen::array<Eigen::Index, 1>({ data_validation.dimension(0) }));
-    std::cout << "data_validation_head\n" << data_validation_head << std::endl;
-    std::cout << "data_validation_tail\n" << data_validation_tail << std::endl;
-    for (int i = 0; i < data_validation.dimension(0); ++i) {
-      assert(data_validation_head(i) == input_validation_head(i));
-      assert(data_validation_tail(i) == input_validation_tail(i));
-    }
+    //// Check that values of the data and input tensors are correctly aligned
+    //Eigen::Tensor<TensorT, 1> data_validation_head = data_validation_expanded.slice(Eigen::array<Eigen::Index, 2>({ 0, 0 }),
+    //  Eigen::array<Eigen::Index, 2>({ data_validation.dimension(0), 1 })
+    //).reshape(Eigen::array<Eigen::Index, 1>({ data_validation.dimension(0) }));
+    //Eigen::Tensor<TensorT, 1> data_validation_tail = data_validation_expanded.slice(Eigen::array<Eigen::Index, 2>({ 0, 0 }),
+    //  Eigen::array<Eigen::Index, 2>({ data_validation.dimension(0), data_validation.dimension(1)*expansion_factor - over_expanded })
+    //).slice(Eigen::array<Eigen::Index, 2>({ 0, batch_size * memory_size * n_epochs - 1 }),
+    //  Eigen::array<Eigen::Index, 2>({ data_validation.dimension(0), 1 })
+    //).reshape(Eigen::array<Eigen::Index, 1>({ data_validation.dimension(0) }));
+    //Eigen::Tensor<TensorT, 1> input_validation_head = this->input_data_validation_.slice(Eigen::array<Eigen::Index, 4>({ 0, 0, 0, 0 }),
+    //  Eigen::array<Eigen::Index, 4>({ 1, 1, data_validation.dimension(0), 1 })
+    //).reshape(Eigen::array<Eigen::Index, 1>({ data_validation.dimension(0) }));
+    //Eigen::Tensor<TensorT, 1> input_validation_tail = this->input_data_validation_.slice(Eigen::array<Eigen::Index, 4>({ batch_size - 1, memory_size - 1, 0, n_epochs - 1 }),
+    //  Eigen::array<Eigen::Index, 4>({ 1, 1, data_validation.dimension(0), 1 })
+    //).reshape(Eigen::array<Eigen::Index, 1>({ data_validation.dimension(0) }));
+    //std::cout << "data_validation_head\n" << data_validation_head << std::endl;
+    //std::cout << "data_validation_tail\n" << data_validation_tail << std::endl;
+    //for (int i = 0; i < data_validation.dimension(0); ++i) {
+    //  assert(data_validation_head(i) == input_validation_head(i));
+    //  assert(data_validation_tail(i) == input_validation_tail(i));
+    //}
 
     // make the one-hot encodings       
     Eigen::Tensor<TensorT, 2> one_hot_vec = OneHotEncoder<std::string, TensorT>(labels_validation_expanded, this->labels_validation_);
@@ -243,27 +243,27 @@ namespace SmartPeak
     ).shuffle(Eigen::array<Eigen::Index, 4>({ 0,1,3,2 }));
     this->loss_output_data_validation_ = one_hot_vec_4d;
 
-    // Check that values of the labels and output tensors are correctly aligned
-    Eigen::Tensor<TensorT, 1> labels_validation_head = one_hot_vec.slice(Eigen::array<Eigen::Index, 2>({ 0, 0 }),
-      Eigen::array<Eigen::Index, 2>({ 1, int(labels_validation_.size()) })
-    ).reshape(Eigen::array<Eigen::Index, 1>({ int(labels_validation_.size()) }));
-    Eigen::Tensor<TensorT, 1> labels_validation_tail = one_hot_vec.slice(Eigen::array<Eigen::Index, 2>({ 0, 0 }),
-      Eigen::array<Eigen::Index, 2>({ data_validation.dimension(1)*expansion_factor - over_expanded, one_hot_vec.dimension(1) })
-    ).slice(Eigen::array<Eigen::Index, 2>({ batch_size * memory_size * n_epochs - 1, 0 }),
-      Eigen::array<Eigen::Index, 2>({ 1, int(labels_validation_.size()) })
-    ).reshape(Eigen::array<Eigen::Index, 1>({ int(labels_validation_.size()) }));
-    Eigen::Tensor<TensorT, 1> loss_validation_head = this->loss_output_data_validation_.slice(Eigen::array<Eigen::Index, 4>({ 0, 0, 0, 0 }),
-      Eigen::array<Eigen::Index, 4>({ 1, 1, int(labels_validation_.size()), 1 })
-    ).reshape(Eigen::array<Eigen::Index, 1>({ int(labels_validation_.size()) }));
-    Eigen::Tensor<TensorT, 1> loss_validation_tail = this->loss_output_data_validation_.slice(Eigen::array<Eigen::Index, 4>({ batch_size - 1, memory_size - 1, 0, n_epochs - 1 }),
-      Eigen::array<Eigen::Index, 4>({ 1, 1, int(labels_validation_.size()), 1 })
-    ).reshape(Eigen::array<Eigen::Index, 1>({ int(labels_validation_.size()) }));
-    std::cout << "labels_validation_head\n" << labels_validation_head << std::endl;
-    std::cout << "labels_validation_tail\n" << labels_validation_tail << std::endl;
-    for (int i = 0; i < int(labels_validation_.size()); ++i) {
-      assert(labels_validation_head(i) == loss_validation_head(i));
-      assert(labels_validation_tail(i) == loss_validation_tail(i));
-    }
+    //// Check that values of the labels and output tensors are correctly aligned
+    //Eigen::Tensor<TensorT, 1> labels_validation_head = one_hot_vec.slice(Eigen::array<Eigen::Index, 2>({ 0, 0 }),
+    //  Eigen::array<Eigen::Index, 2>({ 1, int(labels_validation_.size()) })
+    //).reshape(Eigen::array<Eigen::Index, 1>({ int(labels_validation_.size()) }));
+    //Eigen::Tensor<TensorT, 1> labels_validation_tail = one_hot_vec.slice(Eigen::array<Eigen::Index, 2>({ 0, 0 }),
+    //  Eigen::array<Eigen::Index, 2>({ data_validation.dimension(1)*expansion_factor - over_expanded, one_hot_vec.dimension(1) })
+    //).slice(Eigen::array<Eigen::Index, 2>({ batch_size * memory_size * n_epochs - 1, 0 }),
+    //  Eigen::array<Eigen::Index, 2>({ 1, int(labels_validation_.size()) })
+    //).reshape(Eigen::array<Eigen::Index, 1>({ int(labels_validation_.size()) }));
+    //Eigen::Tensor<TensorT, 1> loss_validation_head = this->loss_output_data_validation_.slice(Eigen::array<Eigen::Index, 4>({ 0, 0, 0, 0 }),
+    //  Eigen::array<Eigen::Index, 4>({ 1, 1, int(labels_validation_.size()), 1 })
+    //).reshape(Eigen::array<Eigen::Index, 1>({ int(labels_validation_.size()) }));
+    //Eigen::Tensor<TensorT, 1> loss_validation_tail = this->loss_output_data_validation_.slice(Eigen::array<Eigen::Index, 4>({ batch_size - 1, memory_size - 1, 0, n_epochs - 1 }),
+    //  Eigen::array<Eigen::Index, 4>({ 1, 1, int(labels_validation_.size()), 1 })
+    //).reshape(Eigen::array<Eigen::Index, 1>({ int(labels_validation_.size()) }));
+    //std::cout << "labels_validation_head\n" << labels_validation_head << std::endl;
+    //std::cout << "labels_validation_tail\n" << labels_validation_tail << std::endl;
+    //for (int i = 0; i < int(labels_validation_.size()); ++i) {
+    //  assert(labels_validation_head(i) == loss_validation_head(i));
+    //  assert(labels_validation_tail(i) == loss_validation_tail(i));
+    //}
 
     // assign the metric tensors
     this->metric_output_data_validation_.slice(Eigen::array<Eigen::Index, 4>({ 0, 0, 0, 0 }),
