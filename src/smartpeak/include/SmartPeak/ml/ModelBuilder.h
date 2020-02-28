@@ -377,7 +377,7 @@ public:
 			const std::shared_ptr<IntegrationWeightGradOp<TensorT>>& node_integration_weight_grad,
 			const std::shared_ptr<WeightInitOp<TensorT>>& weight_init, const std::shared_ptr<SolverOp<TensorT>>& solver,
 			TensorT drop_out_prob = 0.0f, TensorT drop_connection_prob = 0.0f, bool biases = true,
-			bool forget_gate = true, int block_version = 1, bool specify_layer = false);
+			bool forget_gate = true, int block_version = 1, bool specify_layer = false, bool specify_cyclic_pairs = false);
 		std::vector<std::string> addLSTMBlock1(Model<TensorT>& model, const std::string& name, const std::string& module_name,
 			const std::vector<std::string>& source_node_names,
 			const int& n_cells,
@@ -388,7 +388,7 @@ public:
 			const std::shared_ptr<IntegrationWeightGradOp<TensorT>>& node_integration_weight_grad,
 			const std::shared_ptr<WeightInitOp<TensorT>>& weight_init, const std::shared_ptr<SolverOp<TensorT>>& solver,
 			TensorT drop_out_prob = 0.0f, TensorT drop_connection_prob = 0.0f, bool biases = true,
-			bool forget_gate = true, bool specify_layer = false);
+			bool forget_gate = true, bool specify_layer = false, bool specify_cyclic_pairs = false);
 		std::vector<std::string> addLSTMBlock2(Model<TensorT>& model, const std::string& name, const std::string& module_name,
 			const std::vector<std::string>& source_node_names,
 			const int& n_cells,
@@ -399,7 +399,7 @@ public:
 			const std::shared_ptr<IntegrationWeightGradOp<TensorT>>& node_integration_weight_grad,
 			const std::shared_ptr<WeightInitOp<TensorT>>& weight_init, const std::shared_ptr<SolverOp<TensorT>>& solver,
 			TensorT drop_out_prob = 0.0f, TensorT drop_connection_prob = 0.0f, bool biases = true,
-			bool forget_gate = true, bool specify_layer = false);
+			bool forget_gate = true, bool specify_layer = false, bool specify_cyclic_pairs = false);
 
 		/**
 		@brief Add a GRU layer
@@ -2375,7 +2375,7 @@ public:
 		const std::shared_ptr<ActivationOp<TensorT>>& node_activation, const std::shared_ptr<ActivationOp<TensorT>>& node_activation_grad,
 		const std::shared_ptr<IntegrationOp<TensorT>>& node_integration, const std::shared_ptr<IntegrationErrorOp<TensorT>>& node_integration_error, const std::shared_ptr<IntegrationWeightGradOp<TensorT>>& node_integration_weight_grad,
 		const std::shared_ptr<WeightInitOp<TensorT>> & weight_init, const std::shared_ptr<SolverOp<TensorT>> & solver,
-		TensorT drop_out_prob, TensorT drop_connection_prob, bool biases, bool forget_gate, int block_version, bool specify_layer)
+		TensorT drop_out_prob, TensorT drop_connection_prob, bool biases, bool forget_gate, int block_version, bool specify_layer, bool specify_cyclic_pairs)
 	{
 		std::vector<std::string> node_names;
 
@@ -2387,13 +2387,13 @@ public:
 			if (block_version == 1) {
 				std::vector<std::string> output_node_names = addLSTMBlock1(model, node_name, module_name, source_node_names, n_cells, node_activation, node_activation_grad,
 					node_integration, node_integration_error, node_integration_weight_grad,
-					weight_init, solver, drop_out_prob, drop_connection_prob, biases, forget_gate, specify_layer);
+					weight_init, solver, drop_out_prob, drop_connection_prob, biases, forget_gate, specify_layer, specify_cyclic_pairs);
 				for (const std::string& node_name : output_node_names) node_names.push_back(node_name);
 			}
 			else if (block_version == 2) {
 				std::vector<std::string> output_node_names = addLSTMBlock2(model, node_name, module_name, source_node_names, n_cells, node_activation, node_activation_grad,
 					node_integration, node_integration_error, node_integration_weight_grad,
-					weight_init, solver, drop_out_prob, drop_connection_prob, biases, forget_gate, specify_layer);
+					weight_init, solver, drop_out_prob, drop_connection_prob, biases, forget_gate, specify_layer, specify_cyclic_pairs);
 				for (const std::string& node_name : output_node_names) node_names.push_back(node_name);
 			}
 		}
@@ -2408,7 +2408,7 @@ public:
 		const std::shared_ptr<ActivationOp<TensorT>>& node_activation, const std::shared_ptr<ActivationOp<TensorT>>& node_activation_grad,
 		const std::shared_ptr<IntegrationOp<TensorT>>& node_integration, const std::shared_ptr<IntegrationErrorOp<TensorT>>& node_integration_error, const std::shared_ptr<IntegrationWeightGradOp<TensorT>>& node_integration_weight_grad,
 		const std::shared_ptr<WeightInitOp<TensorT>> & weight_init, const std::shared_ptr<SolverOp<TensorT>> & solver,
-		TensorT drop_out_prob, TensorT drop_connection_prob, bool biases, bool forget_gate, bool specify_layer)
+		TensorT drop_out_prob, TensorT drop_connection_prob, bool biases, bool forget_gate, bool specify_layer, bool specify_cyclic_pairs)
 	{
 		std::vector<std::string> node_names;
 		std::string unity_weight_name;
@@ -2696,6 +2696,7 @@ public:
 
 			model.addWeights({ weight_OMultToI });
 			model.addLinks({ link_OMultToI });
+      if (specify_cyclic_pairs) model.addCyclicPairs(std::make_pair(blockOutput_name, blockInput_name));
 
 			// Make the link between the output multiplier node and the input gate
 			char weight_OMultToIGate_name_char[512];
@@ -2715,17 +2716,18 @@ public:
 
 			model.addWeights({ weight_OMultToIGate });
 			model.addLinks({ link_OMultToIGate });
+      if (specify_cyclic_pairs) model.addCyclicPairs(std::make_pair(blockOutput_name, blockGateInput_name));
+
+      // Make the forget gate multiplier node
+      char blockMultForget_name_char[512];
+      sprintf(blockMultForget_name_char, "%s-BlockMultForget-%012d", name.data(), cell_iter);
+      std::string blockMultForget_name(blockMultForget_name_char);
+      Node<TensorT> blockMultForget(blockMultForget_name, NodeType::hidden, NodeStatus::initialized, std::make_shared<LinearOp<TensorT>>(LinearOp<TensorT>()), std::make_shared<LinearGradOp<TensorT>>(LinearGradOp<TensorT>()), std::make_shared<ProdOp<TensorT>>(ProdOp<TensorT>()), std::make_shared<ProdErrorOp<TensorT>>(ProdErrorOp<TensorT>()), std::make_shared<ProdWeightGradOp<TensorT>>(ProdWeightGradOp<TensorT>()));
+      blockMultForget.setModuleName(module_name);
+      if (specify_layer) blockMultForget.setLayerName(module_name + "-BlockMultForget");
+      model.addNodes({ blockMultForget });
 
 			if (forget_gate) {
-				// Make the forget gate multiplier node
-				char blockMultForget_name_char[512];
-				sprintf(blockMultForget_name_char, "%s-BlockMultForget-%012d", name.data(), cell_iter);
-				std::string blockMultForget_name(blockMultForget_name_char);
-				Node<TensorT> blockMultForget(blockMultForget_name, NodeType::hidden, NodeStatus::initialized, std::make_shared<LinearOp<TensorT>>(LinearOp<TensorT>()), std::make_shared<LinearGradOp<TensorT>>(LinearGradOp<TensorT>()), std::make_shared<ProdOp<TensorT>>(ProdOp<TensorT>()),std::make_shared<ProdErrorOp<TensorT>>(ProdErrorOp<TensorT>()), std::make_shared<ProdWeightGradOp<TensorT>>(ProdWeightGradOp<TensorT>()));
-				blockMultForget.setModuleName(module_name);
-				if (specify_layer) blockMultForget.setLayerName(module_name + "-BlockMultForget");
-				model.addNodes({ blockMultForget });
-
 				// Make the link between the forget gate and the forget gate multiplier node
 				unity_weight_name = makeUnityWeight(model, 1.0, module_name, "%s_to_%s", blockGateForget_name, blockMultForget_name);
 				char link_fGateToFMult_name_char[512];
@@ -2753,35 +2755,27 @@ public:
 
 				model.addWeights({ weight_OMultToFGate });
 				model.addLinks({ link_OMultToFGate });
-
-				// Make the link from forget gate multiplier node to memory cell
-				unity_weight_name = makeUnityWeight(model, 1.0, module_name, "%s_to_%s", blockMultForget_name, blockMemoryCell_name);
-				char link_fMultToMemCell_name_char[512];
-				sprintf(link_fMultToMemCell_name_char, "%s_to_%s", blockMultForget_name.data(), blockMemoryCell_name.data());
-				std::string link_fMultToMemCell_name(link_fMultToMemCell_name_char);
-				Link link_fMultToMemCell(link_fMultToMemCell_name, blockMultForget_name, blockMemoryCell_name, unity_weight_name);
-				link_fMultToMemCell.setModuleName(module_name);
-				model.addLinks({ link_fMultToMemCell });
-
-				// Make the link from memory cell to forget gate multiplier node
-				unity_weight_name = makeUnityWeight(model, 1.0, module_name, "%s_to_%s", blockMemoryCell_name, blockMultForget_name);
-				char link_MemCellToFMult_name_char[512];
-				sprintf(link_MemCellToFMult_name_char, "%s_to_%s", blockMemoryCell_name.data(), blockMultForget_name.data());
-				std::string link_MemCellToFMult_name(link_MemCellToFMult_name_char);
-				Link link_MemCellToFMult(link_MemCellToFMult_name, blockMemoryCell_name, blockMultForget_name, unity_weight_name);
-				link_MemCellToFMult.setModuleName(module_name);
-				model.addLinks({ link_MemCellToFMult });
+        if (specify_cyclic_pairs) model.addCyclicPairs(std::make_pair(blockOutput_name, blockGateForget_name));
 			}
-			else {
-				// Make the link from forget gate multiplier node to memory cell
-				unity_weight_name = makeUnityWeight(model, 1.0, module_name, "%s_to_%s", blockMemoryCell_name, blockMemoryCell_name);
-				char link_fMultToMemCell_name_char[512];
-				sprintf(link_fMultToMemCell_name_char, "%s_to_%s", blockMemoryCell_name.data(), blockMemoryCell_name.data());
-				std::string link_fMultToMemCell_name(link_fMultToMemCell_name_char);
-				Link link_fMultToMemCell(link_fMultToMemCell_name, blockMemoryCell_name, blockMemoryCell_name, unity_weight_name);
-				link_fMultToMemCell.setModuleName(module_name);
-				model.addLinks({ link_fMultToMemCell });
-			}
+
+      // Make the link from forget gate multiplier node to memory cell
+      unity_weight_name = makeUnityWeight(model, 1.0, module_name, "%s_to_%s", blockMultForget_name, blockMemoryCell_name);
+      char link_fMultToMemCell_name_char[512];
+      sprintf(link_fMultToMemCell_name_char, "%s_to_%s", blockMultForget_name.data(), blockMemoryCell_name.data());
+      std::string link_fMultToMemCell_name(link_fMultToMemCell_name_char);
+      Link link_fMultToMemCell(link_fMultToMemCell_name, blockMultForget_name, blockMemoryCell_name, unity_weight_name);
+      link_fMultToMemCell.setModuleName(module_name);
+      model.addLinks({ link_fMultToMemCell });
+      if (specify_cyclic_pairs) model.addCyclicPairs(std::make_pair(blockMultForget_name, blockMemoryCell_name));
+
+      // Make the link from memory cell to forget gate multiplier node
+      unity_weight_name = makeUnityWeight(model, 1.0, module_name, "%s_to_%s", blockMemoryCell_name, blockMultForget_name);
+      char link_MemCellToFMult_name_char[512];
+      sprintf(link_MemCellToFMult_name_char, "%s_to_%s", blockMemoryCell_name.data(), blockMultForget_name.data());
+      std::string link_MemCellToFMult_name(link_MemCellToFMult_name_char);
+      Link link_MemCellToFMult(link_MemCellToFMult_name, blockMemoryCell_name, blockMultForget_name, unity_weight_name);
+      link_MemCellToFMult.setModuleName(module_name);
+      model.addLinks({ link_MemCellToFMult });
 
 			// Make the link between the output multiplier node and the output gate
 			char weight_OMultToOGate_name_char[512];
@@ -2801,6 +2795,7 @@ public:
 
 			model.addWeights({ weight_OMultToOGate });
 			model.addLinks({ link_OMultToOGate });
+      if (specify_cyclic_pairs) model.addCyclicPairs(std::make_pair(blockOutput_name, blockGateOutput_name));
 
 			if (biases) {  // biases, links, and weights for input
 				// Make the input bias nodes
@@ -2868,7 +2863,7 @@ public:
 		const std::shared_ptr<ActivationOp<TensorT>>& node_activation, const std::shared_ptr<ActivationOp<TensorT>>& node_activation_grad,
 		const std::shared_ptr<IntegrationOp<TensorT>>& node_integration, const std::shared_ptr<IntegrationErrorOp<TensorT>>& node_integration_error, const std::shared_ptr<IntegrationWeightGradOp<TensorT>>& node_integration_weight_grad,
 		const std::shared_ptr<WeightInitOp<TensorT>> & weight_init, const std::shared_ptr<SolverOp<TensorT>> & solver,
-		TensorT drop_out_prob, TensorT drop_connection_prob, bool biases, bool forget_gate, bool specify_layer)
+		TensorT drop_out_prob, TensorT drop_connection_prob, bool biases, bool forget_gate, bool specify_layer, bool specify_cyclic_pairs)
 	{
 		std::vector<std::string> node_names;
 		std::string unity_weight_name;

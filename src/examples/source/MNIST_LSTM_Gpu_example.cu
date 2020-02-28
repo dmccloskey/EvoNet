@@ -37,7 +37,7 @@ public:
   */
   void makeLSTM(Model<TensorT>& model, const int& n_inputs = 784, const int& n_outputs = 10,
     const int& n_blocks_1 = 128, const int& n_cells_1 = 1, const int& n_blocks_2 = 0, const int& n_cells_2 = 1,
-    const int& n_hidden = 32, const bool& add_forget_gate = true, const bool& add_feature_norm = true, const bool& specify_layers = true) {
+    const int& n_hidden = 32, const bool& add_forget_gate = true, const bool& add_feature_norm = true, const bool& specify_layers = true, const bool& specify_cyclic_pairs = true) {
     model.setId(0);
     model.setName("LSTM");
 
@@ -77,14 +77,14 @@ public:
     auto integration_weight_grad_op = std::make_shared<SumWeightGradOp<TensorT>>(SumWeightGradOp<TensorT>());
 
     // Define the solver
-    auto solver_op = std::make_shared<AdamOp<TensorT>>(AdamOp<TensorT>(1e-5, 0.9, 0.999, 1e-8, 10));
+    auto solver_op = std::make_shared<AdamOp<TensorT>>(AdamOp<TensorT>(1e-6, 0.9, 0.999, 1e-8, 10));
 
     // Add the LSTM layer(s)
     std::vector<std::string> node_names = model_builder.addLSTM(model, "LSTM-01", "LSTM-01", node_names_input, n_blocks_1, n_cells_1,
       activation, activation_grad, integration_op, integration_error_op, integration_weight_grad_op,
       std::make_shared<RandWeightInitOp<TensorT>>(RandWeightInitOp<TensorT>((TensorT)(node_names_input.size() + n_blocks_1) / 2, 1)),
       solver_op,
-      0.0f, 0.0f, true, add_forget_gate, 1, specify_layers);
+      0.0f, 0.0f, true, add_forget_gate, 1, specify_layers, specify_cyclic_pairs);
     if (add_feature_norm) {
       node_names = model_builder.addNormalization(model, "LSTM-01-Norm", "LSTM-01-Norm", node_names, true);
       node_names = model_builder.addSinglyConnected(model, "LSTM-01-Norm-gain", "LSTM-01-Norm-gain", node_names, node_names.size(),
@@ -99,7 +99,7 @@ public:
         activation, activation_grad, integration_op, integration_error_op, integration_weight_grad_op,
         std::make_shared<RandWeightInitOp<TensorT>>(RandWeightInitOp<TensorT>((TensorT)(node_names.size() + n_blocks_2) / 2, 1)),
         solver_op,
-        0.0f, 0.0f, true, add_forget_gate, 1, specify_layers);
+        0.0f, 0.0f, true, add_forget_gate, 1, specify_layers, specify_cyclic_pairs);
     }
     if (add_feature_norm) {
       node_names = model_builder.addNormalization(model, "LSTM-02-Norm", "LSTM-02-Norm", node_names, true);
@@ -455,7 +455,7 @@ void main_MNIST(const std::string& data_dir, const bool& make_model, const bool&
   const std::size_t n_cells_1 = 1;
   const std::size_t n_blocks_2 = 0;
   const std::size_t n_cells_2 = 1;
-  const bool add_forget_gate = false;
+  const bool add_forget_gate = true;
   const std::size_t n_hidden = 0;
   //// Model architecture config 1
   //const std::size_t n_blocks_1 = 128;
@@ -518,7 +518,7 @@ void main_MNIST(const std::string& data_dir, const bool& make_model, const bool&
   model_trainer.setNTETTSteps(1);
   model_trainer.setNTBPTTSteps(n_tbptt);
   model_trainer.setPreserveOoO(true);
-  model_trainer.setFindCycles(true);
+  model_trainer.setFindCycles(false);
   model_trainer.setFastInterpreter(true);
   model_trainer.setLossFunctions({
     std::make_shared<MSELossOp<float>>(MSELossOp<float>(1e-24, 0.0)),
@@ -543,7 +543,7 @@ void main_MNIST(const std::string& data_dir, const bool& make_model, const bool&
   Model<float> model;
   if (make_model) {
     //model_trainer.makeRNN(model, input_nodes.size(), output_nodes.size(), 128, 0, false, false, true);
-    model_trainer.makeLSTM(model, input_nodes.size(), output_nodes.size(), n_blocks_1, n_cells_1, n_blocks_2, n_cells_2, n_hidden, add_forget_gate, true, true);
+    model_trainer.makeLSTM(model, input_nodes.size(), output_nodes.size(), n_blocks_1, n_cells_1, n_blocks_2, n_cells_2, n_hidden, add_forget_gate, false, true, true);
   }
   else {
     // read in the trained model
