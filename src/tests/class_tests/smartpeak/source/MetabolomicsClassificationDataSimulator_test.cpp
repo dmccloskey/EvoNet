@@ -389,7 +389,7 @@ BOOST_AUTO_TEST_CASE(readAndProcessMetabolomicsTrainingAndValidationData)
     Eigen::array<Eigen::Index, 4>({ 1, 1, n_component_group_names_training, 1 })
   ).reshape(Eigen::array<Eigen::Index, 1>({ n_component_group_names_training }));
   for (int i = 0; i < n_component_group_names_training; ++i) {
-    BOOST_CHECK_GE(input_test(i), 0.00054280, 1e-3);
+    BOOST_CHECK_GE(input_test(i), 0.00054280, 1e-6);
     BOOST_CHECK_LE(input_test(i), 508.3080903, 1e-3);
   }
   loss_output_test = metabolomics_data.loss_output_data_training_.slice(Eigen::array<Eigen::Index, 4>({ 0, 0, 0, 0 }),
@@ -408,7 +408,7 @@ BOOST_AUTO_TEST_CASE(readAndProcessMetabolomicsTrainingAndValidationData)
     Eigen::array<Eigen::Index, 4>({ 1, 1, n_component_group_names_training, 1 })
   ).reshape(Eigen::array<Eigen::Index, 1>({ n_component_group_names_training }));
   for (int i = 0; i < n_component_group_names_training; ++i) {
-    BOOST_CHECK_GE(input_test(i), 0.00054280, 1e-3);
+    BOOST_CHECK_GE(input_test(i), 0, 1e-6);
     BOOST_CHECK_LE(input_test(i), 508.3080903, 1e-3);
   }
   loss_output_test = metabolomics_data.loss_output_data_training_.slice(Eigen::array<Eigen::Index, 4>({ batch_size - 1, memory_size - 1, 0, n_epochs - 1 }),
@@ -427,7 +427,7 @@ BOOST_AUTO_TEST_CASE(readAndProcessMetabolomicsTrainingAndValidationData)
     Eigen::array<Eigen::Index, 4>({ 1, 1, n_component_group_names_validation, 1 })
   ).reshape(Eigen::array<Eigen::Index, 1>({ n_component_group_names_validation }));
   for (int i = 0; i < n_component_group_names_validation; ++i) {
-    BOOST_CHECK_GE(input_test(i), 0.00054280, 1e-3);
+    BOOST_CHECK_GE(input_test(i), 0.00054280, 1e-6);
     BOOST_CHECK_LE(input_test(i), 508.3080903, 1e-3);
   }
   loss_output_test = metabolomics_data.loss_output_data_validation_.slice(Eigen::array<Eigen::Index, 4>({ 0, 0, 0, 0 }),
@@ -446,7 +446,7 @@ BOOST_AUTO_TEST_CASE(readAndProcessMetabolomicsTrainingAndValidationData)
     Eigen::array<Eigen::Index, 4>({ 1, 1, n_component_group_names_validation, 1 })
   ).reshape(Eigen::array<Eigen::Index, 1>({ n_component_group_names_validation }));
   for (int i = 0; i < n_component_group_names_validation; ++i) {
-    BOOST_CHECK_GE(input_test(i), 0.00054280, 1e-3);
+    BOOST_CHECK_GE(input_test(i), 0, 1e-6);
     BOOST_CHECK_LE(input_test(i), 508.3080903, 1e-3);
   }
   loss_output_test = metabolomics_data.loss_output_data_validation_.slice(Eigen::array<Eigen::Index, 4>({ batch_size - 1, memory_size - 1, 0, n_epochs - 1 }),
