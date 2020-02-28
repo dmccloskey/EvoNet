@@ -407,8 +407,14 @@ namespace SmartPeak
     }
     else if (use_MARs) {
       // Apply offline transformations
+      TensorT min_value = 1e-3;
+      TensorT max_value = 1e3;
+      if (offline_log_transform_input) {
+        min_value = std::log(min_value);
+        max_value = std::log(max_value);
+      }
       this->transformTrainingAndValidationDataOffline(metabo_data_training, metabo_data_validation,
-        offline_linear_scale_input, false, false, true, 1e-3, 1e3, false, -1, -1);
+        offline_linear_scale_input, offline_log_transform_input, offline_standardize_input, true, min_value, max_value, false, -1, -1);
 
       // Make the training data cache
       this->makeTrainingDataForCache(metabo_features_training, metabo_data_training, metabo_labels_training, n_epochs, batch_size, memory_size,
