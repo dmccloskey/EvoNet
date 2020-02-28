@@ -112,7 +112,7 @@ BOOST_AUTO_TEST_CASE(addBiochemicalReaction1)
   reactions.emplace("HK", reaction1);
 
   // make the fully connected 
-  model_builder.addBiochemicalReactions(
+  model_builder.addBiochemicalReactionsSequencialMin(
     model, reactions, "Mod", "Mod1",
     std::make_shared<RandWeightInitOp<float>>(RandWeightInitOp<float>(4.0)), std::make_shared<SGDOp<float>>(SGDOp<float>(0.1, 0.9)), 1);
 
@@ -222,7 +222,7 @@ BOOST_AUTO_TEST_CASE(addBiochemicalReaction2)
   reactions.emplace("HK", reaction1);
 
   // make the fully connected 
-  model_builder.addBiochemicalReactions(
+  model_builder.addBiochemicalReactionsSequencialMin(
     model, reactions, "Mod", "Mod1",
     std::make_shared<RandWeightInitOp<float>>(RandWeightInitOp<float>(4.0)), std::make_shared<SGDOp<float>>(SGDOp<float>(0.1, 0.9)), 2);
 

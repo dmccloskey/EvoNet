@@ -1,0 +1,5 @@
+time,used_,sample_group_name,analysis_id,subject,condition,blood_fraction,temperature
+0,TRUE,S01_D01_PLT_25C_0hr,BloodProject01_S01_D01_PLT_37C,S01,D01,PLT,25C
+22,TRUE,S01_D01_PLT_25C_22hr,BloodProject01_S01_D01_PLT_37C,S01,D01,PLT,25C
+2,TRUE,S01_D01_PLT_25C_2hr,BloodProject01_S01_D01_PLT_37C,S01,D01,PLT,25C
+6.5,TRUE,S01_D01_PLT_25C_6.5hr,BloodProject01_S01_D01_PLT_37C,S01,D01,PLT,25C

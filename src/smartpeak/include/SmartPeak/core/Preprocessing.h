@@ -41,12 +41,12 @@ namespace SmartPeak
 	@brief Scale by magnitude of the data
 	*/
 	template<typename T>
-	class UnitScale
+	class UnitScaleFunctor
 	{
 	public:
-		UnitScale() {};
-		UnitScale(const Eigen::Tensor<T, 2>& data) { setUnitScale(data); };
-		~UnitScale() {};
+		UnitScaleFunctor() {};
+		UnitScaleFunctor(const Eigen::Tensor<T, 2>& data) { setUnitScale(data); };
+		~UnitScaleFunctor() {};
 		void setUnitScale(const Eigen::Tensor<T, 2>& data)
 		{
 			const Eigen::Tensor<T, 0> max_value = data.maximum();
@@ -63,13 +63,13 @@ namespace SmartPeak
 	@brief Project the data onto a specific range
 	*/
 	template<typename T>
-	class LinearScale
+	class LinearScaleFunctor
 	{
 	public:
-		LinearScale() = default;
-		LinearScale(const T& domain_min, const T& domain_max, const T& range_min, const T& range_max):
+		LinearScaleFunctor() = default;
+		LinearScaleFunctor(const T& domain_min, const T& domain_max, const T& range_min, const T& range_max):
 			domain_min_(domain_min), domain_max_(domain_max), range_min_(range_min), range_max_(range_max){};
-		~LinearScale() = default;
+		~LinearScaleFunctor() = default;
 		T operator()(const T& x_I) const { 
 			T t = (x_I - domain_min_) / (domain_max_ - domain_min_);
 			return (range_min_ + (range_max_ - range_min_) * t); 
@@ -80,6 +80,89 @@ namespace SmartPeak
 		T range_min_;
 		T range_max_;
 	};
+
+  /*
+  @brief Project the data onto a specific range
+  */
+  template<typename T, int N>
+  class LinearScale
+  {
+  public:
+    LinearScale() = default;
+    LinearScale(const Eigen::Tensor<T, N>& data, const T& range_min, const T& range_max) :
+      range_min_(range_min), range_max_(range_max) { setDomain(data); }
+    LinearScale(const T& range_min, const T& range_max) :
+      range_min_(range_min), range_max_(range_max) {}
+    LinearScale(const T& domain_min, const T& domain_max, const T& range_min, const T& range_max) :
+      domain_min_(domain_min), domain_max_(domain_max), range_min_(range_min), range_max_(range_max) {}
+    ~LinearScale() = default;
+    void setDomain(const T& domain_min, const T& domain_max) {
+      domain_min_ = domain_min;
+      domain_max_ = domain_max;
+    }
+    void setDomain(const Eigen::Tensor<T, N>& data) {
+      const Eigen::Tensor<T, 0> max_value = data.maximum();
+      const Eigen::Tensor<T, 0> min_value = data.minimum();
+      domain_max_ = max_value(0);
+      domain_min_ = min_value(0);
+    }
+    Eigen::Tensor<T, N> operator()(const Eigen::Tensor<T, N>& data) const {
+      auto t = (data - data.constant(domain_min_)) / data.constant(domain_max_ - domain_min_);
+      const Eigen::Tensor<T, N> data_linear = data.constant(range_min_) + data.constant(range_max_ - range_min_) * t;
+      return data_linear;
+    };
+  private:
+    T domain_min_;
+    T domain_max_;
+    T range_min_;
+    T range_max_;
+  };
+
+  /*
+  @brief Standardize the data using the Mean and Standard Deviation where
+    the features are assumed to be across dim0 and the samples are assumed to be across dim1
+  */
+  template<typename T, int N>
+  class Standardize
+  {
+  public:
+    Standardize() = default;
+    Standardize(const Eigen::Tensor<T, N>& data) { setMeanAndVar(data); };
+    Standardize(const T& mean, const T& var): mean_(mean), var_(var) {};
+    ~Standardize() = default;
+    void setMeanAndVar(const T& mean, const T& var) {
+      mean_ = mean;
+      var_ = var;
+    }
+    void setMeanAndVar(const Eigen::Tensor<T, N>& data)
+    {
+      // calculate the total dimensions
+      int dim_size_tot = 1;
+      for (int i = 0; i < N; ++i) {
+        dim_size_tot *= data.dimension(i);
+      }
+
+      // calculate the mean
+      Eigen::Tensor<T, 0> mean_0d = data.mean();
+      mean_ = mean_0d(0);
+
+      // calculate the var
+      auto residuals = data - data.constant(mean_);
+      auto ssr = residuals.pow(2).sum();
+      Eigen::Tensor<T, 0> var_0d = ssr / ssr.constant(dim_size_tot - 1);
+      var_ = var_0d(0);
+    }
+    T getMean() { return mean_; }
+    T getVar() { return var_; }
+    Eigen::Tensor<T, N> operator()(const Eigen::Tensor<T, N>& data) const {
+      const Eigen::Tensor<T, N> data_stand = (data - data.constant(mean_)) / 
+        data.constant(var_).pow(T(0.5));
+      return data_stand;
+    };
+  private:
+    T mean_; ///< data set mean
+    T var_; ///< data set var
+  };
 
 	/*
 	@brief "Smooth" binary labels 0 and 1 by a certain offset

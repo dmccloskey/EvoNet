@@ -1,12 +1,12 @@
 /**TODO:  Add copyright*/
 
-#include <SmartPeak/ml/PopulationTrainerDefaultDevice.h>
-#include <SmartPeak/ml/ModelTrainerDefaultDevice.h>
+#include <SmartPeak/ml/PopulationTrainerGpu.h>
+#include <SmartPeak/ml/ModelTrainerGpu.h>
 #include <SmartPeak/ml/ModelReplicator.h>
 #include <SmartPeak/ml/ModelBuilder.h>
 #include <SmartPeak/ml/Model.h>
 #include <SmartPeak/io/PopulationTrainerFile.h>
-#include <SmartPeak/io/ModelInterpreterFileDefaultDevice.h>
+#include <SmartPeak/io/ModelInterpreterFileGpu.h>
 #include <SmartPeak/simulator/HarmonicOscillatorSimulator.h>
 
 #include <unsupported/Eigen/CXX11/Tensor>
@@ -142,7 +142,7 @@ public:
 
 // Extended classes
 template<typename TensorT>
-class ModelTrainerExt : public ModelTrainerDefaultDevice<TensorT>
+class ModelTrainerExt : public ModelTrainerGpu<TensorT>
 {
 public:
   /*
@@ -187,7 +187,7 @@ public:
       std::make_shared<DummySolverOp<TensorT>>(DummySolverOp<TensorT>()), 0.0f, 0.0f, add_biases, specify_layers);
 
     // Manually define the mass nodes
-    for (const std::string& node_name : node_names_output)
+    for (const std::string& node_name : node_names_masses)
       model.getNodesMap().at(node_name)->setType(NodeType::unmodifiable);
 
     // Connect the masses to themselves
@@ -272,14 +272,14 @@ public:
 		const int& n_generations,
 		const int& n_epochs,
 		Model<TensorT>& model,
-		ModelInterpreterDefaultDevice<TensorT>& model_interpreter,
+		ModelInterpreterGpu<TensorT>& model_interpreter,
 		const std::vector<float>& model_errors) {
 		// Check point the model every 1000 epochs
 		if (n_epochs % 1000 == 0 && n_epochs != 0) {
 			model_interpreter.getModelResults(model, false, true, false, false);
 			ModelFile<TensorT> data;
 			data.storeModelBinary(model.getName() + "_" + std::to_string(n_epochs) + "_model.binary", model);
-			ModelInterpreterFileDefaultDevice<TensorT> interpreter_data;
+			ModelInterpreterFileGpu<TensorT> interpreter_data;
 			interpreter_data.storeModelInterpreterBinary(model.getName() + "_" + std::to_string(n_epochs) + "_interpreter.binary", model_interpreter);
 		}
 	}
@@ -332,7 +332,7 @@ public:
 };
 
 template<typename TensorT>
-class PopulationTrainerExt : public PopulationTrainerDefaultDevice<TensorT>
+class PopulationTrainerExt : public PopulationTrainerGpu<TensorT>
 {
 public:
 	void adaptivePopulationScheduler(
@@ -417,16 +417,16 @@ void main_HarmonicOscillator1D(const bool& make_model, const bool& train_model) 
   data_simulator.simulation_name_ = "WeightSpring1W1S1DwDamping";
 
 	// define the model trainers and resources for the trainers
-	std::vector<ModelInterpreterDefaultDevice<float>> model_interpreters;
+	std::vector<ModelInterpreterGpu<float>> model_interpreters;
 	for (size_t i = 0; i < n_threads; ++i) {
 		ModelResources model_resources = { ModelDevice(0, 1) };
-		ModelInterpreterDefaultDevice<float> model_interpreter(model_resources);
+		ModelInterpreterGpu<float> model_interpreter(model_resources);
 		model_interpreters.push_back(model_interpreter);
 	}
 	ModelTrainerExt<float> model_trainer;
 	model_trainer.setBatchSize(32);
   //model_trainer.setBatchSize(1);
-  model_trainer.setMemorySize(128);
+  model_trainer.setMemorySize(64);
 	model_trainer.setNEpochsTraining(10000);
   model_trainer.setNEpochsValidation(25);
   model_trainer.setNTBPTTSteps(model_trainer.getMemorySize() - 5);
@@ -466,7 +466,7 @@ void main_HarmonicOscillator1D(const bool& make_model, const bool& train_model) 
 	std::cout << "Initializing the population..." << std::endl;
 	Model<float> model;
 	if (make_model) {
-    ModelTrainerExt<float>().makeHarmonicOscillator1D(model, 1, 4, 0, false, true);
+    ModelTrainerExt<float>().makeHarmonicOscillator1D(model, 1, 32, 0, false, true);
 	}
 	else {
 		// read in the trained model
@@ -478,7 +478,7 @@ void main_HarmonicOscillator1D(const bool& make_model, const bool& train_model) 
 		model_file.loadModelBinary(model_filename, model);
 		model.setId(1);
 		model.setName("HarmonicOscillator-1");
-		ModelInterpreterFileDefaultDevice<float> model_interpreter_file;
+		ModelInterpreterFileGpu<float> model_interpreter_file;
 		model_interpreter_file.loadModelInterpreterBinary(interpreter_filename, model_interpreters[0]); // FIX ME!
 	}
 	std::vector<Model<float>> population = { model };

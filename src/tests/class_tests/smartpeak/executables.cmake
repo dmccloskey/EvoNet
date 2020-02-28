@@ -68,10 +68,13 @@ set(ml_executables_list
 )
 
 set(simulator_executables_list
+  BiochemicalDataSimulator_test
+  BiochemicalReaction_test
   ChromatogramSimulator_test
   DataSimulator_test
   EMGModel_test
   PeakSimulator_test
+  MetabolomicsClassificationDataSimulator_test
   MNISTSimulator_test
 )
 

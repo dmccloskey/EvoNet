@@ -1,12 +1,12 @@
 /**TODO:  Add copyright*/
 
-#include <SmartPeak/ml/PopulationTrainerDefaultDevice.h>
-#include <SmartPeak/ml/ModelTrainerDefaultDevice.h>
+#include <SmartPeak/ml/PopulationTrainerGpu.h>
+#include <SmartPeak/ml/ModelTrainerGpu.h>
 #include <SmartPeak/ml/ModelReplicator.h>
 #include <SmartPeak/ml/ModelBuilderExperimental.h>
 #include <SmartPeak/ml/Model.h>
 #include <SmartPeak/io/PopulationTrainerFile.h>
-#include <SmartPeak/io/ModelInterpreterFileDefaultDevice.h>
+#include <SmartPeak/io/ModelInterpreterFileGpu.h>
 
 #include "Metabolomics_example.h"
 
@@ -138,7 +138,7 @@ public:
 
 // Extended classes
 template<typename TensorT>
-class ModelTrainerExt : public ModelTrainerDefaultDevice<TensorT>
+class ModelTrainerExt : public ModelTrainerGpu<TensorT>
 {
 public:
 	void makeRBCGlycolysis(Model<TensorT>& model, const std::string& biochem_rxns_filename) {
@@ -152,7 +152,7 @@ public:
 		// Convert the interaction graph to a network model
 		ModelBuilderExperimental<TensorT> model_builder;
 		model_builder.addBiochemicalReactionsMLP(model, biochemical_reaction_model.biochemicalReactions_, "RBC",
-      {8},
+      {32, 32},
 			std::make_shared<ReLUOp<TensorT>>(ReLUOp<TensorT>()), std::make_shared<ReLUGradOp<TensorT>>(ReLUGradOp<TensorT>()),
       //std::make_shared<SigmoidOp<TensorT>>(SigmoidOp<TensorT>()), std::make_shared<SigmoidGradOp<TensorT>>(SigmoidGradOp<TensorT>()),
 			std::make_shared<SumOp<TensorT>>(SumOp<TensorT>()), std::make_shared<SumErrorOp<TensorT>>(SumErrorOp<TensorT>()), std::make_shared<SumWeightGradOp<TensorT>>(SumWeightGradOp<TensorT>()),
@@ -194,14 +194,14 @@ public:
 		const int& n_generations,
 		const int& n_epochs,
 		Model<TensorT>& model,
-		ModelInterpreterDefaultDevice<TensorT>& model_interpreter,
+		ModelInterpreterGpu<TensorT>& model_interpreter,
 		const std::vector<float>& model_errors) {
 		// Check point the model every 1000 epochs
 		if (n_epochs % 1000 == 0 && n_epochs != 0) {
 			model_interpreter.getModelResults(model, false, true, false, false);
 			ModelFile<TensorT> data;
 			data.storeModelBinary(model.getName() + "_" + std::to_string(n_epochs) + "_model.binary", model);
-			ModelInterpreterFileDefaultDevice<TensorT> interpreter_data;
+			ModelInterpreterFileGpu<TensorT> interpreter_data;
 			interpreter_data.storeModelInterpreterBinary(model.getName() + "_" + std::to_string(n_epochs) + "_interpreter.binary", model_interpreter);
 		}
 		//// Record the nodes/links
@@ -213,7 +213,7 @@ public:
 		//}
     // Record the interpreter layer allocation
     if (n_epochs == 0) {
-      ModelInterpreterFileDefaultDevice<TensorT>::storeModelInterpreterCsv(model.getName() + "_interpreterOps.csv", model_interpreter);
+      ModelInterpreterFileGpu<TensorT>::storeModelInterpreterCsv(model.getName() + "_interpreterOps.csv", model_interpreter);
     }
 	}
 };
@@ -265,7 +265,7 @@ public:
 };
 
 template<typename TensorT>
-class PopulationTrainerExt : public PopulationTrainerDefaultDevice<TensorT>
+class PopulationTrainerExt : public PopulationTrainerGpu<TensorT>
 {
 public:
 	void adaptivePopulationScheduler(
@@ -335,17 +335,17 @@ void main_KineticModel(const std::string& data_dir, const bool& make_model, cons
 	data_simulator.simulation_type_ = simulation_type;
 
 	// define the model trainers and resources for the trainers
-	std::vector<ModelInterpreterDefaultDevice<float>> model_interpreters;
+	std::vector<ModelInterpreterGpu<float>> model_interpreters;
 	for (size_t i = 0; i < n_threads; ++i) {
 		ModelResources model_resources = { ModelDevice(0, 1) };
-		ModelInterpreterDefaultDevice<float> model_interpreter(model_resources);
+		ModelInterpreterGpu<float> model_interpreter(model_resources);
 		model_interpreters.push_back(model_interpreter);
 	}
 	ModelTrainerExt<float> model_trainer;
-  //model_trainer.setBatchSize(32);
-  model_trainer.setBatchSize(1);
-	model_trainer.setMemorySize(64);
-	model_trainer.setNEpochsTraining(5000);
+  model_trainer.setBatchSize(32);
+  //model_trainer.setBatchSize(1);
+	model_trainer.setMemorySize(128);
+	model_trainer.setNEpochsTraining(10000);
 	model_trainer.setNEpochsValidation(25);
 	//model_trainer.setNTETTSteps(1);
   model_trainer.setNTETTSteps(model_trainer.getMemorySize() - 3);
@@ -385,7 +385,7 @@ void main_KineticModel(const std::string& data_dir, const bool& make_model, cons
 		model_file.loadModelBinary(model_filename, model);
 		model.setId(1);
 		model.setName("RBCGlycolysis-1");
-		ModelInterpreterFileDefaultDevice<float> model_interpreter_file;
+		ModelInterpreterFileGpu<float> model_interpreter_file;
 		model_interpreter_file.loadModelInterpreterBinary(interpreter_filename, model_interpreters[0]); // FIX ME!
 	}
 	std::vector<Model<float>> population = { model };
@@ -410,9 +410,9 @@ void main_KineticModel(const std::string& data_dir, const bool& make_model, cons
 int main(int argc, char** argv)
 {
   // Parse the user commands
-  std::string data_dir = "C:/Users/dmccloskey/Dropbox (UCSD SBRG)/Project_EvoNet/";
+  //std::string data_dir = "C:/Users/dmccloskey/Dropbox (UCSD SBRG)/Project_EvoNet/";
   //std::string data_dir = "C:/Users/domccl/Dropbox (UCSD SBRG)/Project_EvoNet/";
-  //std::string data_dir = "C:/Users/domccl/GitHub/mnist/";
+  std::string data_dir = "C:/Users/dmccloskey/Documents/GitHub/mnist/";
   bool make_model = true, train_model = true;
   if (argc >= 2) {
     data_dir = argv[1];

@@ -154,9 +154,9 @@ public:
                 this->model_training_.metabolomicsData_.at(this->ref_fold_change_),
                 this->model_training_.component_group_names_.at(nodes_iter));
             else
-              ref = this->model_training_.getRandomConcentration(
-                this->model_training_.metabolomicsData_.at(this->ref_fold_change_),
-                this->model_training_.component_group_names_.at(nodes_iter));
+              ref = this->model_validation_.getRandomConcentration(
+                this->model_validation_.metabolomicsData_.at(this->ref_fold_change_),
+                this->model_validation_.component_group_names_.at(nodes_iter));
             if (ref == 0 || value == 0) {
               input_data(batch_iter, memory_iter, nodes_iter) = 0;
             }
@@ -1162,13 +1162,13 @@ void main_reconstruction(const std::string& biochem_rxns_filename,
   model_trainer.setPreserveOoO(true);
   model_trainer.setLossFunctions({
     std::shared_ptr<LossFunctionOp<float>>(new MAPELossOp<float>(1e-6, 1.0)),
-    std::make_shared<KLDivergenceMuLossOp<float>>(KLDivergenceMuLossOp<float>(1e-6, 0.0)), //FIXME
-    std::make_shared<KLDivergenceLogVarLossOp<float>>(KLDivergenceLogVarLossOp<float>(1e-6, 0.0))
+    std::make_shared<KLDivergenceMuLossOp<float>>(KLDivergenceMuLossOp<float>(1e-6, 0.0, 0.0)), //FIXME
+    std::make_shared<KLDivergenceLogVarLossOp<float>>(KLDivergenceLogVarLossOp<float>(1e-6, 0.0, 0.0))
     });
   model_trainer.setLossFunctionGrads({
     std::shared_ptr<LossFunctionGradOp<float>>(new MAPELossGradOp<float>(1e-6, 1.0)),
-    std::make_shared<KLDivergenceMuLossGradOp<float>>(KLDivergenceMuLossGradOp<float>(1e-6, 0.0)),
-    std::make_shared<KLDivergenceLogVarLossGradOp<float>>(KLDivergenceLogVarLossGradOp<float>(1e-6, 0.0))
+    std::make_shared<KLDivergenceMuLossGradOp<float>>(KLDivergenceMuLossGradOp<float>(1e-6, 0.0, 0.0)),
+    std::make_shared<KLDivergenceLogVarLossGradOp<float>>(KLDivergenceLogVarLossGradOp<float>(1e-6, 0.0, 0.0))
     });
   model_trainer.setLossOutputNodes({ output_nodes, encoding_nodes_mu, encoding_nodes_logvar });
   model_trainer.setMetricFunctions({ std::make_shared<MAEOp<float>>(MAEOp<float>()) });

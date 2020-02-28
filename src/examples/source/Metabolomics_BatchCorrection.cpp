@@ -995,7 +995,7 @@ public:
         std::make_shared<DummySolverOp<TensorT>>(DummySolverOp<TensorT>()), 0.0, 0.0, false, true);
     }
     if (linear_scale_input) {
-      std::string name = "LinearScale" + module_name;
+      std::string name = "LinearScaleFunctor" + module_name;
       node_names = model_builder.addLinearScale(model, name, name, node_names, 0, 1, true);
     }
     if (standardize_input) {

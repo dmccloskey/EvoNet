@@ -1134,23 +1134,23 @@ BOOST_AUTO_TEST_CASE(addLinearScale1)
   node_names = model_builder.addLinearScale(model, "Norm", "Mod1", node_names, 3, 10);
 
   std::vector<std::string> node_names_out = { 
-    "Input_000000000000-LinearScale","Input_000000000001-LinearScale" };
+    "Input_000000000000-LinearScaleFunctor","Input_000000000001-LinearScaleFunctor" };
   BOOST_CHECK_EQUAL(node_names.size(), node_names_out.size());
   for (int i=0; i<node_names_out.size(); ++i) {
     BOOST_CHECK_EQUAL(node_names.at(i), node_names_out.at(i));
   }
 
   std::vector<std::string> node_names_test = { "Input_000000000000-DomainMinOffset","Input_000000000000-DomainScaled",
-    "Input_000000000000-LinearScale","Input_000000000000-RangeMaxMinScale","Input_000000000001-DomainMinOffset",
-    "Input_000000000001-DomainScaled","Input_000000000001-LinearScale","Input_000000000001-RangeMaxMinScale",
+    "Input_000000000000-LinearScaleFunctor","Input_000000000000-RangeMaxMinScale","Input_000000000001-DomainMinOffset",
+    "Input_000000000001-DomainScaled","Input_000000000001-LinearScaleFunctor","Input_000000000001-RangeMaxMinScale",
     "Mod1-RangeMinBias","Mod1-RangeMaxMinBias","Norm-Max","Norm-Min","Norm-Scalar" };
   std::vector<std::string> link_names_test = {
     "Input_000000000000-DomainMinOffset_to_Input_000000000000-DomainScaled","Input_000000000000-DomainScaled_to_Input_000000000000-RangeMaxMinScale",
-    "Input_000000000000-RangeMaxMinScale_to_Input_000000000000-LinearScale","Input_000000000000_to_Input_000000000000-DomainMinOffset",
+    "Input_000000000000-RangeMaxMinScale_to_Input_000000000000-LinearScaleFunctor","Input_000000000000_to_Input_000000000000-DomainMinOffset",
     "Input_000000000000_to_Norm-Max","Input_000000000000_to_Norm-Min","Input_000000000001-DomainMinOffset_to_Input_000000000001-DomainScaled",
-    "Input_000000000001-DomainScaled_to_Input_000000000001-RangeMaxMinScale","Input_000000000001-RangeMaxMinScale_to_Input_000000000001-LinearScale",
+    "Input_000000000001-DomainScaled_to_Input_000000000001-RangeMaxMinScale","Input_000000000001-RangeMaxMinScale_to_Input_000000000001-LinearScaleFunctor",
     "Input_000000000001_to_Input_000000000001-DomainMinOffset","Input_000000000001_to_Norm-Max","Input_000000000001_to_Norm-Min",
-    "Mod1-RangeMinBias_to_Input_000000000000-LinearScale","Mod1-RangeMinBias_to_Input_000000000001-LinearScale","Norm-Max_to_Norm-Scalar",
+    "Mod1-RangeMinBias_to_Input_000000000000-LinearScaleFunctor","Mod1-RangeMinBias_to_Input_000000000001-LinearScaleFunctor","Norm-Max_to_Norm-Scalar",
     "Norm-Min_to_Input_000000000000-DomainMinOffset","Norm-Min_to_Input_000000000001-DomainMinOffset","Norm-Min_to_Norm-Scalar",
     "Norm-Scalar_to_Input_000000000000-DomainScaled","Norm-Scalar_to_Input_000000000001-DomainScaled","Mod1-RangeMaxMinBias_to_Input_000000000000-RangeMaxMinScale",
     "Mod1-RangeMaxMinBias_to_Input_000000000001-RangeMaxMinScale" };
@@ -1201,7 +1201,7 @@ BOOST_AUTO_TEST_CASE(addLinearScale1)
       BOOST_CHECK_EQUAL(model.getNode(node_name).getIntegrationWeightGrad()->getName(), "SumWeightGradOp");
     }
     else if (node_name == "Input_000000000000-DomainMinOffset" || node_name == "Input_000000000001-DomainMinOffset"
-      || node_name == "Input_000000000000-LinearScale" || node_name == "Input_000000000001-LinearScale")
+      || node_name == "Input_000000000000-LinearScaleFunctor" || node_name == "Input_000000000001-LinearScaleFunctor")
     {
       BOOST_CHECK_EQUAL(model.getNode(node_name).getActivation()->getName(), "LinearOp");
       BOOST_CHECK_EQUAL(model.getNode(node_name).getActivationGrad()->getName(), "LinearGradOp");
@@ -1235,7 +1235,7 @@ BOOST_AUTO_TEST_CASE(addLinearScale1)
   {
     BOOST_CHECK_EQUAL(model.getWeight(name).getName(), name);
     BOOST_CHECK_EQUAL(model.getWeight(name).getModuleName(), "Mod1");
-    if (name == "Mod1-RangeMinBias_to_Input_000000000000-LinearScale" || name == "Mod1-RangeMinBias_to_Input_000000000001-LinearScale") {
+    if (name == "Mod1-RangeMinBias_to_Input_000000000000-LinearScaleFunctor" || name == "Mod1-RangeMinBias_to_Input_000000000001-LinearScaleFunctor") {
       BOOST_CHECK_EQUAL(model.getWeight(name).getWeightInitOp()->getParamsAsStr(), "n:3.000000");
       BOOST_CHECK_EQUAL(model.getWeight(name).getWeightInitOp()->getName(), "ConstWeightInitOp");
       BOOST_CHECK_EQUAL(model.getWeight(name).getSolverOp()->getName(), "DummySolverOp");
