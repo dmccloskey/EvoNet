@@ -183,13 +183,14 @@ void main_classification(const std::string& data_dir, const std::string& biochem
   const bool& online_linear_scale_input, const bool& online_log_transform_input, const bool& online_standardize_input)
 {
   // global local variables
-  const int n_epochs = 100;// 100000;
+  const int n_epochs = 100000;
   const int batch_size = 64;
   const int memory_size = 1;
-  const int n_reps_per_sample = n_epochs * batch_size / 4;
+  const int n_reps_per_sample = 1000;
   std::string model_name = "0_Metabolomics";
 
   // define the data simulator
+  std::cout << "Making the training and validation data..." << std::endl;
   MetabolomicsClassificationDataSimulator<float> metabolomics_data;
   int n_reaction_ids_training, n_labels_training, n_component_group_names_training;
   int n_reaction_ids_validation, n_labels_validation, n_component_group_names_validation;
@@ -318,7 +319,7 @@ int main(int argc, char** argv)
   bool apply_fold_change = false;
   std::string fold_change_ref = "Evo04";
   float fold_change_log_base = 10;
-  bool offline_linear_scale_input = false;
+  bool offline_linear_scale_input = true;
   bool offline_log_transform_input = false;
   bool offline_standardize_input = false;
   bool online_linear_scale_input = false;
