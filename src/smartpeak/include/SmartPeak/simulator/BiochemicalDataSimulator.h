@@ -102,11 +102,7 @@ namespace SmartPeak
       const int& n_epochs, const int& batch_size, const int& memory_size,
       const int& n_input_nodes, const int& n_loss_output_nodes, const int& n_metric_output_nodes) = 0;
 
-    bool use_train_for_eval_ = true;
-  protected:
-    void getTrainingDataFromCache_(Eigen::Tensor<TensorT, 3>& input_data, Eigen::Tensor<TensorT, 3>& loss_output_data, Eigen::Tensor<TensorT, 3>& metric_output_data, Eigen::Tensor<TensorT, 2>& time_steps);
-    void getValidationDataFromCache_(Eigen::Tensor<TensorT, 3>& input_data, Eigen::Tensor<TensorT, 3>& loss_output_data, Eigen::Tensor<TensorT, 3>& metric_output_data, Eigen::Tensor<TensorT, 2>& time_steps);
-    Eigen::Tensor<TensorT, 4> input_data_training_;
+    bool use_train_for_eval_ = true;    Eigen::Tensor<TensorT, 4> input_data_training_;
     Eigen::Tensor<TensorT, 4> loss_output_data_training_;
     Eigen::Tensor<TensorT, 4> metric_output_data_training_;
     Eigen::Tensor<TensorT, 3> time_steps_training_;
@@ -116,6 +112,9 @@ namespace SmartPeak
     Eigen::Tensor<TensorT, 3> time_steps_validation_;
     int n_epochs_training_ = 0;
     int n_epochs_validation_ = 0;
+  protected:
+    void getTrainingDataFromCache_(Eigen::Tensor<TensorT, 3>& input_data, Eigen::Tensor<TensorT, 3>& loss_output_data, Eigen::Tensor<TensorT, 3>& metric_output_data, Eigen::Tensor<TensorT, 2>& time_steps);
+    void getValidationDataFromCache_(Eigen::Tensor<TensorT, 3>& input_data, Eigen::Tensor<TensorT, 3>& loss_output_data, Eigen::Tensor<TensorT, 3>& metric_output_data, Eigen::Tensor<TensorT, 2>& time_steps);
 	};
   template<typename TensorT>
   inline void BiochemicalDataSimulator<TensorT>::simulateEvaluationData(Eigen::Tensor<TensorT, 3>& input_data, Eigen::Tensor<TensorT, 2>& time_steps) {

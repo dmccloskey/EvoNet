@@ -6,188 +6,12 @@
 #include <SmartPeak/ml/ModelBuilder.h>
 #include <SmartPeak/io/PopulationTrainerFile.h>
 #include <SmartPeak/io/ModelInterpreterFileDefaultDevice.h>
-#include <SmartPeak/simulator/BiochemicalDataSimulator.h>
+#include <SmartPeak/simulator/MetabolomicsClassificationDataSimulator.h>
 #include <unsupported/Eigen/CXX11/Tensor>
 
 using namespace SmartPeak;
 
 // Other extended classes
-template<typename TensorT>
-class MetDataSimClassification : public BiochemicalDataSimulator<TensorT>
-{
-public:
-  std::vector<std::string> labels_training_;
-  std::vector<std::string> labels_validation_;
-  void makeTrainingDataForCache(const std::vector<std::string>& features, const Eigen::Tensor<TensorT, 2>& data_training, const std::vector<std::string>& labels_training,
-    const int& n_epochs, const int& batch_size, const int& memory_size,
-    const int& n_input_nodes, const int& n_loss_output_nodes, const int& n_metric_output_nodes) override {
-
-    // infer the input sizes
-    const int input_nodes = data_training.dimension(0);
-    assert(n_input_nodes == input_nodes);
-    assert(n_loss_output_nodes == labels_training_.size());
-    assert(n_metric_output_nodes == 2* labels_training_.size()); // accuracy and precision
-    assert(data_training.dimension(0) == features.size());
-    assert(data_training.dimension(1) == labels_training.size());
-
-    // initialize the Tensors
-    this->input_data_training_.resize(batch_size, memory_size, n_input_nodes, n_epochs);
-    this->loss_output_data_training_.resize(batch_size, memory_size, n_loss_output_nodes, n_epochs);
-    this->metric_output_data_training_.resize(batch_size, memory_size, n_metric_output_nodes, n_epochs);
-    this->time_steps_training_.resize(batch_size, memory_size, n_epochs);
-
-    // expand the training data to fit into the requested input size
-    const int expansion_factor = maxFunc(std::ceil(TensorT(batch_size * n_epochs) / TensorT(data_training.dimension(1))), 1);
-    const int over_expanded = data_training.dimension(1)*expansion_factor - batch_size * n_epochs;
-    assert(batch_size * memory_size * n_epochs == data_training.dimension(1)*expansion_factor - over_expanded);
-    Eigen::Tensor<TensorT, 2> data_training_expanded(data_training.dimension(0), data_training.dimension(1)*expansion_factor);
-    Eigen::Tensor<std::string, 2> labels_training_expanded(data_training.dimension(1)*expansion_factor, 1);
-    for (int i = 0; i < expansion_factor; ++i) {
-      // Slices for the data
-      Eigen::array<Eigen::Index, 2> offset1 = {0, i*data_training.dimension(1) };
-      Eigen::array<Eigen::Index, 2> span1 = { data_training.dimension(0), data_training.dimension(1) };
-      data_training_expanded.slice(offset1, span1) = data_training;
-
-      // Slices for the labels
-      for (int j = 0; j < data_training.dimension(1); ++j) {
-        labels_training_expanded(i*data_training.dimension(1) + j, 0) = labels_training.at(j);
-      }
-      //Eigen::array<Eigen::Index, 2> offset2 = { i*data_training.dimension(1), 0 };
-      //Eigen::array<Eigen::Index, 2> span2 = { data_training.dimension(1), 1 };
-      //Eigen::TensorMap<Eigen::Tensor<std::string, 2>> labels_2d(labels_training.data(), data_training.dimension(1), 1);
-      //labels_training_expanded.slice(offset2, span2) = labels_2d;
-    }
-
-    // assign the input tensors
-    auto data_training_expanded_4d = data_training_expanded.slice(Eigen::array<Eigen::Index, 2>({ 0, 0 }),
-      Eigen::array<Eigen::Index, 2>({ data_training.dimension(0), data_training.dimension(1)*expansion_factor - over_expanded })
-    ).reshape(Eigen::array<Eigen::Index, 4>({ data_training.dimension(0), batch_size, memory_size, n_epochs })
-    ).shuffle(Eigen::array<Eigen::Index, 4>({1,2,0,3}));
-    this->input_data_training_ = data_training_expanded_4d;
-
-    // Check that values of the data and input tensors are correctly aligned
-    Eigen::Tensor<TensorT, 1> data_training_head = data_training_expanded.slice(Eigen::array<Eigen::Index, 2>({ 0, 0 }),
-      Eigen::array<Eigen::Index, 2>({ data_training.dimension(0), 1 })
-    ).reshape(Eigen::array<Eigen::Index, 1>({ data_training.dimension(0) }));
-    Eigen::Tensor<TensorT, 1> data_training_tail = data_training_expanded.slice(Eigen::array<Eigen::Index, 2>({ 0, 0 }),
-      Eigen::array<Eigen::Index, 2>({ data_training.dimension(0), data_training.dimension(1)*expansion_factor - over_expanded })
-    ).slice(Eigen::array<Eigen::Index, 2>({ 0, batch_size * memory_size * n_epochs - 1 }),
-      Eigen::array<Eigen::Index, 2>({ data_training.dimension(0), 1 })
-    ).reshape(Eigen::array<Eigen::Index, 1>({ data_training.dimension(0) }));
-    Eigen::Tensor<TensorT, 1> input_training_head = this->input_data_training_.slice(Eigen::array<Eigen::Index, 4>({ 0, 0, 0, 0 }),
-      Eigen::array<Eigen::Index, 4>({ 1, 1, data_training.dimension(0), 1 })
-    ).reshape(Eigen::array<Eigen::Index, 1>({ data_training.dimension(0) }));
-    Eigen::Tensor<TensorT, 1> input_training_tail = this->input_data_training_.slice(Eigen::array<Eigen::Index, 4>({ batch_size - 1, memory_size - 1, 0, n_epochs - 1 }),
-      Eigen::array<Eigen::Index, 4>({ 1, 1, data_training.dimension(0), 1 })
-    ).reshape(Eigen::array<Eigen::Index, 1>({ data_training.dimension(0) }));
-    for (int i = 0; i < data_training.dimension(0); ++i) {
-      assert(data_training_head(i) == input_training_head(i));
-      assert(data_training_tail(i) == input_training_tail(i));
-    }
-
-    // make the one-hot encodings       
-    Eigen::Tensor<TensorT, 2> one_hot_vec = OneHotEncoder<std::string, TensorT>(labels_training_expanded, this->labels_training_);
-    //Eigen::Tensor<TensorT, 2> one_hot_vec_smoothed = one_hot_vec.unaryExpr(LabelSmoother<TensorT>(0.01, 0.01));
-
-    // assign the loss tensors
-    auto one_hot_vec_4d = one_hot_vec.slice(Eigen::array<Eigen::Index, 2>({ 0, 0 }),
-      Eigen::array<Eigen::Index, 2>({ data_training.dimension(1)*expansion_factor - over_expanded, one_hot_vec.dimension(1) })
-    ).reshape(Eigen::array<Eigen::Index, 4>({ batch_size, memory_size, n_epochs, int(labels_training_.size()) })
-    ).shuffle(Eigen::array<Eigen::Index, 4>({ 0,1,3,2 }));
-    this->loss_output_data_training_ = one_hot_vec_4d;
-
-    // Check that values of the labels and output tensors are correctly aligned
-    Eigen::Tensor<TensorT, 1> labels_training_head = one_hot_vec.slice(Eigen::array<Eigen::Index, 2>({ 0, 0 }),
-      Eigen::array<Eigen::Index, 2>({ 1, int(labels_training_.size()) })
-    ).reshape(Eigen::array<Eigen::Index, 1>({ int(labels_training_.size()) }));
-    Eigen::Tensor<TensorT, 1> labels_training_tail = one_hot_vec.slice(Eigen::array<Eigen::Index, 2>({ 0, 0 }),
-      Eigen::array<Eigen::Index, 2>({ data_training.dimension(1)*expansion_factor - over_expanded, one_hot_vec.dimension(1) })
-    ).slice(Eigen::array<Eigen::Index, 2>({ batch_size * memory_size * n_epochs - 1, 0 }),
-      Eigen::array<Eigen::Index, 2>({ 1, int(labels_training_.size()) })
-    ).reshape(Eigen::array<Eigen::Index, 1>({ int(labels_training_.size()) }));
-    Eigen::Tensor<TensorT, 1> loss_training_head = this->loss_output_data_training_.slice(Eigen::array<Eigen::Index, 4>({ 0, 0, 0, 0 }),
-      Eigen::array<Eigen::Index, 4>({ 1, 1, int(labels_training_.size()), 1 })
-    ).reshape(Eigen::array<Eigen::Index, 1>({ int(labels_training_.size()) }));
-    Eigen::Tensor<TensorT, 1> loss_training_tail = this->loss_output_data_training_.slice(Eigen::array<Eigen::Index, 4>({ batch_size - 1, memory_size - 1, 0, n_epochs - 1 }),
-      Eigen::array<Eigen::Index, 4>({ 1, 1, int(labels_training_.size()), 1 })
-    ).reshape(Eigen::array<Eigen::Index, 1>({ int(labels_training_.size()) }));
-    for (int i = 0; i < int(labels_training_.size()); ++i) {
-      assert(labels_training_head(i) == loss_training_head(i));
-      assert(labels_training_tail(i) == loss_training_tail(i));
-    }
-
-    // assign the metric tensors
-    this->metric_output_data_training_.slice(Eigen::array<Eigen::Index, 4>({ 0, 0, 0, 0 }),
-      Eigen::array<Eigen::Index, 4>({ batch_size, memory_size, int(labels_training_.size()), n_epochs })) = one_hot_vec_4d;
-    this->metric_output_data_training_.slice(Eigen::array<Eigen::Index, 4>({ 0, 0, int(labels_training_.size()), 0 }),
-      Eigen::array<Eigen::Index, 4>({ batch_size, memory_size, int(labels_training_.size()), n_epochs })) = one_hot_vec_4d;
-  }
-  void makeValidationDataForCache(const std::vector<std::string>& features, const Eigen::Tensor<TensorT, 2>& data_validation, const std::vector<std::string>& labels_validation,
-    const int& n_epochs, const int& batch_size, const int& memory_size,
-    const int& n_input_nodes, const int& n_loss_output_nodes, const int& n_metric_output_nodes) override {
-
-    // infer the input sizes
-    const int input_nodes = data_validation.dimension(0);
-    assert(n_input_nodes == input_nodes);
-    assert(n_loss_output_nodes == labels_validation_.size());
-    assert(n_metric_output_nodes == 2 * labels_validation_.size()); // accuracy and precision
-    assert(data_validation.dimension(0) == features.size());
-    assert(data_validation.dimension(1) == labels_validation.size());
-
-    // initialize the Tensors
-    this->input_data_validation_.resize(batch_size, memory_size, n_input_nodes, n_epochs);
-    this->loss_output_data_validation_.resize(batch_size, memory_size, n_loss_output_nodes, n_epochs);
-    this->metric_output_data_validation_.resize(batch_size, memory_size, n_metric_output_nodes, n_epochs);
-    this->time_steps_validation_.resize(batch_size, memory_size, n_epochs);
-
-    // expand the validation data to fit into the requested input size
-    const int expansion_factor = maxFunc(std::ceil(TensorT(batch_size * n_epochs) / TensorT(data_validation.dimension(1))), 1);
-    const int over_expanded = data_validation.dimension(1)*expansion_factor - batch_size * n_epochs;
-    assert(batch_size * memory_size * n_epochs == data_validation.dimension(1)*expansion_factor - over_expanded);
-    Eigen::Tensor<TensorT, 2> data_validation_expanded(data_validation.dimension(0), data_validation.dimension(1)*expansion_factor);
-    Eigen::Tensor<std::string, 2> labels_validation_expanded(data_validation.dimension(1)*expansion_factor, 1);
-    for (int i = 0; i < expansion_factor; ++i) {
-      // Slices for the data
-      Eigen::array<Eigen::Index, 2> offset1 = { 0, i*data_validation.dimension(1) };
-      Eigen::array<Eigen::Index, 2> span1 = { data_validation.dimension(0), data_validation.dimension(1) };
-      data_validation_expanded.slice(offset1, span1) = data_validation;
-
-      // Slices for the labels
-      for (int j = 0; j < data_validation.dimension(1); ++j) {
-        labels_validation_expanded(i*data_validation.dimension(1) + j, 0) = labels_validation.at(j);
-      }
-      //Eigen::array<Eigen::Index, 2> offset2 = { i*data_validation.dimension(1), 0 };
-      //Eigen::array<Eigen::Index, 2> span2 = { data_validation.dimension(1), 1 };
-      //Eigen::TensorMap<Eigen::Tensor<std::string, 2>> labels_2d(labels_validation.data(), data_validation.dimension(1), 1);
-      //labels_validation_expanded.slice(offset2, span2) = labels_2d;
-    }
-
-    // assign the input tensors
-    auto data_validation_expanded_4d = data_validation_expanded.slice(Eigen::array<Eigen::Index, 2>({ 0, 0 }),
-      Eigen::array<Eigen::Index, 2>({ data_validation.dimension(0), data_validation.dimension(1)*expansion_factor - over_expanded })
-    ).reshape(Eigen::array<Eigen::Index, 4>({ data_validation.dimension(0), batch_size, memory_size, n_epochs })
-    ).shuffle(Eigen::array<Eigen::Index, 4>({ 1,2,0,3 }));
-    this->input_data_validation_ = data_validation_expanded_4d;
-
-    // make the one-hot encodings       
-    Eigen::Tensor<TensorT, 2> one_hot_vec = OneHotEncoder<std::string, TensorT>(labels_validation_expanded, this->labels_validation_);
-    //Eigen::Tensor<TensorT, 2> one_hot_vec_smoothed = one_hot_vec.unaryExpr(LabelSmoother<TensorT>(0.01, 0.01));
-
-    // assign the loss tensors
-    auto one_hot_vec_4d = one_hot_vec.slice(Eigen::array<Eigen::Index, 2>({ 0, 0 }),
-      Eigen::array<Eigen::Index, 2>({ data_validation.dimension(1)*expansion_factor - over_expanded, one_hot_vec.dimension(1) })
-    ).reshape(Eigen::array<Eigen::Index, 4>({ batch_size, memory_size, n_epochs, int(labels_validation_.size()) })
-    ).shuffle(Eigen::array<Eigen::Index, 4>({ 0,1,3,2 }));
-    this->loss_output_data_validation_ = one_hot_vec_4d;
-
-    // assign the metric tensors
-    this->metric_output_data_validation_.slice(Eigen::array<Eigen::Index, 4>({ 0, 0, 0, 0 }),
-      Eigen::array<Eigen::Index, 4>({ batch_size, memory_size, int(labels_validation_.size()), n_epochs })) = one_hot_vec_4d;
-    this->metric_output_data_validation_.slice(Eigen::array<Eigen::Index, 4>({ 0, 0, int(labels_validation_.size()), 0 }),
-      Eigen::array<Eigen::Index, 4>({ batch_size, memory_size, int(labels_validation_.size()), n_epochs })) = one_hot_vec_4d;
-  }
-};
-
 template<typename TensorT>
 class ModelTrainerExt : public ModelTrainerDefaultDevice<TensorT>
 {
@@ -350,140 +174,37 @@ public:
 void main_classification(const std::string& data_dir, const std::string& biochem_rxns_filename,
   const std::string& metabo_data_filename_train, const std::string& meta_data_filename_train,
   const std::string& metabo_data_filename_test, const std::string& meta_data_filename_test,
-  const bool& make_model = true, const bool& train_model = true, const int& norm_method = 0,
-  const bool& simulate_MARs = true, const bool& sample_concs = true, const bool& use_fold_change = false, const std::string& fold_change_ref = "Evo04")
+  const bool& make_model, const bool& train_model,
+  const bool& use_concentrations, const bool& use_MARs,
+  const bool& sample_values, const bool& iter_values,
+  const bool& fill_sampling, const bool& fill_mean, const bool& fill_zero,
+  const bool& apply_fold_change, const std::string& fold_change_ref, const float& fold_change_log_base,
+  const bool& offline_linear_scale_input, const bool& offline_log_transform_input, const bool& offline_standardize_input,
+  const bool& online_linear_scale_input, const bool& online_log_transform_input, const bool& online_standardize_input)
 {
   // global local variables
   const int n_epochs = 100;// 100000;
   const int batch_size = 64;
   const int memory_size = 1;
-  const bool fill_sampling = false;
-  const bool fill_mean = false;
-  const bool fill_zero = true;
   const int n_reps_per_sample = n_epochs * batch_size / 4;
-
-  // define the data simulator
-  BiochemicalReactionModel<float> reaction_model;
-  MetDataSimClassification<float> metabolomics_data;
   std::string model_name = "0_Metabolomics";
 
-  // Read in the training data
-  reaction_model.readBiochemicalReactions(biochem_rxns_filename, true);
-  reaction_model.readMetabolomicsData(metabo_data_filename_train);
-  reaction_model.readMetaData(meta_data_filename_train);
-  reaction_model.findComponentGroupNames();
-  if (simulate_MARs) {
-    reaction_model.findMARs();
-    reaction_model.findMARs(true, false);
-    reaction_model.findMARs(false, true);
-    reaction_model.removeRedundantMARs();
-  }
-  reaction_model.findLabels();
-  const int n_reaction_ids_training = reaction_model.reaction_ids_.size();
-  const int n_labels_training = reaction_model.labels_.size();
-  const int n_component_group_names_training = reaction_model.component_group_names_.size();
-  metabolomics_data.labels_training_ = reaction_model.labels_;
-
-  // Make the training data caches
-  std::map<std::string, int> sample_group_name_to_reps;
-  std::pair<int, int> max_reps_n_labels = reaction_model.getMaxReplicatesAndNLabels(sample_group_name_to_reps, reaction_model.sample_group_names_, reaction_model.component_group_names_);
-  if (sample_concs) {
-    for (auto& sample_group_name_to_rep : sample_group_name_to_reps) sample_group_name_to_rep.second = n_reps_per_sample;
-    std::vector<std::string> metabo_labels;
-    metabo_labels.reserve(n_reps_per_sample * sample_group_name_to_reps.size());
-    Eigen::Tensor<float, 2> metabo_data(int(reaction_model.component_group_names_.size()), n_reps_per_sample * sample_group_name_to_reps.size());
-    reaction_model.getMetDataAsTensors(metabo_data, metabo_labels,
-      reaction_model.sample_group_names_, reaction_model.component_group_names_, reaction_model.sample_group_name_to_label_, sample_group_name_to_reps,
-      true, false, true, false, false, false, false, use_fold_change, fold_change_ref, 10);
-    metabolomics_data.makeTrainingDataForCache(reaction_model.component_group_names_, metabo_data, metabo_labels, n_epochs, batch_size, memory_size,
-      reaction_model.component_group_names_.size(), reaction_model.labels_.size(), 2 * reaction_model.labels_.size());
-  }
-  else if (simulate_MARs) {
-    for (auto& sample_group_name_to_rep : sample_group_name_to_reps) sample_group_name_to_rep.second = n_reps_per_sample;
-    std::vector<std::string> metabo_labels;
-    metabo_labels.reserve(n_reps_per_sample * sample_group_name_to_reps.size());
-    Eigen::Tensor<float, 2> metabo_data(int(reaction_model.reaction_ids_.size()), n_reps_per_sample * sample_group_name_to_reps.size());
-    reaction_model.getMetDataAsTensors(metabo_data, metabo_labels,
-      reaction_model.sample_group_names_, reaction_model.reaction_ids_, reaction_model.sample_group_name_to_label_, sample_group_name_to_reps,
-      false, true, true, false, false, false, false, use_fold_change, fold_change_ref, 10);
-    metabolomics_data.makeTrainingDataForCache(reaction_model.reaction_ids_, metabo_data, metabo_labels, n_epochs, batch_size, memory_size,
-      reaction_model.reaction_ids_.size(), reaction_model.labels_.size(), 2 * reaction_model.labels_.size());
-  }
-  else {
-    std::vector<std::string> metabo_labels;
-    metabo_labels.reserve(max_reps_n_labels.second);
-    Eigen::Tensor<float, 2> metabo_data(int(reaction_model.component_group_names_.size()), max_reps_n_labels.second);
-    reaction_model.getMetDataAsTensors(metabo_data, metabo_labels,
-      reaction_model.sample_group_names_, reaction_model.component_group_names_, reaction_model.sample_group_name_to_label_, sample_group_name_to_reps,
-      true, false, false, true, fill_sampling, fill_mean, fill_zero, use_fold_change, fold_change_ref, 10);
-    metabolomics_data.makeTrainingDataForCache(reaction_model.component_group_names_, metabo_data, metabo_labels, n_epochs, batch_size, memory_size,
-      reaction_model.component_group_names_.size(), reaction_model.labels_.size(), 2 * reaction_model.labels_.size());
-  }
-
-  // Read in the validation data
-  reaction_model.clear();
-  reaction_model.readBiochemicalReactions(biochem_rxns_filename, true);
-  reaction_model.readMetabolomicsData(metabo_data_filename_test);
-  reaction_model.readMetaData(meta_data_filename_test);
-  reaction_model.findComponentGroupNames();
-  if (simulate_MARs) {
-    reaction_model.findMARs();
-    reaction_model.findMARs(true, false);
-    reaction_model.findMARs(false, true);
-    reaction_model.removeRedundantMARs();
-  }
-  reaction_model.findLabels();
-  const int n_reaction_ids_validation = reaction_model.reaction_ids_.size();
-  const int n_labels_validation = reaction_model.labels_.size();
-  const int n_component_group_names_validation = reaction_model.component_group_names_.size();
-  metabolomics_data.labels_validation_ = reaction_model.labels_;
-
-  // Make the validation data caches
-  sample_group_name_to_reps.clear();
-  max_reps_n_labels = reaction_model.getMaxReplicatesAndNLabels(sample_group_name_to_reps, reaction_model.sample_group_names_, reaction_model.component_group_names_);
-  if (sample_concs) {
-    for (auto& sample_group_name_to_rep : sample_group_name_to_reps) sample_group_name_to_rep.second = n_reps_per_sample;
-    std::vector<std::string> metabo_labels;
-    metabo_labels.reserve(n_reps_per_sample * sample_group_name_to_reps.size());
-    Eigen::Tensor<float, 2> metabo_data(int(reaction_model.component_group_names_.size()), n_reps_per_sample * sample_group_name_to_reps.size());
-    reaction_model.getMetDataAsTensors(metabo_data, metabo_labels,
-      reaction_model.sample_group_names_, reaction_model.component_group_names_, reaction_model.sample_group_name_to_label_, sample_group_name_to_reps,
-      true, false, true, false, false, false, false, use_fold_change, fold_change_ref, 10);
-    metabolomics_data.makeValidationDataForCache(reaction_model.component_group_names_, metabo_data, metabo_labels, n_epochs, batch_size, memory_size,
-      reaction_model.component_group_names_.size(), reaction_model.labels_.size(), 2 * reaction_model.labels_.size());
-  }
-  else if (simulate_MARs) {
-    for (auto& sample_group_name_to_rep : sample_group_name_to_reps) sample_group_name_to_rep.second = n_reps_per_sample;
-    std::vector<std::string> metabo_labels;
-    metabo_labels.reserve(n_reps_per_sample * sample_group_name_to_reps.size());
-    Eigen::Tensor<float, 2> metabo_data(int(reaction_model.reaction_ids_.size()), n_reps_per_sample * sample_group_name_to_reps.size());
-    reaction_model.getMetDataAsTensors(metabo_data, metabo_labels,
-      reaction_model.sample_group_names_, reaction_model.reaction_ids_, reaction_model.sample_group_name_to_label_, sample_group_name_to_reps,
-      false, true, true, false, false, false, false, use_fold_change, fold_change_ref, 10);
-    metabolomics_data.makeValidationDataForCache(reaction_model.reaction_ids_, metabo_data, metabo_labels, n_epochs, batch_size, memory_size,
-      reaction_model.reaction_ids_.size(), reaction_model.labels_.size(), 2 * reaction_model.labels_.size());
-  }
-  else {
-    std::vector<std::string> metabo_labels;
-    metabo_labels.reserve(max_reps_n_labels.second);
-    Eigen::Tensor<float, 2> metabo_data(int(reaction_model.component_group_names_.size()), max_reps_n_labels.second);
-    reaction_model.getMetDataAsTensors(metabo_data, metabo_labels,
-      reaction_model.sample_group_names_, reaction_model.component_group_names_, reaction_model.sample_group_name_to_label_, sample_group_name_to_reps,
-      true, false, false, true, fill_sampling, fill_mean, fill_zero, use_fold_change, fold_change_ref, 10);
-    metabolomics_data.makeValidationDataForCache(reaction_model.component_group_names_, metabo_data, metabo_labels, n_epochs, batch_size, memory_size,
-      reaction_model.component_group_names_.size(), reaction_model.labels_.size(), 2 * reaction_model.labels_.size());
-  }
-
-  // Checks for the training and validation data
-  assert(n_reaction_ids_training == n_reaction_ids_validation);
-  assert(n_labels_training == n_labels_validation);
-  assert(n_component_group_names_training == n_component_group_names_validation);
+  // define the data simulator
+  MetabolomicsClassificationDataSimulator<float> metabolomics_data;
+  int n_reaction_ids_training, n_labels_training, n_component_group_names_training;
+  int n_reaction_ids_validation, n_labels_validation, n_component_group_names_validation;
+  metabolomics_data.readAndProcessMetabolomicsTrainingAndValidationData(
+    n_reaction_ids_training, n_labels_training, n_component_group_names_training, n_reaction_ids_validation, n_labels_validation, n_component_group_names_validation,
+    biochem_rxns_filename, metabo_data_filename_train, meta_data_filename_train, metabo_data_filename_test, meta_data_filename_test,
+    use_concentrations, use_MARs, sample_values, iter_values, fill_sampling, fill_mean, fill_zero, apply_fold_change, fold_change_ref, fold_change_log_base,
+    offline_linear_scale_input, offline_log_transform_input, offline_standardize_input, online_linear_scale_input, online_log_transform_input, online_standardize_input,
+    n_reps_per_sample, n_epochs, batch_size, memory_size);
 
   // define the model input/output nodes
   int n_input_nodes;
-  if (simulate_MARs) n_input_nodes = reaction_model.reaction_ids_.size();
-  else n_input_nodes = reaction_model.component_group_names_.size();
-  const int n_output_nodes = reaction_model.labels_.size();
+  if (use_MARs) n_input_nodes = n_reaction_ids_training;
+  else n_input_nodes = n_component_group_names_training;
+  const int n_output_nodes = n_labels_training;
 
   // define the input nodes
   std::vector<std::string> input_nodes;
@@ -530,29 +251,8 @@ void main_classification(const std::string& data_dir, const std::string& biochem
   Model<float> model;
   if (make_model) {
     std::cout << "Making the model..." << std::endl;
-    bool linear_scale_input = false;
-    bool log_transform_input = false;
-    bool standardize_input = false;
-    if (norm_method == 0) {// normalization type 0 (No normalization)
-    }
-    else if (norm_method == 1) {// normalization type 1 (Projection)
-      linear_scale_input = true;
-    }
-    else if (norm_method == 2) {// normalization type 2 (Standardization + Projection)
-      linear_scale_input = true;
-      standardize_input = true;
-    }
-    else if (norm_method == 3) {// normalization type 3 (Log transformation + Projection)
-      linear_scale_input = true;
-      log_transform_input = true;
-    }
-    else if (norm_method == 4) {// normalization type 4 (Log transformation + Standardization + Projection)
-      linear_scale_input = true;
-      log_transform_input = true;
-      standardize_input = true;
-    }
     //model_trainer.makeModelFCClass(model, n_input_nodes, n_output_nodes, true, true, true, 64, 64, 0); // normalization type 4 (Log transformation + Standardization + Projection)
-    model_trainer.makeModelFCClass(model, n_input_nodes, n_output_nodes, linear_scale_input, log_transform_input, standardize_input, 8, 0, 0);
+    model_trainer.makeModelFCClass(model, n_input_nodes, n_output_nodes, online_linear_scale_input, online_log_transform_input, online_standardize_input, 8, 0, 0);
   }
   else {
     // TODO
@@ -608,11 +308,22 @@ int main(int argc, char** argv)
   std::string meta_data_filename_test = data_dir + "ALEsKOs01_MetaData_test.csv";
   bool make_model = true;
   bool train_model = true;
-  int norm_method = 0;
-  bool simulate_MARs = false;
-  bool sample_concs = true;
-  bool use_fold_change = false;
+  bool use_concentrations = true;
+  bool use_MARs = false;
+  bool sample_values = true;
+  bool iter_values = false;
+  bool fill_sampling = false;
+  bool fill_mean = false;
+  bool fill_zero = false;
+  bool apply_fold_change = false;
   std::string fold_change_ref = "Evo04";
+  float fold_change_log_base = 10;
+  bool offline_linear_scale_input = false;
+  bool offline_log_transform_input = false;
+  bool offline_standardize_input = false;
+  bool online_linear_scale_input = false;
+  bool online_log_transform_input = false;
+  bool online_standardize_input = false;
 
   // Parse the input
   std::cout << "Parsing the user input..." << std::endl;
@@ -641,24 +352,57 @@ int main(int argc, char** argv)
     train_model = (argv[8] == std::string("true")) ? true : false;
   }
   if (argc >= 10) {
+    use_concentrations = (argv[10] == std::string("true")) ? true : false;
+  }
+  if (argc >= 11) {
+    use_MARs = (argv[10] == std::string("true")) ? true : false;
+  }
+  if (argc >= 12) {
+    sample_values = (argv[11] == std::string("true")) ? true : false;
+  }
+  if (argc >= 13) {
+    iter_values = (argv[12] == std::string("true")) ? true : false;
+  }
+  if (argc >= 14) {
+    fill_sampling = (argv[13] == std::string("true")) ? true : false;
+  }
+  if (argc >= 15) {
+    fill_mean = (argv[14] == std::string("true")) ? true : false;
+  }
+  if (argc >= 16) {
+    fill_zero = (argv[15] == std::string("true")) ? true : false;
+  }
+  if (argc >= 17) {
+    apply_fold_change = (argv[16] == std::string("true")) ? true : false;
+  }
+  if (argc >= 18) {
+    fold_change_ref = argv[17];
+  }
+  if (argc >= 19) {
     try {
-      norm_method = (std::stoi(argv[9]) >= 0 && std::stoi(argv[9]) <= 4) ? std::stoi(argv[9]) : 0;
+      fold_change_log_base = std::stof(argv[18]);
     }
     catch (std::exception & e) {
       std::cout << e.what() << std::endl;
     }
   }
-  if (argc >= 11) {
-    simulate_MARs = (argv[10] == std::string("true")) ? true : false;
+  if (argc >= 20) {
+    offline_linear_scale_input = (argv[19] == std::string("true")) ? true : false;
   }
-  if (argc >= 12) {
-    sample_concs = (argv[11] == std::string("true")) ? true : false;
+  if (argc >= 21) {
+    offline_log_transform_input = (argv[20] == std::string("true")) ? true : false;
   }
-  if (argc >= 13) {
-    use_fold_change = (argv[12] == std::string("true")) ? true : false;
+  if (argc >= 22) {
+    offline_standardize_input = (argv[21] == std::string("true")) ? true : false;
   }
-  if (argc >= 14) {
-    fold_change_ref = argv[13];
+  if (argc >= 23) {
+    online_linear_scale_input = (argv[22] == std::string("true")) ? true : false;
+  }
+  if (argc >= 24) {
+    online_log_transform_input = (argv[23] == std::string("true")) ? true : false;
+  }
+  if (argc >= 25) {
+    online_standardize_input = (argv[24] == std::string("true")) ? true : false;
   }
 
   // Cout the parsed input
@@ -670,17 +414,30 @@ int main(int argc, char** argv)
   std::cout << "meta_data_filename_test: " << meta_data_filename_test << std::endl;
   std::cout << "make_model: " << make_model << std::endl;
   std::cout << "train_model: " << train_model << std::endl;
-  std::cout << "norm_method: " << norm_method << std::endl;
-  std::cout << "simulate_MARs: " << simulate_MARs << std::endl;
-  std::cout << "sample_concs: " << sample_concs << std::endl;
-  std::cout << "use_fold_change: " << use_fold_change << std::endl;
+  std::cout << "use_concentrations: " << use_concentrations << std::endl;
+  std::cout << "use_MARs: " << use_MARs << std::endl;
+  std::cout << "sample_values: " << sample_values << std::endl;
+  std::cout << "iter_values: " << iter_values << std::endl;
+  std::cout << "fill_sampling: " << fill_sampling << std::endl;
+  std::cout << "fill_mean: " << fill_mean << std::endl;
+  std::cout << "fill_zero: " << fill_zero << std::endl;
+  std::cout << "apply_fold_change: " << apply_fold_change << std::endl;
   std::cout << "fold_change_ref: " << fold_change_ref << std::endl;
+  std::cout << "fold_change_log_base: " << fold_change_log_base << std::endl;
+  std::cout << "offline_linear_scale_input: " << offline_linear_scale_input << std::endl;
+  std::cout << "offline_log_transform_input: " << offline_log_transform_input << std::endl;
+  std::cout << "offline_standardize_input: " << offline_standardize_input << std::endl;
+  std::cout << "online_linear_scale_input: " << online_linear_scale_input << std::endl;
+  std::cout << "online_log_transform_input: " << online_log_transform_input << std::endl;
+  std::cout << "online_standardize_input: " << online_standardize_input << std::endl;
 
   // Run the classification
-  main_classification(data_dir, biochem_rxns_filename, metabo_data_filename_train, meta_data_filename_train,
-    metabo_data_filename_test, meta_data_filename_test,
-    make_model, train_model, norm_method,
-    simulate_MARs, sample_concs, use_fold_change, fold_change_ref
+  main_classification(data_dir, biochem_rxns_filename, metabo_data_filename_train, meta_data_filename_train, metabo_data_filename_test, meta_data_filename_test,
+    make_model, train_model,
+    use_concentrations, use_MARs, sample_values, iter_values, fill_sampling, fill_mean, fill_zero,
+    apply_fold_change, fold_change_ref, fold_change_log_base,
+    offline_linear_scale_input, offline_log_transform_input, offline_standardize_input,
+    online_linear_scale_input, online_log_transform_input, online_standardize_input
   );
   return 0;
 }

@@ -10,6 +10,7 @@ set(sources_list_h
 	DataSimulator.h
 	EMGModel.h
 	HarmonicOscillatorSimulator.h
+	MetabolomicsClassificationDataSimulator.h
 	MNISTSimulator.h
 	PeakSimulator.h
 )
