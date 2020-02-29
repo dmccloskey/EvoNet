@@ -55,7 +55,7 @@ BOOST_AUTO_TEST_CASE(readAndProcessMetabolomicsTrainingAndValidationData)
     n_reaction_ids_training, n_labels_training, n_component_group_names_training, n_reaction_ids_validation, n_labels_validation, n_component_group_names_validation,
     biochem_rxns_filename, metabo_data_filename_train, meta_data_filename_train, metabo_data_filename_test, meta_data_filename_test,
     true, false, false, true, false, false, true, false, "S01_D01_PLT_25C_0hr", 10, false, false, false, false, false, false,
-    n_reps_per_sample, n_epochs, batch_size, memory_size);
+    n_reps_per_sample, false, n_epochs, batch_size, memory_size);
   BOOST_CHECK_EQUAL(n_reaction_ids_training, 0);
   BOOST_CHECK_EQUAL(n_labels_training, 1);
   BOOST_CHECK_EQUAL(n_component_group_names_training, 81);
@@ -160,7 +160,7 @@ BOOST_AUTO_TEST_CASE(readAndProcessMetabolomicsTrainingAndValidationData)
     n_reaction_ids_training, n_labels_training, n_component_group_names_training, n_reaction_ids_validation, n_labels_validation, n_component_group_names_validation,
     biochem_rxns_filename, metabo_data_filename_train, meta_data_filename_train, metabo_data_filename_test, meta_data_filename_test,
     true, false, false, true, false, false, true, false, "S01_D01_PLT_25C_0hr", 10, true, false, false, false, false, false,
-    n_reps_per_sample, n_epochs, batch_size, memory_size);
+    n_reps_per_sample, false, n_epochs, batch_size, memory_size);
   BOOST_CHECK_EQUAL(n_reaction_ids_training, 0);
   BOOST_CHECK_EQUAL(n_labels_training, 1);
   BOOST_CHECK_EQUAL(n_component_group_names_training, 81);
@@ -267,7 +267,7 @@ BOOST_AUTO_TEST_CASE(readAndProcessMetabolomicsTrainingAndValidationData)
     n_reaction_ids_training, n_labels_training, n_component_group_names_training, n_reaction_ids_validation, n_labels_validation, n_component_group_names_validation,
     biochem_rxns_filename, metabo_data_filename_train, meta_data_filename_train, metabo_data_filename_test, meta_data_filename_test,
     true, false, false, true, false, false, true, true, "S01_D01_PLT_25C_0hr", 10, false, false, false, false, false, false,
-    n_reps_per_sample, n_epochs, batch_size, memory_size);
+    n_reps_per_sample, false, n_epochs, batch_size, memory_size);
   BOOST_CHECK_EQUAL(n_reaction_ids_training, 0);
   BOOST_CHECK_EQUAL(n_labels_training, 1);
   BOOST_CHECK_EQUAL(n_component_group_names_training, 81);
@@ -374,7 +374,7 @@ BOOST_AUTO_TEST_CASE(readAndProcessMetabolomicsTrainingAndValidationData)
     n_reaction_ids_training, n_labels_training, n_component_group_names_training, n_reaction_ids_validation, n_labels_validation, n_component_group_names_validation,
     biochem_rxns_filename, metabo_data_filename_train, meta_data_filename_train, metabo_data_filename_test, meta_data_filename_test,
     true, false, true, false, false, false, false, false, "S01_D01_PLT_25C_0hr", 10, false, false, false, false, false, false,
-    n_reps_per_sample, n_epochs, batch_size, memory_size);
+    n_reps_per_sample, false, n_epochs, batch_size, memory_size);
   BOOST_CHECK_EQUAL(n_reaction_ids_training, 0);
   BOOST_CHECK_EQUAL(n_labels_training, 1);
   BOOST_CHECK_EQUAL(n_component_group_names_training, 81);
@@ -465,7 +465,7 @@ BOOST_AUTO_TEST_CASE(readAndProcessMetabolomicsTrainingAndValidationData)
     n_reaction_ids_training, n_labels_training, n_component_group_names_training, n_reaction_ids_validation, n_labels_validation, n_component_group_names_validation,
     biochem_rxns_filename, metabo_data_filename_train, meta_data_filename_train, metabo_data_filename_test, meta_data_filename_test,
     true, false, true, false, false, false, false, false, "S01_D01_PLT_25C_0hr", 10, true, false, false, false, false, false,
-    n_reps_per_sample, n_epochs, batch_size, memory_size);
+    n_reps_per_sample, false, n_epochs, batch_size, memory_size);
   BOOST_CHECK_EQUAL(n_reaction_ids_training, 0);
   BOOST_CHECK_EQUAL(n_labels_training, 1);
   BOOST_CHECK_EQUAL(n_component_group_names_training, 81);
@@ -556,7 +556,7 @@ BOOST_AUTO_TEST_CASE(readAndProcessMetabolomicsTrainingAndValidationData)
     n_reaction_ids_training, n_labels_training, n_component_group_names_training, n_reaction_ids_validation, n_labels_validation, n_component_group_names_validation,
     biochem_rxns_filename, metabo_data_filename_train, meta_data_filename_train, metabo_data_filename_test, meta_data_filename_test,
     true, false, true, false, false, false, false, true, "S01_D01_PLT_25C_0hr", 10, false, false, false, false, false, false,
-    n_reps_per_sample, n_epochs, batch_size, memory_size);
+    n_reps_per_sample, false, n_epochs, batch_size, memory_size);
   BOOST_CHECK_EQUAL(n_reaction_ids_training, 0);
   BOOST_CHECK_EQUAL(n_labels_training, 1);
   BOOST_CHECK_EQUAL(n_component_group_names_training, 81);
@@ -647,7 +647,7 @@ BOOST_AUTO_TEST_CASE(readAndProcessMetabolomicsTrainingAndValidationData)
     n_reaction_ids_training, n_labels_training, n_component_group_names_training, n_reaction_ids_validation, n_labels_validation, n_component_group_names_validation,
     biochem_rxns_filename, metabo_data_filename_train, meta_data_filename_train, metabo_data_filename_test, meta_data_filename_test,
     false, true, true, false, false, false, false, false, "S01_D01_PLT_25C_0hr", 10, false, false, false, false, false, false,
-    n_reps_per_sample, n_epochs, batch_size, memory_size);
+    n_reps_per_sample, false, n_epochs, batch_size, memory_size);
   BOOST_CHECK_EQUAL(n_reaction_ids_training, 11);
   BOOST_CHECK_EQUAL(n_labels_training, 1);
   BOOST_CHECK_EQUAL(n_component_group_names_training, 81);
@@ -738,7 +738,7 @@ BOOST_AUTO_TEST_CASE(readAndProcessMetabolomicsTrainingAndValidationData)
     n_reaction_ids_training, n_labels_training, n_component_group_names_training, n_reaction_ids_validation, n_labels_validation, n_component_group_names_validation,
     biochem_rxns_filename, metabo_data_filename_train, meta_data_filename_train, metabo_data_filename_test, meta_data_filename_test,
     false, true, true, false, false, false, false, false, "S01_D01_PLT_25C_0hr", 10, true, false, false, false, false, false,
-    n_reps_per_sample, n_epochs, batch_size, memory_size);
+    n_reps_per_sample, false, n_epochs, batch_size, memory_size);
   BOOST_CHECK_EQUAL(n_reaction_ids_training, 11);
   BOOST_CHECK_EQUAL(n_labels_training, 1);
   BOOST_CHECK_EQUAL(n_component_group_names_training, 81);
@@ -829,7 +829,7 @@ BOOST_AUTO_TEST_CASE(readAndProcessMetabolomicsTrainingAndValidationData)
     n_reaction_ids_training, n_labels_training, n_component_group_names_training, n_reaction_ids_validation, n_labels_validation, n_component_group_names_validation,
     biochem_rxns_filename, metabo_data_filename_train, meta_data_filename_train, metabo_data_filename_test, meta_data_filename_test,
     false, true, true, false, false, false, false, true, "S01_D01_PLT_25C_0hr", 10, false, false, false, false, false, false,
-    n_reps_per_sample, n_epochs, batch_size, memory_size);
+    n_reps_per_sample, false, n_epochs, batch_size, memory_size);
   BOOST_CHECK_EQUAL(n_reaction_ids_training, 11);
   BOOST_CHECK_EQUAL(n_labels_training, 1);
   BOOST_CHECK_EQUAL(n_component_group_names_training, 81);

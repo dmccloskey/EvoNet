@@ -54,7 +54,7 @@ namespace SmartPeak
       const bool& apply_fold_change, const std::string& fold_change_ref, const TensorT& fold_change_log_base,
       const bool& offline_linear_scale_input, const bool& offline_log_transform_input, const bool& offline_standardize_input,
       const bool& online_linear_scale_input, const bool& online_log_transform_input, const bool& online_standardize_input,
-      const int& n_reps_per_sample,
+      const int& n_reps_per_sample, const bool& randomize_sample_group_names,
       const int& n_epochs, const int& batch_size, const int& memory_size);
   };
   template<typename TensorT>
@@ -273,7 +273,8 @@ namespace SmartPeak
   }
   template<typename TensorT>
   inline void MetabolomicsClassificationDataSimulator<TensorT>::readAndProcessMetabolomicsTrainingAndValidationData(int & n_reaction_ids_training, int & n_labels_training, int & n_component_group_names_training, int & n_reaction_ids_validation, int & n_labels_validation, int & n_component_group_names_validation, const std::string & biochem_rxns_filename, const std::string & metabo_data_filename_train, const std::string & meta_data_filename_train, const std::string & metabo_data_filename_test, const std::string & meta_data_filename_test, 
-    const bool & use_concentrations, const bool & use_MARs, const bool & sample_values, const bool & iter_values, const bool & fill_sampling, const bool & fill_mean, const bool & fill_zero, const bool & apply_fold_change, const std::string & fold_change_ref, const TensorT & fold_change_log_base, const bool & offline_linear_scale_input, const bool & offline_log_transform_input, const bool & offline_standardize_input, const bool & online_linear_scale_input, const bool & online_log_transform_input, const bool & online_standardize_input, const int & n_reps_per_sample, const int & n_epochs, const int & batch_size, const int & memory_size)
+    const bool & use_concentrations, const bool & use_MARs, const bool & sample_values, const bool & iter_values, const bool & fill_sampling, const bool & fill_mean, const bool & fill_zero, const bool & apply_fold_change, const std::string & fold_change_ref, const TensorT & fold_change_log_base, const bool & offline_linear_scale_input, const bool & offline_log_transform_input, const bool & offline_standardize_input, const bool & online_linear_scale_input, const bool & online_log_transform_input, const bool & online_standardize_input, 
+    const int & n_reps_per_sample, const bool& randomize_sample_group_names, const int & n_epochs, const int & batch_size, const int & memory_size)
   {
     // define the data simulator
     BiochemicalReactionModel<TensorT> reaction_model;
@@ -323,7 +324,7 @@ namespace SmartPeak
       // Create the data matrix
       reaction_model.getMetDataAsTensors(metabo_data_training, metabo_labels_training,
         reaction_model.sample_group_names_, reaction_model.component_group_names_, reaction_model.sample_group_name_to_label_, sample_group_name_to_reps,
-        use_concentrations, use_MARs, sample_values, iter_values, fill_sampling, fill_mean, fill_zero, apply_fold_change, fold_change_ref, fold_change_log_base);
+        use_concentrations, use_MARs, sample_values, iter_values, fill_sampling, fill_mean, fill_zero, apply_fold_change, fold_change_ref, fold_change_log_base, randomize_sample_group_names);
     }
     else if (use_MARs) {
       // Adjust the number of replicates per sample group
@@ -337,7 +338,7 @@ namespace SmartPeak
       // Create the data matrix
       reaction_model.getMetDataAsTensors(metabo_data_training, metabo_labels_training,
         reaction_model.sample_group_names_, reaction_model.reaction_ids_, reaction_model.sample_group_name_to_label_, sample_group_name_to_reps,
-        use_concentrations, use_MARs, sample_values, iter_values, fill_sampling, fill_mean, fill_zero, apply_fold_change, fold_change_ref, fold_change_log_base);
+        use_concentrations, use_MARs, sample_values, iter_values, fill_sampling, fill_mean, fill_zero, apply_fold_change, fold_change_ref, fold_change_log_base, randomize_sample_group_names);
     }
 
     // Read in the validation data
@@ -376,7 +377,7 @@ namespace SmartPeak
       // Create the data matrix
       reaction_model.getMetDataAsTensors(metabo_data_validation, metabo_labels_validation,
         reaction_model.sample_group_names_, reaction_model.component_group_names_, reaction_model.sample_group_name_to_label_, sample_group_name_to_reps,
-        use_concentrations, use_MARs, sample_values, iter_values, fill_sampling, fill_mean, fill_zero, apply_fold_change, fold_change_ref, fold_change_log_base);
+        use_concentrations, use_MARs, sample_values, iter_values, fill_sampling, fill_mean, fill_zero, apply_fold_change, fold_change_ref, fold_change_log_base, randomize_sample_group_names);
     }
     else if (use_MARs) {
       // Adjust the number of replicates per sample group
@@ -390,7 +391,7 @@ namespace SmartPeak
       // Create the data matrix
       reaction_model.getMetDataAsTensors(metabo_data_validation, metabo_labels_validation,
         reaction_model.sample_group_names_, reaction_model.reaction_ids_, reaction_model.sample_group_name_to_label_, sample_group_name_to_reps,
-        use_concentrations, use_MARs, sample_values, iter_values, fill_sampling, fill_mean, fill_zero, apply_fold_change, fold_change_ref, fold_change_log_base);
+        use_concentrations, use_MARs, sample_values, iter_values, fill_sampling, fill_mean, fill_zero, apply_fold_change, fold_change_ref, fold_change_log_base, randomize_sample_group_names);
     }
 
     // Make the training and validation data caches after an optional transformation step
