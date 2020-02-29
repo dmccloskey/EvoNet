@@ -12,8 +12,8 @@ namespace SmartPeak
   class MetabolomicsReconstructionDataSimulator : public BiochemicalDataSimulator<TensorT>
   {
   public:
-    int n_encodings_continuous_;
-    int n_encodings_discrete_;
+    int n_encodings_continuous_ = -1;
+    int n_encodings_discrete_ = -1;
     std::vector<std::string> labels_training_;
     std::vector<std::string> labels_validation_;
     void makeTrainingDataForCache(const std::vector<std::string>& features, const Eigen::Tensor<TensorT, 2>& data_training, const std::vector<std::string>& labels_training,
@@ -69,7 +69,7 @@ namespace SmartPeak
     assert(n_metric_output_nodes == input_nodes); // accuracy and precision
     assert(data_training.dimension(0) == features.size());
     assert(data_training.dimension(1) == labels_training.size());
-    assert(n_metric_output_nodes == input_nodes);
+    assert(this->n_encodings_continuous_ > 0);
 
     // Gaussian Sampler
     Eigen::Tensor<TensorT, 4> gaussian_samples = GaussianSampler<TensorT>(batch_size, memory_size, this->n_encodings_continuous_, n_epochs);
@@ -114,37 +114,37 @@ namespace SmartPeak
     this->input_data_training_.slice(Eigen::array<Eigen::Index, 4>({ 0, 0, 0, 0 }),
       Eigen::array<Eigen::Index, 4>({ batch_size, memory_size, input_nodes, n_epochs })) = data_training_expanded_4d;
     this->input_data_training_.slice(Eigen::array<Eigen::Index, 4>({ 0, 0, input_nodes, 0 }),
-      Eigen::array<Eigen::Index, 4>({ batch_size, memory_size, this->n_encodings_, n_epochs })) = gaussian_samples;
+      Eigen::array<Eigen::Index, 4>({ batch_size, memory_size, this->n_encodings_continuous_, n_epochs })) = gaussian_samples;
 
-    // Check that values of the data and input tensors are correctly aligned
-    Eigen::Tensor<TensorT, 1> data_training_head = data_training_expanded.slice(Eigen::array<Eigen::Index, 2>({ 0, 0 }),
-      Eigen::array<Eigen::Index, 2>({ data_training.dimension(0), 1 })
-    ).reshape(Eigen::array<Eigen::Index, 1>({ data_training.dimension(0) }));
-    Eigen::Tensor<TensorT, 1> data_training_tail = data_training_expanded.slice(Eigen::array<Eigen::Index, 2>({ 0, 0 }),
-      Eigen::array<Eigen::Index, 2>({ data_training.dimension(0), data_training.dimension(1)*expansion_factor - over_expanded })
-    ).slice(Eigen::array<Eigen::Index, 2>({ 0, batch_size * memory_size * n_epochs - 1 }),
-      Eigen::array<Eigen::Index, 2>({ data_training.dimension(0), 1 })
-    ).reshape(Eigen::array<Eigen::Index, 1>({ data_training.dimension(0) }));
-    Eigen::Tensor<TensorT, 1> input_training_head = this->input_data_training_.slice(Eigen::array<Eigen::Index, 4>({ 0, 0, 0, 0 }),
-      Eigen::array<Eigen::Index, 4>({ 1, 1, data_training.dimension(0), 1 })
-    ).reshape(Eigen::array<Eigen::Index, 1>({ data_training.dimension(0) }));
-    Eigen::Tensor<TensorT, 1> input_training_tail = this->input_data_training_.slice(Eigen::array<Eigen::Index, 4>({ batch_size - 1, memory_size - 1, 0, n_epochs - 1 }),
-      Eigen::array<Eigen::Index, 4>({ 1, 1, data_training.dimension(0), 1 })
-    ).reshape(Eigen::array<Eigen::Index, 1>({ data_training.dimension(0) }));
-    std::cout << "data_training_head\n" << data_training_head << std::endl;
-    std::cout << "data_training_tail\n" << data_training_tail << std::endl;
-    for (int i = 0; i < data_training.dimension(0); ++i) {
-      assert(data_training_head(i) == input_training_head(i));
-      assert(data_training_tail(i) == input_training_tail(i));
-    }
+    //// Check that values of the data and input tensors are correctly aligned
+    //Eigen::Tensor<TensorT, 1> data_training_head = data_training_expanded.slice(Eigen::array<Eigen::Index, 2>({ 0, 0 }),
+    //  Eigen::array<Eigen::Index, 2>({ data_training.dimension(0), 1 })
+    //).reshape(Eigen::array<Eigen::Index, 1>({ data_training.dimension(0) }));
+    //Eigen::Tensor<TensorT, 1> data_training_tail = data_training_expanded.slice(Eigen::array<Eigen::Index, 2>({ 0, 0 }),
+    //  Eigen::array<Eigen::Index, 2>({ data_training.dimension(0), data_training.dimension(1)*expansion_factor - over_expanded })
+    //).slice(Eigen::array<Eigen::Index, 2>({ 0, batch_size * memory_size * n_epochs - 1 }),
+    //  Eigen::array<Eigen::Index, 2>({ data_training.dimension(0), 1 })
+    //).reshape(Eigen::array<Eigen::Index, 1>({ data_training.dimension(0) }));
+    //Eigen::Tensor<TensorT, 1> input_training_head = this->input_data_training_.slice(Eigen::array<Eigen::Index, 4>({ 0, 0, 0, 0 }),
+    //  Eigen::array<Eigen::Index, 4>({ 1, 1, data_training.dimension(0), 1 })
+    //).reshape(Eigen::array<Eigen::Index, 1>({ data_training.dimension(0) }));
+    //Eigen::Tensor<TensorT, 1> input_training_tail = this->input_data_training_.slice(Eigen::array<Eigen::Index, 4>({ batch_size - 1, memory_size - 1, 0, n_epochs - 1 }),
+    //  Eigen::array<Eigen::Index, 4>({ 1, 1, data_training.dimension(0), 1 })
+    //).reshape(Eigen::array<Eigen::Index, 1>({ data_training.dimension(0) }));
+    //std::cout << "data_training_head\n" << data_training_head << std::endl;
+    //std::cout << "data_training_tail\n" << data_training_tail << std::endl;
+    //for (int i = 0; i < data_training.dimension(0); ++i) {
+    //  assert(data_training_head(i) == input_training_head(i));
+    //  assert(data_training_tail(i) == input_training_tail(i));
+    //}
 
     // assign the loss tensors
     this->loss_output_data_training_.slice(Eigen::array<Eigen::Index, 4>({ 0, 0, 0, 0 }),
       Eigen::array<Eigen::Index, 4>({ batch_size, memory_size, input_nodes, n_epochs })) = data_training_expanded_4d;
     this->loss_output_data_training_.slice(Eigen::array<Eigen::Index, 4>({ 0, 0, input_nodes, 0 }),
-      Eigen::array<Eigen::Index, 4>({ batch_size, memory_size, this->n_encodings_, n_epochs })) = KL_losses;
-    this->loss_output_data_training_.slice(Eigen::array<Eigen::Index, 4>({ 0, 0, input_nodes + this->n_encodings_, 0 }),
-      Eigen::array<Eigen::Index, 4>({ batch_size, memory_size, this->n_encodings_, n_epochs })) = KL_losses;
+      Eigen::array<Eigen::Index, 4>({ batch_size, memory_size, this->n_encodings_continuous_, n_epochs })) = KL_losses;
+    this->loss_output_data_training_.slice(Eigen::array<Eigen::Index, 4>({ 0, 0, input_nodes + this->n_encodings_continuous_, 0 }),
+      Eigen::array<Eigen::Index, 4>({ batch_size, memory_size, this->n_encodings_continuous_, n_epochs })) = KL_losses;
 
     // assign the metric tensors
     this->metric_output_data_training_.slice(Eigen::array<Eigen::Index, 4>({ 0, 0, 0, 0 }),
@@ -160,7 +160,7 @@ namespace SmartPeak
     assert(n_metric_output_nodes == input_nodes); // accuracy and precision
     assert(data_validation.dimension(0) == features.size());
     assert(data_validation.dimension(1) == labels_validation.size());
-    assert(n_metric_output_nodes == input_nodes);
+    assert(this->n_encodings_continuous_ > 0);
 
     // Dummy data for the KL divergence losses
     Eigen::Tensor<TensorT, 4> KL_losses(batch_size, memory_size, this->n_encodings_continuous_, n_epochs);
@@ -202,37 +202,37 @@ namespace SmartPeak
     this->input_data_validation_.slice(Eigen::array<Eigen::Index, 4>({ 0, 0, 0, 0 }),
       Eigen::array<Eigen::Index, 4>({ batch_size, memory_size, input_nodes, n_epochs })) = data_validation_expanded_4d;
     this->input_data_validation_.slice(Eigen::array<Eigen::Index, 4>({ 0, 0, input_nodes, 0 }),
-      Eigen::array<Eigen::Index, 4>({ batch_size, memory_size, this->n_encodings_, n_epochs })) = KL_losses;
+      Eigen::array<Eigen::Index, 4>({ batch_size, memory_size, this->n_encodings_continuous_, n_epochs })) = KL_losses;
 
-    // Check that values of the data and input tensors are correctly aligned
-    Eigen::Tensor<TensorT, 1> data_validation_head = data_validation_expanded.slice(Eigen::array<Eigen::Index, 2>({ 0, 0 }),
-      Eigen::array<Eigen::Index, 2>({ data_validation.dimension(0), 1 })
-    ).reshape(Eigen::array<Eigen::Index, 1>({ data_validation.dimension(0) }));
-    Eigen::Tensor<TensorT, 1> data_validation_tail = data_validation_expanded.slice(Eigen::array<Eigen::Index, 2>({ 0, 0 }),
-      Eigen::array<Eigen::Index, 2>({ data_validation.dimension(0), data_validation.dimension(1) * expansion_factor - over_expanded })
-    ).slice(Eigen::array<Eigen::Index, 2>({ 0, batch_size * memory_size * n_epochs - 1 }),
-      Eigen::array<Eigen::Index, 2>({ data_validation.dimension(0), 1 })
-    ).reshape(Eigen::array<Eigen::Index, 1>({ data_validation.dimension(0) }));
-    Eigen::Tensor<TensorT, 1> input_validation_head = this->input_data_validation_.slice(Eigen::array<Eigen::Index, 4>({ 0, 0, 0, 0 }),
-      Eigen::array<Eigen::Index, 4>({ 1, 1, data_validation.dimension(0), 1 })
-    ).reshape(Eigen::array<Eigen::Index, 1>({ data_validation.dimension(0) }));
-    Eigen::Tensor<TensorT, 1> input_validation_tail = this->input_data_validation_.slice(Eigen::array<Eigen::Index, 4>({ batch_size - 1, memory_size - 1, 0, n_epochs - 1 }),
-      Eigen::array<Eigen::Index, 4>({ 1, 1, data_validation.dimension(0), 1 })
-    ).reshape(Eigen::array<Eigen::Index, 1>({ data_validation.dimension(0) }));
-    std::cout << "data_validation_head\n" << data_validation_head << std::endl;
-    std::cout << "data_validation_tail\n" << data_validation_tail << std::endl;
-    for (int i = 0; i < data_validation.dimension(0); ++i) {
-      assert(data_validation_head(i) == input_validation_head(i));
-      assert(data_validation_tail(i) == input_validation_tail(i));
-    }
+    //// Check that values of the data and input tensors are correctly aligned
+    //Eigen::Tensor<TensorT, 1> data_validation_head = data_validation_expanded.slice(Eigen::array<Eigen::Index, 2>({ 0, 0 }),
+    //  Eigen::array<Eigen::Index, 2>({ data_validation.dimension(0), 1 })
+    //).reshape(Eigen::array<Eigen::Index, 1>({ data_validation.dimension(0) }));
+    //Eigen::Tensor<TensorT, 1> data_validation_tail = data_validation_expanded.slice(Eigen::array<Eigen::Index, 2>({ 0, 0 }),
+    //  Eigen::array<Eigen::Index, 2>({ data_validation.dimension(0), data_validation.dimension(1) * expansion_factor - over_expanded })
+    //).slice(Eigen::array<Eigen::Index, 2>({ 0, batch_size * memory_size * n_epochs - 1 }),
+    //  Eigen::array<Eigen::Index, 2>({ data_validation.dimension(0), 1 })
+    //).reshape(Eigen::array<Eigen::Index, 1>({ data_validation.dimension(0) }));
+    //Eigen::Tensor<TensorT, 1> input_validation_head = this->input_data_validation_.slice(Eigen::array<Eigen::Index, 4>({ 0, 0, 0, 0 }),
+    //  Eigen::array<Eigen::Index, 4>({ 1, 1, data_validation.dimension(0), 1 })
+    //).reshape(Eigen::array<Eigen::Index, 1>({ data_validation.dimension(0) }));
+    //Eigen::Tensor<TensorT, 1> input_validation_tail = this->input_data_validation_.slice(Eigen::array<Eigen::Index, 4>({ batch_size - 1, memory_size - 1, 0, n_epochs - 1 }),
+    //  Eigen::array<Eigen::Index, 4>({ 1, 1, data_validation.dimension(0), 1 })
+    //).reshape(Eigen::array<Eigen::Index, 1>({ data_validation.dimension(0) }));
+    //std::cout << "data_validation_head\n" << data_validation_head << std::endl;
+    //std::cout << "data_validation_tail\n" << data_validation_tail << std::endl;
+    //for (int i = 0; i < data_validation.dimension(0); ++i) {
+    //  assert(data_validation_head(i) == input_validation_head(i));
+    //  assert(data_validation_tail(i) == input_validation_tail(i));
+    //}
 
     // assign the loss tensors
     this->loss_output_data_validation_.slice(Eigen::array<Eigen::Index, 4>({ 0, 0, 0, 0 }),
       Eigen::array<Eigen::Index, 4>({ batch_size, memory_size, input_nodes, n_epochs })) = data_validation_expanded_4d;
     this->loss_output_data_validation_.slice(Eigen::array<Eigen::Index, 4>({ 0, 0, input_nodes, 0 }),
-      Eigen::array<Eigen::Index, 4>({ batch_size, memory_size, this->n_encodings_, n_epochs })) = KL_losses;
-    this->loss_output_data_validation_.slice(Eigen::array<Eigen::Index, 4>({ 0, 0, input_nodes + this->n_encodings_, 0 }),
-      Eigen::array<Eigen::Index, 4>({ batch_size, memory_size, this->n_encodings_, n_epochs })) = KL_losses;
+      Eigen::array<Eigen::Index, 4>({ batch_size, memory_size, this->n_encodings_continuous_, n_epochs })) = KL_losses;
+    this->loss_output_data_validation_.slice(Eigen::array<Eigen::Index, 4>({ 0, 0, input_nodes + this->n_encodings_continuous_, 0 }),
+      Eigen::array<Eigen::Index, 4>({ batch_size, memory_size, this->n_encodings_continuous_, n_epochs })) = KL_losses;
 
     // assign the metric tensors
     this->metric_output_data_validation_.slice(Eigen::array<Eigen::Index, 4>({ 0, 0, 0, 0 }),
