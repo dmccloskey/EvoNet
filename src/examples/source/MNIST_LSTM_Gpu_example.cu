@@ -363,7 +363,7 @@ public:
       // Assign the input data
       for (int memory_iter = 0; memory_iter < memory_size; ++memory_iter) {
         for (int nodes_iter = 0; nodes_iter < n_input_nodes; ++nodes_iter) {
-          int iter = memory_size * memory_iter + nodes_iter;
+          int iter = n_input_nodes * memory_iter + nodes_iter;
           input_data(batch_iter, memory_iter, nodes_iter) = this->training_data(sample_indices[batch_iter], iter);
         }
       }
@@ -397,7 +397,7 @@ public:
       // Assign the input data
       for (int memory_iter = 0; memory_iter < memory_size; ++memory_iter) {
         for (int nodes_iter = 0; nodes_iter < n_input_nodes; ++nodes_iter) {
-          int iter = memory_size * memory_iter + nodes_iter;
+          int iter = n_input_nodes * memory_iter + nodes_iter;
           input_data(batch_iter, memory_iter, nodes_iter) = this->validation_data(sample_indices[batch_iter], iter);
         }
       }
@@ -440,7 +440,7 @@ void main_MNIST(const std::string& data_dir, const bool& make_model, const bool&
 
   // define the data simulator
   const std::size_t input_size = 784;
-  const std::size_t n_input_nodes = 28; // per column)
+  const std::size_t n_input_nodes = 1; // per pixel 28; // per column
   const std::size_t memory_size = input_size / n_input_nodes;
   const std::size_t n_tbptt = (memory_size > 256) ? 256 : memory_size;
   const std::size_t n_labels = 10;

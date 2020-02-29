@@ -183,7 +183,7 @@ void main_classification(const std::string& data_dir, const std::string& biochem
   const bool& online_linear_scale_input, const bool& online_log_transform_input, const bool& online_standardize_input)
 {
   // global local variables
-  const int n_epochs = 100000;
+  const int n_epochs = 20000;
   const int batch_size = 64;
   const int memory_size = 1;
   const int n_reps_per_sample = 1000;
@@ -235,7 +235,7 @@ void main_classification(const std::string& data_dir, const std::string& biochem
   ModelTrainerExt<float> model_trainer;
   model_trainer.setBatchSize(batch_size);
   model_trainer.setMemorySize(memory_size);
-  model_trainer.setNEpochsTraining(n_epochs);
+  model_trainer.setNEpochsTraining(n_epochs*5); // Iterate through the stored data 5 times
   model_trainer.setNEpochsValidation(0);
   model_trainer.setVerbosityLevel(1);
   model_trainer.setLogging(true, false, false);
@@ -357,7 +357,7 @@ int main(int argc, char** argv)
     train_model = (argv[8] == std::string("true")) ? true : false;
   }
   if (argc >= 10) {
-    use_concentrations = (argv[10] == std::string("true")) ? true : false;
+    use_concentrations = (argv[9] == std::string("true")) ? true : false;
   }
   if (argc >= 11) {
     use_MARs = (argv[10] == std::string("true")) ? true : false;
