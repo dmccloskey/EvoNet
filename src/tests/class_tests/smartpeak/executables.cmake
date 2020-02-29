@@ -75,6 +75,7 @@ set(simulator_executables_list
   EMGModel_test
   PeakSimulator_test
   MetabolomicsClassificationDataSimulator_test
+  MetabolomicsReconstructionDataSimulator_test
   MNISTSimulator_test
 )
 
