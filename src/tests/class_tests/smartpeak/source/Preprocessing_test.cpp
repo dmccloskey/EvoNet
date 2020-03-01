@@ -136,9 +136,15 @@ BOOST_AUTO_TEST_CASE(P_MakeShuffleMatrix)
     BOOST_CHECK_GE(shuffle1.getIndices().at(i), 0);
     BOOST_CHECK_LE(shuffle1.getIndices().at(i), 7);
   }
+  shuffle1.setShuffleMatrix(true);
+  //std::cout << "Shuffle_matrix\n" << shuffle1.getShuffleMatrix() << std::endl;
+  for (int i = 0; i < shuffle_dim_size; ++i) {
+    Eigen::Tensor<float, 0> row_sum = shuffle1.getShuffleMatrix().chip(i, 0).sum();
+    BOOST_CHECK_EQUAL(row_sum(0), 1);
+  }
 
   // Test initialization with dim size
-  MakeShuffleMatrix<float> shuffle2(shuffle_dim_size);
+  MakeShuffleMatrix<float> shuffle2(shuffle_dim_size, true);
   BOOST_CHECK(shuffle2.getIndices() != indices);
   for (int i = 0; i < shuffle_dim_size; ++i) {
     BOOST_CHECK_GE(shuffle2.getIndices().at(i), 0);
@@ -146,25 +152,36 @@ BOOST_AUTO_TEST_CASE(P_MakeShuffleMatrix)
   }
 
   // Test initialization with indices to use
-  MakeShuffleMatrix<float> shuffle3(indices);
+  MakeShuffleMatrix<float> shuffle3(indices, true);
   BOOST_CHECK(shuffle3.getIndices() == indices);
-
-  // Test shuffle matrix with no shuffle
-  Eigen::Tensor<float, 2> shuffle_matrix = shuffle3(true);
-  //std::cout << "Shuffle_matrix\n" << shuffle_matrix << std::endl;
+  //std::cout << "Shuffle_matrix\n" << shuffle3.getShuffleMatrix() << std::endl;
   for (int i = 0; i < shuffle_dim_size; ++i) {
-    BOOST_CHECK_EQUAL(shuffle_matrix(i,i), 1);
-    Eigen::Tensor<float, 0> row_sum = shuffle_matrix.chip(i, 0).sum();
+    BOOST_CHECK_EQUAL(shuffle3.getShuffleMatrix()(i, i), 1);
+    Eigen::Tensor<float, 0> row_sum = shuffle3.getShuffleMatrix().chip(i, 0).sum();
     BOOST_CHECK_EQUAL(row_sum(0), 1);
   }
 
-  // Test shuffle matrix with no shuffle
-  shuffle_matrix = shuffle1(true);
-  //std::cout << "Shuffle_matrix\n" << shuffle_matrix << std::endl;
-  for (int i = 0; i < shuffle_dim_size; ++i) {
-    Eigen::Tensor<float, 0> row_sum = shuffle_matrix.chip(i, 0).sum();
-    BOOST_CHECK_EQUAL(row_sum(0), 1);
-  }
+  // Test row/column shuffling on toy data
+  Eigen::Tensor<float, 2> data(2, 3);
+  data.setValues({ {1,2,3},{4,5,6} });
+  MakeShuffleMatrix<float> shuffle_col(std::vector<int>({1,2,0}), true);
+  Eigen::Tensor<float, 2> col_shuffle = data;
+  shuffle_col(col_shuffle, true);
+  BOOST_CHECK_EQUAL(col_shuffle(0, 0), 2);
+  BOOST_CHECK_EQUAL(col_shuffle(0, 1), 3);
+  BOOST_CHECK_EQUAL(col_shuffle(0, 2), 1);
+  BOOST_CHECK_EQUAL(col_shuffle(1, 0), 5);
+  BOOST_CHECK_EQUAL(col_shuffle(1, 1), 6);
+  BOOST_CHECK_EQUAL(col_shuffle(1, 2), 4);
+  MakeShuffleMatrix<float> shuffle_row(std::vector<int>({ 1,0 }), false);
+  Eigen::Tensor<float, 2> row_shuffle = data;
+  shuffle_row(row_shuffle, false);
+  BOOST_CHECK_EQUAL(row_shuffle(0, 0), 4);
+  BOOST_CHECK_EQUAL(row_shuffle(0, 1), 5);
+  BOOST_CHECK_EQUAL(row_shuffle(0, 2), 6);
+  BOOST_CHECK_EQUAL(row_shuffle(1, 0), 1);
+  BOOST_CHECK_EQUAL(row_shuffle(1, 1), 2);
+  BOOST_CHECK_EQUAL(row_shuffle(1, 2), 3);
 }
 
 BOOST_AUTO_TEST_CASE(P_LabelSmoother)

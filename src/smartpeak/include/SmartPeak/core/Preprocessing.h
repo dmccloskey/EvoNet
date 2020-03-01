@@ -172,8 +172,8 @@ namespace SmartPeak
   {
   public:
     MakeShuffleMatrix() = default;
-    MakeShuffleMatrix(const std::vector<int>& indices): indices_(indices) {};
-    MakeShuffleMatrix(const int& shuffle_dim_size) { setIndices(shuffle_dim_size); };
+    MakeShuffleMatrix(const std::vector<int>& indices, const bool& shuffle_cols) : indices_(indices) { setShuffleMatrix(shuffle_cols); };
+    MakeShuffleMatrix(const int& shuffle_dim_size, const bool& shuffle_cols) { setIndices(shuffle_dim_size); setShuffleMatrix(shuffle_cols); };
     ~MakeShuffleMatrix() = default;
     void setIndices(const int& shuffle_dim_size) {
       // initialize the indices
@@ -185,22 +185,28 @@ namespace SmartPeak
       auto rng = std::default_random_engine{};
       std::shuffle(std::begin(indices_), std::end(indices_), rng);
     }
-    std::vector<int> getIndices() { return indices_; }
-    Eigen::Tensor<T, 2> operator()(const bool& shuffle_cols) const {
+    std::vector<int> getIndices() const { return indices_; }
+    void setShuffleMatrix(const bool& shuffle_cols) {
       // initialize the shuffle matrix
       assert(indices_.size() > 0);
-      Eigen::Tensor<T, 2> shuffle_matrix(int(indices_.size()), int(indices_.size()));
-      shuffle_matrix.setZero();
+      shuffle_matrix_.resize(int(indices_.size()), int(indices_.size()));
+      shuffle_matrix_.setZero();
 
       // specify the ones in the shuffle matrix
       for (int dim_iter = 0; dim_iter < indices_.size(); ++dim_iter) {
-        if (shuffle_cols) shuffle_matrix(dim_iter, indices_.at(dim_iter)) = T(1);
-        else shuffle_matrix(indices_.at(dim_iter), dim_iter) = T(1);
+        if (shuffle_cols) shuffle_matrix_(indices_.at(dim_iter), dim_iter) = T(1);
+        else shuffle_matrix_(dim_iter, indices_.at(dim_iter)) = T(1); 
       }
-      return shuffle_matrix;
+    };
+    Eigen::Tensor<T, 2> getShuffleMatrix() const { return shuffle_matrix_; };
+    template<typename TT = T, std::enable_if_t<!std::is_same<TT, double>::value && std::is_same<TT, T>::value, int> = 0>
+    void operator()(Eigen::Tensor<TT, 2>& data, const bool& shuffle_cols) {
+      if (shuffle_cols) data = data.contract(shuffle_matrix_, Eigen::array<Eigen::IndexPair<int>, 1>{ Eigen::IndexPair<int>(1, 0) }).eval();
+      else data = shuffle_matrix_.contract(data, Eigen::array<Eigen::IndexPair<int>, 1>{ Eigen::IndexPair<int>(1, 0) }).eval();
     };
   private:
     std::vector<int> indices_; ///< indices used to crate the permutation matrix
+    Eigen::Tensor<T, 2> shuffle_matrix_;
   };
 
 	/*
