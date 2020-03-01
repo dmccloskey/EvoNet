@@ -202,7 +202,7 @@ namespace SmartPeak
 
     // optionally shuffle the data and labels
     if (shuffle_data_and_labels) {
-      MakeShuffleMatrix<TensorT> shuffleMatrix(data_training.dimension(1) * expansion_factor, true);
+      MakeShuffleMatrix<TensorT> shuffleMatrix(data_validation.dimension(1) * expansion_factor, true);
       shuffleMatrix(data_validation_expanded, true);
     }
 
@@ -379,6 +379,10 @@ namespace SmartPeak
       this->transformTrainingAndValidationDataOffline(metabo_data_training, metabo_data_validation,
         offline_linear_scale_input, offline_log_transform_input, offline_standardize_input, false, -1, -1, false, -1, -1);
 
+      // Apply online transformations
+      this->transformTrainingAndValidationDataOnline(metabo_data_training, metabo_data_validation,
+        online_linear_scale_input, online_log_transform_input, online_standardize_input);
+
       // Make the training data cache
       this->makeTrainingDataForCache(metabo_features_training, metabo_data_training, metabo_labels_training, n_epochs, batch_size, memory_size,
         n_component_group_names_training + this->n_encodings_continuous_, n_component_group_names_training + 2 * this->n_encodings_continuous_, n_component_group_names_training, shuffle_data_and_labels);
@@ -395,6 +399,10 @@ namespace SmartPeak
       }
       this->transformTrainingAndValidationDataOffline(metabo_data_training, metabo_data_validation,
         offline_linear_scale_input, offline_log_transform_input, offline_standardize_input, true, min_value, max_value, false, -1, -1);
+
+      // Apply online transformations
+      this->transformTrainingAndValidationDataOnline(metabo_data_training, metabo_data_validation,
+        online_linear_scale_input, online_log_transform_input, online_standardize_input);
 
       // Make the training data cache
       this->makeTrainingDataForCache(metabo_features_training, metabo_data_training, metabo_labels_training, n_epochs, batch_size, memory_size,

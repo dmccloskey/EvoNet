@@ -606,7 +606,7 @@ public:
   @brief Fully connected variational reconstruction model
     where the expected output is the input
   */
-  void makeModelFCVAE_2(Model<TensorT>& model, const int& n_inputs, const int& n_outputs, const int& n_encodings, const bool& linear_scale_input, const bool& log_transform_input, const bool& standardize_input, const bool& add_norm = false,
+  void makeModelFCVAE(Model<TensorT>& model, const int& n_inputs, const int& n_outputs, const int& n_encodings, const bool& linear_scale_input, const bool& log_transform_input, const bool& standardize_input, const bool& add_norm = false,
     const int& n_en_hidden_0 = 64, const int& n_en_hidden_1 = 64, const int& n_en_hidden_2 = 0, const int& n_de_hidden_0 = 64, const int& n_de_hidden_1 = 64, const int& n_de_hidden_2 = 0, const bool& is_fold_change = false) {
     model.setId(0);
     model.setName("VAE");
@@ -1137,7 +1137,7 @@ void main_reconstruction(const std::string& biochem_rxns_filename,
   Model<float> model_FCVAE;
   if (make_model & make_data_caches) {
     std::cout << "Making the model..." << std::endl;
-    model_trainer.makeModelFCVAE_2(model_FCVAE, n_input_nodes, n_output_nodes, encoding_size, false, false, false, false,
+    model_trainer.makeModelFCVAE(model_FCVAE, n_input_nodes, n_output_nodes, encoding_size, false, false, false, false,
       64, 64, 0, 64, 64, 0, use_fold_change); // normalization type 0
   }
   else if (make_model) {

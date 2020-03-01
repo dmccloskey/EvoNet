@@ -225,6 +225,96 @@ BOOST_AUTO_TEST_CASE(transformTrainingAndValidationDataOffline)
 BOOST_AUTO_TEST_CASE(transformTrainingAndValidationDataOnline)
 {
   BiochemicalDataSimulatorTest<float> biochemicalDataSimulator;
+
+  // Make the dummy training/validation data
+  const int n_features = 2;
+  const int n_samples_training = 4;
+  const int n_samples_validation = 2;
+  Eigen::Tensor<float, 2> data_training(n_features, n_samples_training);
+  Eigen::Tensor<float, 2> data_validation(n_features, n_samples_validation);
+  Eigen::Tensor<float, 2> data_training_expected(n_features, n_samples_training);
+  Eigen::Tensor<float, 2> data_validation_expected(n_features, n_samples_validation);
+
+  // Test without user defined parameters (no transformation)
+  data_training.setValues({ {0, 1, 2, 3},{4, 5, 6, 7} });
+  data_validation.setValues({ {0, 1}, {4, 5} });
+  biochemicalDataSimulator.transformTrainingAndValidationDataOnline(data_training, data_validation,
+    false, false, false);
+  data_training_expected.setValues({ {0, 1, 2, 3},{4, 5, 6, 7} });
+  data_validation_expected.setValues({ {0, 1}, {4, 5} });
+  for (int i = 0; i < n_features; ++i) {
+    for (int j = 0; j < n_samples_training; ++j) {
+      BOOST_CHECK_CLOSE(data_training(i, j), data_training_expected(i, j), 1e-4);
+    }
+    for (int j = 0; j < n_samples_validation; ++j) {
+      BOOST_CHECK_CLOSE(data_validation(i, j), data_validation_expected(i, j), 1e-4);
+    }
+  }
+
+  // Test without user defined parameters (Linear Scale)
+  data_training.setValues({ {0, 1, 2, 3},{4, 5, 6, 7} });
+  data_validation.setValues({ {0, 1}, {4, 5} });
+  biochemicalDataSimulator.transformTrainingAndValidationDataOnline(data_training, data_validation,
+    true, false, false);
+  data_training_expected.setValues({ {0, 0, 0, 0},{1, 1, 1, 1} });
+  data_validation_expected.setValues({ {0, 0}, {1, 1} });
+  for (int i = 0; i < n_features; ++i) {
+    for (int j = 0; j < n_samples_training; ++j) {
+      BOOST_CHECK_CLOSE(data_training(i, j), data_training_expected(i, j), 1e-4);
+    }
+    for (int j = 0; j < n_samples_validation; ++j) {
+      BOOST_CHECK_CLOSE(data_validation(i, j), data_validation_expected(i, j), 1e-4);
+    }
+  }
+
+  // Test without user defined parameters (Log Transformation)
+  data_training.setValues({ {0.5, 1, 2, 3},{4, 5, 6, 7} });
+  data_validation.setValues({ {0.5, 1}, {4, 5} });
+  biochemicalDataSimulator.transformTrainingAndValidationDataOnline(data_training, data_validation,
+    false, true, false);
+  data_training_expected.setValues({ {-0.69314718, 0, 0.69314718, 1.09861229},{1.38629436, 1.60943791, 1.79175947, 1.94591015} });
+  data_validation_expected.setValues({ {-0.69314718, 0}, {1.38629436, 1.60943791} });
+  for (int i = 0; i < n_features; ++i) {
+    for (int j = 0; j < n_samples_training; ++j) {
+      BOOST_CHECK_CLOSE(data_training(i, j), data_training_expected(i, j), 1e-4);
+    }
+    for (int j = 0; j < n_samples_validation; ++j) {
+      BOOST_CHECK_CLOSE(data_validation(i, j), data_validation_expected(i, j), 1e-4);
+    }
+  }
+
+  // Test without user defined parameters (Standardization)
+  data_training.setValues({ {0, 1, 2, 3},{4, 5, 6, 7} });
+  data_validation.setValues({ {0, 1}, {4, 5} });
+  biochemicalDataSimulator.transformTrainingAndValidationDataOnline(data_training, data_validation,
+    false, false, true);
+  data_training_expected.setValues({ {-0.707106769, -0.707106769, -0.707106769, -0.707106769},
+    {0.707106769, 0.707106769,  0.707106769,  0.707106769} });
+  data_validation_expected.setValues({ {-0.707106769, -0.707106769}, {0.707106769, 0.707106769} });
+  for (int i = 0; i < n_features; ++i) {
+    for (int j = 0; j < n_samples_training; ++j) {
+      BOOST_CHECK_CLOSE(data_training(i, j), data_training_expected(i, j), 1e-4);
+    }
+    for (int j = 0; j < n_samples_validation; ++j) {
+      BOOST_CHECK_CLOSE(data_validation(i, j), data_validation_expected(i, j), 1e-4);
+    }
+  }
+
+  // Test without user defined parameters (Log transformation + standardization + linearization)
+  data_training.setValues({ {0.5, 1, 2, 3},{4, 5, 6, 7} });
+  data_validation.setValues({ {0.5, 1}, {4, 5} });
+  biochemicalDataSimulator.transformTrainingAndValidationDataOnline(data_training, data_validation,
+    true, true, true);
+  data_training_expected.setValues({ {0, 0, 0, 0},{1, 1, 1, 1} });
+  data_validation_expected.setValues({ {0, 0}, {1, 1} });
+  for (int i = 0; i < n_features; ++i) {
+    for (int j = 0; j < n_samples_training; ++j) {
+      BOOST_CHECK_CLOSE(data_training(i, j), data_training_expected(i, j), 1e-4);
+    }
+    for (int j = 0; j < n_samples_validation; ++j) {
+      BOOST_CHECK_CLOSE(data_validation(i, j), data_validation_expected(i, j), 1e-4);
+    }
+  }
 }
 
 BOOST_AUTO_TEST_CASE(getTrainingDataFromCache)

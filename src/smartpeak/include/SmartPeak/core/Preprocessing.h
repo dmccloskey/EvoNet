@@ -201,8 +201,22 @@ namespace SmartPeak
     Eigen::Tensor<T, 2> getShuffleMatrix() const { return shuffle_matrix_; };
     template<typename TT = T, std::enable_if_t<!std::is_same<TT, double>::value && std::is_same<TT, T>::value, int> = 0>
     void operator()(Eigen::Tensor<TT, 2>& data, const bool& shuffle_cols) {
-      if (shuffle_cols) data = data.contract(shuffle_matrix_, Eigen::array<Eigen::IndexPair<Eigen::Index>, 1>({ Eigen::IndexPair<Eigen::Index>(1, 0) })).eval();
-      else data = shuffle_matrix_.contract(data, Eigen::array<Eigen::IndexPair<Eigen::Index>, 1>({ Eigen::IndexPair<Eigen::Index>(1, 0) })).eval();
+      //if (shuffle_cols) data = data.contract(shuffle_matrix_, Eigen::array<Eigen::IndexPair<Eigen::Index>, 1>({ Eigen::IndexPair<Eigen::Index>(1, 0) })).eval();
+      //else data = shuffle_matrix_.contract(data, Eigen::array<Eigen::IndexPair<Eigen::Index>, 1>({ Eigen::IndexPair<Eigen::Index>(1, 0) })).eval();
+      if (shuffle_cols) {
+        Eigen::TensorMap<Eigen::Tensor<TT, 3>> data_values(data.data(), data.dimension(0), data.dimension(1), 1);
+        Eigen::TensorMap<Eigen::Tensor<TT, 3>> shuffle_matrix_values(shuffle_matrix_.data(), 1, shuffle_matrix_.dimension(0), shuffle_matrix_.dimension(1));
+        auto data_values_bcast = data_values.broadcast(Eigen::array<Eigen::Index, 3>({ 1, 1, data.dimension(1) }));
+        auto shuffle_matrix_values_bcast = shuffle_matrix_values.broadcast(Eigen::array<Eigen::Index, 3>({ data.dimension(0), 1, 1 }));
+        data = (data_values_bcast * shuffle_matrix_values_bcast).sum(Eigen::array<Eigen::Index, 1>({ 1 })).eval();
+      }
+      else {
+        Eigen::TensorMap<Eigen::Tensor<TT, 3>> data_values(data.data(), 1, data.dimension(0), data.dimension(1));
+        Eigen::TensorMap<Eigen::Tensor<TT, 3>> shuffle_matrix_values(shuffle_matrix_.data(), shuffle_matrix_.dimension(0), shuffle_matrix_.dimension(1), 1);
+        auto data_values_bcast = data_values.broadcast(Eigen::array<Eigen::Index, 3>({ data.dimension(0), 1, 1 }));
+        auto shuffle_matrix_values_bcast = shuffle_matrix_values.broadcast(Eigen::array<Eigen::Index, 3>({ 1, 1, data.dimension(1) }));
+        data = (data_values_bcast * shuffle_matrix_values_bcast).sum(Eigen::array<Eigen::Index, 1>({ 1 })).eval();
+      }
     };
     template<typename TT = T, std::enable_if_t<std::is_same<TT, double>::value && std::is_same<TT, T>::value, int> = 0>
     void operator()(Eigen::Tensor<TT, 2>& data, const bool& shuffle_cols) {
@@ -222,7 +236,7 @@ namespace SmartPeak
       }
     };
   private:
-    std::vector<int> indices_; ///< indices used to crate the permutation matrix
+    std::vector<int> indices_; ///< indices used to create the shuffle matrix
     Eigen::Tensor<T, 2> shuffle_matrix_;
   };
 
