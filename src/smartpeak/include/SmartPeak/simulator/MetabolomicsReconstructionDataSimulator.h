@@ -106,6 +106,13 @@ namespace SmartPeak
       //labels_training_expanded.slice(offset2, span2) = labels_2d;
     }
 
+    // optionally shuffle the data and labels
+    if (shuffle_data_and_labels) {
+      MakeShuffleMatrix<TensorT> shuffleMatrix(data_training.dimension(1)*expansion_factor);
+      Eigen::Tensor<TensorT, 2> data_training_shuffle = shuffleMatrix(true);
+      data_training_expanded = data_training_expanded.contract(data_training_shuffle, Eigen::array<Eigen::IndexPair<int>, 1>{ Eigen::IndexPair<int>(1, 0) });
+    }
+
     // assign the input tensors
     auto data_training_expanded_4d = data_training_expanded.slice(Eigen::array<Eigen::Index, 2>({ 0, 0 }),
       Eigen::array<Eigen::Index, 2>({ data_training.dimension(0), data_training.dimension(1)*expansion_factor - over_expanded })
@@ -192,6 +199,13 @@ namespace SmartPeak
       //Eigen::array<Eigen::Index, 2> span2 = { data_validation.dimension(1), 1 };
       //Eigen::TensorMap<Eigen::Tensor<std::string, 2>> labels_2d(labels_validation.data(), data_validation.dimension(1), 1);
       //labels_validation_expanded.slice(offset2, span2) = labels_2d;
+    }
+
+    // optionally shuffle the data and labels
+    if (shuffle_data_and_labels) {
+      MakeShuffleMatrix<TensorT> shuffleMatrix(data_validation.dimension(1)*expansion_factor);
+      Eigen::Tensor<TensorT, 2> data_validation_shuffle = shuffleMatrix(true);
+      data_validation_expanded = data_validation_expanded.contract(data_validation_shuffle, Eigen::array<Eigen::IndexPair<int>, 1>{ Eigen::IndexPair<int>(1, 0) });
     }
 
     // assign the input tensors

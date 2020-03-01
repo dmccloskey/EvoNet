@@ -98,6 +98,19 @@ namespace SmartPeak
       //labels_training_expanded.slice(offset2, span2) = labels_2d;
     }
 
+    // make the one-hot encodings       
+    Eigen::Tensor<TensorT, 2> one_hot_vec = OneHotEncoder<std::string, TensorT>(labels_training_expanded, this->labels_training_);
+    //Eigen::Tensor<TensorT, 2> one_hot_vec_smoothed = one_hot_vec.unaryExpr(LabelSmoother<TensorT>(0.01, 0.01));
+
+    // optionally shuffle the data and labels
+    if (shuffle_data_and_labels) {
+      MakeShuffleMatrix<TensorT> shuffleMatrix(data_training.dimension(1)*expansion_factor);
+      Eigen::Tensor<TensorT, 2> data_training_shuffle = shuffleMatrix(true);
+      data_training_expanded = data_training_expanded.contract(data_training_shuffle, Eigen::array<Eigen::IndexPair<int>, 1>{ Eigen::IndexPair<int>(1, 0) });
+      Eigen::Tensor<TensorT, 2> data_labels_shuffle = shuffleMatrix(false);
+      one_hot_vec = data_labels_shuffle.contract(one_hot_vec, Eigen::array<Eigen::IndexPair<int>, 1>{ Eigen::IndexPair<int>(1, 0) });
+    }
+
     // assign the input tensors
     auto data_training_expanded_4d = data_training_expanded.slice(Eigen::array<Eigen::Index, 2>({ 0, 0 }),
       Eigen::array<Eigen::Index, 2>({ data_training.dimension(0), data_training.dimension(1)*expansion_factor - over_expanded })
@@ -126,10 +139,6 @@ namespace SmartPeak
     //  assert(data_training_head(i) == input_training_head(i));
     //  assert(data_training_tail(i) == input_training_tail(i));
     //}
-
-    // make the one-hot encodings       
-    Eigen::Tensor<TensorT, 2> one_hot_vec = OneHotEncoder<std::string, TensorT>(labels_training_expanded, this->labels_training_);
-    //Eigen::Tensor<TensorT, 2> one_hot_vec_smoothed = one_hot_vec.unaryExpr(LabelSmoother<TensorT>(0.01, 0.01));
 
     // assign the loss tensors
     auto one_hot_vec_4d = one_hot_vec.slice(Eigen::array<Eigen::Index, 2>({ 0, 0 }),
@@ -205,6 +214,19 @@ namespace SmartPeak
       //labels_validation_expanded.slice(offset2, span2) = labels_2d;
     }
 
+    // make the one-hot encodings       
+    Eigen::Tensor<TensorT, 2> one_hot_vec = OneHotEncoder<std::string, TensorT>(labels_validation_expanded, this->labels_validation_);
+    //Eigen::Tensor<TensorT, 2> one_hot_vec_smoothed = one_hot_vec.unaryExpr(LabelSmoother<TensorT>(0.01, 0.01));
+
+    // optionally shuffle the data and labels
+    if (shuffle_data_and_labels) {
+      MakeShuffleMatrix<TensorT> shuffleMatrix(data_validation.dimension(1)*expansion_factor);
+      Eigen::Tensor<TensorT, 2> data_validation_shuffle = shuffleMatrix(true);
+      data_validation_expanded = data_validation_expanded.contract(data_validation_shuffle, Eigen::array<Eigen::IndexPair<int>, 1>{ Eigen::IndexPair<int>(1, 0) });
+      Eigen::Tensor<TensorT, 2> data_labels_shuffle = shuffleMatrix(false);
+      one_hot_vec = data_labels_shuffle.contract(one_hot_vec, Eigen::array<Eigen::IndexPair<int>, 1>{ Eigen::IndexPair<int>(1, 0) });
+    }
+
     // assign the input tensors
     auto data_validation_expanded_4d = data_validation_expanded.slice(Eigen::array<Eigen::Index, 2>({ 0, 0 }),
       Eigen::array<Eigen::Index, 2>({ data_validation.dimension(0), data_validation.dimension(1)*expansion_factor - over_expanded })
@@ -233,10 +255,6 @@ namespace SmartPeak
     //  assert(data_validation_head(i) == input_validation_head(i));
     //  assert(data_validation_tail(i) == input_validation_tail(i));
     //}
-
-    // make the one-hot encodings       
-    Eigen::Tensor<TensorT, 2> one_hot_vec = OneHotEncoder<std::string, TensorT>(labels_validation_expanded, this->labels_validation_);
-    //Eigen::Tensor<TensorT, 2> one_hot_vec_smoothed = one_hot_vec.unaryExpr(LabelSmoother<TensorT>(0.01, 0.01));
 
     // assign the loss tensors
     auto one_hot_vec_4d = one_hot_vec.slice(Eigen::array<Eigen::Index, 2>({ 0, 0 }),

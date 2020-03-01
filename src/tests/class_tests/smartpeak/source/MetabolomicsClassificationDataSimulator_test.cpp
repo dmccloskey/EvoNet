@@ -914,6 +914,21 @@ BOOST_AUTO_TEST_CASE(readAndProcessMetabolomicsTrainingAndValidationData)
     BOOST_CHECK_CLOSE(loss_output_test(i), metabo_labels_expected(i), 1e-4);
     BOOST_CHECK_CLOSE(metric_output_test(i), metabo_labels_expected(i), 1e-4);
   }
+
+  // Test with use_concentrations, iter_values, fill_zero, w/o fold change, w/o offline transformation, w/o online transformation, and shuffle_data_and_labels
+  metabolomics_data.readAndProcessMetabolomicsTrainingAndValidationData(
+    n_reaction_ids_training, n_labels_training, n_component_group_names_training, n_reaction_ids_validation, n_labels_validation, n_component_group_names_validation,
+    biochem_rxns_filename, metabo_data_filename_train, meta_data_filename_train, metabo_data_filename_test, meta_data_filename_test,
+    true, false, false, true, false, false, true, false, "S01_D01_PLT_25C_0hr", 10, false, false, false, false, false, false,
+    n_reps_per_sample, false, true, n_epochs, batch_size, memory_size);
+  BOOST_CHECK_EQUAL(n_reaction_ids_training, 0);
+  BOOST_CHECK_EQUAL(n_labels_training, 1);
+  BOOST_CHECK_EQUAL(n_component_group_names_training, 81);
+  BOOST_CHECK_EQUAL(n_reaction_ids_validation, 0);
+  BOOST_CHECK_EQUAL(n_labels_validation, 1);
+  BOOST_CHECK_EQUAL(n_component_group_names_validation, 81);
+  BOOST_CHECK_EQUAL(metabolomics_data.labels_training_.at(0), "D01");
+  BOOST_CHECK_EQUAL(metabolomics_data.labels_validation_.at(0), "D01");
 }
 
 BOOST_AUTO_TEST_SUITE_END()
