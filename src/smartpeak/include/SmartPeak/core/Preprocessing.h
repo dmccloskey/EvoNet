@@ -199,10 +199,10 @@ namespace SmartPeak
       }
     };
     Eigen::Tensor<T, 2> getShuffleMatrix() const { return shuffle_matrix_; };
-    template<typename TT = T, std::enable_if_t<!std::is_same<TT, double>::value && std::is_same<TT, T>::value, int> = 0>
+    template<typename TT = T, std::enable_if_t<std::is_same<TT, float>::value && std::is_same<TT, T>::value, int> = 0>
     void operator()(Eigen::Tensor<TT, 2>& data, const bool& shuffle_cols) {
-      if (shuffle_cols) data = data.contract(shuffle_matrix_, Eigen::array<Eigen::IndexPair<int>, 1>{ Eigen::IndexPair<int>(1, 0) }).eval();
-      else data = shuffle_matrix_.contract(data, Eigen::array<Eigen::IndexPair<int>, 1>{ Eigen::IndexPair<int>(1, 0) }).eval();
+      if (shuffle_cols) data = data.contract(shuffle_matrix_, Eigen::array<Eigen::IndexPair<int>, 1>({ Eigen::IndexPair<int>(1, 0) })).eval();
+      else data = shuffle_matrix_.contract(data, Eigen::array<Eigen::IndexPair<int>, 1>({ Eigen::IndexPair<int>(1, 0) })).eval();
     };
   private:
     std::vector<int> indices_; ///< indices used to crate the permutation matrix

@@ -104,11 +104,10 @@ namespace SmartPeak
 
     // optionally shuffle the data and labels
     if (shuffle_data_and_labels) {
-      MakeShuffleMatrix<TensorT> shuffleMatrix(data_training.dimension(1)*expansion_factor);
-      Eigen::Tensor<TensorT, 2> data_training_shuffle = shuffleMatrix(true);
-      data_training_expanded = data_training_expanded.contract(data_training_shuffle, Eigen::array<Eigen::IndexPair<int>, 1>{ Eigen::IndexPair<int>(1, 0) });
-      Eigen::Tensor<TensorT, 2> data_labels_shuffle = shuffleMatrix(false);
-      one_hot_vec = data_labels_shuffle.contract(one_hot_vec, Eigen::array<Eigen::IndexPair<int>, 1>{ Eigen::IndexPair<int>(1, 0) });
+      MakeShuffleMatrix<TensorT> shuffleMatrix(data_training.dimension(1) * expansion_factor, true);
+      shuffleMatrix(data_training_expanded, true);
+      shuffleMatrix.setShuffleMatrix(false); // re-orient for column with the same random indices
+      shuffleMatrix(one_hot_vec, false);
     }
 
     // assign the input tensors
@@ -220,11 +219,10 @@ namespace SmartPeak
 
     // optionally shuffle the data and labels
     if (shuffle_data_and_labels) {
-      MakeShuffleMatrix<TensorT> shuffleMatrix(data_validation.dimension(1)*expansion_factor);
-      Eigen::Tensor<TensorT, 2> data_validation_shuffle = shuffleMatrix(true);
-      data_validation_expanded = data_validation_expanded.contract(data_validation_shuffle, Eigen::array<Eigen::IndexPair<int>, 1>{ Eigen::IndexPair<int>(1, 0) });
-      Eigen::Tensor<TensorT, 2> data_labels_shuffle = shuffleMatrix(false);
-      one_hot_vec = data_labels_shuffle.contract(one_hot_vec, Eigen::array<Eigen::IndexPair<int>, 1>{ Eigen::IndexPair<int>(1, 0) });
+      MakeShuffleMatrix<TensorT> shuffleMatrix(data_validation.dimension(1)*expansion_factor, true);
+      shuffleMatrix(data_validation_expanded, true);
+      shuffleMatrix.setShuffleMatrix(false); // re-orient for column with the same random indices
+      shuffleMatrix(one_hot_vec, false);
     }
 
     // assign the input tensors

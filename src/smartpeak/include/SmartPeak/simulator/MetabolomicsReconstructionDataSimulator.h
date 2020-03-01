@@ -108,9 +108,8 @@ namespace SmartPeak
 
     // optionally shuffle the data and labels
     if (shuffle_data_and_labels) {
-      MakeShuffleMatrix<TensorT> shuffleMatrix(data_training.dimension(1)*expansion_factor);
-      Eigen::Tensor<TensorT, 2> data_training_shuffle = shuffleMatrix(true);
-      data_training_expanded = data_training_expanded.contract(data_training_shuffle, Eigen::array<Eigen::IndexPair<int>, 1>{ Eigen::IndexPair<int>(1, 0) });
+      MakeShuffleMatrix<TensorT> shuffleMatrix(data_training.dimension(1) * expansion_factor, true);
+      shuffleMatrix(data_training_expanded, true);
     }
 
     // assign the input tensors
@@ -203,9 +202,8 @@ namespace SmartPeak
 
     // optionally shuffle the data and labels
     if (shuffle_data_and_labels) {
-      MakeShuffleMatrix<TensorT> shuffleMatrix(data_validation.dimension(1)*expansion_factor);
-      Eigen::Tensor<TensorT, 2> data_validation_shuffle = shuffleMatrix(true);
-      data_validation_expanded = data_validation_expanded.contract(data_validation_shuffle, Eigen::array<Eigen::IndexPair<int>, 1>{ Eigen::IndexPair<int>(1, 0) });
+      MakeShuffleMatrix<TensorT> shuffleMatrix(data_training.dimension(1) * expansion_factor, true);
+      shuffleMatrix(data_validation_expanded, true);
     }
 
     // assign the input tensors
