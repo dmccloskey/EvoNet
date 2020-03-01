@@ -119,8 +119,7 @@ namespace SmartPeak
   };
 
   /*
-  @brief Standardize the data using the Mean and Standard Deviation where
-    the features are assumed to be across dim0 and the samples are assumed to be across dim1
+  @brief Standardize the data using the Mean and Standard Deviation
   */
   template<typename T, int N>
   class Standardize
@@ -162,6 +161,46 @@ namespace SmartPeak
   private:
     T mean_; ///< data set mean
     T var_; ///< data set var
+  };
+
+  /*
+  @brief Generate a permutation Matrix that will randomly shuffle the order of the
+    columns (Data * Permut) or rows (Permut * Data) when applied to the original Matrix
+  */
+  template<typename T>
+  class MakeShuffleMatrix
+  {
+  public:
+    MakeShuffleMatrix() = default;
+    MakeShuffleMatrix(const std::vector<int>& indices): indices_(indices) {};
+    MakeShuffleMatrix(const int& shuffle_dim_size) { setIndices(shuffle_dim_size); };
+    ~MakeShuffleMatrix() = default;
+    void setIndices(const int& shuffle_dim_size) {
+      // initialize the indices
+      indices_.clear();
+      indices_.reserve(shuffle_dim_size);
+      for (int i = 0; i < shuffle_dim_size; ++i) indices_.push_back(i);
+
+      // randomize the indices
+      auto rng = std::default_random_engine{};
+      std::shuffle(std::begin(indices_), std::end(indices_), rng);
+    }
+    std::vector<int> getIndices() { return indices_; }
+    Eigen::Tensor<T, 2> operator()(const bool& shuffle_cols) const {
+      // initialize the shuffle matrix
+      assert(indices_.size() > 0);
+      Eigen::Tensor<T, 2> shuffle_matrix(int(indices_.size()), int(indices_.size()));
+      shuffle_matrix.setZero();
+
+      // specify the ones in the shuffle matrix
+      for (int dim_iter = 0; dim_iter < indices_.size(); ++dim_iter) {
+        if (shuffle_cols) shuffle_matrix(dim_iter, indices_.at(dim_iter)) = T(1);
+        else shuffle_matrix(indices_.at(dim_iter), dim_iter) = T(1);
+      }
+      return shuffle_matrix;
+    };
+  private:
+    std::vector<int> indices_; ///< indices used to crate the permutation matrix
   };
 
 	/*
