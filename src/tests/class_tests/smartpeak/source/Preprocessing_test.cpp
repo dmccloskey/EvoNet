@@ -182,6 +182,28 @@ BOOST_AUTO_TEST_CASE(P_MakeShuffleMatrix)
   BOOST_CHECK_EQUAL(row_shuffle(1, 0), 1);
   BOOST_CHECK_EQUAL(row_shuffle(1, 1), 2);
   BOOST_CHECK_EQUAL(row_shuffle(1, 2), 3);
+
+  // Test row/column shuffling on toy data
+  Eigen::Tensor<double, 2> data_db(2, 3);
+  data_db.setValues({ {1,2,3},{4,5,6} });
+  MakeShuffleMatrix<double> shuffle_col_db(std::vector<int>({ 1,2,0 }), true);
+  Eigen::Tensor<double, 2> col_shuffle_db = data_db;
+  shuffle_col_db(col_shuffle_db, true);
+  BOOST_CHECK_EQUAL(col_shuffle_db(0, 0), 2);
+  BOOST_CHECK_EQUAL(col_shuffle_db(0, 1), 3);
+  BOOST_CHECK_EQUAL(col_shuffle_db(0, 2), 1);
+  BOOST_CHECK_EQUAL(col_shuffle_db(1, 0), 5);
+  BOOST_CHECK_EQUAL(col_shuffle_db(1, 1), 6);
+  BOOST_CHECK_EQUAL(col_shuffle_db(1, 2), 4);
+  MakeShuffleMatrix<double> shuffle_row_db(std::vector<int>({ 1,0 }), false);
+  Eigen::Tensor<double, 2> row_shuffle_db = data_db;
+  shuffle_row_db(row_shuffle_db, false);
+  BOOST_CHECK_EQUAL(row_shuffle_db(0, 0), 4);
+  BOOST_CHECK_EQUAL(row_shuffle_db(0, 1), 5);
+  BOOST_CHECK_EQUAL(row_shuffle_db(0, 2), 6);
+  BOOST_CHECK_EQUAL(row_shuffle_db(1, 0), 1);
+  BOOST_CHECK_EQUAL(row_shuffle_db(1, 1), 2);
+  BOOST_CHECK_EQUAL(row_shuffle_db(1, 2), 3);
 }
 
 BOOST_AUTO_TEST_CASE(P_LabelSmoother)
