@@ -897,7 +897,7 @@ namespace SmartPeak
 
       // Iterate through each replicate and add the label to the label matrix
       for (int rep_iter = 0; rep_iter < sample_group_name_to_reps.at(sample_group_name); ++rep_iter) {
-        labels.at(samples_cnt) = sample_group_name_to_label.at(sample_group_name);
+        labels.at(sample_indices.at(samples_cnt)) = sample_group_name_to_label.at(sample_group_name);
         ++samples_cnt;
       }
     }

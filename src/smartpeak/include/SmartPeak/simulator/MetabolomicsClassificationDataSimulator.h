@@ -16,10 +16,10 @@ namespace SmartPeak
     std::vector<std::string> labels_validation_;
     void makeTrainingDataForCache(const std::vector<std::string>& features, const Eigen::Tensor<TensorT, 2>& data_training, const std::vector<std::string>& labels_training,
       const int& n_epochs, const int& batch_size, const int& memory_size,
-      const int& n_input_nodes, const int& n_loss_output_nodes, const int& n_metric_output_nodes) override;
+      const int& n_input_nodes, const int& n_loss_output_nodes, const int& n_metric_output_nodes, const bool& shuffle_data_and_labels) override;
     void makeValidationDataForCache(const std::vector<std::string>& features, const Eigen::Tensor<TensorT, 2>& data_validation, const std::vector<std::string>& labels_validation,
       const int& n_epochs, const int& batch_size, const int& memory_size,
-      const int& n_input_nodes, const int& n_loss_output_nodes, const int& n_metric_output_nodes) override;
+      const int& n_input_nodes, const int& n_loss_output_nodes, const int& n_metric_output_nodes, const bool& shuffle_data_and_labels) override;
 
     /* Read and process the training and validation data for metabolomics analysis
 
@@ -36,6 +36,8 @@ namespace SmartPeak
     @param[in] meta_data_filename_test
     ...
     @param[in] n_reps_per_sample The number of replicates per sample to use for sample values
+    @param[in] randomize_sample_group_names If true, will randomize the ordering of the sample group names when making the data and label tensors from the BiochemicalReaction::MetabolomicsData structure
+    @param[in] shuffle_data_and_labels If true, will shuffle the expanded data and label tensors prior to initializing the training/validation data caches
     @param[in] n_epochs
     @param[in] batch_size
     @param[in] memory_size
@@ -54,11 +56,11 @@ namespace SmartPeak
       const bool& apply_fold_change, const std::string& fold_change_ref, const TensorT& fold_change_log_base,
       const bool& offline_linear_scale_input, const bool& offline_log_transform_input, const bool& offline_standardize_input,
       const bool& online_linear_scale_input, const bool& online_log_transform_input, const bool& online_standardize_input,
-      const int& n_reps_per_sample, const bool& randomize_sample_group_names,
+      const int& n_reps_per_sample, const bool& randomize_sample_group_names, const bool& shuffle_data_and_labels,
       const int& n_epochs, const int& batch_size, const int& memory_size);
   };
   template<typename TensorT>
-  inline void MetabolomicsClassificationDataSimulator<TensorT>::makeTrainingDataForCache(const std::vector<std::string>& features, const Eigen::Tensor<TensorT, 2>& data_training, const std::vector<std::string>& labels_training, const int & n_epochs, const int & batch_size, const int & memory_size, const int & n_input_nodes, const int & n_loss_output_nodes, const int & n_metric_output_nodes)
+  inline void MetabolomicsClassificationDataSimulator<TensorT>::makeTrainingDataForCache(const std::vector<std::string>& features, const Eigen::Tensor<TensorT, 2>& data_training, const std::vector<std::string>& labels_training, const int & n_epochs, const int & batch_size, const int & memory_size, const int & n_input_nodes, const int & n_loss_output_nodes, const int & n_metric_output_nodes, const bool& shuffle_data_and_labels)
   {
     // infer the input sizes
     const int input_nodes = data_training.dimension(0);
@@ -165,7 +167,7 @@ namespace SmartPeak
       Eigen::array<Eigen::Index, 4>({ batch_size, memory_size, int(labels_training_.size()), n_epochs })) = one_hot_vec_4d;
   }
   template<typename TensorT>
-  inline void MetabolomicsClassificationDataSimulator<TensorT>::makeValidationDataForCache(const std::vector<std::string>& features, const Eigen::Tensor<TensorT, 2>& data_validation, const std::vector<std::string>& labels_validation, const int & n_epochs, const int & batch_size, const int & memory_size, const int & n_input_nodes, const int & n_loss_output_nodes, const int & n_metric_output_nodes)
+  inline void MetabolomicsClassificationDataSimulator<TensorT>::makeValidationDataForCache(const std::vector<std::string>& features, const Eigen::Tensor<TensorT, 2>& data_validation, const std::vector<std::string>& labels_validation, const int & n_epochs, const int & batch_size, const int & memory_size, const int & n_input_nodes, const int & n_loss_output_nodes, const int & n_metric_output_nodes, const bool& shuffle_data_and_labels)
   {
     // infer the input sizes
     const int input_nodes = data_validation.dimension(0);
@@ -274,7 +276,7 @@ namespace SmartPeak
   template<typename TensorT>
   inline void MetabolomicsClassificationDataSimulator<TensorT>::readAndProcessMetabolomicsTrainingAndValidationData(int & n_reaction_ids_training, int & n_labels_training, int & n_component_group_names_training, int & n_reaction_ids_validation, int & n_labels_validation, int & n_component_group_names_validation, const std::string & biochem_rxns_filename, const std::string & metabo_data_filename_train, const std::string & meta_data_filename_train, const std::string & metabo_data_filename_test, const std::string & meta_data_filename_test, 
     const bool & use_concentrations, const bool & use_MARs, const bool & sample_values, const bool & iter_values, const bool & fill_sampling, const bool & fill_mean, const bool & fill_zero, const bool & apply_fold_change, const std::string & fold_change_ref, const TensorT & fold_change_log_base, const bool & offline_linear_scale_input, const bool & offline_log_transform_input, const bool & offline_standardize_input, const bool & online_linear_scale_input, const bool & online_log_transform_input, const bool & online_standardize_input, 
-    const int & n_reps_per_sample, const bool& randomize_sample_group_names, const int & n_epochs, const int & batch_size, const int & memory_size)
+    const int & n_reps_per_sample, const bool& randomize_sample_group_names, const bool& shuffle_data_and_labels, const int & n_epochs, const int & batch_size, const int & memory_size)
   {
     // define the data simulator
     BiochemicalReactionModel<TensorT> reaction_model;
@@ -402,9 +404,9 @@ namespace SmartPeak
 
       // Make the training data cache
       this->makeTrainingDataForCache(metabo_features_training, metabo_data_training, metabo_labels_training, n_epochs, batch_size, memory_size,
-        n_component_group_names_training, n_labels_training, 2 * n_labels_training);
+        n_component_group_names_training, n_labels_training, 2 * n_labels_training, shuffle_data_and_labels);
       this->makeValidationDataForCache(metabo_features_validation, metabo_data_validation, metabo_labels_validation, n_epochs, batch_size, memory_size,
-        n_component_group_names_validation, n_labels_validation, 2 * n_labels_validation);
+        n_component_group_names_validation, n_labels_validation, 2 * n_labels_validation, shuffle_data_and_labels);
     }
     else if (use_MARs) {
       // Apply offline transformations
@@ -419,9 +421,9 @@ namespace SmartPeak
 
       // Make the training data cache
       this->makeTrainingDataForCache(metabo_features_training, metabo_data_training, metabo_labels_training, n_epochs, batch_size, memory_size,
-        n_reaction_ids_training, n_labels_training, 2 * n_labels_training);
+        n_reaction_ids_training, n_labels_training, 2 * n_labels_training, shuffle_data_and_labels);
       this->makeValidationDataForCache(metabo_features_validation, metabo_data_validation, metabo_labels_validation, n_epochs, batch_size, memory_size,
-        n_reaction_ids_validation, n_labels_validation, 2 * n_labels_validation);
+        n_reaction_ids_validation, n_labels_validation, 2 * n_labels_validation, shuffle_data_and_labels);
     }
 
     // Checks for the training and validation data

@@ -16,10 +16,10 @@ class BiochemicalDataSimulatorTest : public BiochemicalDataSimulator<TensorT>
 public:
   void makeTrainingDataForCache(const std::vector<std::string>& features, const Eigen::Tensor<TensorT, 2>& data_training, const std::vector<std::string>& labels_training, 
     const int& n_epochs, const int& batch_size, const int& memory_size,
-    const int& n_input_nodes, const int& n_loss_output_nodes, const int& n_metric_output_nodes) override {}
+    const int& n_input_nodes, const int& n_loss_output_nodes, const int& n_metric_output_nodes, const bool& shuffle_data_and_labels) override {}
   void makeValidationDataForCache(const std::vector<std::string>& features, const Eigen::Tensor<TensorT, 2>& data_validation, const std::vector<std::string>& labels_validation,
     const int& n_epochs, const int& batch_size, const int& memory_size,
-    const int& n_input_nodes, const int& n_loss_output_nodes, const int& n_metric_output_nodes) override {}
+    const int& n_input_nodes, const int& n_loss_output_nodes, const int& n_metric_output_nodes, const bool& shuffle_data_and_labels) override {}
   void getTrainingDataFromCache(Eigen::Tensor<TensorT, 3>& input_data, Eigen::Tensor<TensorT, 3>& loss_output_data, Eigen::Tensor<TensorT, 3>& metric_output_data, Eigen::Tensor<TensorT, 2>& time_steps) {
     this->getTrainingDataFromCache_(input_data, loss_output_data, metric_output_data, time_steps);
   }

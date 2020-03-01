@@ -204,7 +204,7 @@ void main_classification(const std::string& data_dir, const std::string& biochem
     biochem_rxns_filename, metabo_data_filename_train, meta_data_filename_train, metabo_data_filename_test, meta_data_filename_test,
     use_concentrations, use_MARs, sample_values, iter_values, fill_sampling, fill_mean, fill_zero, apply_fold_change, fold_change_ref, fold_change_log_base,
     offline_linear_scale_input, offline_log_transform_input, offline_standardize_input, online_linear_scale_input, online_log_transform_input, online_standardize_input,
-    n_reps_per_sample, true, n_epochs, batch_size, memory_size);
+    n_reps_per_sample, true, true, n_epochs, batch_size, memory_size);
 
   // define the model input/output nodes
   int n_input_nodes;
