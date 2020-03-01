@@ -183,10 +183,15 @@ void main_classification(const std::string& data_dir, const std::string& biochem
   const bool& online_linear_scale_input, const bool& online_log_transform_input, const bool& online_standardize_input)
 {
   // global local variables
-  const int n_epochs = 100000;
+  const int n_epochs = 20000;
   const int batch_size = 64;
   const int memory_size = 1;
-  const int n_reps_per_sample = 1000;
+  const int n_reps_per_sample = 10000;
+
+  // prior to using shuffle when making the data caches
+  //const int n_labels = 7; // IndustrialStrains0103
+  //const int n_reps_per_sample = n_epochs*batch_size/n_labels;
+
   //std::string model_name = "MetClass_" + std::to_string(use_concentrations) + "-" + std::to_string(use_MARs) + "-" + std::to_string(sample_values) + "-" + std::to_string(iter_values) + "-"
   //  + std::to_string(fill_sampling) + "-" + std::to_string(fill_mean) + "-" + std::to_string(fill_zero) + "-" + std::to_string(apply_fold_change) + "-" + std::to_string(fold_change_log_base) + "-"
   //  + std::to_string(offline_linear_scale_input) + "-" + std::to_string(offline_log_transform_input) + "-" + std::to_string(offline_standardize_input) + "-"
@@ -203,7 +208,7 @@ void main_classification(const std::string& data_dir, const std::string& biochem
     biochem_rxns_filename, metabo_data_filename_train, meta_data_filename_train, metabo_data_filename_test, meta_data_filename_test,
     use_concentrations, use_MARs, sample_values, iter_values, fill_sampling, fill_mean, fill_zero, apply_fold_change, fold_change_ref, fold_change_log_base,
     offline_linear_scale_input, offline_log_transform_input, offline_standardize_input, online_linear_scale_input, online_log_transform_input, online_standardize_input,
-    n_reps_per_sample, n_epochs, batch_size, memory_size);
+    n_reps_per_sample, true, true, n_epochs, batch_size, memory_size);
 
   // define the model input/output nodes
   int n_input_nodes;
@@ -235,7 +240,7 @@ void main_classification(const std::string& data_dir, const std::string& biochem
   ModelTrainerExt<float> model_trainer;
   model_trainer.setBatchSize(batch_size);
   model_trainer.setMemorySize(memory_size);
-  model_trainer.setNEpochsTraining(n_epochs);
+  model_trainer.setNEpochsTraining(n_epochs * 5); // Iterate through the stored data 5 times
   model_trainer.setNEpochsValidation(0);
   model_trainer.setVerbosityLevel(1);
   model_trainer.setLogging(true, false, false);

@@ -186,8 +186,12 @@ void main_classification(const std::string& data_dir, const std::string& biochem
   const int n_epochs = 20000;
   const int batch_size = 64;
   const int memory_size = 1;
-  const int n_labels = 7; // IndustrialStrains0103
-  const int n_reps_per_sample = n_epochs*batch_size/n_labels;
+  const int n_reps_per_sample = 10000;
+
+  // prior to using shuffle when making the data caches
+  //const int n_labels = 7; // IndustrialStrains0103
+  //const int n_reps_per_sample = n_epochs*batch_size/n_labels;
+
   //std::string model_name = "MetClass_" + std::to_string(use_concentrations) + "-" + std::to_string(use_MARs) + "-" + std::to_string(sample_values) + "-" + std::to_string(iter_values) + "-"
   //  + std::to_string(fill_sampling) + "-" + std::to_string(fill_mean) + "-" + std::to_string(fill_zero) + "-" + std::to_string(apply_fold_change) + "-" + std::to_string(fold_change_log_base) + "-"
   //  + std::to_string(offline_linear_scale_input) + "-" + std::to_string(offline_log_transform_input) + "-" + std::to_string(offline_standardize_input) + "-"
