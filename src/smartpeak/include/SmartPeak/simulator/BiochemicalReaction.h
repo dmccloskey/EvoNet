@@ -792,6 +792,13 @@ namespace SmartPeak
       TensorT mean = sum / met_data.size();
       return mean;
     };
+    auto calcFC = [](const TensorT& value, const TensorT& ref, const TensorT& fold_change_log_base) {
+      TensorT fc = 0;
+      if (value != 0 && ref != 0) {
+        fc = minFunc(maxFunc(std::log(value / ref) / std::log(fold_change_log_base), -1), 1);
+      }
+      return fc;
+    };
 
     // determine the number of total samples
     int total_samples = 0;
@@ -841,11 +848,7 @@ namespace SmartPeak
             // Assign the value for each replicate through random sampling of the replicates
             MetabolomicsDatum random_met = selectRandomElement(metabolomicsData_.at(sample_group_name).at(component_group_name));
             value = random_met.calculated_concentration;
-            if (apply_fold_change) {
-              random_met = selectRandomElement(metabolomicsData_.at(fold_change_ref).at(component_group_name));
-              value /= random_met.calculated_concentration;
-              value = minFunc(maxFunc(std::log(value) / std::log(fold_change_log_base), -1), 1);
-            }
+            if (apply_fold_change) value = calcFC(value, selectRandomElement(metabolomicsData_.at(fold_change_ref).at(component_group_name)).calculated_concentration, fold_change_log_base);
           }
           else if (use_concentrations && iter_values) {
             // Or by iterating through the replicates filling in missing values as needed
@@ -864,21 +867,16 @@ namespace SmartPeak
             }
             if (apply_fold_change) {
               if (rep_iter >= metabolomicsData_.at(fold_change_ref).at(component_group_name).size() && fill_sampling) {
-                MetabolomicsDatum random_met = selectRandomElement(metabolomicsData_.at(fold_change_ref).at(component_group_name));
-                value /= random_met.calculated_concentration;
-                value = minFunc(maxFunc(std::log(value) / std::log(fold_change_log_base), -1), 1);
+                value = calcFC(value, selectRandomElement(metabolomicsData_.at(fold_change_ref).at(component_group_name)).calculated_concentration, fold_change_log_base);
               }
               else if (rep_iter >= metabolomicsData_.at(fold_change_ref).at(component_group_name).size() && fill_mean) {
-                value /= calcMean(metabolomicsData_.at(fold_change_ref).at(component_group_name));
-                value = minFunc(maxFunc(std::log(value) / std::log(fold_change_log_base), -1), 1);
+                value = calcFC(value, calcMean(metabolomicsData_.at(fold_change_ref).at(component_group_name)), fold_change_log_base);
               }
               else if (rep_iter >= metabolomicsData_.at(fold_change_ref).at(component_group_name).size() && fill_zero) {
-                value /= 1e-6;
-                value = minFunc(maxFunc(std::log(value) / std::log(fold_change_log_base), -1), 1);
+                value = 0;
               }
               else {
-                value /= metabolomicsData_.at(fold_change_ref).at(component_group_name).at(rep_iter).calculated_concentration;
-                value = minFunc(maxFunc(std::log(value) / std::log(fold_change_log_base), -1), 1);
+                value = calcFC(value, metabolomicsData_.at(fold_change_ref).at(component_group_name).at(rep_iter).calculated_concentration, fold_change_log_base);
               }
             }
           }
@@ -886,8 +884,7 @@ namespace SmartPeak
             // OR by sampling mass action ratios
             value = calculateMAR(metabolomicsData_.at(sample_group_name), biochemicalReactions_.at(component_group_name));
             if (apply_fold_change) {
-              value /= calculateMAR(metabolomicsData_.at(fold_change_ref), biochemicalReactions_.at(component_group_name));
-              value = minFunc(maxFunc(std::log(value) / std::log(fold_change_log_base), -1), 1);
+              value = calcFC(value, calculateMAR(metabolomicsData_.at(fold_change_ref), biochemicalReactions_.at(component_group_name)), fold_change_log_base);
             }
           }
           data(feature_iter, sample_indices.at(samples_cnt_prev)) = value;
