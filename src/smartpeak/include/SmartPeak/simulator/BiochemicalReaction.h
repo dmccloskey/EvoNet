@@ -794,7 +794,7 @@ namespace SmartPeak
     };
     auto calcFC = [](const TensorT& value, const TensorT& ref, const TensorT& fold_change_log_base) {
       TensorT fc = 0;
-      if (value != 0 && ref != 0) {
+      if (value > 0 && ref > 0) {
         fc = minFunc(maxFunc(std::log(value / ref) / std::log(fold_change_log_base), -1), 1);
       }
       return fc;

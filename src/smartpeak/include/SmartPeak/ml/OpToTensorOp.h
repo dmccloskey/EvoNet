@@ -546,15 +546,35 @@ namespace SmartPeak
         return op_tensor_class;
       }
       else if (op_class->getName() == "MAEOp") {
-        MetricFunctionTensorOp<TensorT, DeviceT>* op_tensor_class = new MAETensorOp<TensorT, DeviceT>();
+        MetricFunctionTensorOp<TensorT, DeviceT>* op_tensor_class = new MAETensorOp<TensorT, DeviceT>(op_class->getReductionFunc());
         return op_tensor_class;
       }
       else if (op_class->getName() == "CosineSimilarityOp") {
-        MetricFunctionTensorOp<TensorT, DeviceT>* op_tensor_class = new CosineSimilarityTensorOp<TensorT, DeviceT>();
+        MetricFunctionTensorOp<TensorT, DeviceT>* op_tensor_class = new CosineSimilarityTensorOp<TensorT, DeviceT>(op_class->getReductionFunc());
         return op_tensor_class;
       }
       else if (op_class->getName() == "PearsonROp") {
-        MetricFunctionTensorOp<TensorT, DeviceT>* op_tensor_class = new PearsonRTensorOp<TensorT, DeviceT>();
+        MetricFunctionTensorOp<TensorT, DeviceT>* op_tensor_class = new PearsonRTensorOp<TensorT, DeviceT>(op_class->getReductionFunc());
+        return op_tensor_class;
+      }
+      else if (op_class->getName() == "EuclideanDistOp") {
+        MetricFunctionTensorOp<TensorT, DeviceT>* op_tensor_class = new EuclideanDistTensorOp<TensorT, DeviceT>(op_class->getReductionFunc());
+        return op_tensor_class;
+      }
+      else if (op_class->getName() == "ManhattanDistOp") {
+        MetricFunctionTensorOp<TensorT, DeviceT>* op_tensor_class = new ManhattanDistTensorOp<TensorT, DeviceT>(op_class->getReductionFunc());
+        return op_tensor_class;
+      }
+      else if (op_class->getName() == "JeffreysAndMatusitaDistOp") {
+        MetricFunctionTensorOp<TensorT, DeviceT>* op_tensor_class = new JeffreysAndMatusitaDistTensorOp<TensorT, DeviceT>(op_class->getReductionFunc());
+        return op_tensor_class;
+      }
+      else if (op_class->getName() == "LogarithmicDistOp") {
+        MetricFunctionTensorOp<TensorT, DeviceT>* op_tensor_class = new LogarithmicDistTensorOp<TensorT, DeviceT>(op_class->getReductionFunc());
+        return op_tensor_class;
+      }
+      else if (op_class->getName() == "PercentDifferenceOp") {
+        MetricFunctionTensorOp<TensorT, DeviceT>* op_tensor_class = new PercentDifferenceTensorOp<TensorT, DeviceT>(op_class->getReductionFunc());
         return op_tensor_class;
       }
       else {

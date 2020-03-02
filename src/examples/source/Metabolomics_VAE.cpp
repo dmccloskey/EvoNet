@@ -224,6 +224,7 @@ void main_reconstruction(const std::string& data_dir, const std::string& biochem
   const bool& apply_fold_change, const std::string& fold_change_ref, const float& fold_change_log_base,
   const bool& offline_linear_scale_input, const bool& offline_log_transform_input, const bool& offline_standardize_input,
   const bool& online_linear_scale_input, const bool& online_log_transform_input, const bool& online_standardize_input,
+  const std::string& loss_function,
   const int& device_id)
 {
   // global local variables
@@ -342,17 +343,47 @@ void main_reconstruction(const std::string& data_dir, const std::string& biochem
   model_trainer.setFindCycles(false);
   model_trainer.setFastInterpreter(true);
   model_trainer.setPreserveOoO(true);
+  std::shared_ptr<LossFunctionOp<float>> loss_function_op;
+  std::shared_ptr<LossFunctionGradOp<float>> loss_function_grad_op;
+  if (loss_function == std::string("MSE")) {
+    loss_function_op = std::make_shared<MSELossOp<float>>(MSELossOp<float>(1e-6, 1.0));
+    loss_function_grad_op = std::make_shared<MSELossGradOp<float>>(MSELossGradOp<float>(1e-6, 1.0));
+  }
+  else if (loss_function == std::string("MAE")) {
+    loss_function_op = std::make_shared<MAELossOp<float>>(MAELossOp<float>(1e-6, 1.0));
+    loss_function_grad_op = std::make_shared<MAELossGradOp<float>>(MAELossGradOp<float>(1e-6, 1.0));
+  }
+  else if (loss_function == std::string("MLE")) {
+    loss_function_op = std::make_shared<MLELossOp<float>>(MLELossOp<float>(1e-6, 1.0));
+    loss_function_grad_op = std::make_shared<MLELossGradOp<float>>(MLELossGradOp<float>(1e-6, 1.0));
+  }
+  else if (loss_function == std::string("MAPE")) {
+    loss_function_op = std::make_shared<MAPELossOp<float>>(MAPELossOp<float>(1e-6, 1.0));
+    loss_function_grad_op = std::make_shared<MAPELossGradOp<float>>(MAPELossGradOp<float>(1e-6, 1.0));
+  }
+  else if (loss_function == std::string("BCEWithLogits")) {
+    loss_function_op = std::make_shared<BCEWithLogitsLossOp<float>>(BCEWithLogitsLossOp<float>(1e-6, 1.0));
+    loss_function_grad_op = std::make_shared<BCEWithLogitsLossGradOp<float>>(BCEWithLogitsLossGradOp<float>(1e-6, 1.0));
+  }
   model_trainer.setLossFunctions({
-    std::shared_ptr<LossFunctionOp<float>>(new MAPELossOp<float>(1e-6, 1.0)),
+    loss_function_op,
     std::make_shared<KLDivergenceMuLossOp<float>>(KLDivergenceMuLossOp<float>(1e-6, 0.0, 0.0)), //FIXME
     std::make_shared<KLDivergenceLogVarLossOp<float>>(KLDivergenceLogVarLossOp<float>(1e-6, 0.0, 0.0))
     });
   model_trainer.setLossFunctionGrads({
-    std::shared_ptr<LossFunctionGradOp<float>>(new MAPELossGradOp<float>(1e-6, 1.0)),
+    loss_function_grad_op,
     std::make_shared<KLDivergenceMuLossGradOp<float>>(KLDivergenceMuLossGradOp<float>(1e-6, 0.0, 0.0)),
     std::make_shared<KLDivergenceLogVarLossGradOp<float>>(KLDivergenceLogVarLossGradOp<float>(1e-6, 0.0, 0.0))
     });
   model_trainer.setLossOutputNodes({ output_nodes, encoding_nodes_mu, encoding_nodes_logvar });
+  // TODO: 
+  //Abs Perc difference
+  //Manhattan distance
+  //Logarithmic distance
+  //Euclidean distance
+  //M& J distance
+  //Log Manhattan distance
+  //PearsonR
   model_trainer.setMetricFunctions({ std::make_shared<MAEOp<float>>(MAEOp<float>()) });
   model_trainer.setMetricOutputNodes({ output_nodes });
   model_trainer.setMetricNames({ "MAE" });
@@ -499,23 +530,24 @@ int main(int argc, char** argv)
     online_standardize_input = (argv[24] == std::string("true")) ? true : false;
   }
   if (argc >= 26) {
+    if (argv[25] == std::string("MSE"))
+      loss_function = "MSE";
+    else if (argv[25] == std::string("MAE"))
+      loss_function = "MAE";
+    else if (argv[25] == std::string("MLE"))
+      loss_function = "MLE";
+    else if (argv[25] == std::string("MAPE"))
+      loss_function = "MAPE";
+    else if (argv[25] == std::string("BCEWithLogits"))
+      loss_function = "BCEWithLogits";
+  }
+  if (argc >= 27) {
     try {
-      device_id = std::stoi(argv[25]);
+      device_id = std::stoi(argv[26]);
     }
     catch (std::exception & e) {
       std::cout << e.what() << std::endl;
     }
-  }
-  if (argc >= 27) {
-    if (argv[26] == std::string("MSE"))
-      loss_function = "MSE";
-    else if (argv[26] == std::string("MAE"))
-      loss_function = "MAE";
-    else if (argv[26] == std::string("MLE"))
-      loss_function = "MLE";
-    else if (argv[26] == std::string("MAPE"))
-      loss_function = "MAPE";
-    // TODO
   }
 
   // Cout the parsed input
@@ -543,8 +575,8 @@ int main(int argc, char** argv)
   std::cout << "online_linear_scale_input: " << online_linear_scale_input << std::endl;
   std::cout << "online_log_transform_input: " << online_log_transform_input << std::endl;
   std::cout << "online_standardize_input: " << online_standardize_input << std::endl;
-  std::cout << "device_id: " << device_id << std::endl;
   std::cout << "loss_function: " << loss_function << std::endl;
+  std::cout << "device_id: " << device_id << std::endl;
 
   // Run the classification
   main_reconstruction(data_dir, biochem_rxns_filename, metabo_data_filename_train, meta_data_filename_train, metabo_data_filename_test, meta_data_filename_test,
@@ -552,7 +584,7 @@ int main(int argc, char** argv)
     use_concentrations, use_MARs, sample_values, iter_values, fill_sampling, fill_mean, fill_zero,
     apply_fold_change, fold_change_ref, fold_change_log_base,
     offline_linear_scale_input, offline_log_transform_input, offline_standardize_input,
-    online_linear_scale_input, online_log_transform_input, online_standardize_input, device_id
+    online_linear_scale_input, online_log_transform_input, online_standardize_input, loss_function, device_id
   );
   return 0;
 }

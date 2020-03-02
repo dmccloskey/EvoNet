@@ -431,6 +431,11 @@ BOOST_AUTO_TEST_CASE(gettersAndSettersMAEOp)
 {
   MAEOp<float> operation;
   BOOST_CHECK_EQUAL(operation.getName(), "MAEOp");
+  BOOST_CHECK_EQUAL(operation.getReductionFunc(), "Sum");
+  BOOST_CHECK_EQUAL(operation.getParameters().size(), 0);
+
+  MAEOp<float> operation2(std::string("Mean"));
+  BOOST_CHECK_EQUAL(operation2.getReductionFunc(), "Mean");
 }
 
 /**
@@ -454,6 +459,11 @@ BOOST_AUTO_TEST_CASE(gettersAndSettersCosineSimilarityOp)
 {
   CosineSimilarityOp<float> operation;
   BOOST_CHECK_EQUAL(operation.getName(), "CosineSimilarityOp");
+  BOOST_CHECK_EQUAL(operation.getReductionFunc(), "Sum");
+  BOOST_CHECK_EQUAL(operation.getParameters().size(), 0);
+
+  CosineSimilarityOp<float> operation2(std::string("Mean"));
+  BOOST_CHECK_EQUAL(operation2.getReductionFunc(), "Mean");
 }
 
 /**
@@ -477,6 +487,151 @@ BOOST_AUTO_TEST_CASE(gettersAndSettersPearsonROp)
 {
   PearsonROp<float> operation;
   BOOST_CHECK_EQUAL(operation.getName(), "PearsonROp");
+  BOOST_CHECK_EQUAL(operation.getReductionFunc(), "Sum");
+  BOOST_CHECK_EQUAL(operation.getParameters().size(), 0);
+
+  PearsonROp<float> operation2(std::string("Mean"));
+  BOOST_CHECK_EQUAL(operation2.getReductionFunc(), "Mean");
+}
+
+/**
+  EuclideanDistOp Tests
+*/
+BOOST_AUTO_TEST_CASE(constructorEuclideanDistOp)
+{
+  EuclideanDistOp<double>* ptrEuclideanDist = nullptr;
+  EuclideanDistOp<double>* nullPointerEuclideanDist = nullptr;
+  BOOST_CHECK_EQUAL(ptrEuclideanDist, nullPointerEuclideanDist);
+}
+
+BOOST_AUTO_TEST_CASE(destructorEuclideanDistOp)
+{
+  EuclideanDistOp<double>* ptrEuclideanDist = nullptr;
+  ptrEuclideanDist = new EuclideanDistOp<double>();
+  delete ptrEuclideanDist;
+}
+
+BOOST_AUTO_TEST_CASE(gettersAndSettersEuclideanDistOp)
+{
+  EuclideanDistOp<float> operation;
+  BOOST_CHECK_EQUAL(operation.getName(), "EuclideanDistOp");
+  BOOST_CHECK_EQUAL(operation.getReductionFunc(), "Sum");
+  BOOST_CHECK_EQUAL(operation.getParameters().size(), 0);
+
+  EuclideanDistOp<float> operation2(std::string("Mean"));
+  BOOST_CHECK_EQUAL(operation2.getReductionFunc(), "Mean");
+}
+
+/**
+  ManhattanDistOp Tests
+*/
+BOOST_AUTO_TEST_CASE(constructorManhattanDistOp)
+{
+  ManhattanDistOp<double>* ptrManhattanDist = nullptr;
+  ManhattanDistOp<double>* nullPointerManhattanDist = nullptr;
+  BOOST_CHECK_EQUAL(ptrManhattanDist, nullPointerManhattanDist);
+}
+
+BOOST_AUTO_TEST_CASE(destructorManhattanDistOp)
+{
+  ManhattanDistOp<double>* ptrManhattanDist = nullptr;
+  ptrManhattanDist = new ManhattanDistOp<double>();
+  delete ptrManhattanDist;
+}
+
+BOOST_AUTO_TEST_CASE(gettersAndSettersManhattanDistOp)
+{
+  ManhattanDistOp<float> operation;
+  BOOST_CHECK_EQUAL(operation.getName(), "ManhattanDistOp");
+  BOOST_CHECK_EQUAL(operation.getReductionFunc(), "Sum");
+  BOOST_CHECK_EQUAL(operation.getParameters().size(), 0);
+
+  ManhattanDistOp<float> operation2(std::string("Mean"));
+  BOOST_CHECK_EQUAL(operation2.getReductionFunc(), "Mean");
+}
+
+/**
+  JeffreysAndMatusitaDistOp Tests
+*/
+BOOST_AUTO_TEST_CASE(constructorJeffreysAndMatusitaDistOp)
+{
+  JeffreysAndMatusitaDistOp<double>* ptrJeffreysAndMatusitaDist = nullptr;
+  JeffreysAndMatusitaDistOp<double>* nullPointerJeffreysAndMatusitaDist = nullptr;
+  BOOST_CHECK_EQUAL(ptrJeffreysAndMatusitaDist, nullPointerJeffreysAndMatusitaDist);
+}
+
+BOOST_AUTO_TEST_CASE(destructorJeffreysAndMatusitaDistOp)
+{
+  JeffreysAndMatusitaDistOp<double>* ptrJeffreysAndMatusitaDist = nullptr;
+  ptrJeffreysAndMatusitaDist = new JeffreysAndMatusitaDistOp<double>();
+  delete ptrJeffreysAndMatusitaDist;
+}
+
+BOOST_AUTO_TEST_CASE(gettersAndSettersJeffreysAndMatusitaDistOp)
+{
+  JeffreysAndMatusitaDistOp<float> operation;
+  BOOST_CHECK_EQUAL(operation.getName(), "JeffreysAndMatusitaDistOp");
+  BOOST_CHECK_EQUAL(operation.getReductionFunc(), "Sum");
+  BOOST_CHECK_EQUAL(operation.getParameters().size(), 0);
+
+  JeffreysAndMatusitaDistOp<float> operation2(std::string("Mean"));
+  BOOST_CHECK_EQUAL(operation2.getReductionFunc(), "Mean");
+}
+
+/**
+  LogarithmicDistOp Tests
+*/
+BOOST_AUTO_TEST_CASE(constructorLogarithmicDistOp)
+{
+  LogarithmicDistOp<double>* ptrLogarithmicDist = nullptr;
+  LogarithmicDistOp<double>* nullPointerLogarithmicDist = nullptr;
+  BOOST_CHECK_EQUAL(ptrLogarithmicDist, nullPointerLogarithmicDist);
+}
+
+BOOST_AUTO_TEST_CASE(destructorLogarithmicDistOp)
+{
+  LogarithmicDistOp<double>* ptrLogarithmicDist = nullptr;
+  ptrLogarithmicDist = new LogarithmicDistOp<double>();
+  delete ptrLogarithmicDist;
+}
+
+BOOST_AUTO_TEST_CASE(gettersAndSettersLogarithmicDistOp)
+{
+  LogarithmicDistOp<float> operation;
+  BOOST_CHECK_EQUAL(operation.getName(), "LogarithmicDistOp");
+  BOOST_CHECK_EQUAL(operation.getReductionFunc(), "Sum");
+  BOOST_CHECK_EQUAL(operation.getParameters().size(), 0);
+
+  LogarithmicDistOp<float> operation2(std::string("Mean"));
+  BOOST_CHECK_EQUAL(operation2.getReductionFunc(), "Mean");
+}
+
+/**
+  PercentDifferenceOp Tests
+*/
+BOOST_AUTO_TEST_CASE(constructorPercentDifferenceOp)
+{
+  PercentDifferenceOp<double>* ptrPercentDifference = nullptr;
+  PercentDifferenceOp<double>* nullPointerPercentDifference = nullptr;
+  BOOST_CHECK_EQUAL(ptrPercentDifference, nullPointerPercentDifference);
+}
+
+BOOST_AUTO_TEST_CASE(destructorPercentDifferenceOp)
+{
+  PercentDifferenceOp<double>* ptrPercentDifference = nullptr;
+  ptrPercentDifference = new PercentDifferenceOp<double>();
+  delete ptrPercentDifference;
+}
+
+BOOST_AUTO_TEST_CASE(gettersAndSettersPercentDifferenceOp)
+{
+  PercentDifferenceOp<float> operation;
+  BOOST_CHECK_EQUAL(operation.getName(), "PercentDifferenceOp");
+  BOOST_CHECK_EQUAL(operation.getReductionFunc(), "Sum");
+  BOOST_CHECK_EQUAL(operation.getParameters().size(), 0);
+
+  PercentDifferenceOp<float> operation2(std::string("Mean"));
+  BOOST_CHECK_EQUAL(operation2.getReductionFunc(), "Mean");
 }
 
 BOOST_AUTO_TEST_SUITE_END()
