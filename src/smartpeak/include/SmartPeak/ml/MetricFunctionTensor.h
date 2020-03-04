@@ -758,7 +758,20 @@ public:
       Eigen::TensorMap<Eigen::Tensor<TensorT, 4>> predicted_tensor(predicted, batch_size, memory_size, layer_size, 1);
       Eigen::TensorMap<Eigen::Tensor<TensorT, 2>> error_tensor(error, n_metrics, memory_size);
       auto predicted_chip = predicted_tensor.chip(time_step, 1);
-      auto euclidean_dist = ((expected_tensor - predicted_chip).pow(TensorT(2))).sum(Eigen::array<int, 1>({ 1 })).sqrt();
+
+      // allocate temporary memory
+      TensorT* tmp_data;
+      if (typeid(device).name() == typeid(Eigen::DefaultDevice).name()) {
+        tmp_data = new TensorT[batch_size * 1];
+      }
+#if COMPILE_WITH_CUDA
+      else if (typeid(device).name() == typeid(Eigen::GpuDevice).name()) {
+        size_t bytes = batch_size * 1 * sizeof(TensorT);
+        assert(cudaMalloc((void**)(&tmp_data), bytes) == cudaSuccess);
+      }
+#endif
+      Eigen::TensorMap<Eigen::Tensor<TensorT, 2>> euclidean_dist(tmp_data, batch_size, 1);
+      euclidean_dist.device(device) = ((expected_tensor - predicted_chip).pow(TensorT(2))).sum(Eigen::array<int, 1>({ 1 })).sqrt();
       if (this->reduction_func_ == "Sum")
         error_tensor.chip(metric_index, 0).chip(time_step, 0).device(device) += euclidean_dist.sum();
       else if (this->reduction_func_ == "Mean")
@@ -768,6 +781,16 @@ public:
         auto var = ((mean - euclidean_dist.chip(0, 1)).pow(TensorT(2)) / mean.constant(TensorT(batch_size) - 1)).sum();
         error_tensor.chip(metric_index, 0).chip(time_step, 0).device(device) += var;
       }
+
+      // deallocate temporary memory
+      if (typeid(device).name() == typeid(Eigen::DefaultDevice).name()) {
+        delete[] tmp_data;
+      }
+#if COMPILE_WITH_CUDA
+      else if (typeid(device).name() == typeid(Eigen::GpuDevice).name()) {
+        assert(cudaFree(tmp_data) == cudaSuccess);
+      }
+#endif
     };
   };
 
@@ -787,7 +810,20 @@ public:
       Eigen::TensorMap<Eigen::Tensor<TensorT, 4>> predicted_tensor(predicted, batch_size, memory_size, layer_size, 1);
       Eigen::TensorMap<Eigen::Tensor<TensorT, 2>> error_tensor(error, n_metrics, memory_size);
       auto predicted_chip = predicted_tensor.chip(time_step, 1);
-      auto euclidean_dist = ((expected_tensor - predicted_chip).pow(TensorT(2)).sqrt()).sum(Eigen::array<int, 1>({ 1 }));
+
+      // allocate temporary memory
+      TensorT* tmp_data;
+      if (typeid(device).name() == typeid(Eigen::DefaultDevice).name()) {
+        tmp_data = new TensorT[batch_size * 1];
+      }
+#if COMPILE_WITH_CUDA
+      else if (typeid(device).name() == typeid(Eigen::GpuDevice).name()) {
+        size_t bytes = batch_size * 1 * sizeof(TensorT);
+        assert(cudaMalloc((void**)(&tmp_data), bytes) == cudaSuccess);
+      }
+#endif
+      Eigen::TensorMap<Eigen::Tensor<TensorT, 2>> euclidean_dist(tmp_data, batch_size, 1);
+      euclidean_dist.device(device) = ((expected_tensor - predicted_chip).pow(TensorT(2)).sqrt()).sum(Eigen::array<int, 1>({ 1 }));
       if (this->reduction_func_ == "Sum")
         error_tensor.chip(metric_index, 0).chip(time_step, 0).device(device) += euclidean_dist.sum();
       else if (this->reduction_func_ == "Mean")
@@ -797,6 +833,16 @@ public:
         auto var = ((mean - euclidean_dist.chip(0, 1)).pow(TensorT(2)) / mean.constant(TensorT(batch_size) - 1)).sum();
         error_tensor.chip(metric_index, 0).chip(time_step, 0).device(device) += var;
       }
+
+      // deallocate temporary memory
+      if (typeid(device).name() == typeid(Eigen::DefaultDevice).name()) {
+        delete[] tmp_data;
+      }
+#if COMPILE_WITH_CUDA
+      else if (typeid(device).name() == typeid(Eigen::GpuDevice).name()) {
+        assert(cudaFree(tmp_data) == cudaSuccess);
+      }
+#endif
     };
   };
 
@@ -816,7 +862,20 @@ public:
       Eigen::TensorMap<Eigen::Tensor<TensorT, 4>> predicted_tensor(predicted, batch_size, memory_size, layer_size, 1);
       Eigen::TensorMap<Eigen::Tensor<TensorT, 2>> error_tensor(error, n_metrics, memory_size);
       auto predicted_chip = predicted_tensor.chip(time_step, 1);
-      auto euclidean_dist = ((expected_tensor.cwiseMax(expected_tensor.constant(TensorT(0))).sqrt() - 
+
+      // allocate temporary memory
+      TensorT* tmp_data;
+      if (typeid(device).name() == typeid(Eigen::DefaultDevice).name()) {
+        tmp_data = new TensorT[batch_size * 1];
+      }
+#if COMPILE_WITH_CUDA
+      else if (typeid(device).name() == typeid(Eigen::GpuDevice).name()) {
+        size_t bytes = batch_size * 1 * sizeof(TensorT);
+        assert(cudaMalloc((void**)(&tmp_data), bytes) == cudaSuccess);
+      }
+#endif
+      Eigen::TensorMap<Eigen::Tensor<TensorT, 2>> euclidean_dist(tmp_data, batch_size, 1);
+      euclidean_dist.device(device) = ((expected_tensor.cwiseMax(expected_tensor.constant(TensorT(0))).sqrt() -
         predicted_chip.cwiseMax(predicted_chip.constant(TensorT(0))).sqrt()).pow(TensorT(2))).sum(Eigen::array<int, 1>({ 1 })).sqrt();
       if (this->reduction_func_ == "Sum")
         error_tensor.chip(metric_index, 0).chip(time_step, 0).device(device) += euclidean_dist.sum();
@@ -827,6 +886,16 @@ public:
         auto var = ((mean - euclidean_dist.chip(0, 1)).pow(TensorT(2)) / mean.constant(TensorT(batch_size) - 1)).sum();
         error_tensor.chip(metric_index, 0).chip(time_step, 0).device(device) += var;
       }
+
+      // deallocate temporary memory
+      if (typeid(device).name() == typeid(Eigen::DefaultDevice).name()) {
+        delete[] tmp_data;
+      }
+#if COMPILE_WITH_CUDA
+      else if (typeid(device).name() == typeid(Eigen::GpuDevice).name()) {
+        assert(cudaFree(tmp_data) == cudaSuccess);
+      }
+#endif
     };
   };
 
@@ -848,7 +917,20 @@ public:
       auto predicted_chip = predicted_tensor.chip(time_step, 1);
       auto diff = expected_tensor - predicted_chip;
       auto min_offset = diff.chip(0, 2) - diff.minimum(Eigen::array<Eigen::Index, 1>({ 1 })).broadcast(Eigen::array<Eigen::Index, 3>({ 1, layer_size, 1 })) + diff.chip(0, 2).constant(TensorT(1));
-      auto euclidean_dist = min_offset.log().sum(Eigen::array<int, 1>({ 1 }));
+
+      // allocate temporary memory
+      TensorT* tmp_data;
+      if (typeid(device).name() == typeid(Eigen::DefaultDevice).name()) {
+        tmp_data = new TensorT[batch_size * 1];
+      }
+#if COMPILE_WITH_CUDA
+      else if (typeid(device).name() == typeid(Eigen::GpuDevice).name()) {
+        size_t bytes = batch_size * 1 * sizeof(TensorT);
+        assert(cudaMalloc((void**)(&tmp_data), bytes) == cudaSuccess);
+      }
+#endif
+      Eigen::TensorMap<Eigen::Tensor<TensorT, 2>> euclidean_dist(tmp_data, batch_size, 1);
+      euclidean_dist.device(device) = min_offset.log().sum(Eigen::array<int, 1>({ 1 }));
       if (this->reduction_func_ == "Sum")
         error_tensor.chip(metric_index, 0).chip(time_step, 0).device(device) += euclidean_dist.sum();
       else if (this->reduction_func_ == "Mean")
@@ -858,6 +940,15 @@ public:
         auto var = ((mean - euclidean_dist.chip(0, 1)).pow(TensorT(2)) / mean.constant(TensorT(batch_size) - 1)).sum();
         error_tensor.chip(metric_index, 0).chip(time_step, 0).device(device) += var;
       }
+      // deallocate temporary memory
+      if (typeid(device).name() == typeid(Eigen::DefaultDevice).name()) {
+        delete[] tmp_data;
+      }
+#if COMPILE_WITH_CUDA
+      else if (typeid(device).name() == typeid(Eigen::GpuDevice).name()) {
+        assert(cudaFree(tmp_data) == cudaSuccess);
+      }
+#endif
     };
   };
 
@@ -878,7 +969,20 @@ public:
       Eigen::TensorMap<Eigen::Tensor<TensorT, 4>> predicted_tensor(predicted, batch_size, memory_size, layer_size, 1);
       Eigen::TensorMap<Eigen::Tensor<TensorT, 2>> error_tensor(error, n_metrics, memory_size);
       auto predicted_chip = predicted_tensor.chip(time_step, 1);
-      auto perce_diff = ((expected_tensor - predicted_chip).pow(TensorT(2)).sqrt() / (expected_tensor + expected_tensor.constant(TensorT(1e-6)))).sum(Eigen::array<int, 1>({ 1 }));
+
+      // allocate temporary memory
+      TensorT* tmp_data;
+      if (typeid(device).name() == typeid(Eigen::DefaultDevice).name()) {
+        tmp_data = new TensorT[batch_size * 1];
+      }
+#if COMPILE_WITH_CUDA
+      else if (typeid(device).name() == typeid(Eigen::GpuDevice).name()) {
+        size_t bytes = batch_size * 1 * sizeof(TensorT);
+        assert(cudaMalloc((void**)(&tmp_data), bytes) == cudaSuccess);
+      }
+#endif
+      Eigen::TensorMap<Eigen::Tensor<TensorT, 2>> perce_diff(tmp_data, batch_size, 1);
+      perce_diff.device(device) = ((expected_tensor - predicted_chip).pow(TensorT(2)).sqrt() / (expected_tensor + expected_tensor.constant(TensorT(1e-6)))).sum(Eigen::array<int, 1>({ 1 }));
       if (this->reduction_func_ == "Sum")
         error_tensor.chip(metric_index, 0).chip(time_step, 0).device(device) += perce_diff.sum();
       else if (this->reduction_func_ == "Mean")
@@ -888,6 +992,16 @@ public:
         auto var = ((mean - perce_diff.chip(0, 1)).pow(TensorT(2)) / mean.constant(TensorT(batch_size) - 1)).sum();
         error_tensor.chip(metric_index, 0).chip(time_step, 0).device(device) += var;
       }
+
+      // deallocate temporary memory
+      if (typeid(device).name() == typeid(Eigen::DefaultDevice).name()) {
+        delete[] tmp_data;
+      }
+#if COMPILE_WITH_CUDA
+      else if (typeid(device).name() == typeid(Eigen::GpuDevice).name()) {
+        assert(cudaFree(tmp_data) == cudaSuccess);
+      }
+#endif
     };
   };
 }

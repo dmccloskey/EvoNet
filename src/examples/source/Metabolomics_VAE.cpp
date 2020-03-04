@@ -228,7 +228,7 @@ void main_reconstruction(const std::string& data_dir, const std::string& biochem
   const int& device_id)
 {
   // global local variables
-  const int n_epochs = 20000;
+  const int n_epochs = 10;// 20000;
   const int batch_size = 64;
   const int memory_size = 1;
   //const int n_reps_per_sample = 10000;
@@ -261,7 +261,7 @@ void main_reconstruction(const std::string& data_dir, const std::string& biochem
   int n_input_nodes;
   if (use_MARs) n_input_nodes = n_reaction_ids_training;
   else n_input_nodes = n_component_group_names_training;
-  const int n_output_nodes = n_labels_training;
+  const int n_output_nodes = n_input_nodes;
 
   //// Balance the sample group names
   //metabolomics_data.model_training_.sample_group_names_ = {
@@ -376,6 +376,7 @@ void main_reconstruction(const std::string& data_dir, const std::string& biochem
     std::make_shared<KLDivergenceLogVarLossGradOp<float>>(KLDivergenceLogVarLossGradOp<float>(1e-6, 0.0, 0.0))
     });
   model_trainer.setLossOutputNodes({ output_nodes, encoding_nodes_mu, encoding_nodes_logvar });
+  // NOTE: const int n_metrics = 14; is hard coded in MetabolomicsReconstructionDataSimulator!!!
   model_trainer.setMetricFunctions({ 
     std::make_shared<CosineSimilarityOp<float>>(CosineSimilarityOp<float>("Mean")), std::make_shared<CosineSimilarityOp<float>>(CosineSimilarityOp<float>("Var")), 
     std::make_shared<PearsonROp<float>>(PearsonROp<float>("Mean")), std::make_shared<PearsonROp<float>>(PearsonROp<float>("Var")), 
@@ -407,7 +408,7 @@ void main_reconstruction(const std::string& data_dir, const std::string& biochem
   Model<float> model;
   if (make_model) {
     std::cout << "Making the model..." << std::endl;
-    model_trainer.makeVAEFullyConn(model, n_input_nodes, n_encodings_continuous, 8, 0, 0, false, true);
+    model_trainer.makeVAEFullyConn(model, n_input_nodes, n_encodings_continuous, 16, 0, 0, false, true);
   }
   else {
     // TODO
@@ -460,7 +461,7 @@ int main(int argc, char** argv)
   bool online_linear_scale_input = false;
   bool online_log_transform_input = false;
   bool online_standardize_input = false;
-  int device_id = 1;
+  int device_id = 0;
   std::string loss_function = "MSE";
 
   // Parse the input

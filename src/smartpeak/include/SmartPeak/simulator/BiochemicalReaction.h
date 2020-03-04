@@ -848,7 +848,10 @@ namespace SmartPeak
             // Assign the value for each replicate through random sampling of the replicates
             MetabolomicsDatum random_met = selectRandomElement(metabolomicsData_.at(sample_group_name).at(component_group_name));
             value = random_met.calculated_concentration;
-            if (apply_fold_change) value = calcFC(value, selectRandomElement(metabolomicsData_.at(fold_change_ref).at(component_group_name)).calculated_concentration, fold_change_log_base);
+            if (apply_fold_change) {
+              if (metabolomicsData_.at(fold_change_ref).count(component_group_name) > 0) value = calcFC(value, selectRandomElement(metabolomicsData_.at(fold_change_ref).at(component_group_name)).calculated_concentration, fold_change_log_base);
+              else value = 0;
+            }
           }
           else if (use_concentrations && iter_values) {
             // Or by iterating through the replicates filling in missing values as needed
@@ -866,13 +869,13 @@ namespace SmartPeak
               value = metabolomicsData_.at(sample_group_name).at(component_group_name).at(rep_iter).calculated_concentration;
             }
             if (apply_fold_change) {
-              if (rep_iter >= metabolomicsData_.at(fold_change_ref).at(component_group_name).size() && fill_sampling) {
+              if (metabolomicsData_.at(fold_change_ref).count(component_group_name) > 0 && rep_iter >= metabolomicsData_.at(fold_change_ref).at(component_group_name).size() && fill_sampling) {
                 value = calcFC(value, selectRandomElement(metabolomicsData_.at(fold_change_ref).at(component_group_name)).calculated_concentration, fold_change_log_base);
               }
-              else if (rep_iter >= metabolomicsData_.at(fold_change_ref).at(component_group_name).size() && fill_mean) {
+              else if (metabolomicsData_.at(fold_change_ref).count(component_group_name) > 0 && rep_iter >= metabolomicsData_.at(fold_change_ref).at(component_group_name).size() && fill_mean) {
                 value = calcFC(value, calcMean(metabolomicsData_.at(fold_change_ref).at(component_group_name)), fold_change_log_base);
               }
-              else if (rep_iter >= metabolomicsData_.at(fold_change_ref).at(component_group_name).size() && fill_zero) {
+              else if (metabolomicsData_.at(fold_change_ref).count(component_group_name) > 0 && rep_iter >= metabolomicsData_.at(fold_change_ref).at(component_group_name).size() && fill_zero) {
                 value = 0;
               }
               else {

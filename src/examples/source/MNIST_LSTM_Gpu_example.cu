@@ -542,8 +542,8 @@ void main_MNIST(const std::string& data_dir, const bool& make_model, const bool&
   std::cout << "Initializing the population..." << std::endl;
   Model<float> model;
   if (make_model) {
-    //model_trainer.makeRNN(model, input_nodes.size(), output_nodes.size(), 128, 0, false, false, true);
-    model_trainer.makeLSTM(model, input_nodes.size(), output_nodes.size(), n_blocks_1, n_cells_1, n_blocks_2, n_cells_2, n_hidden, add_forget_gate, false, true, true);
+    model_trainer.makeRNN(model, input_nodes.size(), output_nodes.size(), 128, 0, true, false, true);
+    //model_trainer.makeLSTM(model, input_nodes.size(), output_nodes.size(), n_blocks_1, n_cells_1, n_blocks_2, n_cells_2, n_hidden, add_forget_gate, false, true, true);
   }
   else {
     // read in the trained model
