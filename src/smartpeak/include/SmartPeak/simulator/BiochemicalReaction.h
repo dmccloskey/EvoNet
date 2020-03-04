@@ -878,6 +878,9 @@ namespace SmartPeak
               else if (metabolomicsData_.at(fold_change_ref).count(component_group_name) > 0 && rep_iter >= metabolomicsData_.at(fold_change_ref).at(component_group_name).size() && fill_zero) {
                 value = 0;
               }
+              else if (metabolomicsData_.at(fold_change_ref).count(component_group_name) == 0) {
+                value = 0;
+              }
               else {
                 value = calcFC(value, metabolomicsData_.at(fold_change_ref).at(component_group_name).at(rep_iter).calculated_concentration, fold_change_log_base);
               }
