@@ -25,7 +25,7 @@ namespace SmartPeak
 		virtual std::string getName() = 0;
 		virtual std::vector<TensorT> getParameters() const = 0;
     std::string getReductionFunc() { return reduction_func_; }
-    void setReductionFunc(std::string& reduction_func) { reduction_func_ = reduction_func; }
+    void setReductionFunc(const std::string& reduction_func) { reduction_func_ = reduction_func; }
   protected:
     std::string reduction_func_ = "Sum";
 	};
@@ -119,7 +119,6 @@ namespace SmartPeak
   public:
     RecallBCOp() = default;
     RecallBCOp(const TensorT& classification_threshold) :classification_threshold_(classification_threshold) {}
-    RecallBCOp(std::string& reduction_func) : MetricFunctionOp(reduction_func) {};
     std::string getName() { return "RecallBCOp"; };
     std::vector<TensorT> getParameters() const { return std::vector<TensorT>({ this->classification_threshold_ }); }
     TensorT getClassificationThreshold() const { return this->classification_threshold_; }
@@ -256,7 +255,7 @@ namespace SmartPeak
   public:
     MAEOp() = default;
     ~MAEOp() = default;
-    MAEOp(std::string& reduction_func){ this->setReductionFunc(reduction_func); }; ///< Options are Sum, Mean, Var
+    MAEOp(const std::string& reduction_func){ this->setReductionFunc(reduction_func); }; ///< Options are Sum, Mean, Var
 		std::string getName() { return "MAEOp"; };
 		std::vector<TensorT> getParameters() const { return std::vector<TensorT>(); }
   };
@@ -270,7 +269,7 @@ namespace SmartPeak
   public:
     CosineSimilarityOp() = default;
     ~CosineSimilarityOp() = default;
-    CosineSimilarityOp(std::string & reduction_func){ this->setReductionFunc(reduction_func); }; ///< Options are Sum, Mean, Var
+    CosineSimilarityOp(const std::string& reduction_func){ this->setReductionFunc(reduction_func); }; ///< Options are Sum, Mean, Var
     std::string getName() { return "CosineSimilarityOp"; };
     std::vector<TensorT> getParameters() const { return std::vector<TensorT>(); }
   };
@@ -284,7 +283,7 @@ namespace SmartPeak
   public:
     PearsonROp() = default;
     ~PearsonROp() = default;
-    PearsonROp(std::string & reduction_func){ this->setReductionFunc(reduction_func); }; ///< Options are Sum, Mean, Var
+    PearsonROp(const std::string& reduction_func){ this->setReductionFunc(reduction_func); }; ///< Options are Sum, Mean, Var
     std::string getName() { return "PearsonROp"; };
     std::vector<TensorT> getParameters() const { return std::vector<TensorT>(); }
   };
@@ -298,7 +297,7 @@ namespace SmartPeak
   public:
     EuclideanDistOp() = default;
     ~EuclideanDistOp() = default;
-    EuclideanDistOp(std::string & reduction_func){ this->setReductionFunc(reduction_func); }; ///< Options are Sum, Mean, Var
+    EuclideanDistOp(const std::string& reduction_func){ this->setReductionFunc(reduction_func); }; ///< Options are Sum, Mean, Var
     std::string getName() { return "EuclideanDistOp"; };
     std::vector<TensorT> getParameters() const { return std::vector<TensorT>(); }
   };
@@ -312,7 +311,7 @@ namespace SmartPeak
   public:
     ManhattanDistOp() = default;
     ~ManhattanDistOp() = default;
-    ManhattanDistOp(std::string & reduction_func){ this->setReductionFunc(reduction_func); }; ///< Options are Sum, Mean, Var
+    ManhattanDistOp(const std::string& reduction_func){ this->setReductionFunc(reduction_func); }; ///< Options are Sum, Mean, Var
     std::string getName() { return "ManhattanDistOp"; };
     std::vector<TensorT> getParameters() const { return std::vector<TensorT>(); }
   };
@@ -326,7 +325,7 @@ namespace SmartPeak
   public:
     JeffreysAndMatusitaDistOp() = default;
     ~JeffreysAndMatusitaDistOp() = default;
-    JeffreysAndMatusitaDistOp(std::string & reduction_func){ this->setReductionFunc(reduction_func); }; ///< Options are Sum, Mean, Var
+    JeffreysAndMatusitaDistOp(const std::string& reduction_func){ this->setReductionFunc(reduction_func); }; ///< Options are Sum, Mean, Var
     std::string getName() { return "JeffreysAndMatusitaDistOp"; };
     std::vector<TensorT> getParameters() const { return std::vector<TensorT>(); }
   };
@@ -340,7 +339,7 @@ namespace SmartPeak
   public:
     LogarithmicDistOp() = default;
     ~LogarithmicDistOp() = default;
-    LogarithmicDistOp(std::string & reduction_func){ this->setReductionFunc(reduction_func); }; ///< Options are Sum, Mean, Var
+    LogarithmicDistOp(const std::string& reduction_func){ this->setReductionFunc(reduction_func); }; ///< Options are Sum, Mean, Var
     std::string getName() { return "LogarithmicDistOp"; };
     std::vector<TensorT> getParameters() const { return std::vector<TensorT>(); }
   };
@@ -354,7 +353,7 @@ namespace SmartPeak
   public:
     PercentDifferenceOp() = default;
     ~PercentDifferenceOp() = default;
-    PercentDifferenceOp(std::string & reduction_func){ this->setReductionFunc(reduction_func); }; ///< Options are Sum, Mean, Var
+    PercentDifferenceOp(const std::string& reduction_func){ this->setReductionFunc(reduction_func); }; ///< Options are Sum, Mean, Var
     std::string getName() { return "PercentDifferenceOp"; };
     std::vector<TensorT> getParameters() const { return std::vector<TensorT>(); }
   };

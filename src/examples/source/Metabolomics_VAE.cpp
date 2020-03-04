@@ -367,7 +367,7 @@ void main_reconstruction(const std::string& data_dir, const std::string& biochem
   }
   model_trainer.setLossFunctions({
     loss_function_op,
-    std::make_shared<KLDivergenceMuLossOp<float>>(KLDivergenceMuLossOp<float>(1e-6, 0.0, 0.0)), //FIXME
+    std::make_shared<KLDivergenceMuLossOp<float>>(KLDivergenceMuLossOp<float>(1e-6, 0.0, 0.0)),
     std::make_shared<KLDivergenceLogVarLossOp<float>>(KLDivergenceLogVarLossOp<float>(1e-6, 0.0, 0.0))
     });
   model_trainer.setLossFunctionGrads({
@@ -376,17 +376,30 @@ void main_reconstruction(const std::string& data_dir, const std::string& biochem
     std::make_shared<KLDivergenceLogVarLossGradOp<float>>(KLDivergenceLogVarLossGradOp<float>(1e-6, 0.0, 0.0))
     });
   model_trainer.setLossOutputNodes({ output_nodes, encoding_nodes_mu, encoding_nodes_logvar });
-  // TODO: 
-  //Abs Perc difference
-  //Manhattan distance
-  //Logarithmic distance
-  //Euclidean distance
-  //M& J distance
-  //Log Manhattan distance
-  //PearsonR
-  model_trainer.setMetricFunctions({ std::make_shared<MAEOp<float>>(MAEOp<float>()) });
-  model_trainer.setMetricOutputNodes({ output_nodes });
-  model_trainer.setMetricNames({ "MAE" });
+  model_trainer.setMetricFunctions({ 
+    std::make_shared<CosineSimilarityOp<float>>(CosineSimilarityOp<float>("Mean")), std::make_shared<CosineSimilarityOp<float>>(CosineSimilarityOp<float>("Var")), 
+    std::make_shared<PearsonROp<float>>(PearsonROp<float>("Mean")), std::make_shared<PearsonROp<float>>(PearsonROp<float>("Var")), 
+    std::make_shared<EuclideanDistOp<float>>(EuclideanDistOp<float>("Mean")), std::make_shared<EuclideanDistOp<float>>(EuclideanDistOp<float>("Var")), 
+    std::make_shared<ManhattanDistOp<float>>(ManhattanDistOp<float>("Mean")), std::make_shared<ManhattanDistOp<float>>(ManhattanDistOp<float>("Var")), 
+    std::make_shared<JeffreysAndMatusitaDistOp<float>>(JeffreysAndMatusitaDistOp<float>("Mean")), std::make_shared<JeffreysAndMatusitaDistOp<float>>(JeffreysAndMatusitaDistOp<float>("Var")), 
+    std::make_shared<LogarithmicDistOp<float>>(LogarithmicDistOp<float>("Mean")), std::make_shared<LogarithmicDistOp<float>>(LogarithmicDistOp<float>("Var")),
+    std::make_shared<PercentDifferenceOp<float>>(PercentDifferenceOp<float>("Mean")), std::make_shared<PercentDifferenceOp<float>>(PercentDifferenceOp<float>("Var"))});
+  model_trainer.setMetricOutputNodes({ 
+    output_nodes, output_nodes,
+    output_nodes, output_nodes,
+    output_nodes, output_nodes,
+    output_nodes, output_nodes,
+    output_nodes, output_nodes,
+    output_nodes, output_nodes,
+    output_nodes, output_nodes });
+  model_trainer.setMetricNames({ 
+    "CosineSimilarity-Mean", "CosineSimilarity-Var",
+    "PearsonR-Mean", "PearsonR-Var",
+    "EuclideanDist-Mean", "EuclideanDist-Var",
+    "ManhattanDist-Mean", "ManhattanDist-Var",
+    "JeffreysAndMatusitaDist-Mean", "JeffreysAndMatusitaDist-Var",
+    "LogarithmicDist-Mean", "LogarithmicDist-Var",
+    "PercentDifference-Mean", "PercentDifference-Var" });
 
   // define the model logger
   ModelLogger<float> model_logger(true, true, false, false, false, false, false, false);
