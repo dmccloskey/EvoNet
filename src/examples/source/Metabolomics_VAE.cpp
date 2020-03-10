@@ -150,16 +150,16 @@ public:
     ModelInterpreterDefaultDevice<TensorT>& model_interpreter,
     const std::vector<float>& model_errors) override {
     // Check point the model every 1000 epochs
-    if (n_epochs % 1000 == 0 && n_epochs != 0) {
-      model_interpreter.getModelResults(model, false, true, false, false);
-      //// save the model weights
-      //WeightFile<float> weight_data;
-      //weight_data.storeWeightValuesCsv(model.getName() + "_" + std::to_string(n_epochs) + "_weights.csv", model.weights_);
-      // save the model and tensors to binary
-      ModelFile<TensorT> data;
-      data.storeModelBinary(model.getName() + "_" + std::to_string(n_epochs) + "_model.binary", model);
-      ModelInterpreterFileDefaultDevice<TensorT> interpreter_data;
-      interpreter_data.storeModelInterpreterBinary(model.getName() + "_" + std::to_string(n_epochs) + "_interpreter.binary", model_interpreter);
+    if (n_epochs % 10 == 0 && n_epochs != 0) {
+      //model_interpreter.getModelResults(model, false, true, false, false);
+      ////// save the model weights
+      ////WeightFile<float> weight_data;
+      ////weight_data.storeWeightValuesCsv(model.getName() + "_" + std::to_string(n_epochs) + "_weights.csv", model.weights_);
+      //// save the model and tensors to binary
+      //ModelFile<TensorT> data;
+      //data.storeModelBinary(model.getName() + "_" + std::to_string(n_epochs) + "_model.binary", model);
+      //ModelInterpreterFileDefaultDevice<TensorT> interpreter_data;
+      //interpreter_data.storeModelInterpreterBinary(model.getName() + "_" + std::to_string(n_epochs) + "_interpreter.binary", model_interpreter);
 
       // Increase the KL divergence beta and capacity
       TensorT beta = 1 / 2.5e4 * n_epochs;
@@ -228,7 +228,7 @@ void main_reconstruction(const std::string& data_dir, const std::string& biochem
   const int& device_id)
 {
   // global local variables
-  const int n_epochs = 10;// 20000;
+  const int n_epochs = 100;// 20000;
   const int batch_size = 64;
   const int memory_size = 1;
   //const int n_reps_per_sample = 10000;
@@ -236,7 +236,7 @@ void main_reconstruction(const std::string& data_dir, const std::string& biochem
 
   // prior to using shuffle when making the data caches
   const int n_labels = 7; // IndustrialStrains0103
-  const int n_reps_per_sample = n_epochs*batch_size/n_labels;
+  const int n_reps_per_sample = n_epochs * batch_size / n_labels;
 
   //std::string model_name = "MetClass_" + std::to_string(use_concentrations) + "-" + std::to_string(use_MARs) + "-" + std::to_string(sample_values) + "-" + std::to_string(iter_values) + "-"
   //  + std::to_string(fill_sampling) + "-" + std::to_string(fill_mean) + "-" + std::to_string(fill_zero) + "-" + std::to_string(apply_fold_change) + "-" + std::to_string(fold_change_log_base) + "-"
@@ -377,15 +377,15 @@ void main_reconstruction(const std::string& data_dir, const std::string& biochem
     });
   model_trainer.setLossOutputNodes({ output_nodes, encoding_nodes_mu, encoding_nodes_logvar });
   // NOTE: const int n_metrics = 14; is hard coded in MetabolomicsReconstructionDataSimulator!!!
-  model_trainer.setMetricFunctions({ 
-    std::make_shared<CosineSimilarityOp<float>>(CosineSimilarityOp<float>("Mean")), std::make_shared<CosineSimilarityOp<float>>(CosineSimilarityOp<float>("Var")), 
-    std::make_shared<PearsonROp<float>>(PearsonROp<float>("Mean")), std::make_shared<PearsonROp<float>>(PearsonROp<float>("Var")), 
-    std::make_shared<EuclideanDistOp<float>>(EuclideanDistOp<float>("Mean")), std::make_shared<EuclideanDistOp<float>>(EuclideanDistOp<float>("Var")), 
-    std::make_shared<ManhattanDistOp<float>>(ManhattanDistOp<float>("Mean")), std::make_shared<ManhattanDistOp<float>>(ManhattanDistOp<float>("Var")), 
-    std::make_shared<JeffreysAndMatusitaDistOp<float>>(JeffreysAndMatusitaDistOp<float>("Mean")), std::make_shared<JeffreysAndMatusitaDistOp<float>>(JeffreysAndMatusitaDistOp<float>("Var")), 
+  model_trainer.setMetricFunctions({
+    std::make_shared<CosineSimilarityOp<float>>(CosineSimilarityOp<float>("Mean")), std::make_shared<CosineSimilarityOp<float>>(CosineSimilarityOp<float>("Var")),
+    std::make_shared<PearsonROp<float>>(PearsonROp<float>("Mean")), std::make_shared<PearsonROp<float>>(PearsonROp<float>("Var")),
+    std::make_shared<EuclideanDistOp<float>>(EuclideanDistOp<float>("Mean")), std::make_shared<EuclideanDistOp<float>>(EuclideanDistOp<float>("Var")),
+    std::make_shared<ManhattanDistOp<float>>(ManhattanDistOp<float>("Mean")), std::make_shared<ManhattanDistOp<float>>(ManhattanDistOp<float>("Var")),
+    std::make_shared<JeffreysAndMatusitaDistOp<float>>(JeffreysAndMatusitaDistOp<float>("Mean")), std::make_shared<JeffreysAndMatusitaDistOp<float>>(JeffreysAndMatusitaDistOp<float>("Var")),
     std::make_shared<LogarithmicDistOp<float>>(LogarithmicDistOp<float>("Mean")), std::make_shared<LogarithmicDistOp<float>>(LogarithmicDistOp<float>("Var")),
-    std::make_shared<PercentDifferenceOp<float>>(PercentDifferenceOp<float>("Mean")), std::make_shared<PercentDifferenceOp<float>>(PercentDifferenceOp<float>("Var"))});
-  model_trainer.setMetricOutputNodes({ 
+    std::make_shared<PercentDifferenceOp<float>>(PercentDifferenceOp<float>("Mean")), std::make_shared<PercentDifferenceOp<float>>(PercentDifferenceOp<float>("Var")) });
+  model_trainer.setMetricOutputNodes({
     output_nodes, output_nodes,
     output_nodes, output_nodes,
     output_nodes, output_nodes,
@@ -393,7 +393,7 @@ void main_reconstruction(const std::string& data_dir, const std::string& biochem
     output_nodes, output_nodes,
     output_nodes, output_nodes,
     output_nodes, output_nodes });
-  model_trainer.setMetricNames({ 
+  model_trainer.setMetricNames({
     "CosineSimilarity-Mean", "CosineSimilarity-Var",
     "PearsonR-Mean", "PearsonR-Var",
     "EuclideanDist-Mean", "EuclideanDist-Var",
