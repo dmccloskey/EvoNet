@@ -151,21 +151,25 @@ public:
     const std::vector<float>& model_errors) override {
     // Check point the model every 1000 epochs
     if (n_epochs % 1000 == 0 && n_epochs != 0) {
-      //model_interpreter.getModelResults(model, false, true, false, false);
-      //// save the model weights
-      ////WeightFile<float> weight_data;
-      ////weight_data.storeWeightValuesCsv(model.getName() + "_" + std::to_string(n_epochs) + "_weights.csv", model.weights_);
+      model_interpreter.getModelResults(model, false, true, false, false);
+      // save the model weights
+      //WeightFile<float> weight_data;
+      //weight_data.storeWeightValuesCsv(model.getName() + "_" + std::to_string(n_epochs) + "_weights.csv", model.weights_);
       // save the model and tensors to binary
-      //ModelFile<TensorT> data;
-      //data.storeModelBinary(model.getName() + "_" + std::to_string(n_epochs) + "_model.binary", model);
-      //ModelInterpreterFileGpu<TensorT> interpreter_data;
-      //interpreter_data.storeModelInterpreterBinary(model.getName() + "_" + std::to_string(n_epochs) + "_interpreter.binary", model_interpreter);
+      ModelFile<TensorT> data;
+      data.storeModelBinary(model.getName() + "_" + std::to_string(n_epochs) + "_model.binary", model);
+      ModelInterpreterFileGpu<TensorT> interpreter_data;
+      interpreter_data.storeModelInterpreterBinary(model.getName() + "_" + std::to_string(n_epochs) + "_interpreter.binary", model_interpreter);
 
       // Increase the KL divergence beta and capacity
-      TensorT beta = 1 / 2.5e4 * n_epochs;
-      if (beta > 1) beta = 1;
-      TensorT capacity_z = 0.0 / 2.5e4 * n_epochs;
-      if (capacity_z > 5) capacity_z = 5;
+      TensorT beta = 1;
+      TensorT capacity_z = 5;
+      if (this->KL_divergence_warmup_) {
+        beta = 1 / 2.5e4 * n_epochs;
+        if (beta > 1) beta = 1;
+        capacity_z = 0.0 / 2.5e4 * n_epochs;
+        if (capacity_z > 5) capacity_z = 5;
+      }
       this->getLossFunctions().at(1) = std::make_shared<KLDivergenceMuLossOp<float>>(KLDivergenceMuLossOp<float>(1e-6, beta, capacity_z));
       this->getLossFunctions().at(2) = std::make_shared<KLDivergenceLogVarLossOp<float>>(KLDivergenceLogVarLossOp<float>(1e-6, beta, capacity_z));
       this->getLossFunctionGrads().at(1) = std::make_shared<KLDivergenceMuLossGradOp<float>>(KLDivergenceMuLossGradOp<float>(1e-6, beta, capacity_z));
@@ -211,6 +215,7 @@ public:
     }
     model_logger.writeLogs(model, n_epochs, log_train_headers, log_test_headers, log_train_values, log_test_values, output_nodes, expected_values, {}, output_nodes, {}, input_nodes, {});
   }
+  bool KL_divergence_warmup_ = true;
 };
 
 /// Script to run the reconstruction network
@@ -225,7 +230,7 @@ void main_reconstruction(const std::string& data_dir, const std::string& biochem
   const bool& offline_linear_scale_input, const bool& offline_log_transform_input, const bool& offline_standardize_input,
   const bool& online_linear_scale_input, const bool& online_log_transform_input, const bool& online_standardize_input,
   const std::string& loss_function,
-  const int& device_id)
+  const int& device_id, const bool& KL_divergence_warmup)
 {
   // global local variables
   const int n_epochs = 20000;
@@ -376,6 +381,7 @@ void main_reconstruction(const std::string& data_dir, const std::string& biochem
     std::make_shared<KLDivergenceLogVarLossGradOp<float>>(KLDivergenceLogVarLossGradOp<float>(1e-6, 0.0, 0.0))
     });
   model_trainer.setLossOutputNodes({ output_nodes, encoding_nodes_mu, encoding_nodes_logvar });
+  model_trainer.KL_divergence_warmup_ = KL_divergence_warmup;
   // NOTE: const int n_metrics = 14; is hard coded in MetabolomicsReconstructionDataSimulator!!!
   model_trainer.setMetricFunctions({
     std::make_shared<CosineSimilarityOp<float>>(CosineSimilarityOp<float>("Mean")), std::make_shared<CosineSimilarityOp<float>>(CosineSimilarityOp<float>("Var")),
@@ -411,7 +417,13 @@ void main_reconstruction(const std::string& data_dir, const std::string& biochem
     model_trainer.makeVAEFullyConn(model, n_input_nodes, n_encodings_continuous, 16, 0, 0, false, true);
   }
   else {
-    // TODO
+    std::cout << "Reading in the model..." << std::endl;
+    const std::string model_filename = data_dir + model_name + "_model.binary";
+    const std::string interpreter_filename = data_dir + model_name + "_interpreter.binary";
+    ModelFile<float> model_file;
+    model_file.loadModelBinary(model_filename, model);
+    ModelInterpreterFileGpu<float> model_interpreter_file;
+    model_interpreter_file.loadModelInterpreterBinary(interpreter_filename, model_interpreter);
   }
   model.setName(data_dir + model_name); //So that all output will be written to a specific directory
 
@@ -463,6 +475,7 @@ int main(int argc, char** argv)
   bool online_standardize_input = false;
   int device_id = 0;
   std::string loss_function = "MSE";
+  bool KL_divergence_warmup = true;
 
   // Parse the input
   std::cout << "Parsing the user input..." << std::endl;
@@ -563,6 +576,9 @@ int main(int argc, char** argv)
       std::cout << e.what() << std::endl;
     }
   }
+  if (argc >= 28) {
+    KL_divergence_warmup = (argv[27] == std::string("true")) ? true : false;
+  }
 
   // Cout the parsed input
   std::cout << "data_dir: " << data_dir << std::endl;
@@ -591,6 +607,7 @@ int main(int argc, char** argv)
   std::cout << "online_standardize_input: " << online_standardize_input << std::endl;
   std::cout << "loss_function: " << loss_function << std::endl;
   std::cout << "device_id: " << device_id << std::endl;
+  std::cout << "KL_divergence_warmup: " << KL_divergence_warmup << std::endl;
 
   // Run the classification
   main_reconstruction(data_dir, biochem_rxns_filename, metabo_data_filename_train, meta_data_filename_train, metabo_data_filename_test, meta_data_filename_test,
@@ -598,7 +615,7 @@ int main(int argc, char** argv)
     use_concentrations, use_MARs, sample_values, iter_values, fill_sampling, fill_mean, fill_zero,
     apply_fold_change, fold_change_ref, fold_change_log_base,
     offline_linear_scale_input, offline_log_transform_input, offline_standardize_input,
-    online_linear_scale_input, online_log_transform_input, online_standardize_input, loss_function, device_id
+    online_linear_scale_input, online_log_transform_input, online_standardize_input, loss_function, device_id, KL_divergence_warmup
   );
   return 0;
 }
