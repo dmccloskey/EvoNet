@@ -744,6 +744,8 @@ public:
 
   /**
     @brief EuclideanDist metric function.
+
+    NOTE: useful for data in the range of (-inf, inf)
   */
   template<typename TensorT, typename DeviceT>
   class EuclideanDistTensorOp : public MetricFunctionTensorOp<TensorT, DeviceT>
@@ -796,6 +798,8 @@ public:
 
   /**
     @brief ManhattanDist metric function.
+
+    NOTE: useful for data in the range of (-inf, inf)
   */
   template<typename TensorT, typename DeviceT>
   class ManhattanDistTensorOp : public MetricFunctionTensorOp<TensorT, DeviceT>
@@ -848,6 +852,8 @@ public:
 
   /**
     @brief JeffreysAndMatusitaDist metric function.
+
+    NOTE: only useful for data in the range of [0, inf)
   */
   template<typename TensorT, typename DeviceT>
   class JeffreysAndMatusitaDistTensorOp : public MetricFunctionTensorOp<TensorT, DeviceT>
@@ -901,6 +907,8 @@ public:
 
   /**
     @brief Logarithmic Distance metric function.
+
+    NOTE: only useful for data in the range of [0, inf)
   */
   template<typename TensorT, typename DeviceT>
   class LogarithmicDistTensorOp : public MetricFunctionTensorOp<TensorT, DeviceT>
@@ -955,6 +963,8 @@ public:
 
   /**
     @brief PercentDifference metric function.
+
+    NOTE: useful for data in the range of (-inf, inf)
   */
   template<typename TensorT, typename DeviceT>
   class PercentDifferenceTensorOp : public MetricFunctionTensorOp<TensorT, DeviceT>
@@ -982,6 +992,7 @@ public:
       }
 #endif
       Eigen::TensorMap<Eigen::Tensor<TensorT, 2>> perce_diff(tmp_data, batch_size, 1);
+      // TODO: change to (expected_tensor == expected_tensor.constant(TensorT(0))).select(expected_tensor.constant(TensorT(0)), ((expected_tensor - predicted_chip).pow(TensorT(2)).sqrt() / expected_tensor).sum(Eigen::array<int, 1>({ 1 }));
       perce_diff.device(device) = ((expected_tensor - predicted_chip).pow(TensorT(2)).sqrt() / (expected_tensor + expected_tensor.constant(TensorT(1e-6)))).sum(Eigen::array<int, 1>({ 1 }));
       if (this->reduction_func_ == "Sum")
         error_tensor.chip(metric_index, 0).chip(time_step, 0).device(device) += perce_diff.sum();
