@@ -873,7 +873,7 @@ public:
       Eigen::TensorMap<Eigen::Tensor<TensorT, 2>> error_tensor(error, batch_size, memory_size);
       auto predicted_chip = predicted_tensor.chip(time_step, 1);
       auto result = (expected_tensor == expected_tensor.constant(TensorT(0))).select(expected_tensor.constant(TensorT(0)),
-        (expected_tensor - predicted_chip).pow(TensorT(2)).sqrt() / expected_tensor / expected_tensor.constant(TensorT(layer_size))
+        ((expected_tensor - predicted_chip) / expected_tensor).abs() / expected_tensor.constant(TensorT(layer_size))
       );
       error_tensor.chip(time_step, 1).device(device) += (result.sum(Eigen::array<int, 1>({ 1 }))*error_tensor.chip(time_step, 1).constant(this->scale_)).clip(this->min_, this->max_);
     };
@@ -894,9 +894,10 @@ public:
       Eigen::TensorMap<Eigen::Tensor<TensorT, 3>> predicted_tensor(predicted, batch_size, memory_size, layer_size);
       Eigen::TensorMap<Eigen::Tensor<TensorT, 3>> error_tensor(error, batch_size, memory_size, layer_size);
       auto predicted_chip = predicted_tensor.chip(time_step, 1);
-
-      error_tensor.chip(time_step, 1).device(device) += (((expected_tensor - predicted_chip) / (expected_tensor - predicted_chip - expected_tensor.constant(this->eps_)).pow(TensorT(2)).sqrt() / (expected_tensor + expected_tensor.constant(TensorT(this->eps_))) / expected_tensor.constant(TensorT(layer_size)))
-        *error_tensor.chip(time_step, 1).constant(this->scale_)).clip(this->min_, this->max_);
+      auto result = (expected_tensor - predicted_chip) / (expected_tensor - predicted_chip).abs() / expected_tensor.abs() / expected_tensor.constant(TensorT(layer_size));
+      auto result_selected = ((expected_tensor - predicted_chip) == expected_tensor.constant(TensorT(0)) || expected_tensor == expected_tensor.constant(TensorT(0))).select(
+        expected_tensor.constant(TensorT(0)), result);
+      error_tensor.chip(time_step, 1).device(device) += result_selected * expected_tensor.constant(this->scale_).clip(this->min_, this->max_);
     };
   };
 
