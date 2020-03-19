@@ -1256,7 +1256,7 @@ BOOST_AUTO_TEST_CASE(operationfunctionPercentDifferenceOp)
   Eigen::Tensor<float, 2> error_var(n_metrics, memory_size); error_var.setZero();
   operation_var(y_pred.data(), y_true.data(), error_var.data(), batch_size, memory_size, layer_size, n_metrics, time_step, metric_index, device);
   BOOST_CHECK_CLOSE(error_var(0, 0), 0, 1e-4);
-  BOOST_CHECK_CLOSE(error_var(1, 0), 1.99999619, 1e-4);
+  BOOST_CHECK_CLOSE(error_var(1, 0), 2.0, 1e-4);
   BOOST_CHECK_CLOSE(error_var(0, 1), 0, 1e-4);
   BOOST_CHECK_CLOSE(error_var(1, 1), 0, 1e-4);
 }

@@ -979,6 +979,7 @@ public:
       Eigen::TensorMap<Eigen::Tensor<TensorT, 4>> predicted_tensor(predicted, batch_size, memory_size, layer_size, 1);
       Eigen::TensorMap<Eigen::Tensor<TensorT, 2>> error_tensor(error, n_metrics, memory_size);
       auto predicted_chip = predicted_tensor.chip(time_step, 1);
+      auto perc_diff_selected = (expected_tensor == expected_tensor.constant(TensorT(0))).select(expected_tensor.constant(TensorT(0)), (expected_tensor - predicted_chip).pow(TensorT(2)).sqrt() / expected_tensor.abs());
 
       // allocate temporary memory
       TensorT* tmp_data;
@@ -992,8 +993,8 @@ public:
       }
 #endif
       Eigen::TensorMap<Eigen::Tensor<TensorT, 2>> perce_diff(tmp_data, batch_size, 1);
-      // TODO: change to (expected_tensor == expected_tensor.constant(TensorT(0))).select(expected_tensor.constant(TensorT(0)), ((expected_tensor - predicted_chip).pow(TensorT(2)).sqrt() / expected_tensor).sum(Eigen::array<int, 1>({ 1 }));
-      perce_diff.device(device) = ((expected_tensor - predicted_chip).pow(TensorT(2)).sqrt() / (expected_tensor + expected_tensor.constant(TensorT(1e-6)))).sum(Eigen::array<int, 1>({ 1 }));
+      perce_diff.device(device) = perc_diff_selected.sum(Eigen::array<int, 1>({ 1 }));
+      //perce_diff.device(device) = ((expected_tensor - predicted_chip).pow(TensorT(2)).sqrt() / (expected_tensor + expected_tensor.constant(TensorT(1e-6)))).sum(Eigen::array<int, 1>({ 1 }));
       if (this->reduction_func_ == "Sum")
         error_tensor.chip(metric_index, 0).chip(time_step, 0).device(device) += perce_diff.sum();
       else if (this->reduction_func_ == "Mean")
