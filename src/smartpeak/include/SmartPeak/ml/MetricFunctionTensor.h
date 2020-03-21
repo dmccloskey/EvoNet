@@ -960,7 +960,6 @@ public:
     };
   };
 
-
   /**
     @brief PercentDifference metric function.
 
