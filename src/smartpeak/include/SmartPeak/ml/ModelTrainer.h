@@ -1513,7 +1513,7 @@ private:
     for (auto& helper : this->loss_function_helpers_) {
       // Slice out the output
       Eigen::array<Eigen::Index, 3> offsets = {0, 0, output_node_cnt};
-      Eigen::array<Eigen::Index, 3> spans = { this->getBatchSize(), this->getMemorySize(), helper.output_nodes_.size() };
+      Eigen::array<Eigen::Index, 3> spans = { this->getBatchSize(), this->getMemorySize(), (int)helper.output_nodes_.size() };
       Eigen::Tensor<TensorT, 3> expected = output.slice(offsets, spans);
 
       // Calculate the errors
@@ -1533,7 +1533,7 @@ private:
     for (auto& helper : this->metric_function_helpers_) {
       // Slice out the output
       Eigen::array<Eigen::Index, 3> offsets = { 0, 0, output_node_cnt };
-      Eigen::array<Eigen::Index, 3> spans = { this->getBatchSize(), this->getMemorySize(), helper.output_nodes_.size() };
+      Eigen::array<Eigen::Index, 3> spans = { this->getBatchSize(), this->getMemorySize(), (int)helper.output_nodes_.size() };
       Eigen::Tensor<TensorT, 3> expected = output.slice(offsets, spans);
 
       // Calculate the metrics

@@ -64,10 +64,9 @@ namespace SmartPeak
   {
     // infer the input sizes
     const int input_nodes = data_training.dimension(0);
-    const int n_metrics = 14;
     assert(n_input_nodes == input_nodes + this->n_encodings_continuous_);
     assert(n_loss_output_nodes == input_nodes + 2*this->n_encodings_continuous_);
-    assert(n_metric_output_nodes == n_metrics * input_nodes); // accuracy and precision
+    assert(n_metric_output_nodes == input_nodes); // accuracy and precision
     assert(data_training.dimension(0) == features.size());
     assert(data_training.dimension(1) == labels_training.size());
     assert(this->n_encodings_continuous_ > 0);
@@ -154,20 +153,16 @@ namespace SmartPeak
       Eigen::array<Eigen::Index, 4>({ batch_size, memory_size, this->n_encodings_continuous_, n_epochs })) = KL_losses;
 
     // assign the metric tensors
-    for (int i = 0; i < n_metrics; ++i) {
-      this->metric_output_data_training_.slice(Eigen::array<Eigen::Index, 4>({ 0, 0, i * input_nodes, 0 }),
-        Eigen::array<Eigen::Index, 4>({ batch_size, memory_size, input_nodes, n_epochs })) = data_training_expanded_4d;
-    }
+    this->metric_output_data_training_ = data_training_expanded_4d;
   }
   template<typename TensorT>
   inline void MetabolomicsReconstructionDataSimulator<TensorT>::makeValidationDataForCache(const std::vector<std::string>& features, const Eigen::Tensor<TensorT, 2>& data_validation, const std::vector<std::string>& labels_validation, const int & n_epochs, const int & batch_size, const int & memory_size, const int & n_input_nodes, const int & n_loss_output_nodes, const int & n_metric_output_nodes, const bool& shuffle_data_and_labels)
   {
     // infer the input sizes
     const int input_nodes = data_validation.dimension(0);
-    const int n_metrics = 14;
     assert(n_input_nodes == input_nodes + this->n_encodings_continuous_);
     assert(n_loss_output_nodes == input_nodes + 2 * this->n_encodings_continuous_);
-    assert(n_metric_output_nodes == n_metrics * input_nodes);
+    assert(n_metric_output_nodes == input_nodes);
     assert(data_validation.dimension(0) == features.size());
     assert(data_validation.dimension(1) == labels_validation.size());
     assert(this->n_encodings_continuous_ > 0);
@@ -251,10 +246,7 @@ namespace SmartPeak
       Eigen::array<Eigen::Index, 4>({ batch_size, memory_size, this->n_encodings_continuous_, n_epochs })) = KL_losses;
 
     // assign the metric tensors
-    for (int i = 0; i < n_metrics; ++i) {
-      this->metric_output_data_validation_.slice(Eigen::array<Eigen::Index, 4>({ 0, 0, i * input_nodes, 0 }),
-        Eigen::array<Eigen::Index, 4>({ batch_size, memory_size, input_nodes, n_epochs })) = data_validation_expanded_4d;
-    }
+    this->metric_output_data_validation_ = data_validation_expanded_4d;
   }
   template<typename TensorT>
   inline void MetabolomicsReconstructionDataSimulator<TensorT>::readAndProcessMetabolomicsTrainingAndValidationData(int & n_reaction_ids_training, int & n_labels_training, int & n_component_group_names_training, int & n_reaction_ids_validation, int & n_labels_validation, int & n_component_group_names_validation, const std::string & biochem_rxns_filename, const std::string & metabo_data_filename_train, const std::string & meta_data_filename_train, const std::string & metabo_data_filename_test, const std::string & meta_data_filename_test, 
@@ -273,7 +265,6 @@ namespace SmartPeak
     n_component_group_names_validation = -1;
     this->labels_training_.clear();
     this->labels_validation_.clear();
-    const int n_metrics = 14;
 
     // Read in the training data
     reaction_model.readBiochemicalReactions(biochem_rxns_filename, true);
@@ -392,9 +383,9 @@ namespace SmartPeak
 
       // Make the training data cache
       this->makeTrainingDataForCache(metabo_features_training, metabo_data_training, metabo_labels_training, n_epochs, batch_size, memory_size,
-        n_component_group_names_training + this->n_encodings_continuous_, n_component_group_names_training + 2 * this->n_encodings_continuous_, n_metrics * n_component_group_names_training, shuffle_data_and_labels);
+        n_component_group_names_training + this->n_encodings_continuous_, n_component_group_names_training + 2 * this->n_encodings_continuous_, n_component_group_names_training, shuffle_data_and_labels);
       this->makeValidationDataForCache(metabo_features_validation, metabo_data_validation, metabo_labels_validation, n_epochs, batch_size, memory_size,
-        n_component_group_names_training + this->n_encodings_continuous_, n_component_group_names_training + 2 * this->n_encodings_continuous_, n_metrics * n_component_group_names_training, shuffle_data_and_labels);
+        n_component_group_names_training + this->n_encodings_continuous_, n_component_group_names_training + 2 * this->n_encodings_continuous_, n_component_group_names_training, shuffle_data_and_labels);
     }
     else if (use_MARs) {
       // Apply offline transformations
@@ -413,9 +404,9 @@ namespace SmartPeak
 
       // Make the training data cache
       this->makeTrainingDataForCache(metabo_features_training, metabo_data_training, metabo_labels_training, n_epochs, batch_size, memory_size,
-        n_reaction_ids_validation + this->n_encodings_continuous_, n_reaction_ids_validation + 2 * this->n_encodings_continuous_, n_metrics * n_reaction_ids_validation, shuffle_data_and_labels);
+        n_reaction_ids_validation + this->n_encodings_continuous_, n_reaction_ids_validation + 2 * this->n_encodings_continuous_, n_reaction_ids_validation, shuffle_data_and_labels);
       this->makeValidationDataForCache(metabo_features_validation, metabo_data_validation, metabo_labels_validation, n_epochs, batch_size, memory_size,
-        n_reaction_ids_validation + this->n_encodings_continuous_, n_reaction_ids_validation + 2*this->n_encodings_continuous_, n_metrics * n_reaction_ids_validation, shuffle_data_and_labels);
+        n_reaction_ids_validation + this->n_encodings_continuous_, n_reaction_ids_validation + 2*this->n_encodings_continuous_, n_reaction_ids_validation, shuffle_data_and_labels);
     }
 
     // Checks for the training and validation data

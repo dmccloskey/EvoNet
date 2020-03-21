@@ -370,43 +370,44 @@ void main_reconstruction(const std::string& data_dir, const std::string& biochem
     loss_function_op = std::make_shared<BCEWithLogitsLossOp<float>>(BCEWithLogitsLossOp<float>(1e-6, 1.0));
     loss_function_grad_op = std::make_shared<BCEWithLogitsLossGradOp<float>>(BCEWithLogitsLossGradOp<float>(1e-6, 1.0));
   }
-  model_trainer.setLossFunctions({
-    loss_function_op,
-    std::make_shared<KLDivergenceMuLossOp<float>>(KLDivergenceMuLossOp<float>(1e-6, 0.0, 0.0)),
-    std::make_shared<KLDivergenceLogVarLossOp<float>>(KLDivergenceLogVarLossOp<float>(1e-6, 0.0, 0.0))
-    });
-  model_trainer.setLossFunctionGrads({
-    loss_function_grad_op,
-    std::make_shared<KLDivergenceMuLossGradOp<float>>(KLDivergenceMuLossGradOp<float>(1e-6, 0.0, 0.0)),
-    std::make_shared<KLDivergenceLogVarLossGradOp<float>>(KLDivergenceLogVarLossGradOp<float>(1e-6, 0.0, 0.0))
-    });
-  model_trainer.setLossOutputNodes({ output_nodes, encoding_nodes_mu, encoding_nodes_logvar });
+
+  std::vector<LossFunctionHelper<float>> loss_function_helpers;
+  LossFunctionHelper<float> loss_function_helper1, loss_function_helper2, loss_function_helper3;
+  loss_function_helper1.output_nodes_ = output_nodes;
+  loss_function_helper1.loss_functions_ = { loss_function_op };
+  loss_function_helper1.loss_function_grads_ = { loss_function_grad_op };
+  loss_function_helpers.push_back(loss_function_helper1);
+  loss_function_helper2.output_nodes_ = encoding_nodes_mu;
+  loss_function_helper2.loss_functions_ = { std::make_shared<KLDivergenceMuLossOp<float>>(KLDivergenceMuLossOp<float>(1e-6, 0.0, 0.0)) };
+  loss_function_helper2.loss_function_grads_ = { std::make_shared<KLDivergenceMuLossGradOp<float>>(KLDivergenceMuLossGradOp<float>(1e-6, 0.0, 0.0)) };
+  loss_function_helpers.push_back(loss_function_helper2);
+  loss_function_helper3.output_nodes_ = encoding_nodes_logvar;
+  loss_function_helper3.loss_functions_ = { std::make_shared<KLDivergenceLogVarLossOp<float>>(KLDivergenceLogVarLossOp<float>(1e-6, 0.0, 0.0)) };
+  loss_function_helper3.loss_function_grads_ = { std::make_shared<KLDivergenceLogVarLossGradOp<float>>(KLDivergenceLogVarLossGradOp<float>(1e-6, 0.0, 0.0)) };
+  loss_function_helpers.push_back(loss_function_helper3);
+  model_trainer.setLossFunctionHelpers(loss_function_helpers);
   model_trainer.KL_divergence_warmup_ = KL_divergence_warmup;
+
   // NOTE: const int n_metrics = 14; is hard coded in MetabolomicsReconstructionDataSimulator!!!
-  model_trainer.setMetricFunctions({
-    std::make_shared<CosineSimilarityOp<float>>(CosineSimilarityOp<float>("Mean")), std::make_shared<CosineSimilarityOp<float>>(CosineSimilarityOp<float>("Var")),
+  std::vector<MetricFunctionHelper<float>> metric_function_helpers;
+  MetricFunctionHelper<float> metric_function_helper1;
+  metric_function_helper1.output_nodes_ = output_nodes;
+  metric_function_helper1.metric_functions_ = { std::make_shared<CosineSimilarityOp<float>>(CosineSimilarityOp<float>("Mean")), std::make_shared<CosineSimilarityOp<float>>(CosineSimilarityOp<float>("Var")),
     std::make_shared<PearsonROp<float>>(PearsonROp<float>("Mean")), std::make_shared<PearsonROp<float>>(PearsonROp<float>("Var")),
     std::make_shared<EuclideanDistOp<float>>(EuclideanDistOp<float>("Mean")), std::make_shared<EuclideanDistOp<float>>(EuclideanDistOp<float>("Var")),
     std::make_shared<ManhattanDistOp<float>>(ManhattanDistOp<float>("Mean")), std::make_shared<ManhattanDistOp<float>>(ManhattanDistOp<float>("Var")),
     std::make_shared<JeffreysAndMatusitaDistOp<float>>(JeffreysAndMatusitaDistOp<float>("Mean")), std::make_shared<JeffreysAndMatusitaDistOp<float>>(JeffreysAndMatusitaDistOp<float>("Var")),
     std::make_shared<LogarithmicDistOp<float>>(LogarithmicDistOp<float>("Mean")), std::make_shared<LogarithmicDistOp<float>>(LogarithmicDistOp<float>("Var")),
-    std::make_shared<PercentDifferenceOp<float>>(PercentDifferenceOp<float>("Mean")), std::make_shared<PercentDifferenceOp<float>>(PercentDifferenceOp<float>("Var")) });
-  model_trainer.setMetricOutputNodes({
-    output_nodes, output_nodes,
-    output_nodes, output_nodes,
-    output_nodes, output_nodes,
-    output_nodes, output_nodes,
-    output_nodes, output_nodes,
-    output_nodes, output_nodes,
-    output_nodes, output_nodes });
-  model_trainer.setMetricNames({
-    "CosineSimilarity-Mean", "CosineSimilarity-Var",
+    std::make_shared<PercentDifferenceOp<float>>(PercentDifferenceOp<float>("Mean")), std::make_shared<PercentDifferenceOp<float>>(PercentDifferenceOp<float>("Var")) };
+  metric_function_helper1.metric_names_ = { "CosineSimilarity-Mean", "CosineSimilarity-Var",
     "PearsonR-Mean", "PearsonR-Var",
     "EuclideanDist-Mean", "EuclideanDist-Var",
     "ManhattanDist-Mean", "ManhattanDist-Var",
     "JeffreysAndMatusitaDist-Mean", "JeffreysAndMatusitaDist-Var",
     "LogarithmicDist-Mean", "LogarithmicDist-Var",
-    "PercentDifference-Mean", "PercentDifference-Var" });
+    "PercentDifference-Mean", "PercentDifference-Var" };
+  metric_function_helpers.push_back(metric_function_helper1);
+  model_trainer.setMetricFunctionHelpers(metric_function_helpers);
 
   // define the model logger
   ModelLogger<float> model_logger(true, true, false, false, false, false, false, false);

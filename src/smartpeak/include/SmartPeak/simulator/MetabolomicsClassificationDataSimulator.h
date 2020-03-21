@@ -66,7 +66,7 @@ namespace SmartPeak
     const int input_nodes = data_training.dimension(0);
     assert(n_input_nodes == input_nodes);
     assert(n_loss_output_nodes == labels_training_.size());
-    assert(n_metric_output_nodes == 2 * labels_training_.size()); // accuracy and precision
+    assert(n_metric_output_nodes == labels_training_.size()); // accuracy and precision
     assert(data_training.dimension(0) == features.size());
     assert(data_training.dimension(1) == labels_training.size());
 
@@ -169,10 +169,7 @@ namespace SmartPeak
     //}
 
     // assign the metric tensors
-    this->metric_output_data_training_.slice(Eigen::array<Eigen::Index, 4>({ 0, 0, 0, 0 }),
-      Eigen::array<Eigen::Index, 4>({ batch_size, memory_size, int(labels_training_.size()), n_epochs })) = one_hot_vec_4d;
-    this->metric_output_data_training_.slice(Eigen::array<Eigen::Index, 4>({ 0, 0, int(labels_training_.size()), 0 }),
-      Eigen::array<Eigen::Index, 4>({ batch_size, memory_size, int(labels_training_.size()), n_epochs })) = one_hot_vec_4d;
+    this->metric_output_data_training_ = one_hot_vec_4d;
   }
   template<typename TensorT>
   inline void MetabolomicsClassificationDataSimulator<TensorT>::makeValidationDataForCache(const std::vector<std::string>& features, const Eigen::Tensor<TensorT, 2>& data_validation, const std::vector<std::string>& labels_validation, const int & n_epochs, const int & batch_size, const int & memory_size, const int & n_input_nodes, const int & n_loss_output_nodes, const int & n_metric_output_nodes, const bool& shuffle_data_and_labels)
@@ -181,7 +178,7 @@ namespace SmartPeak
     const int input_nodes = data_validation.dimension(0);
     assert(n_input_nodes == input_nodes);
     assert(n_loss_output_nodes == labels_validation_.size());
-    assert(n_metric_output_nodes == 2 * labels_validation_.size()); // accuracy and precision
+    assert(n_metric_output_nodes == labels_validation_.size()); // accuracy and precision
     assert(data_validation.dimension(0) == features.size());
     assert(data_validation.dimension(1) == labels_validation.size());
 
@@ -284,10 +281,7 @@ namespace SmartPeak
     //}
 
     // assign the metric tensors
-    this->metric_output_data_validation_.slice(Eigen::array<Eigen::Index, 4>({ 0, 0, 0, 0 }),
-      Eigen::array<Eigen::Index, 4>({ batch_size, memory_size, int(labels_validation_.size()), n_epochs })) = one_hot_vec_4d;
-    this->metric_output_data_validation_.slice(Eigen::array<Eigen::Index, 4>({ 0, 0, int(labels_validation_.size()), 0 }),
-      Eigen::array<Eigen::Index, 4>({ batch_size, memory_size, int(labels_validation_.size()), n_epochs })) = one_hot_vec_4d;
+    this->metric_output_data_validation_ = one_hot_vec_4d;
   }
   template<typename TensorT>
   inline void MetabolomicsClassificationDataSimulator<TensorT>::readAndProcessMetabolomicsTrainingAndValidationData(int & n_reaction_ids_training, int & n_labels_training, int & n_component_group_names_training, int & n_reaction_ids_validation, int & n_labels_validation, int & n_component_group_names_validation, const std::string & biochem_rxns_filename, const std::string & metabo_data_filename_train, const std::string & meta_data_filename_train, const std::string & metabo_data_filename_test, const std::string & meta_data_filename_test, 
@@ -420,9 +414,9 @@ namespace SmartPeak
 
       // Make the training data cache
       this->makeTrainingDataForCache(metabo_features_training, metabo_data_training, metabo_labels_training, n_epochs, batch_size, memory_size,
-        n_component_group_names_training, n_labels_training, 2 * n_labels_training, shuffle_data_and_labels);
+        n_component_group_names_training, n_labels_training, n_labels_training, shuffle_data_and_labels);
       this->makeValidationDataForCache(metabo_features_validation, metabo_data_validation, metabo_labels_validation, n_epochs, batch_size, memory_size,
-        n_component_group_names_validation, n_labels_validation, 2 * n_labels_validation, shuffle_data_and_labels);
+        n_component_group_names_validation, n_labels_validation, n_labels_validation, shuffle_data_and_labels);
     }
     else if (use_MARs) {
       // Apply offline transformations
@@ -437,9 +431,9 @@ namespace SmartPeak
 
       // Make the training data cache
       this->makeTrainingDataForCache(metabo_features_training, metabo_data_training, metabo_labels_training, n_epochs, batch_size, memory_size,
-        n_reaction_ids_training, n_labels_training, 2 * n_labels_training, shuffle_data_and_labels);
+        n_reaction_ids_training, n_labels_training, n_labels_training, shuffle_data_and_labels);
       this->makeValidationDataForCache(metabo_features_validation, metabo_data_validation, metabo_labels_validation, n_epochs, batch_size, memory_size,
-        n_reaction_ids_validation, n_labels_validation, 2 * n_labels_validation, shuffle_data_and_labels);
+        n_reaction_ids_validation, n_labels_validation, n_labels_validation, shuffle_data_and_labels);
     }
 
     // Checks for the training and validation data
