@@ -252,25 +252,37 @@ BOOST_AUTO_TEST_CASE(checkLossFunctions)
   ModelTrainerExt<float> model_trainer;
   BOOST_CHECK(!model_trainer.checkLossFunctions());
 
-  model_trainer.setLossFunctions({
-    std::make_shared<MSELossOp<float>>(MSELossOp<float>(1e-6, 1.0)),
-    std::make_shared<KLDivergenceMuLossOp<float>>(KLDivergenceMuLossOp<float>(1e-6, 0.1, 0.0)),
-    std::make_shared<KLDivergenceLogVarLossOp<float>>(KLDivergenceLogVarLossOp<float>(1e-6, 0.1, 0.0)) });
-  model_trainer.setLossFunctionGrads({
-    std::make_shared<MSELossGradOp<float>>(MSELossGradOp<float>(1e-6, 1.0)),
-    std::make_shared<KLDivergenceMuLossGradOp<float>>(KLDivergenceMuLossGradOp<float>(1e-6, 0.1, 0.0)),
-    std::make_shared<KLDivergenceLogVarLossGradOp<float>>(KLDivergenceLogVarLossGradOp<float>(1e-6, 0.1, 0.0)) });
-  std::vector<std::string> output_nodes, encoding_nodes_mu, encoding_nodes_logvar;
-  model_trainer.setLossOutputNodes({ output_nodes, encoding_nodes_mu, encoding_nodes_logvar });
+  std::vector<LossFunctionHelper<float>> loss_function_helpers;
+  LossFunctionHelper<float> loss_function_helper1, loss_function_helper2, loss_function_helper3;
+  loss_function_helper1.output_nodes_ = { "Output000000000000", "Output00000000001", "Output000000000002" };
+  loss_function_helper1.loss_functions_ = { std::make_shared<BCEWithLogitsLossOp<float>>(BCEWithLogitsLossOp<float>(1e-6, 1.0)) };
+  loss_function_helper1.loss_function_grads_ = { std::make_shared<BCEWithLogitsLossGradOp<float>>(BCEWithLogitsLossGradOp<float>(1e-6, 1.0)) };
+  loss_function_helpers.push_back(loss_function_helper1);
+  loss_function_helper2.output_nodes_ = { "Mu000000000000", "Mu00000000001" };
+  loss_function_helper2.loss_functions_ = { std::make_shared<KLDivergenceMuLossOp<float>>(KLDivergenceMuLossOp<float>(1e-6, 0.0, 0.0)) };
+  loss_function_helper2.loss_function_grads_ = { std::make_shared<KLDivergenceMuLossGradOp<float>>(KLDivergenceMuLossGradOp<float>(1e-6, 0.0, 0.0)) };
+  loss_function_helpers.push_back(loss_function_helper2);
+  loss_function_helper3.output_nodes_ = { "Var000000000000", "Var00000000001" };
+  loss_function_helper3.loss_functions_ = { std::make_shared<KLDivergenceLogVarLossOp<float>>(KLDivergenceLogVarLossOp<float>(1e-6, 0.0, 0.0)) };
+  loss_function_helper3.loss_function_grads_ = { std::make_shared<KLDivergenceLogVarLossGradOp<float>>(KLDivergenceLogVarLossGradOp<float>(1e-6, 0.0, 0.0)) };
+  loss_function_helpers.push_back(loss_function_helper3);
+  model_trainer.setLossFunctionHelpers(loss_function_helpers);
   BOOST_CHECK(model_trainer.checkLossFunctions());
 
-  model_trainer.setLossFunctions({
-    std::make_shared<MSELossOp<float>>(MSELossOp<float>(1e-6, 1.0)) });
-  model_trainer.setLossFunctionGrads({
-    std::make_shared<MSELossGradOp<float>>(MSELossGradOp<float>(1e-6, 1.0)),
-    std::make_shared<KLDivergenceMuLossGradOp<float>>(KLDivergenceMuLossGradOp<float>(1e-6, 0.1, 0.0)),
-    std::make_shared<KLDivergenceLogVarLossGradOp<float>>(KLDivergenceLogVarLossGradOp<float>(1e-6, 0.1, 0.0)) });
-  model_trainer.setLossOutputNodes({ output_nodes, encoding_nodes_mu });
+  loss_function_helpers.clear();
+  loss_function_helper1.output_nodes_ = { "Output000000000000", "Output00000000001", "Output000000000002" };
+  loss_function_helper1.loss_functions_ = { std::make_shared<BCEWithLogitsLossOp<float>>(BCEWithLogitsLossOp<float>(1e-6, 1.0)) };
+  loss_function_helper1.loss_function_grads_.clear();
+  loss_function_helpers.push_back(loss_function_helper1);
+  loss_function_helper2.output_nodes_ = { "Mu000000000000", "Mu00000000001" };
+  loss_function_helper2.loss_functions_ = { std::make_shared<KLDivergenceMuLossOp<float>>(KLDivergenceMuLossOp<float>(1e-6, 0.0, 0.0)) };
+  loss_function_helper2.loss_function_grads_ = { std::make_shared<KLDivergenceMuLossGradOp<float>>(KLDivergenceMuLossGradOp<float>(1e-6, 0.0, 0.0)) };
+  loss_function_helpers.push_back(loss_function_helper2);
+  loss_function_helper3.output_nodes_ = { "Var000000000000", "Var00000000001" };
+  loss_function_helper3.loss_functions_ = { std::make_shared<KLDivergenceLogVarLossOp<float>>(KLDivergenceLogVarLossOp<float>(1e-6, 0.0, 0.0)) };
+  loss_function_helper3.loss_function_grads_ = { std::make_shared<KLDivergenceLogVarLossGradOp<float>>(KLDivergenceLogVarLossGradOp<float>(1e-6, 0.0, 0.0)) };
+  loss_function_helpers.push_back(loss_function_helper3);
+  model_trainer.setLossFunctionHelpers(loss_function_helpers);
   BOOST_CHECK(!model_trainer.checkLossFunctions());
 }
 
@@ -279,13 +291,23 @@ BOOST_AUTO_TEST_CASE(checkMetricFunctions)
   ModelTrainerExt<float> model_trainer;
   BOOST_CHECK(!model_trainer.checkMetricFunctions());
 
-  model_trainer.setMetricFunctions({ std::make_shared<MAEOp<float>>(MAEOp<float>()) });
-  std::vector<std::string> output_nodes;
-  model_trainer.setMetricOutputNodes({ output_nodes });
-  model_trainer.setMetricNames({"MAE"});
+  std::vector<MetricFunctionHelper<float>> metric_function_helpers;
+  MetricFunctionHelper<float> metric_function_helper1;
+  metric_function_helper1.output_nodes_ = { "Output000000000000", "Output00000000001", "Output000000000002" };
+  metric_function_helper1.metric_functions_ = { std::make_shared<CosineSimilarityOp<float>>(CosineSimilarityOp<float>("Mean")), std::make_shared<CosineSimilarityOp<float>>(CosineSimilarityOp<float>("Var")),
+    std::make_shared<PearsonROp<float>>(PearsonROp<float>("Mean")), std::make_shared<PearsonROp<float>>(PearsonROp<float>("Var")) };
+  metric_function_helper1.metric_names_ = { "CosineSimilarity-Mean", "CosineSimilarity-Var", "PearsonR-Mean", "PearsonR-Var" };
+  metric_function_helpers.push_back(metric_function_helper1);
+  model_trainer.setMetricFunctionHelpers(metric_function_helpers);
   BOOST_CHECK(model_trainer.checkMetricFunctions());
 
-  model_trainer.setMetricNames( std::vector<std::string>());
+  metric_function_helpers.clear();
+  metric_function_helper1.output_nodes_ = { "Output000000000000", "Output00000000001", "Output000000000002" };
+  metric_function_helper1.metric_functions_ = { std::make_shared<CosineSimilarityOp<float>>(CosineSimilarityOp<float>("Mean")), std::make_shared<CosineSimilarityOp<float>>(CosineSimilarityOp<float>("Var")),
+    std::make_shared<PearsonROp<float>>(PearsonROp<float>("Mean")), std::make_shared<PearsonROp<float>>(PearsonROp<float>("Var")) };
+  metric_function_helper1.metric_names_.clear();
+  metric_function_helpers.push_back(metric_function_helper1);
+  model_trainer.setMetricFunctionHelpers(metric_function_helpers);
   BOOST_CHECK(!model_trainer.checkMetricFunctions());
 }
 
@@ -405,9 +427,13 @@ BOOST_AUTO_TEST_CASE(DAGToy1)
 	trainer.setLogging(false, false);
   const std::vector<std::string> input_nodes = {"0", "1", "6", "7"}; // true inputs + biases
   const std::vector<std::string> output_nodes = {"4", "5"};
-	trainer.setLossFunctions({ std::make_shared<MSELossOp<float>>(MSELossOp<float>()) });
-	trainer.setLossFunctionGrads({ std::make_shared<MSELossGradOp<float>>(MSELossGradOp<float>()) });
-	trainer.setLossOutputNodes({ output_nodes });
+  std::vector<LossFunctionHelper<float>> loss_function_helpers;
+  LossFunctionHelper<float> loss_function_helper1;
+  loss_function_helper1.output_nodes_ = output_nodes;
+  loss_function_helper1.loss_functions_ = { std::make_shared<MSELossOp<float>>(MSELossOp<float>(1e-6, 1.0)) };
+  loss_function_helper1.loss_function_grads_ = { std::make_shared<MSELossGradOp<float>>(MSELossGradOp<float>(1e-6, 1.0)) };
+  loss_function_helpers.push_back(loss_function_helper1);
+  trainer.setLossFunctionHelpers(loss_function_helpers);
 
   // Make the input data
   Eigen::Tensor<float, 4> input_data(trainer.getBatchSize(), trainer.getMemorySize(), (int)input_nodes.size(), trainer.getNEpochsTraining());
@@ -483,12 +509,22 @@ BOOST_AUTO_TEST_CASE(DAGToy2)
   trainer.setLogging(false, false);
   const std::vector<std::string> input_nodes = { "0", "1", "6", "7" }; // true inputs + biases
   const std::vector<std::string> output_nodes = { "4", "5" };
-  trainer.setLossFunctions({ std::make_shared<MSELossOp<float>>(MSELossOp<float>()) });
-  trainer.setLossFunctionGrads({ std::make_shared<MSELossGradOp<float>>(MSELossGradOp<float>()) });
-  trainer.setLossOutputNodes({ output_nodes });
-  trainer.setMetricFunctions({ std::make_shared<MAEOp<float>>(MAEOp<float>()) });
-  trainer.setMetricOutputNodes({ output_nodes });
-  trainer.setMetricNames({"MAE"});
+
+  std::vector<LossFunctionHelper<float>> loss_function_helpers;
+  LossFunctionHelper<float> loss_function_helper1;
+  loss_function_helper1.output_nodes_ = output_nodes;
+  loss_function_helper1.loss_functions_ = { std::make_shared<MSELossOp<float>>(MSELossOp<float>(1e-6, 1.0)) };
+  loss_function_helper1.loss_function_grads_ = { std::make_shared<MSELossGradOp<float>>(MSELossGradOp<float>(1e-6, 1.0)) };
+  loss_function_helpers.push_back(loss_function_helper1);
+  trainer.setLossFunctionHelpers(loss_function_helpers);
+
+  std::vector<MetricFunctionHelper<float>> metric_function_helpers;
+  MetricFunctionHelper<float> metric_function_helper1;
+  metric_function_helper1.output_nodes_ = output_nodes;
+  metric_function_helper1.metric_functions_ = { std::make_shared<MAEOp<float>>(MAEOp<float>("Sum")) };
+  metric_function_helper1.metric_names_ = { "MAE"};
+  metric_function_helpers.push_back(metric_function_helper1);
+  trainer.setMetricFunctionHelpers(metric_function_helpers);
 
   DataSimulatorDAGToy<float> data_simulator;
 
@@ -497,17 +533,17 @@ BOOST_AUTO_TEST_CASE(DAGToy2)
     input_nodes, ModelLogger<float>(), ModelInterpreterDefaultDevice<float>(model_resources));
 
   const Eigen::Tensor<float, 0> total_error = model1.getError().sum();
-  BOOST_CHECK(total_error(0) <= 757.0);
-  BOOST_CHECK(errors.first.back() <= 757.0);
-  BOOST_CHECK(errors.second.back() <= 486.0);
+  BOOST_CHECK_LE(total_error(0), 757.0);
+  BOOST_CHECK_LE(errors.first.back(), 757.0);
+  BOOST_CHECK_LE(errors.second.back(), 486.0);
 
   std::pair<std::vector<float>, std::vector<float>> validation_errors = trainer.validateModel(model1, data_simulator,
     input_nodes, ModelLogger<float>(), ModelInterpreterDefaultDevice<float>(model_resources));
 
   const Eigen::Tensor<float, 0> total_error_validation = model1.getError().sum();
-  BOOST_CHECK(total_error_validation(0) <= 749.843);
-  BOOST_CHECK(validation_errors.first.back() <= 749.843);
-  BOOST_CHECK(validation_errors.second.back() <= 455.844);
+  BOOST_CHECK_LE(total_error_validation(0), 749.853395);
+  BOOST_CHECK_LE(validation_errors.first.back(), 749.853395);
+  BOOST_CHECK_LE(validation_errors.second.back(), 455.849305);
 
   // TODO evaluateModel
 }
@@ -580,9 +616,14 @@ BOOST_AUTO_TEST_CASE(DCGToy1)
 	trainer.setNEpochsValidation(50);
   const std::vector<std::string> input_nodes = {"0", "3", "4"}; // true inputs + biases
   const std::vector<std::string> output_nodes = {"2"};
-	trainer.setLossFunctions({ std::make_shared<MSELossOp<float>>(MSELossOp<float>()) });
-	trainer.setLossFunctionGrads({ std::make_shared<MSELossGradOp<float>>(MSELossGradOp<float>()) });
-	trainer.setLossOutputNodes({ output_nodes });
+
+  std::vector<LossFunctionHelper<float>> loss_function_helpers;
+  LossFunctionHelper<float> loss_function_helper1;
+  loss_function_helper1.output_nodes_ = output_nodes;
+  loss_function_helper1.loss_functions_ = { std::make_shared<MSELossOp<float>>(MSELossOp<float>(1e-6, 1.0)) };
+  loss_function_helper1.loss_function_grads_ = { std::make_shared<MSELossGradOp<float>>(MSELossGradOp<float>(1e-6, 1.0)) };
+  loss_function_helpers.push_back(loss_function_helper1);
+  trainer.setLossFunctionHelpers(loss_function_helpers);
 
   // Make the input data
   Eigen::Tensor<float, 4> input_data(trainer.getBatchSize(), trainer.getMemorySize(), (int)input_nodes.size(), trainer.getNEpochsTraining());
@@ -662,12 +703,22 @@ BOOST_AUTO_TEST_CASE(DCGToy2)
   trainer.setNEpochsValidation(50);
   const std::vector<std::string> input_nodes = { "0", "3", "4" }; // true inputs + biases
   const std::vector<std::string> output_nodes = { "2" };
-  trainer.setLossFunctions({ std::make_shared<MSELossOp<float>>(MSELossOp<float>()) });
-  trainer.setLossFunctionGrads({ std::make_shared<MSELossGradOp<float>>(MSELossGradOp<float>()) });
-  trainer.setLossOutputNodes({ output_nodes });
-  trainer.setMetricFunctions({ std::make_shared<MAEOp<float>>(MAEOp<float>()) });
-  trainer.setMetricOutputNodes({ output_nodes });
-  trainer.setMetricNames({ "MAE" });
+
+  std::vector<LossFunctionHelper<float>> loss_function_helpers;
+  LossFunctionHelper<float> loss_function_helper1;
+  loss_function_helper1.output_nodes_ = output_nodes;
+  loss_function_helper1.loss_functions_ = { std::make_shared<MSELossOp<float>>(MSELossOp<float>(1e-6, 1.0)) };
+  loss_function_helper1.loss_function_grads_ = { std::make_shared<MSELossGradOp<float>>(MSELossGradOp<float>(1e-6, 1.0)) };
+  loss_function_helpers.push_back(loss_function_helper1);
+  trainer.setLossFunctionHelpers(loss_function_helpers);
+
+  std::vector<MetricFunctionHelper<float>> metric_function_helpers;
+  MetricFunctionHelper<float> metric_function_helper1;
+  metric_function_helper1.output_nodes_ = output_nodes;
+  metric_function_helper1.metric_functions_ = { std::make_shared<MAEOp<float>>(MAEOp<float>("Sum")) };
+  metric_function_helper1.metric_names_ = { "MAE" };
+  metric_function_helpers.push_back(metric_function_helper1);
+  trainer.setMetricFunctionHelpers(metric_function_helpers);
 
   // Make data simulator
   DataSimulatorDCGToy<float> data_simulator;

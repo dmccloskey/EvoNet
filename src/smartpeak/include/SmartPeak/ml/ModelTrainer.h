@@ -69,8 +69,8 @@ public:
 		bool getLogTraining() const { return log_training_; };
 		bool getLogValidation() const { return log_validation_; };
 		bool getLogEvaluation() const { return log_evaluation_; };
-		std::vector<std::shared_ptr<LossFunctionHelper<TensorT>>> getLossFunctionHelpers() { return loss_function_helpers_; }; ///< loss_function_helpers getter [TODO: tests]
-		std::vector<std::shared_ptr<MetricFunctionHelper<TensorT>>> getMetricFunctionHelpers() { return metric_function_helpers_; }; ///< metric_functions_helpers getter [TODO: tests]
+		std::vector<LossFunctionHelper<TensorT>> getLossFunctionHelpers() { return loss_function_helpers_; }; ///< loss_function_helpers getter [TODO: tests]
+		std::vector<MetricFunctionHelper<TensorT>> getMetricFunctionHelpers() { return metric_function_helpers_; }; ///< metric_functions_helpers getter [TODO: tests]
 		int getNTBPTTSteps() const { return n_TBPTT_steps_; }; ///< n_TBPTT setter
 		int getNTETTSteps() const { return n_TETT_steps_; }; ///< n_TETT setter
 		bool getFindCycles() { return find_cycles_; }; ///< find_cycles getter [TODO: tests]
@@ -495,7 +495,7 @@ private:
     int cnt = 0;
     for (const auto& helper : this->loss_function_helpers_)
       cnt += helper.loss_functions_.size();
-    return int;
+    return cnt;
   }
 
   template<typename TensorT, typename InterpreterT>
@@ -504,7 +504,7 @@ private:
     int cnt = 0;
     for (const auto& helper : this->metric_function_helpers_)
       cnt += helper.metric_functions_.size();
-    return int;
+    return cnt;
   }
   template<typename TensorT, typename InterpreterT>
 	bool ModelTrainer<TensorT, InterpreterT>::checkInputData(const int& n_epochs,
@@ -674,7 +674,7 @@ private:
         std::cout << "Interpreting the model..." << std::endl;
       model_interpreter.checkMemory(model, this->getBatchSize(), this->getMemorySize());
       model_interpreter.getForwardPropogationOperations(model, this->getBatchSize(), this->getMemorySize(), true, this->getFastInterpreter(), this->getFindCycles(), this->getPreserveOoO());
-      model_interpreter.allocateModelErrorTensor(this->getBatchSize(), this->getMemorySize(), this->metric_output_nodes_.size());
+      model_interpreter.allocateModelErrorTensor(this->getBatchSize(), this->getMemorySize(), this->getNMetricFunctions());
     }
 
 		for (int iter = 0; iter < this->getNEpochsTraining(); ++iter) // use n_epochs here
@@ -696,7 +696,7 @@ private:
 			if (this->getVerbosityLevel() >= 2)
 				std::cout << "Error Calculation..." << std::endl;
       const Eigen::Tensor<TensorT, 3> expected_tmp = output.chip(iter, 3);
-      this->ApplyModelLosses_(model, expected_temp, model_interpreter);
+      this->ApplyModelLosses_(model, expected_tmp, model_interpreter);
 
 			// back propogate
 			if (this->getVerbosityLevel() >= 2)
@@ -963,6 +963,7 @@ private:
         std::cout << "Interpreting the model..." << std::endl;
       model_interpreter.checkMemory(model, this->getBatchSize(), this->getMemorySize());
       model_interpreter.getForwardPropogationOperations(model, this->getBatchSize(), this->getMemorySize(), true, this->getFastInterpreter(), this->getFindCycles(), this->getPreserveOoO());
+      model_interpreter.allocateModelErrorTensor(this->getBatchSize(), this->getMemorySize(), this->getNMetricFunctions());
     }
 
 		for (int iter = 0; iter < this->getNEpochsValidation(); ++iter) // use n_epochs here
@@ -1235,15 +1236,13 @@ private:
       model_interpreter.getModelResults(model, true, false, false, false);
 			std::vector<Eigen::Tensor<TensorT, 2>> output;
       int node_iter = 0;
-			for (const std::vector<std::string>& output_nodes_vec : this->loss_output_nodes_) {
-				for (const std::string& output_node : output_nodes_vec) {
-          for (int batch_iter = 0; batch_iter < this->getBatchSize(); ++batch_iter) {
-            for (int memory_iter = 0; memory_iter < this->getMemorySize(); ++memory_iter) {
-              model_output(batch_iter, memory_iter, node_iter, iter) = model.getNodesMap().at(output_node)->getOutput()(batch_iter, memory_iter);
-            }
+			for (const std::string& output_node : output_nodes) {
+        for (int batch_iter = 0; batch_iter < this->getBatchSize(); ++batch_iter) {
+          for (int memory_iter = 0; memory_iter < this->getMemorySize(); ++memory_iter) {
+            model_output(batch_iter, memory_iter, node_iter, iter) = model.getNodesMap().at(output_node)->getOutput()(batch_iter, memory_iter);
           }
-          ++node_iter;
-				}
+        }
+        ++node_iter;
 			}
 
 			// log epoch
@@ -1323,15 +1322,13 @@ private:
       model_interpreter.getModelResults(model, true, false, false, false);
       std::vector<Eigen::Tensor<TensorT, 2>> output;
       int node_iter = 0;
-      for (const std::vector<std::string>& output_nodes_vec : this->loss_output_nodes_) {
-        for (const std::string& output_node : output_nodes_vec) {
-          for (int batch_iter = 0; batch_iter < this->getBatchSize(); ++batch_iter) {
-            for (int memory_iter = 0; memory_iter < this->getMemorySize(); ++memory_iter) {
-              model_output(batch_iter, memory_iter, node_iter, iter) = model.getNodesMap().at(output_node)->getOutput()(batch_iter, memory_iter);
-            }
+      for (const std::string& output_node : output_nodes) {
+        for (int batch_iter = 0; batch_iter < this->getBatchSize(); ++batch_iter) {
+          for (int memory_iter = 0; memory_iter < this->getMemorySize(); ++memory_iter) {
+            model_output(batch_iter, memory_iter, node_iter, iter) = model.getNodesMap().at(output_node)->getOutput()(batch_iter, memory_iter);
           }
-          ++node_iter;
         }
+        ++node_iter;
       }
 
       // log epoch
@@ -1516,7 +1513,7 @@ private:
     for (auto& helper : this->loss_function_helpers_) {
       // Slice out the output
       Eigen::array<Eigen::Index, 3> offsets = {0, 0, output_node_cnt};
-      Eigen::array<Eigen::Index, 3> spans = { this->getBatchSize(), this->getMemorySize(), helper.output_nodes.size() };
+      Eigen::array<Eigen::Index, 3> spans = { this->getBatchSize(), this->getMemorySize(), helper.output_nodes_.size() };
       Eigen::Tensor<TensorT, 3> expected = output.slice(offsets, spans);
 
       // Calculate the errors
@@ -1532,15 +1529,15 @@ private:
   template<typename TensorT, typename InterpreterT>
   inline void ModelTrainer<TensorT, InterpreterT>::ApplyModelMetrics_(Model<TensorT>& model, const Eigen::Tensor<TensorT, 3>& output, InterpreterT& model_interpreter)
   {
-    output_node_cnt = 0;
+    int output_node_cnt = 0;
     for (auto& helper : this->metric_function_helpers_) {
       // Slice out the output
       Eigen::array<Eigen::Index, 3> offsets = { 0, 0, output_node_cnt };
-      Eigen::array<Eigen::Index, 3> spans = { this->getBatchSize(), this->getMemorySize(), helper.output_nodes.size() };
+      Eigen::array<Eigen::Index, 3> spans = { this->getBatchSize(), this->getMemorySize(), helper.output_nodes_.size() };
       Eigen::Tensor<TensorT, 3> expected = output.slice(offsets, spans);
 
       // Calculate the metrics
-      for (size_t metric_iter = 0; metric_iter < this->metric_functions_.size(); ++metric_iter) {
+      for (size_t metric_iter = 0; metric_iter < helper.metric_functions_.size(); ++metric_iter) {
         if (this->getNTETTSteps() < 0)
           model_interpreter.CMTT(model, expected, helper.output_nodes_, helper.metric_functions_.at(metric_iter).get(), this->getMemorySize(), metric_iter);
         else
