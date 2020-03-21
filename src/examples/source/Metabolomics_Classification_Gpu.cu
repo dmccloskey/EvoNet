@@ -159,7 +159,7 @@ public:
     std::vector<TensorT> log_train_values = { model_error_train };
     std::vector<TensorT> log_test_values = { model_error_test };
     int metric_iter = 0;
-    for (const std::string& metric_name : this->metric_names_) {
+    for (const std::string& metric_name : this->getMetricNamesLinearized()) {
       log_train_headers.push_back(metric_name);
       log_test_headers.push_back(metric_name);
       log_train_values.push_back(model_metrics_train(metric_iter));
