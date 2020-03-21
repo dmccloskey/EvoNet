@@ -70,7 +70,7 @@ public:
 		bool getLogValidation() const { return log_validation_; };
 		bool getLogEvaluation() const { return log_evaluation_; };
 		std::vector<std::shared_ptr<LossFunctionHelper<TensorT>>> getLossFunctionHelpers() { return loss_function_helpers_; }; ///< loss_function_helpers getter [TODO: tests]
-		std::vector<std::shared_ptr<MetricFunctionHelper<TensorT>>> geMetricFunctionHelpers() { return metric_function_helpers_; }; ///< metric_functions_helpers getter [TODO: tests]
+		std::vector<std::shared_ptr<MetricFunctionHelper<TensorT>>> getMetricFunctionHelpers() { return metric_function_helpers_; }; ///< metric_functions_helpers getter [TODO: tests]
 		int getNTBPTTSteps() const { return n_TBPTT_steps_; }; ///< n_TBPTT setter
 		int getNTETTSteps() const { return n_TETT_steps_; }; ///< n_TETT setter
 		bool getFindCycles() { return find_cycles_; }; ///< find_cycles getter [TODO: tests]

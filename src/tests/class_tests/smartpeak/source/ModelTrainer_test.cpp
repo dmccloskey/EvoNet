@@ -117,12 +117,8 @@ BOOST_AUTO_TEST_CASE(gettersAndSetters)
   BOOST_CHECK_EQUAL(trainer.getFindCycles(), true);
   BOOST_CHECK_EQUAL(trainer.getFastInterpreter(), false);
   BOOST_CHECK_EQUAL(trainer.getPreserveOoO(), true);
-  BOOST_CHECK_EQUAL(trainer.getLossFunctions().size(), 0);
-  BOOST_CHECK_EQUAL(trainer.getLossFunctionGrads().size(), 0);
-  BOOST_CHECK_EQUAL(trainer.getLossOutputNodes().size(), 0);
-  BOOST_CHECK_EQUAL(trainer.getMetricFunctions().size(), 0);
-  BOOST_CHECK_EQUAL(trainer.getMetricOutputNodes().size(), 0);
-  BOOST_CHECK_EQUAL(trainer.getMetricNames().size(), 0);
+  BOOST_CHECK_EQUAL(trainer.getLossFunctionHelpers().size(), 0);
+  BOOST_CHECK_EQUAL(trainer.getMetricFunctionHelpers().size(), 0);
   BOOST_CHECK_EQUAL(trainer.getInterpretModel(), true);
   BOOST_CHECK_EQUAL(trainer.getResetModel(), true);
   BOOST_CHECK_EQUAL(trainer.getResetInterpreter(), true);
@@ -158,15 +154,42 @@ BOOST_AUTO_TEST_CASE(gettersAndSetters)
   BOOST_CHECK_EQUAL(trainer.getFindCycles(), false);
   BOOST_CHECK_EQUAL(trainer.getFastInterpreter(), true);
   BOOST_CHECK_EQUAL(trainer.getPreserveOoO(), false);
-  //BOOST_CHECK_EQUAL(trainer.getLossFunctions().size(), 0);
-  //BOOST_CHECK_EQUAL(trainer.getLossFunctionGrads().size(), 0);
-  //BOOST_CHECK_EQUAL(trainer.getLossOutputNodes().size(), 0);
-  //BOOST_CHECK_EQUAL(trainer.getMetricFunctions().size(), 0);
-  //BOOST_CHECK_EQUAL(trainer.getMetricOutputNodes().size(), 0);
-  //BOOST_CHECK_EQUAL(trainer.getMetricNames().size(), 0);
   BOOST_CHECK_EQUAL(trainer.getInterpretModel(), false);
   BOOST_CHECK_EQUAL(trainer.getResetModel(), false);
   BOOST_CHECK_EQUAL(trainer.getResetInterpreter(), false);
+
+  // Test loss and metric function getters and setters
+  std::vector<LossFunctionHelper<float>> loss_function_helpers;
+  LossFunctionHelper<float> loss_function_helper1, loss_function_helper2, loss_function_helper3;
+  loss_function_helper1.output_nodes_ = { "Output000000000000", "Output00000000001", "Output000000000002" };
+  loss_function_helper1.loss_functions_ = { std::make_shared<BCEWithLogitsLossOp<float>>(BCEWithLogitsLossOp<float>(1e-6, 1.0)) };
+  loss_function_helper1.loss_function_grads_ = { std::make_shared<BCEWithLogitsLossGradOp<float>>(BCEWithLogitsLossGradOp<float>(1e-6, 1.0)) };
+  loss_function_helpers.push_back(loss_function_helper1);
+  loss_function_helper2.output_nodes_ = { "Mu000000000000", "Mu00000000001" };
+  loss_function_helper2.loss_functions_ = { std::make_shared<KLDivergenceMuLossOp<float>>(KLDivergenceMuLossOp<float>(1e-6, 0.0, 0.0)) };
+  loss_function_helper2.loss_function_grads_ = { std::make_shared<KLDivergenceMuLossGradOp<float>>(KLDivergenceMuLossGradOp<float>(1e-6, 0.0, 0.0)) };
+  loss_function_helpers.push_back(loss_function_helper2);
+  loss_function_helper3.output_nodes_ = { "Var000000000000", "Var00000000001" };
+  loss_function_helper3.loss_functions_ = { std::make_shared<KLDivergenceLogVarLossOp<float>>(KLDivergenceLogVarLossOp<float>(1e-6, 0.0, 0.0)) };
+  loss_function_helper3.loss_function_grads_ = { std::make_shared<KLDivergenceLogVarLossGradOp<float>>(KLDivergenceLogVarLossGradOp<float>(1e-6, 0.0, 0.0)) };
+  loss_function_helpers.push_back(loss_function_helper3);
+
+  std::vector<MetricFunctionHelper<float>> metric_function_helpers;
+  MetricFunctionHelper<float> metric_function_helper1;
+  metric_function_helper1.output_nodes_ = { "Output000000000000", "Output00000000001", "Output000000000002" };
+  metric_function_helper1.metric_functions_ = { std::make_shared<CosineSimilarityOp<float>>(CosineSimilarityOp<float>("Mean")), std::make_shared<CosineSimilarityOp<float>>(CosineSimilarityOp<float>("Var")),
+    std::make_shared<PearsonROp<float>>(PearsonROp<float>("Mean")), std::make_shared<PearsonROp<float>>(PearsonROp<float>("Var")) };
+  metric_function_helper1.metric_names_ = { "CosineSimilarity-Mean", "CosineSimilarity-Var", "PearsonR-Mean", "PearsonR-Var" };
+  metric_function_helpers.push_back(metric_function_helper1);
+
+  trainer.setLossFunctionHelpers(loss_function_helpers);
+  trainer.setMetricFunctionHelpers(metric_function_helpers);
+  BOOST_CHECK(trainer.getLossOutputNodesLinearized() == std::vector<std::string>({ "Output000000000000", "Output00000000001", "Output000000000002",
+    "Mu000000000000", "Mu00000000001", "Var000000000000", "Var00000000001" }));
+  BOOST_CHECK(trainer.getMetricOutputNodesLinearized() == std::vector<std::string>({ "Output000000000000", "Output00000000001", "Output000000000002" }));
+  BOOST_CHECK(trainer.getMetricNamesLinearized() == std::vector<std::string>({ "CosineSimilarity-Mean", "CosineSimilarity-Var", "PearsonR-Mean", "PearsonR-Var" }));
+  BOOST_CHECK_EQUAL(trainer.getNLossFunctions(), 3);
+  BOOST_CHECK_EQUAL(trainer.getNMetricFunctions(), 4);
 }
 
 BOOST_AUTO_TEST_CASE(checkInputData) 
