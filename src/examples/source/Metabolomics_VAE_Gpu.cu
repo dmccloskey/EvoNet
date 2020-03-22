@@ -571,6 +571,7 @@ int main(int argc, char** argv)
   if (argc >= 27) {
     try {
       device_id = std::stoi(argv[26]);
+      device_id = (device_id >= 0 && device_id < 4) ? device_id : 0; // TODO: assumes only 4 devices are available
     }
     catch (std::exception & e) {
       std::cout << e.what() << std::endl;
