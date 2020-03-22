@@ -557,7 +557,10 @@ public:
 			Eigen::TensorMap<Eigen::Tensor<TensorT, 3>> predicted_tensor(predicted, batch_size, memory_size, layer_size);
 			Eigen::TensorMap<Eigen::Tensor<TensorT, 2>> error_tensor(error, batch_size, memory_size);
       auto predicted_chip = predicted_tensor.chip(time_step, 1);
-			auto max_values = (-predicted_chip).cwiseMax(expected_tensor.constant(TensorT(0)));
+			//auto max_values = (-predicted_chip).cwiseMax(expected_tensor.constant(TensorT(0))); // pytorch version
+      //auto max_values = predicted_chip.cwiseMax(expected_tensor.constant(TensorT(0))); // tensorFlow version
+      auto max_values = (expected_tensor < expected_tensor.constant(TensorT(0))).select(predicted_chip.cwiseMin(expected_tensor.constant(TensorT(0))), predicted_chip.cwiseMax(expected_tensor.constant(TensorT(0)))); // custom version
+      auto abs_values = -(predicted_chip.abs()); // tensorFlow and custom versions
 
       // Temporary memory for computation
       TensorT* tmp_data;
@@ -571,9 +574,15 @@ public:
       }
 #endif
       Eigen::TensorMap<Eigen::Tensor<TensorT, 1>> result(tmp_data, batch_size);
+      //result.device(device) = (
+      //  predicted_chip - predicted_chip * expected_tensor + max_values + ((-max_values).exp() + (-predicted_chip - max_values).exp()).log()
+      //  ).sum(Eigen::array<int, 1>({ 1 })) * error_tensor.chip(time_step, 1).constant(this->scale_); // pytorch version
+      //result.device(device) = (
+      //  max_values - predicted_chip * expected_tensor + (expected_tensor.constant(TensorT(1)) + abs_values.exp()).log()
+      //  ).sum(Eigen::array<int, 1>({ 1 })) * error_tensor.chip(time_step, 1).constant(this->scale_); // tensorFlow version
       result.device(device) = (
-        predicted_chip - predicted_chip * expected_tensor + max_values + ((-max_values).exp() + (-predicted_chip - max_values).exp()).log()
-        ).sum(Eigen::array<int, 1>({ 1 })) * error_tensor.chip(time_step, 1).constant(this->scale_);
+        max_values - predicted_chip * expected_tensor.abs() + (expected_tensor.constant(TensorT(1)) + abs_values.exp()).log()
+        ).sum(Eigen::array<int, 1>({ 1 })) * error_tensor.chip(time_step, 1).constant(this->scale_); // custom version
       error_tensor.chip(time_step, 1).device(device) += (result == result).select(result.clip(this->min_, this->max_), result.constant(TensorT(0)));
 
       // Deallocate temporary memory
@@ -591,12 +600,12 @@ public:
 	/**
 	@brief BCEWithLogits loss function gradient.
 
-	Starting from the following BCEWithLogits formula
-	x - x * z + log(1 + exp(-x))
+  Starting from the following BCEWithLogits formula
+  maxOrMin[z](x, 0) - x * abs(z) + log(1 + exp(-abs(x)))
 
-	The derivative with respect to x can be formulated as
-	1 - z + 1/(1 + exp(-x))*(-exp(-x))
-	= -((z - 1)*exp(x) + z)/(exp(x) + 1)
+  The derivative with respect to x can be formulated as
+  -x*exp(-abs(x)) / ((exp(-abs(x)) + 1) * abs(x)) - abs(z) + maxOrMin[z](x/abs(x), 0)
+
 	*/
 	template<typename TensorT, typename DeviceT>
 	class BCEWithLogitsLossGradTensorOp : public LossFunctionGradTensorOp<TensorT, DeviceT>
@@ -610,8 +619,36 @@ public:
 			Eigen::TensorMap<Eigen::Tensor<TensorT, 3>> predicted_tensor(predicted, batch_size, memory_size, layer_size);
 			Eigen::TensorMap<Eigen::Tensor<TensorT, 3>> error_tensor(error, batch_size, memory_size, layer_size);
 			auto predicted_chip = predicted_tensor.chip(time_step, 1);
-      auto result = ((expected_tensor - expected_tensor.constant(TensorT(1))) * predicted_chip.exp() + expected_tensor) / (predicted_chip.exp() + expected_tensor.constant(TensorT(1))) * error_tensor.chip(time_step, 1).constant(this->scale_);
-      error_tensor.chip(time_step, 1).device(device) += (result == result).select(result.clip(this->min_, this->max_), result.constant(TensorT(0)));
+      auto predicted_dir = predicted_chip / predicted_chip.abs();
+      auto max_values = (expected_tensor < expected_tensor.constant(TensorT(0))).select(predicted_dir.cwiseMin(expected_tensor.constant(TensorT(0))), predicted_dir.cwiseMax(expected_tensor.constant(TensorT(0)))); // custom version
+      auto abs_values = -(predicted_chip.abs()); // tensorFlow and custom versions
+
+      // Temporary memory for computation
+      TensorT* tmp_data;
+      if (typeid(device).name() == typeid(Eigen::DefaultDevice).name()) {
+        tmp_data = new TensorT[batch_size * layer_size];
+      }
+#if COMPILE_WITH_CUDA
+      else if (typeid(device).name() == typeid(Eigen::GpuDevice).name()) {
+        size_t bytes = batch_size * layer_size * sizeof(TensorT);
+        assert(cudaMalloc((void**)(&tmp_data), bytes) == cudaSuccess);
+      }
+#endif
+      Eigen::TensorMap<Eigen::Tensor<TensorT, 2>> result(tmp_data, batch_size, layer_size);
+      //auto result = ((expected_tensor - expected_tensor.constant(TensorT(1))) * predicted_chip.exp() + expected_tensor) / (predicted_chip.exp() + expected_tensor.constant(TensorT(1)));
+      result.device(device) = (-predicted_chip * abs_values.exp() / ((abs_values.exp() + expected_tensor.constant(TensorT(1))) * predicted_chip.abs())) - expected_tensor.abs() + max_values;
+      auto result_scale = result * error_tensor.chip(time_step, 1).constant(this->scale_);
+      error_tensor.chip(time_step, 1).device(device) += (result_scale == result_scale).select(result_scale.clip(this->min_, this->max_), result_scale.constant(TensorT(0)));
+
+      // Deallocate temporary memory
+      if (typeid(device).name() == typeid(Eigen::DefaultDevice).name()) {
+        delete[] tmp_data;
+      }
+#if COMPILE_WITH_CUDA
+      else if (typeid(device).name() == typeid(Eigen::GpuDevice).name()) {
+        assert(cudaFree(tmp_data) == cudaSuccess);
+      }
+#endif
 		};
 	};
 

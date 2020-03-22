@@ -388,7 +388,6 @@ void main_reconstruction(const std::string& data_dir, const std::string& biochem
   model_trainer.setLossFunctionHelpers(loss_function_helpers);
   model_trainer.KL_divergence_warmup_ = KL_divergence_warmup;
 
-  // NOTE: const int n_metrics = 14; is hard coded in MetabolomicsReconstructionDataSimulator!!!
   std::vector<MetricFunctionHelper<float>> metric_function_helpers;
   MetricFunctionHelper<float> metric_function_helper1;
   metric_function_helper1.output_nodes_ = output_nodes;
