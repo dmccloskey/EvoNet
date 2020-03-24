@@ -643,8 +643,8 @@ void trainModel(const std::string& data_dir, const bool& make_model) {
   std::vector<LossFunctionHelper<float>> loss_function_helpers;
   LossFunctionHelper<float> loss_function_helper1, loss_function_helper2, loss_function_helper3, loss_function_helper4;
   loss_function_helper1.output_nodes_ = output_nodes;
-  loss_function_helper1.loss_functions_ = { std::make_shared<BCEWithLogitsLossOp<float>>(BCEWithLogitsLossOp<float>(1e-6, 1.0 / float(n_pixels))) };
-  loss_function_helper1.loss_function_grads_ = { std::make_shared<BCEWithLogitsLossGradOp<float>>(BCEWithLogitsLossGradOp<float>(1e-6, 1.0 / float(n_pixels))) };
+  loss_function_helper1.loss_functions_ = { std::make_shared<MAPELossOp<float>>(MAPELossOp<float>(1e-6, 1.0)) };
+  loss_function_helper1.loss_function_grads_ = { std::make_shared<MAPELossGradOp<float>>(MAPELossGradOp<float>(1e-6, 1.0)) };
   loss_function_helpers.push_back(loss_function_helper1);
   loss_function_helper2.output_nodes_ = encoding_nodes_mu;
   loss_function_helper2.loss_functions_ = { std::make_shared<KLDivergenceMuLossOp<float>>(KLDivergenceMuLossOp<float>(1e-6, 0.0, 0.0)) };
@@ -748,8 +748,8 @@ void traverseLatentSpace(const std::string& data_dir, const bool& make_model) {
   std::vector<LossFunctionHelper<float>> loss_function_helpers;
   LossFunctionHelper<float> loss_function_helper1;
   loss_function_helper1.output_nodes_ = output_nodes;
-  loss_function_helper1.loss_functions_ = { std::make_shared<BCEWithLogitsLossOp<float>>(BCEWithLogitsLossOp<float>(1e-6, 1.0 / float(n_pixels))) };
-  loss_function_helper1.loss_function_grads_ = { std::make_shared<BCEWithLogitsLossGradOp<float>>(BCEWithLogitsLossGradOp<float>(1e-6, 1.0 / float(n_pixels))) };
+  loss_function_helper1.loss_functions_ = { std::make_shared<MAPELossOp<float>>(MAPELossOp<float>(1e-6, 1.0)) };
+  loss_function_helper1.loss_function_grads_ = { std::make_shared<MAPELossGradOp<float>>(MAPELossGradOp<float>(1e-6, 1.0 )) };
   loss_function_helpers.push_back(loss_function_helper1);
   model_trainer.setLossFunctionHelpers(loss_function_helpers);
 
