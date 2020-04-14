@@ -163,7 +163,7 @@ public:
 
       // Increase the KL divergence beta and capacity
       TensorT beta = 1;
-      TensorT capacity_z = 5;
+      TensorT capacity_z = 0;
       if (this->KL_divergence_warmup_) {
         beta = 1 / 2.5e4 * n_epochs;
         if (beta > 1) beta = 1;

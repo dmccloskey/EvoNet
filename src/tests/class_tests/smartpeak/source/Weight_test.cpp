@@ -42,7 +42,6 @@ BOOST_AUTO_TEST_CASE(constructor2)
   BOOST_CHECK_EQUAL(weight.getWeightInitOp(), weight_init.get());
   BOOST_CHECK_EQUAL(weight.getSolverOp(), solver.get());
   BOOST_CHECK_EQUAL(weight.getWeightInitOp()->operator()(), 2.0);
-  BOOST_CHECK_CLOSE(weight.getSolverOp()->operator()(1.0, 2.0), 0.98, 1e-3);
 }
 
 BOOST_AUTO_TEST_CASE(comparison) 
@@ -85,7 +84,6 @@ BOOST_AUTO_TEST_CASE(gettersAndSetters)
   BOOST_CHECK_EQUAL(weight.getWeightInitOp(), weight_init.get());
   BOOST_CHECK_EQUAL(weight.getSolverOp(), solver.get());
   BOOST_CHECK_EQUAL(weight.getWeightInitOp()->operator()(), 2.0);
-  BOOST_CHECK_CLOSE(weight.getSolverOp()->operator()(1.0, 2.0), 0.98, 1e-3);
 
 	// Check weight after initialization
 	weight.initWeight();
