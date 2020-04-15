@@ -191,7 +191,7 @@ BOOST_AUTO_TEST_CASE(loadModelBinary2)
 
 		model_interpreter.executeBackwardPropogationOperations(0); // BP
 		model_interpreter.executeWeightErrorOperations(); // Weight error
-		model_interpreter.executeWeightUpdateOperations(); // Weight update
+		model_interpreter.executeWeightUpdateOperations(0); // Weight update
 
 		// reinitialize the model
 		if (iter != max_iter - 1) {
@@ -237,7 +237,7 @@ BOOST_AUTO_TEST_CASE(loadModelBinary2)
 
 		model_interpreter_test.executeBackwardPropogationOperations(0); // BP
 		model_interpreter_test.executeWeightErrorOperations(); // Weight error
-		model_interpreter_test.executeWeightUpdateOperations(); // Weight update
+		model_interpreter_test.executeWeightUpdateOperations(0); // Weight update
 
 		// reinitialize the model
 		if (iter != max_iter - 1) {

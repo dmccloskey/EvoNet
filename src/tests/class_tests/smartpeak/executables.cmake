@@ -59,7 +59,6 @@ set(ml_executables_list
   PopulationLogger_test
   PopulationTrainer_test
   PopulationTrainerGpu_test
-  SharedFunctions_test
   Solver_test
   SolverTensor_test
   Weight_test
