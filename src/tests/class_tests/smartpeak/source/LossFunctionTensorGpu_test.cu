@@ -9,6 +9,8 @@
 #include <SmartPeak/core/Preprocessing.h>
 #include <SmartPeak/ml/LossFunctionTensor.h>
 
+#define AssertPrint(a) if (!a) std::cout<<"Test failed"<<std::endl; // Macro to print instead of abort on test failures
+
 #include <iostream>
 
 using namespace SmartPeak;
@@ -37,10 +39,10 @@ void test_operationfunctionEuclideanDistanceOp()
 
   operation(y_pred.data(), y_true.data(), error_ptr, batch_size, memory_size, layer_size, time_step, device);
   Eigen::TensorMap<Eigen::Tensor<double, 2>> error(error_ptr, batch_size, memory_size);
-  assert(assert_close(error(0, 0), 1.0));
-  assert(assert_close(error(1, 0), 1.0));
-  assert(assert_close(error(0, 1), 0.0));
-  assert(assert_close(error(1, 1), 0.0));
+  AssertPrint(assert_close(error(0, 0), 1.0));
+  AssertPrint(assert_close(error(1, 0), 1.0));
+  AssertPrint(assert_close(error(0, 1), 0.0));
+  AssertPrint(assert_close(error(1, 1), 0.0));
 }
 
 void test_operationfunctionEuclideanDistanceGradOp()
@@ -66,14 +68,14 @@ void test_operationfunctionEuclideanDistanceGradOp()
 
   operation(y_pred.data(), y_true.data(), error_ptr, batch_size, memory_size, layer_size, time_step, device);
   Eigen::TensorMap<Eigen::Tensor<double, 3>> error(error_ptr, batch_size, memory_size, layer_size);
-  assert(assert_close(error(0, 0, 0), 0.0)); //-nan
-  assert(assert_close(error(0, 1, 0), 0.0));
-  assert(assert_close(error(1, 0, 0), -0.999999));
-  assert(assert_close(error(1, 1, 0), 0.0));
-  assert(assert_close(error(0, 0, 1), 1.0000, 1e-3));
-  assert(assert_close(error(0, 1, 1), 0.0));
-  assert(assert_close(error(1, 0, 1), 0.0));
-  assert(assert_close(error(1, 1, 1), 0.0));
+  AssertPrint(assert_close(error(0, 0, 0), 0.0)); //-nan
+  AssertPrint(assert_close(error(0, 1, 0), 0.0));
+  AssertPrint(assert_close(error(1, 0, 0), -0.999999));
+  AssertPrint(assert_close(error(1, 1, 0), 0.0));
+  AssertPrint(assert_close(error(0, 0, 1), 1.0000, 1e-3));
+  AssertPrint(assert_close(error(0, 1, 1), 0.0));
+  AssertPrint(assert_close(error(1, 0, 1), 0.0));
+  AssertPrint(assert_close(error(1, 1, 1), 0.0));
 }
 
 void test_operationfunctionL2NormOp()
@@ -99,10 +101,10 @@ void test_operationfunctionL2NormOp()
 
   operation(y_pred.data(), y_true.data(), error_ptr, batch_size, memory_size, layer_size, time_step, device);
   Eigen::TensorMap<Eigen::Tensor<double, 2>> error(error_ptr, batch_size, memory_size);
-  assert(assert_close(error(0, 0), 0.5)); //TODO
-  assert(assert_close(error(1, 0), -2.5));
-  assert(assert_close(error(0, 1), 0.0));
-  assert(assert_close(error(1, 1), 0.0));
+  AssertPrint(assert_close(error(0, 0), 0.5)); //TODO
+  AssertPrint(assert_close(error(1, 0), -2.5));
+  AssertPrint(assert_close(error(0, 1), 0.0));
+  AssertPrint(assert_close(error(1, 1), 0.0));
 }
 
 void test_operationfunctionL2NormGradOp()
@@ -128,14 +130,14 @@ void test_operationfunctionL2NormGradOp()
 
   operation(y_pred.data(), y_true.data(), error_ptr, batch_size, memory_size, layer_size, time_step, device);
   Eigen::TensorMap<Eigen::Tensor<double, 3>> error(error_ptr, batch_size, memory_size, layer_size);
-  assert(assert_close(error(0, 0, 0), 0.0));
-  assert(assert_close(error(0, 1, 0), 0.0));
-  assert(assert_close(error(1, 0, 0), -1.0));
-  assert(assert_close(error(1, 1, 0), 0.0));
-  assert(assert_close(error(0, 0, 1), 1.0));
-  assert(assert_close(error(0, 1, 1), 0.0));
-  assert(assert_close(error(1, 0, 1), 0.0));
-  assert(assert_close(error(1, 1, 1), 0.0));
+  AssertPrint(assert_close(error(0, 0, 0), 0.0));
+  AssertPrint(assert_close(error(0, 1, 0), 0.0));
+  AssertPrint(assert_close(error(1, 0, 0), -1.0));
+  AssertPrint(assert_close(error(1, 1, 0), 0.0));
+  AssertPrint(assert_close(error(0, 0, 1), 1.0));
+  AssertPrint(assert_close(error(0, 1, 1), 0.0));
+  AssertPrint(assert_close(error(1, 0, 1), 0.0));
+  AssertPrint(assert_close(error(1, 1, 1), 0.0));
 }
 
 void test_operationfunctionCrossEntropyOp()
@@ -161,10 +163,10 @@ void test_operationfunctionCrossEntropyOp()
 
   operation(y_pred.data(), y_true.data(), error_ptr, batch_size, memory_size, layer_size, time_step, device);
   Eigen::TensorMap<Eigen::Tensor<double, 2>> error(error_ptr, batch_size, memory_size);
-  assert(assert_close(error(0, 0), 4.60514975));
-  assert(assert_close(error(1, 0), 0.21071884));
-  assert(assert_close(error(0, 1), 0.0));
-  assert(assert_close(error(1, 1), 0.0));
+  AssertPrint(assert_close(error(0, 0), 4.60514975));
+  AssertPrint(assert_close(error(1, 0), 0.21071884));
+  AssertPrint(assert_close(error(0, 1), 0.0));
+  AssertPrint(assert_close(error(1, 1), 0.0));
 }
 
 void test_operationfunctionCrossEntropyGradOp()
@@ -190,14 +192,14 @@ void test_operationfunctionCrossEntropyGradOp()
 
   operation(y_pred.data(), y_true.data(), error_ptr, batch_size, memory_size, layer_size, time_step, device);
   Eigen::TensorMap<Eigen::Tensor<double, 3>> error(error_ptr, batch_size, memory_size, layer_size);
-  assert(assert_close(error(0, 0, 0), -10.0001106));
-  assert(assert_close(error(0, 1, 0), 0.0));
-  assert(assert_close(error(1, 0, 0), -1.11112344));
-  assert(assert_close(error(1, 1, 0), 0.0));
-  assert(assert_close(error(0, 0, 1), 10.0001087));
-  assert(assert_close(error(0, 1, 1), 0.0));
-  assert(assert_close(error(1, 0, 1), 1.11112344));
-  assert(assert_close(error(1, 1, 1), 0.0));
+  AssertPrint(assert_close(error(0, 0, 0), -10.0001106));
+  AssertPrint(assert_close(error(0, 1, 0), 0.0));
+  AssertPrint(assert_close(error(1, 0, 0), -1.11112344));
+  AssertPrint(assert_close(error(1, 1, 0), 0.0));
+  AssertPrint(assert_close(error(0, 0, 1), 10.0001087));
+  AssertPrint(assert_close(error(0, 1, 1), 0.0));
+  AssertPrint(assert_close(error(1, 0, 1), 1.11112344));
+  AssertPrint(assert_close(error(1, 1, 1), 0.0));
 }
 
 void test_operationfunctionNegativeLogLikelihoodOp()
@@ -223,10 +225,10 @@ void test_operationfunctionNegativeLogLikelihoodOp()
 
   operation(y_pred.data(), y_true.data(), error_ptr, batch_size, memory_size, layer_size, time_step, device);
   Eigen::TensorMap<Eigen::Tensor<double, 2>> error(error_ptr, batch_size, memory_size);
-  assert(assert_close(error(0, 0), 1.15129256));
-  assert(assert_close(error(1, 0), 0.0526802726));
-  assert(assert_close(error(0, 1), 0.0));
-  assert(assert_close(error(1, 1), 0.0));
+  AssertPrint(assert_close(error(0, 0), 1.15129256));
+  AssertPrint(assert_close(error(1, 0), 0.0526802726));
+  AssertPrint(assert_close(error(0, 1), 0.0));
+  AssertPrint(assert_close(error(1, 1), 0.0));
 }
 
 void test_operationfunctionNegativeLogLikelihoodGradOp()
@@ -252,14 +254,14 @@ void test_operationfunctionNegativeLogLikelihoodGradOp()
 
   operation(y_pred.data(), y_true.data(), error_ptr, batch_size, memory_size, layer_size, time_step, device);
   Eigen::TensorMap<Eigen::Tensor<double, 3>> error(error_ptr, batch_size, memory_size, layer_size);
-  assert(assert_close(error(0, 0, 0), -4.99994993));
-  assert(assert_close(error(0, 1, 0), 0.0));
-  assert(assert_close(error(1, 0, 0), -0.555554926));
-  assert(assert_close(error(1, 1, 0), 0.0));
-  assert(assert_close(error(0, 0, 1), 0.0));
-  assert(assert_close(error(0, 1, 1), 0.0));
-  assert(assert_close(error(1, 0, 1), 0.0));
-  assert(assert_close(error(1, 1, 1), 0.0));
+  AssertPrint(assert_close(error(0, 0, 0), -4.99994993));
+  AssertPrint(assert_close(error(0, 1, 0), 0.0));
+  AssertPrint(assert_close(error(1, 0, 0), -0.555554926));
+  AssertPrint(assert_close(error(1, 1, 0), 0.0));
+  AssertPrint(assert_close(error(0, 0, 1), 0.0));
+  AssertPrint(assert_close(error(0, 1, 1), 0.0));
+  AssertPrint(assert_close(error(1, 0, 1), 0.0));
+  AssertPrint(assert_close(error(1, 1, 1), 0.0));
 }
 
 void test_operationfunctionMSEOp()
@@ -285,10 +287,10 @@ void test_operationfunctionMSEOp()
 
   operation(y_pred.data(), y_true.data(), error_ptr, batch_size, memory_size, layer_size, time_step, device);
   Eigen::TensorMap<Eigen::Tensor<double, 2>> error(error_ptr, batch_size, memory_size);
-  assert(assert_close(error(0, 0), 0.25));
-  assert(assert_close(error(1, 0), 0.25));
-  assert(assert_close(error(0, 1), 0.0));
-  assert(assert_close(error(1, 1), 0.0));
+  AssertPrint(assert_close(error(0, 0), 0.25));
+  AssertPrint(assert_close(error(1, 0), 0.25));
+  AssertPrint(assert_close(error(0, 1), 0.0));
+  AssertPrint(assert_close(error(1, 1), 0.0));
 }
 
 void test_operationfunctionMSEGradOp()
@@ -314,14 +316,14 @@ void test_operationfunctionMSEGradOp()
 
   operation(y_pred.data(), y_true.data(), error_ptr, batch_size, memory_size, layer_size, time_step, device);
   Eigen::TensorMap<Eigen::Tensor<double, 3>> error(error_ptr, batch_size, memory_size, layer_size);
-  assert(assert_close(error(0, 0, 0), 0.0));
-  assert(assert_close(error(0, 1, 0), 0.0));
-  assert(assert_close(error(1, 0, 0), -0.5));
-  assert(assert_close(error(1, 1, 0), 0.0));
-  assert(assert_close(error(0, 0, 1), 0.5));
-  assert(assert_close(error(0, 1, 1), 0.0));
-  assert(assert_close(error(1, 0, 1), 0.0));
-  assert(assert_close(error(1, 1, 1), 0.0));
+  AssertPrint(assert_close(error(0, 0, 0), 0.0));
+  AssertPrint(assert_close(error(0, 1, 0), 0.0));
+  AssertPrint(assert_close(error(1, 0, 0), -0.5));
+  AssertPrint(assert_close(error(1, 1, 0), 0.0));
+  AssertPrint(assert_close(error(0, 0, 1), 0.5));
+  AssertPrint(assert_close(error(0, 1, 1), 0.0));
+  AssertPrint(assert_close(error(1, 0, 1), 0.0));
+  AssertPrint(assert_close(error(1, 1, 1), 0.0));
 }
 
 void test_operationfunctionMAEOp()
@@ -347,10 +349,10 @@ void test_operationfunctionMAEOp()
 
   operation(y_pred.data(), y_true.data(), error_ptr, batch_size, memory_size, layer_size, time_step, device);
   Eigen::TensorMap<Eigen::Tensor<double, 2>> error(error_ptr, batch_size, memory_size);
-  assert(assert_close(error(0, 0), 0.5));
-  assert(assert_close(error(1, 0), 0.5));
-  assert(assert_close(error(0, 1), 0.0));
-  assert(assert_close(error(1, 1), 0.0));
+  AssertPrint(assert_close(error(0, 0), 0.5));
+  AssertPrint(assert_close(error(1, 0), 0.5));
+  AssertPrint(assert_close(error(0, 1), 0.0));
+  AssertPrint(assert_close(error(1, 1), 0.0));
 }
 
 void test_operationfunctionMAEGradOp()
@@ -376,14 +378,14 @@ void test_operationfunctionMAEGradOp()
 
   operation(y_pred.data(), y_true.data(), error_ptr, batch_size, memory_size, layer_size, time_step, device);
   Eigen::TensorMap<Eigen::Tensor<double, 3>> error(error_ptr, batch_size, memory_size, layer_size);
-  assert(assert_close(error(0, 0, 0), 0.0));
-  assert(assert_close(error(0, 1, 0), 0.0));
-  assert(assert_close(error(1, 0, 0), -0.499999523));
-  assert(assert_close(error(1, 1, 0), 0.0));
-  assert(assert_close(error(0, 0, 1), 0.500000536));
-  assert(assert_close(error(0, 1, 1), 0.0));
-  assert(assert_close(error(1, 0, 1), 0.0));
-  assert(assert_close(error(1, 1, 1), 0.0));
+  AssertPrint(assert_close(error(0, 0, 0), 0.0));
+  AssertPrint(assert_close(error(0, 1, 0), 0.0));
+  AssertPrint(assert_close(error(1, 0, 0), -0.499999523));
+  AssertPrint(assert_close(error(1, 1, 0), 0.0));
+  AssertPrint(assert_close(error(0, 0, 1), 0.500000536));
+  AssertPrint(assert_close(error(0, 1, 1), 0.0));
+  AssertPrint(assert_close(error(1, 0, 1), 0.0));
+  AssertPrint(assert_close(error(1, 1, 1), 0.0));
 }
 
 void test_operationfunctionMRSEOp()
@@ -409,10 +411,10 @@ void test_operationfunctionMRSEOp()
 
   operation(y_pred.data(), y_true.data(), error_ptr, batch_size, memory_size, layer_size, time_step, device);
   Eigen::TensorMap<Eigen::Tensor<double, 2>> error(error_ptr, batch_size, memory_size);
-  assert(assert_close(error(0, 0), 1.5));
-  assert(assert_close(error(1, 0), 1.5));
-  assert(assert_close(error(0, 1), 0.0));
-  assert(assert_close(error(1, 1), 0.0));
+  AssertPrint(assert_close(error(0, 0), 1.5));
+  AssertPrint(assert_close(error(1, 0), 1.5));
+  AssertPrint(assert_close(error(0, 1), 0.0));
+  AssertPrint(assert_close(error(1, 1), 0.0));
 }
 
 void test_operationfunctionMRSEGradOp()
@@ -438,14 +440,14 @@ void test_operationfunctionMRSEGradOp()
 
   operation(y_pred.data(), y_true.data(), error_ptr, batch_size, memory_size, layer_size, time_step, device);
   Eigen::TensorMap<Eigen::Tensor<double, 3>> error(error_ptr, batch_size, memory_size, layer_size);
-  assert(assert_close(error(0, 0, 0), -499999.969));
-  assert(assert_close(error(0, 1, 0), 0.0));
-  assert(assert_close(error(1, 0, 0), -499999.969));
-  assert(assert_close(error(1, 1, 0), 0.0));
-  assert(assert_close(error(0, 0, 1), -707106.688));
-  assert(assert_close(error(0, 1, 1), 0.0));
-  assert(assert_close(error(1, 0, 1), -707106.688));
-  assert(assert_close(error(1, 1, 1), 0.0));
+  AssertPrint(assert_close(error(0, 0, 0), -499999.969));
+  AssertPrint(assert_close(error(0, 1, 0), 0.0));
+  AssertPrint(assert_close(error(1, 0, 0), -499999.969));
+  AssertPrint(assert_close(error(1, 1, 0), 0.0));
+  AssertPrint(assert_close(error(0, 0, 1), -707106.688));
+  AssertPrint(assert_close(error(0, 1, 1), 0.0));
+  AssertPrint(assert_close(error(1, 0, 1), -707106.688));
+  AssertPrint(assert_close(error(1, 1, 1), 0.0));
 }
 
 void test_operationfunctionMLEOp()
@@ -471,10 +473,10 @@ void test_operationfunctionMLEOp()
 
   operation(y_pred.data(), y_true.data(), error_ptr, batch_size, memory_size, layer_size, time_step, device);
   Eigen::TensorMap<Eigen::Tensor<double, 2>> error(error_ptr, batch_size, memory_size);
-  assert(assert_close(error(0, 0), 0.346573591));
-  assert(assert_close(error(1, 0), 0.346573591));
-  assert(assert_close(error(0, 1), 0.0));
-  assert(assert_close(error(1, 1), 0.0));
+  AssertPrint(assert_close(error(0, 0), 0.346573591));
+  AssertPrint(assert_close(error(1, 0), 0.346573591));
+  AssertPrint(assert_close(error(0, 1), 0.0));
+  AssertPrint(assert_close(error(1, 1), 0.0));
 }
 
 void test_operationfunctionMLEGradOp()
@@ -500,14 +502,14 @@ void test_operationfunctionMLEGradOp()
 
   operation(y_pred.data(), y_true.data(), error_ptr, batch_size, memory_size, layer_size, time_step, device);
   Eigen::TensorMap<Eigen::Tensor<double, 3>> error(error_ptr, batch_size, memory_size, layer_size);
-  assert(assert_close(error(0, 0, 0), -0.500000536));
-  assert(assert_close(error(0, 1, 0), 0.0));
-  assert(assert_close(error(1, 0, 0), -0.500000536));
-  assert(assert_close(error(1, 1, 0), 0.0));
-  assert(assert_close(error(0, 0, 1), -0.250000119));
-  assert(assert_close(error(0, 1, 1), 0.0));
-  assert(assert_close(error(1, 0, 1), -0.250000119));
-  assert(assert_close(error(1, 1, 1), 0.0));
+  AssertPrint(assert_close(error(0, 0, 0), -0.500000536));
+  AssertPrint(assert_close(error(0, 1, 0), 0.0));
+  AssertPrint(assert_close(error(1, 0, 0), -0.500000536));
+  AssertPrint(assert_close(error(1, 1, 0), 0.0));
+  AssertPrint(assert_close(error(0, 0, 1), -0.250000119));
+  AssertPrint(assert_close(error(0, 1, 1), 0.0));
+  AssertPrint(assert_close(error(1, 0, 1), -0.250000119));
+  AssertPrint(assert_close(error(1, 1, 1), 0.0));
 }
 
 void test_operationfunctionKLDivergenceMuOp()
@@ -534,10 +536,10 @@ void test_operationfunctionKLDivergenceMuOp()
 
   operation(y_pred.data(), y_true.data(), error_ptr, batch_size, memory_size, layer_size, time_step, device);
   Eigen::TensorMap<Eigen::Tensor<double, 2>> error(error_ptr, batch_size, memory_size);
-  assert(assert_close(error(0, 0), 0.0));
-  assert(assert_close(error(1, 0), 3.0));
-  assert(assert_close(error(0, 1), 0.0));
-  assert(assert_close(error(1, 1), 0.0));
+  AssertPrint(assert_close(error(0, 0), 0.0));
+  AssertPrint(assert_close(error(1, 0), 3.0));
+  AssertPrint(assert_close(error(0, 1), 0.0));
+  AssertPrint(assert_close(error(1, 1), 0.0));
 
 	// With capacity
 	KLDivergenceMuLossTensorOp<double, Eigen::GpuDevice> operationC(1e-3, 1, 5);
@@ -546,10 +548,10 @@ void test_operationfunctionKLDivergenceMuOp()
 
 	operationC(y_pred.data(), y_true.data(), errorC_ptr, batch_size, memory_size, layer_size, time_step, device);
 	Eigen::TensorMap<Eigen::Tensor<double, 2>> errorC(errorC_ptr, batch_size, memory_size);
-	assert(assert_close(errorC(0, 0), -5.0));
-	assert(assert_close(errorC(1, 0), -2.0));
-	assert(assert_close(errorC(0, 1), 0.0));
-	assert(assert_close(errorC(1, 1), 0.0));
+	AssertPrint(assert_close(errorC(0, 0), -5.0));
+	AssertPrint(assert_close(errorC(1, 0), -2.0));
+	AssertPrint(assert_close(errorC(0, 1), 0.0));
+	AssertPrint(assert_close(errorC(1, 1), 0.0));
 }
 
 void test_operationfunctionKLDivergenceMuGradOp()
@@ -576,14 +578,14 @@ void test_operationfunctionKLDivergenceMuGradOp()
 
   operation(y_pred.data(), y_true.data(), error_ptr, batch_size, memory_size, layer_size, time_step, device);
   Eigen::TensorMap<Eigen::Tensor<double, 3>> error(error_ptr, batch_size, memory_size, layer_size);
-  assert(assert_close(error(0, 0, 0), -2.0));
-  assert(assert_close(error(0, 1, 0), 0.0));
-  assert(assert_close(error(1, 0, 0), -4.0));
-  assert(assert_close(error(1, 1, 0), 0.0));
-  assert(assert_close(error(0, 0, 1), -2.0));
-  assert(assert_close(error(0, 1, 1), 0.0));
-  assert(assert_close(error(1, 0, 1), -4.0));
-  assert(assert_close(error(1, 1, 1), 0.0));
+  AssertPrint(assert_close(error(0, 0, 0), -2.0));
+  AssertPrint(assert_close(error(0, 1, 0), 0.0));
+  AssertPrint(assert_close(error(1, 0, 0), -4.0));
+  AssertPrint(assert_close(error(1, 1, 0), 0.0));
+  AssertPrint(assert_close(error(0, 0, 1), -2.0));
+  AssertPrint(assert_close(error(0, 1, 1), 0.0));
+  AssertPrint(assert_close(error(1, 0, 1), -4.0));
+  AssertPrint(assert_close(error(1, 1, 1), 0.0));
 
 	// With capacity
 	KLDivergenceMuLossGradTensorOp<double, Eigen::GpuDevice> operationC(1e-6, 1, 5);
@@ -592,14 +594,14 @@ void test_operationfunctionKLDivergenceMuGradOp()
 
 	operationC(y_pred.data(), y_true.data(), errorC_ptr, batch_size, memory_size, layer_size, time_step, device);
 	Eigen::TensorMap<Eigen::Tensor<double, 3>> errorC(errorC_ptr, batch_size, memory_size, layer_size);
-	assert(assert_close(errorC(0, 0, 0), 3.0));
-	assert(assert_close(errorC(0, 1, 0), 0.0));
-	assert(assert_close(errorC(1, 0, 0), 1.0));
-	assert(assert_close(errorC(1, 1, 0), 0.0));
-	assert(assert_close(errorC(0, 0, 1), 3.0));
-	assert(assert_close(errorC(0, 1, 1), 0.0));
-	assert(assert_close(errorC(1, 0, 1), 1.0));
-	assert(assert_close(errorC(1, 1, 1), 0.0));
+	AssertPrint(assert_close(errorC(0, 0, 0), 3.0));
+	AssertPrint(assert_close(errorC(0, 1, 0), 0.0));
+	AssertPrint(assert_close(errorC(1, 0, 0), 1.0));
+	AssertPrint(assert_close(errorC(1, 1, 0), 0.0));
+	AssertPrint(assert_close(errorC(0, 0, 1), 3.0));
+	AssertPrint(assert_close(errorC(0, 1, 1), 0.0));
+	AssertPrint(assert_close(errorC(1, 0, 1), 1.0));
+	AssertPrint(assert_close(errorC(1, 1, 1), 0.0));
 }
 
 void test_operationfunctionKLDivergenceLogVarOp2()
@@ -626,10 +628,10 @@ void test_operationfunctionKLDivergenceLogVarOp2()
 
   operation(y_pred.data(), y_true.data(), error_ptr, batch_size, memory_size, layer_size, time_step, device);
   Eigen::TensorMap<Eigen::Tensor<double, 2>> error(error_ptr, batch_size, memory_size);
-  assert(assert_close(error(0, 0), 1.29744244));
-  assert(assert_close(error(1, 0), 2.43656349));
-  assert(assert_close(error(0, 1), 0.0));
-  assert(assert_close(error(1, 1), 0.0));
+  AssertPrint(assert_close(error(0, 0), 1.29744244));
+  AssertPrint(assert_close(error(1, 0), 2.43656349));
+  AssertPrint(assert_close(error(0, 1), 0.0));
+  AssertPrint(assert_close(error(1, 1), 0.0));
 
 	// With capacity
 	KLDivergenceLogVarLossTensorOp<double, Eigen::GpuDevice> operationC(1e-3, 1, 5);
@@ -638,10 +640,10 @@ void test_operationfunctionKLDivergenceLogVarOp2()
 
 	operationC(y_pred.data(), y_true.data(), errorC_ptr, batch_size, memory_size, layer_size, time_step, device);
 	Eigen::TensorMap<Eigen::Tensor<double, 2>> errorC(errorC_ptr, batch_size, memory_size);
-	assert(assert_close(errorC(0, 0), -3.70255756));
-	assert(assert_close(errorC(1, 0), -2.56343651));
-	assert(assert_close(errorC(0, 1), 0.0));
-	assert(assert_close(errorC(1, 1), 0.0));
+	AssertPrint(assert_close(errorC(0, 0), -3.70255756));
+	AssertPrint(assert_close(errorC(1, 0), -2.56343651));
+	AssertPrint(assert_close(errorC(0, 1), 0.0));
+	AssertPrint(assert_close(errorC(1, 1), 0.0));
 }
 
 void test_operationfunctionKLDivergenceLogVarGradOp()
@@ -668,14 +670,14 @@ void test_operationfunctionKLDivergenceLogVarGradOp()
 
   operation(y_pred.data(), y_true.data(), error_ptr, batch_size, memory_size, layer_size, time_step, device);
   Eigen::TensorMap<Eigen::Tensor<double, 3>> error(error_ptr, batch_size, memory_size, layer_size);
-  assert(assert_close(error(0, 0, 0), -1.14872122));
-  assert(assert_close(error(0, 1, 0), 0.0));
-  assert(assert_close(error(1, 0, 0), -2.21828175));
-  assert(assert_close(error(1, 1, 0), 0.0));
-  assert(assert_close(error(0, 0, 1), -1.14872122));
-  assert(assert_close(error(0, 1, 1), 0.0));
-  assert(assert_close(error(1, 0, 1), -2.21828175));
-  assert(assert_close(error(1, 1, 1), 0.0));
+  AssertPrint(assert_close(error(0, 0, 0), -1.14872122));
+  AssertPrint(assert_close(error(0, 1, 0), 0.0));
+  AssertPrint(assert_close(error(1, 0, 0), -2.21828175));
+  AssertPrint(assert_close(error(1, 1, 0), 0.0));
+  AssertPrint(assert_close(error(0, 0, 1), -1.14872122));
+  AssertPrint(assert_close(error(0, 1, 1), 0.0));
+  AssertPrint(assert_close(error(1, 0, 1), -2.21828175));
+  AssertPrint(assert_close(error(1, 1, 1), 0.0));
 
 	// With capacity
 	KLDivergenceLogVarLossGradTensorOp<double, Eigen::GpuDevice> operationC(1e-6, 1, 5);
@@ -684,14 +686,14 @@ void test_operationfunctionKLDivergenceLogVarGradOp()
 
 	operationC(y_pred.data(), y_true.data(), errorC_ptr, batch_size, memory_size, layer_size, time_step, device);
 	Eigen::TensorMap<Eigen::Tensor<double, 3>> errorC(errorC_ptr, batch_size, memory_size, layer_size);
-	assert(assert_close(errorC(0, 0, 0), 3.85127878));
-	assert(assert_close(errorC(0, 1, 0), 0.0));
-	assert(assert_close(errorC(1, 0, 0), 2.78171825));
-	assert(assert_close(errorC(1, 1, 0), 0.0));
-	assert(assert_close(errorC(0, 0, 1), 3.85127878));
-	assert(assert_close(errorC(0, 1, 1), 0.0));
-	assert(assert_close(errorC(1, 0, 1), 2.78171825));
-	assert(assert_close(errorC(1, 1, 1), 0.0));
+	AssertPrint(assert_close(errorC(0, 0, 0), 3.85127878));
+	AssertPrint(assert_close(errorC(0, 1, 0), 0.0));
+	AssertPrint(assert_close(errorC(1, 0, 0), 2.78171825));
+	AssertPrint(assert_close(errorC(1, 1, 0), 0.0));
+	AssertPrint(assert_close(errorC(0, 0, 1), 3.85127878));
+	AssertPrint(assert_close(errorC(0, 1, 1), 0.0));
+	AssertPrint(assert_close(errorC(1, 0, 1), 2.78171825));
+	AssertPrint(assert_close(errorC(1, 1, 1), 0.0));
 }
 
 void test_operationfunctionBCEWithLogitsOp()
@@ -717,10 +719,10 @@ void test_operationfunctionBCEWithLogitsOp()
 
   operation(y_pred.data(), y_true.data(), error_ptr, batch_size, memory_size, layer_size, time_step, device);
   Eigen::TensorMap<Eigen::Tensor<double, 2>> error(error_ptr, batch_size, memory_size);
-  assert(assert_close(error(0, 0), 2.44018984));
-  assert(assert_close(error(1, 0), 1.44018972));
-  assert(assert_close(error(0, 1), 0.0));
-  assert(assert_close(error(1, 1), 0.0));
+  AssertPrint(assert_close(error(0, 0), 2.44018984));
+  AssertPrint(assert_close(error(1, 0), 1.44018972));
+  AssertPrint(assert_close(error(0, 1), 0.0));
+  AssertPrint(assert_close(error(1, 1), 0.0));
 }
 
 void test_operationfunctionBCEWithLogitsGradOp()
@@ -746,14 +748,14 @@ void test_operationfunctionBCEWithLogitsGradOp()
 
   operation(y_pred.data(), y_true.data(), error_ptr, batch_size, memory_size, layer_size, time_step, device);
   Eigen::TensorMap<Eigen::Tensor<double, 3>> error(error_ptr, batch_size, memory_size, layer_size);
-  assert(assert_close(error(0, 0, 0), 0.268941432));
-  assert(assert_close(error(0, 1, 0), 0.0));
-  assert(assert_close(error(1, 0, 0), -0.731058598));
-  assert(assert_close(error(1, 1, 0), 0.0));
-  assert(assert_close(error(0, 0, 1), -0.880797088));
-  assert(assert_close(error(0, 1, 1), 0.0));
-  assert(assert_close(error(1, 0, 1), 0.119202919));
-  assert(assert_close(error(1, 1, 1), 0.0));
+  AssertPrint(assert_close(error(0, 0, 0), 0.268941432));
+  AssertPrint(assert_close(error(0, 1, 0), 0.0));
+  AssertPrint(assert_close(error(1, 0, 0), -0.731058598));
+  AssertPrint(assert_close(error(1, 1, 0), 0.0));
+  AssertPrint(assert_close(error(0, 0, 1), -0.880797088));
+  AssertPrint(assert_close(error(0, 1, 1), 0.0));
+  AssertPrint(assert_close(error(1, 0, 1), 0.119202919));
+  AssertPrint(assert_close(error(1, 1, 1), 0.0));
 }
 
 void test_operationfunctionCrossEntropyWithLogitsOp1()
@@ -782,14 +784,14 @@ void test_operationfunctionCrossEntropyWithLogitsOp1()
 
   operation(y_pred.data(), y_true.data(), error_ptr, batch_size, memory_size, layer_size, time_step, device);
   Eigen::TensorMap<Eigen::Tensor<double, 2>> error(error_ptr, batch_size, memory_size);
-  //assert(assert_close(error(0, 0), 0.656630814));
-  //assert(assert_close(error(1, 0), 0.156630829));
-  //assert(assert_close(error(0, 1), 0.0));
-  //assert(assert_close(error(1, 1), 0.0));
-  assert(assert_close(error(0, 0), 1.15129054));
-  assert(assert_close(error(1, 0), 0.0526805036));
-  assert(assert_close(error(0, 1), 0.0));
-  assert(assert_close(error(1, 1), 0.0));
+  //AssertPrint(assert_close(error(0, 0), 0.656630814));
+  //AssertPrint(assert_close(error(1, 0), 0.156630829));
+  //AssertPrint(assert_close(error(0, 1), 0.0));
+  //AssertPrint(assert_close(error(1, 1), 0.0));
+  AssertPrint(assert_close(error(0, 0), 1.15129054));
+  AssertPrint(assert_close(error(1, 0), 0.0526805036));
+  AssertPrint(assert_close(error(0, 1), 0.0));
+  AssertPrint(assert_close(error(1, 1), 0.0));
 }
 
 void test_operationfunctionCrossEntropyWithLogitsGradOp1()
@@ -818,32 +820,32 @@ void test_operationfunctionCrossEntropyWithLogitsGradOp1()
 
   operation(y_pred.data(), y_true.data(), error_ptr, batch_size, memory_size, layer_size, time_step, device);
   Eigen::TensorMap<Eigen::Tensor<double, 3>> error(error_ptr, batch_size, memory_size, layer_size);
-  //assert(assert_close(error(0, 0, 0), 0.0));
-  //assert(assert_close(error(0, 1, 0), 0.0));
-  //assert(assert_close(error(1, 0, 0), -0.5));
-  //assert(assert_close(error(1, 1, 0), 0.0));
-  //assert(assert_close(error(0, 0, 1), -1.0));
-  //assert(assert_close(error(0, 1, 1), 0.0));
-  //assert(assert_close(error(1, 0, 1), -0.5));
-  //assert(assert_close(error(1, 1, 1), 0.0));
+  //AssertPrint(assert_close(error(0, 0, 0), 0.0));
+  //AssertPrint(assert_close(error(0, 1, 0), 0.0));
+  //AssertPrint(assert_close(error(1, 0, 0), -0.5));
+  //AssertPrint(assert_close(error(1, 1, 0), 0.0));
+  //AssertPrint(assert_close(error(0, 0, 1), -1.0));
+  //AssertPrint(assert_close(error(0, 1, 1), 0.0));
+  //AssertPrint(assert_close(error(1, 0, 1), -0.5));
+  //AssertPrint(assert_close(error(1, 1, 1), 0.0));
   // Option 1
-  assert(assert_close(error(0, 0, 0), 0.5)); // NegLogLiklihoodGrad = -4.99994993
-  assert(assert_close(error(0, 1, 0), 0.0));
-  assert(assert_close(error(1, 0, 0), -0.598610044)); // NegLogLiklihoodGrad = -0.555554926
-  assert(assert_close(error(1, 1, 0), 0.0));
-  assert(assert_close(error(0, 0, 1), -1.09861004));
-  assert(assert_close(error(0, 1, 1), 0.0));
-  assert(assert_close(error(1, 0, 1), 0.0));
-  assert(assert_close(error(1, 1, 1), 0.0));
+  AssertPrint(assert_close(error(0, 0, 0), 0.5)); // NegLogLiklihoodGrad = -4.99994993
+  AssertPrint(assert_close(error(0, 1, 0), 0.0));
+  AssertPrint(assert_close(error(1, 0, 0), -0.598610044)); // NegLogLiklihoodGrad = -0.555554926
+  AssertPrint(assert_close(error(1, 1, 0), 0.0));
+  AssertPrint(assert_close(error(0, 0, 1), -1.09861004));
+  AssertPrint(assert_close(error(0, 1, 1), 0.0));
+  AssertPrint(assert_close(error(1, 0, 1), 0.0));
+  AssertPrint(assert_close(error(1, 1, 1), 0.0));
   //// Option 2
-  //assert(assert_close(error(0, 0, 0), -4.9999299));
-  //assert(assert_close(error(0, 1, 0), 0.0));
-  //assert(assert_close(error(1, 0, 0), -0.555555224));
-  //assert(assert_close(error(1, 1, 0), 0.0));
-  //assert(assert_close(error(0, 0, 1), 0.0));
-  //assert(assert_close(error(0, 1, 1), 0.0));
-  //assert(assert_close(error(1, 0, 1), 0.0));
-  //assert(assert_close(error(1, 1, 1), 0.0));
+  //AssertPrint(assert_close(error(0, 0, 0), -4.9999299));
+  //AssertPrint(assert_close(error(0, 1, 0), 0.0));
+  //AssertPrint(assert_close(error(1, 0, 0), -0.555555224));
+  //AssertPrint(assert_close(error(1, 1, 0), 0.0));
+  //AssertPrint(assert_close(error(0, 0, 1), 0.0));
+  //AssertPrint(assert_close(error(0, 1, 1), 0.0));
+  //AssertPrint(assert_close(error(1, 0, 1), 0.0));
+  //AssertPrint(assert_close(error(1, 1, 1), 0.0));
 }
 
 void test_operationfunctionMSERangeUBOp()
@@ -869,10 +871,10 @@ void test_operationfunctionMSERangeUBOp()
 
   operation(y_pred.data(), y_true.data(), error_ptr, batch_size, memory_size, layer_size, time_step, device);
   Eigen::TensorMap<Eigen::Tensor<double, 2>> error(error_ptr, batch_size, memory_size);
-  assert(assert_close(error(0, 0), 0.25));
-  assert(assert_close(error(1, 0), 0.0));
-  assert(assert_close(error(0, 1), 0.0));
-  assert(assert_close(error(1, 1), 0.0));
+  AssertPrint(assert_close(error(0, 0), 0.25));
+  AssertPrint(assert_close(error(1, 0), 0.0));
+  AssertPrint(assert_close(error(0, 1), 0.0));
+  AssertPrint(assert_close(error(1, 1), 0.0));
 }
 
 void test_operationfunctionMSERangeUBGradOp()
@@ -898,14 +900,14 @@ void test_operationfunctionMSERangeUBGradOp()
 
   operation(y_pred.data(), y_true.data(), error_ptr, batch_size, memory_size, layer_size, time_step, device);
   Eigen::TensorMap<Eigen::Tensor<double, 3>> error(error_ptr, batch_size, memory_size, layer_size);
-  assert(assert_close(error(0, 0, 0), 0.0));
-  assert(assert_close(error(0, 1, 0), 0.0));
-  assert(assert_close(error(1, 0, 0), 0.0));
-  assert(assert_close(error(1, 1, 0), 0.0));
-  assert(assert_close(error(0, 0, 1), -0.5));
-  assert(assert_close(error(0, 1, 1), 0.0));
-  assert(assert_close(error(1, 0, 1), 0.0));
-  assert(assert_close(error(1, 1, 1), 0.0));
+  AssertPrint(assert_close(error(0, 0, 0), 0.0));
+  AssertPrint(assert_close(error(0, 1, 0), 0.0));
+  AssertPrint(assert_close(error(1, 0, 0), 0.0));
+  AssertPrint(assert_close(error(1, 1, 0), 0.0));
+  AssertPrint(assert_close(error(0, 0, 1), -0.5));
+  AssertPrint(assert_close(error(0, 1, 1), 0.0));
+  AssertPrint(assert_close(error(1, 0, 1), 0.0));
+  AssertPrint(assert_close(error(1, 1, 1), 0.0));
 }
 
 void test_operationfunctionMSERangeLBOp()
@@ -931,10 +933,10 @@ void test_operationfunctionMSERangeLBOp()
 
   operation(y_pred.data(), y_true.data(), error_ptr, batch_size, memory_size, layer_size, time_step, device);
   Eigen::TensorMap<Eigen::Tensor<double, 2>> error(error_ptr, batch_size, memory_size);
-  assert(assert_close(error(0, 0), 0.0));
-  assert(assert_close(error(1, 0), 0.25));
-  assert(assert_close(error(0, 1), 0.0));
-  assert(assert_close(error(1, 1), 0.0));
+  AssertPrint(assert_close(error(0, 0), 0.0));
+  AssertPrint(assert_close(error(1, 0), 0.25));
+  AssertPrint(assert_close(error(0, 1), 0.0));
+  AssertPrint(assert_close(error(1, 1), 0.0));
 }
 
 void test_operationfunctionMSERangeLBGradOp()
@@ -960,14 +962,14 @@ void test_operationfunctionMSERangeLBGradOp()
 
   operation(y_pred.data(), y_true.data(), error_ptr, batch_size, memory_size, layer_size, time_step, device);
   Eigen::TensorMap<Eigen::Tensor<double, 3>> error(error_ptr, batch_size, memory_size, layer_size);
-  assert(assert_close(error(0, 0, 0), 0.0));
-  assert(assert_close(error(0, 1, 0), 0.0));
-  assert(assert_close(error(1, 0, 0), 0.5));
-  assert(assert_close(error(1, 1, 0), 0.0));
-  assert(assert_close(error(0, 0, 1), 0.0));
-  assert(assert_close(error(0, 1, 1), 0.0));
-  assert(assert_close(error(1, 0, 1), 0.0));
-  assert(assert_close(error(1, 1, 1), 0.0));
+  AssertPrint(assert_close(error(0, 0, 0), 0.0));
+  AssertPrint(assert_close(error(0, 1, 0), 0.0));
+  AssertPrint(assert_close(error(1, 0, 0), 0.5));
+  AssertPrint(assert_close(error(1, 1, 0), 0.0));
+  AssertPrint(assert_close(error(0, 0, 1), 0.0));
+  AssertPrint(assert_close(error(0, 1, 1), 0.0));
+  AssertPrint(assert_close(error(1, 0, 1), 0.0));
+  AssertPrint(assert_close(error(1, 1, 1), 0.0));
 }
 
 void test_operationfunctionKLDivergenceCatOp()
@@ -994,10 +996,10 @@ void test_operationfunctionKLDivergenceCatOp()
 
   operation(y_pred.data(), y_true.data(), error_ptr, batch_size, memory_size, layer_size, time_step, device);
   Eigen::TensorMap<Eigen::Tensor<double, 2>> error(error_ptr, batch_size, memory_size);
-  assert(assert_close(error(0, 0), 6.12971067));
-  assert(assert_close(error(1, 0), 30.2493725));
-  assert(assert_close(error(0, 1), 0.0));
-  assert(assert_close(error(1, 1), 0.0));
+  AssertPrint(assert_close(error(0, 0), 6.12971067));
+  AssertPrint(assert_close(error(1, 0), 30.2493725));
+  AssertPrint(assert_close(error(0, 1), 0.0));
+  AssertPrint(assert_close(error(1, 1), 0.0));
 
 	// With capacity
 	KLDivergenceCatLossTensorOp<double, Eigen::GpuDevice> operationC(1e-3, 1, 5);
@@ -1006,10 +1008,10 @@ void test_operationfunctionKLDivergenceCatOp()
 
 	operationC(y_pred.data(), y_true.data(), errorC_ptr, batch_size, memory_size, layer_size, time_step, device);
 	Eigen::TensorMap<Eigen::Tensor<double, 2>> errorC(errorC_ptr, batch_size, memory_size);
-	assert(assert_close(errorC(0, 0), 5.43656349));
-	assert(assert_close(errorC(1, 0), 29.5562248));
-	assert(assert_close(errorC(0, 1), 0.0));
-	assert(assert_close(errorC(1, 1), 0.0));
+	AssertPrint(assert_close(errorC(0, 0), 5.43656349));
+	AssertPrint(assert_close(errorC(1, 0), 29.5562248));
+	AssertPrint(assert_close(errorC(0, 1), 0.0));
+	AssertPrint(assert_close(errorC(1, 1), 0.0));
 }
 
 void test_operationfunctionKLDivergenceCatGradOp()
@@ -1036,14 +1038,14 @@ void test_operationfunctionKLDivergenceCatGradOp()
 
   operation(y_pred.data(), y_true.data(), error_ptr, batch_size, memory_size, layer_size, time_step, device);
   Eigen::TensorMap<Eigen::Tensor<double, 3>> error(error_ptr, batch_size, memory_size, layer_size);
-  assert(assert_close(error(0, 0, 0), -5.43656349));
-  assert(assert_close(error(0, 1, 0), 0.0));
-  assert(assert_close(error(1, 0, 0), -22.1671677));
-  assert(assert_close(error(1, 1, 0), 0.0));
-  assert(assert_close(error(0, 0, 1), -5.43656349));
-  assert(assert_close(error(0, 1, 1), 0.0));
-  assert(assert_close(error(1, 0, 1), -22.1671677));
-  assert(assert_close(error(1, 1, 1), 0.0));
+  AssertPrint(assert_close(error(0, 0, 0), -5.43656349));
+  AssertPrint(assert_close(error(0, 1, 0), 0.0));
+  AssertPrint(assert_close(error(1, 0, 0), -22.1671677));
+  AssertPrint(assert_close(error(1, 1, 0), 0.0));
+  AssertPrint(assert_close(error(0, 0, 1), -5.43656349));
+  AssertPrint(assert_close(error(0, 1, 1), 0.0));
+  AssertPrint(assert_close(error(1, 0, 1), -22.1671677));
+  AssertPrint(assert_close(error(1, 1, 1), 0.0));
 
 	// With capacity
 	KLDivergenceCatLossGradTensorOp<double, Eigen::GpuDevice> operationC(1e-6, 1, 5);
@@ -1052,14 +1054,14 @@ void test_operationfunctionKLDivergenceCatGradOp()
 
 	operationC(y_pred.data(), y_true.data(), errorC_ptr, batch_size, memory_size, layer_size, time_step, device);
 	Eigen::TensorMap<Eigen::Tensor<double, 3>> errorC(errorC_ptr, batch_size, memory_size, layer_size);
-	assert(assert_close(errorC(0, 0, 0), -4.74341631));
-	assert(assert_close(errorC(0, 1, 0), 0.0));
-	assert(assert_close(errorC(1, 0, 0), -21.47402));
-	assert(assert_close(errorC(1, 1, 0), 0.0));
-	assert(assert_close(errorC(0, 0, 1), -4.74341631));
-	assert(assert_close(errorC(0, 1, 1), 0.0));
-	assert(assert_close(errorC(1, 0, 1), -21.47402));
-	assert(assert_close(errorC(1, 1, 1), 0.0));
+	AssertPrint(assert_close(errorC(0, 0, 0), -4.74341631));
+	AssertPrint(assert_close(errorC(0, 1, 0), 0.0));
+	AssertPrint(assert_close(errorC(1, 0, 0), -21.47402));
+	AssertPrint(assert_close(errorC(1, 1, 0), 0.0));
+	AssertPrint(assert_close(errorC(0, 0, 1), -4.74341631));
+	AssertPrint(assert_close(errorC(0, 1, 1), 0.0));
+	AssertPrint(assert_close(errorC(1, 0, 1), -21.47402));
+	AssertPrint(assert_close(errorC(1, 1, 1), 0.0));
 }
 
 void test_operationfunctionMAPELossOp()
@@ -1085,10 +1087,10 @@ void test_operationfunctionMAPELossOp()
 
   operation(y_pred.data(), y_true.data(), error_ptr, batch_size, memory_size, layer_size, time_step, device);
   Eigen::TensorMap<Eigen::Tensor<double, 2>> error(error_ptr, batch_size, memory_size);
-  assert(assert_close(error(0, 0), 0.249999881));
-  assert(assert_close(error(1, 0), 0.499999523));
-  assert(assert_close(error(0, 1), 0.0));
-  assert(assert_close(error(1, 1), 0.0));
+  AssertPrint(assert_close(error(0, 0), 0.249999881));
+  AssertPrint(assert_close(error(1, 0), 0.499999523));
+  AssertPrint(assert_close(error(0, 1), 0.0));
+  AssertPrint(assert_close(error(1, 1), 0.0));
 }
 
 void test_operationfunctionMAPELossGradOp()
@@ -1114,14 +1116,14 @@ void test_operationfunctionMAPELossGradOp()
 
   operation(y_pred.data(), y_true.data(), error_ptr, batch_size, memory_size, layer_size, time_step, device);
   Eigen::TensorMap<Eigen::Tensor<double, 3>> error(error_ptr, batch_size, memory_size, layer_size);
-  assert(assert_close(error(0, 0, 0), 0.0));
-  assert(assert_close(error(0, 1, 0), 0.0));
-  assert(assert_close(error(1, 0, 0), -0.499999046));
-  assert(assert_close(error(1, 1, 0), 0.0));
-  assert(assert_close(error(0, 0, 1), 0.250000149));
-  assert(assert_close(error(0, 1, 1), 0.0));
-  assert(assert_close(error(1, 0, 1), 0.0));
-  assert(assert_close(error(1, 1, 1), 0.0));
+  AssertPrint(assert_close(error(0, 0, 0), 0.0));
+  AssertPrint(assert_close(error(0, 1, 0), 0.0));
+  AssertPrint(assert_close(error(1, 0, 0), -0.499999046));
+  AssertPrint(assert_close(error(1, 1, 0), 0.0));
+  AssertPrint(assert_close(error(0, 0, 1), 0.250000149));
+  AssertPrint(assert_close(error(0, 1, 1), 0.0));
+  AssertPrint(assert_close(error(1, 0, 1), 0.0));
+  AssertPrint(assert_close(error(1, 1, 1), 0.0));
 }
 
 int main(int argc, char** argv)

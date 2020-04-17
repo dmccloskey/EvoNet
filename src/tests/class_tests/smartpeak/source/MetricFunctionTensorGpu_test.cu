@@ -4,6 +4,8 @@
 #include <SmartPeak/core/Preprocessing.h>
 #include <SmartPeak/ml/MetricFunctionTensor.h>
 
+#define AssertPrint(a) if (!a) std::cout<<"Test failed"<<std::endl; // Macro to print instead of abort on test failures
+
 #include <iostream>
 
 using namespace SmartPeak;
@@ -29,14 +31,14 @@ void test_operationfunctionAccuracyBCOp(){
     });
 
   double error_ptr[] = { 0, 0, 0, 0 };
-  cudaStream_t stream; assert(cudaStreamCreateWithFlags(&stream, cudaStreamNonBlocking) == cudaSuccess); Eigen::GpuStreamDevice stream_device(&stream, 0.0); Eigen::GpuDevice device(&stream_device);
+  cudaStream_t stream; AssertPrint(cudaStreamCreateWithFlags(&stream, cudaStreamNonBlocking) == cudaSuccess); Eigen::GpuStreamDevice stream_device(&stream, 0.0); Eigen::GpuDevice device(&stream_device);
 
   operation(y_pred.data(), y_true.data(), error_ptr, batch_size, memory_size, layer_size, n_metrics, time_step, metric_index, device);
   Eigen::TensorMap<Eigen::Tensor<double, 2>> error(error_ptr, n_metrics, memory_size);
-  assert(assert_close(error(0, 0.0), 0.0));
-  assert(assert_close(error(1, 0.0), 0.5));
-  assert(assert_close(error(0, 1), 0.0));
-  assert(assert_close(error(1, 1), 0.0));
+  AssertPrint(assert_close(error(0, 0), 0.0));
+  AssertPrint(assert_close(error(1, 0), 0.5));
+  AssertPrint(assert_close(error(0, 1), 0.0));
+  AssertPrint(assert_close(error(1, 1), 0.0));
 }
 
 void test_operationfunctionAccuracyMCMicroOp()
@@ -60,14 +62,14 @@ void test_operationfunctionAccuracyMCMicroOp()
     });
 
   double error_ptr[] = { 0, 0, 0, 0 };
-  cudaStream_t stream; assert(cudaStreamCreateWithFlags(&stream, cudaStreamNonBlocking) == cudaSuccess); Eigen::GpuStreamDevice stream_device(&stream, 0.0); Eigen::GpuDevice device(&stream_device);
+  cudaStream_t stream; AssertPrint(cudaStreamCreateWithFlags(&stream, cudaStreamNonBlocking) == cudaSuccess); Eigen::GpuStreamDevice stream_device(&stream, 0.0); Eigen::GpuDevice device(&stream_device);
 
   operation(y_pred.data(), y_true.data(), error_ptr, batch_size, memory_size, layer_size, n_metrics, time_step, metric_index, device);
   Eigen::TensorMap<Eigen::Tensor<double, 2>> error(error_ptr, n_metrics, memory_size);
-  assert(assert_close(error(0, 0.0), 0.0));
-  assert(assert_close(error(1, 0.0), 0.75));
-  assert(assert_close(error(0, 1), 0.0));
-  assert(assert_close(error(1, 1), 0.0));
+  AssertPrint(assert_close(error(0, 0), 0.0));
+  AssertPrint(assert_close(error(1, 0), 0.75));
+  AssertPrint(assert_close(error(0, 1), 0.0));
+  AssertPrint(assert_close(error(1, 1), 0.0));
 }
 
 void test_operationfunctionAccuracyMCMacroOp()
@@ -91,14 +93,14 @@ void test_operationfunctionAccuracyMCMacroOp()
     });
 
   double error_ptr[] = { 0, 0, 0, 0 };
-  cudaStream_t stream; assert(cudaStreamCreateWithFlags(&stream, cudaStreamNonBlocking) == cudaSuccess); Eigen::GpuStreamDevice stream_device(&stream, 0.0); Eigen::GpuDevice device(&stream_device);
+  cudaStream_t stream; AssertPrint(cudaStreamCreateWithFlags(&stream, cudaStreamNonBlocking) == cudaSuccess); Eigen::GpuStreamDevice stream_device(&stream, 0.0); Eigen::GpuDevice device(&stream_device);
 
   operation(y_pred.data(), y_true.data(), error_ptr, batch_size, memory_size, layer_size, n_metrics, time_step, metric_index, device);
   Eigen::TensorMap<Eigen::Tensor<double, 2>> error(error_ptr, n_metrics, memory_size);
-  //assert(assert_close(error(0, 0.0), 0.0));
-  //assert(assert_close(error(1, 0.0), 0.5));
-  //assert(assert_close(error(0, 1), 0.0));
-  //assert(assert_close(error(1, 1), 0.0));
+  //AssertPrint(assert_close(error(0, 0), 0.0));
+  //AssertPrint(assert_close(error(1, 0), 0.5));
+  //AssertPrint(assert_close(error(0, 1), 0.0));
+  //AssertPrint(assert_close(error(1, 1), 0.0));
 }
 
 void test_operationfunctionPrecisionBCOp()
@@ -122,14 +124,14 @@ void test_operationfunctionPrecisionBCOp()
     });
 
   double error_ptr[] = { 0, 0, 0, 0 };
-  cudaStream_t stream; assert(cudaStreamCreateWithFlags(&stream, cudaStreamNonBlocking) == cudaSuccess); Eigen::GpuStreamDevice stream_device(&stream, 0.0); Eigen::GpuDevice device(&stream_device);
+  cudaStream_t stream; AssertPrint(cudaStreamCreateWithFlags(&stream, cudaStreamNonBlocking) == cudaSuccess); Eigen::GpuStreamDevice stream_device(&stream, 0.0); Eigen::GpuDevice device(&stream_device);
 
   operation(y_pred.data(), y_true.data(), error_ptr, batch_size, memory_size, layer_size, n_metrics, time_step, metric_index, device);
   Eigen::TensorMap<Eigen::Tensor<double, 2>> error(error_ptr, n_metrics, memory_size);
-  assert(assert_close(error(0, 0.0), 0.0));
-  assert(assert_close(error(1, 0.0), 0.25));
-  assert(assert_close(error(0, 1), 0.0));
-  assert(assert_close(error(1, 1), 0.0));
+  AssertPrint(assert_close(error(0, 0), 0.0));
+  AssertPrint(assert_close(error(1, 0), 0.25));
+  AssertPrint(assert_close(error(0, 1), 0.0));
+  AssertPrint(assert_close(error(1, 1), 0.0));
 }
 
 void test_operationfunctionPrecisionMCMicroOp()
@@ -153,14 +155,14 @@ void test_operationfunctionPrecisionMCMicroOp()
     });
 
   double error_ptr[] = { 0, 0, 0, 0 };
-  cudaStream_t stream; assert(cudaStreamCreateWithFlags(&stream, cudaStreamNonBlocking) == cudaSuccess); Eigen::GpuStreamDevice stream_device(&stream, 0.0); Eigen::GpuDevice device(&stream_device);
+  cudaStream_t stream; AssertPrint(cudaStreamCreateWithFlags(&stream, cudaStreamNonBlocking) == cudaSuccess); Eigen::GpuStreamDevice stream_device(&stream, 0.0); Eigen::GpuDevice device(&stream_device);
 
   operation(y_pred.data(), y_true.data(), error_ptr, batch_size, memory_size, layer_size, n_metrics, time_step, metric_index, device);
   Eigen::TensorMap<Eigen::Tensor<double, 2>> error(error_ptr, n_metrics, memory_size);
-  assert(assert_close(error(0, 0.0), 0.0));
-  assert(assert_close(error(1, 0.0), 0.5));
-  assert(assert_close(error(0, 1), 0.0));
-  assert(assert_close(error(1, 1), 0.0));
+  AssertPrint(assert_close(error(0, 0), 0.0));
+  AssertPrint(assert_close(error(1, 0), 0.5));
+  AssertPrint(assert_close(error(0, 1), 0.0));
+  AssertPrint(assert_close(error(1, 1), 0.0));
 }
 
 void test_operationfunctionPrecisionMCMacroOp()
@@ -184,14 +186,14 @@ void test_operationfunctionPrecisionMCMacroOp()
     });
 
   double error_ptr[] = { 0, 0, 0, 0 };
-  cudaStream_t stream; assert(cudaStreamCreateWithFlags(&stream, cudaStreamNonBlocking) == cudaSuccess); Eigen::GpuStreamDevice stream_device(&stream, 0.0); Eigen::GpuDevice device(&stream_device);
+  cudaStream_t stream; AssertPrint(cudaStreamCreateWithFlags(&stream, cudaStreamNonBlocking) == cudaSuccess); Eigen::GpuStreamDevice stream_device(&stream, 0.0); Eigen::GpuDevice device(&stream_device);
 
   operation(y_pred.data(), y_true.data(), error_ptr, batch_size, memory_size, layer_size, n_metrics, time_step, metric_index, device);
   Eigen::TensorMap<Eigen::Tensor<double, 2>> error(error_ptr, n_metrics, memory_size);
-  //assert(assert_close(error(0, 0.0), 0.0));
-  //assert(assert_close(error(1, 0.0), 0.5));
-  //assert(assert_close(error(0, 1), 0.0));
-  //assert(assert_close(error(1, 1), 0.0));
+  //AssertPrint(assert_close(error(0, 0), 0.0));
+  //AssertPrint(assert_close(error(1, 0), 0.5));
+  //AssertPrint(assert_close(error(0, 1), 0.0));
+  //AssertPrint(assert_close(error(1, 1), 0.0));
 }
 
 
@@ -216,14 +218,14 @@ void test_operationfunctionRecallBCOp()
     });
 
   double error_ptr[] = { 0, 0, 0, 0 };
-  cudaStream_t stream; assert(cudaStreamCreateWithFlags(&stream, cudaStreamNonBlocking) == cudaSuccess); Eigen::GpuStreamDevice stream_device(&stream, 0.0); Eigen::GpuDevice device(&stream_device);
+  cudaStream_t stream; AssertPrint(cudaStreamCreateWithFlags(&stream, cudaStreamNonBlocking) == cudaSuccess); Eigen::GpuStreamDevice stream_device(&stream, 0.0); Eigen::GpuDevice device(&stream_device);
 
   operation(y_pred.data(), y_true.data(), error_ptr, batch_size, memory_size, layer_size, n_metrics, time_step, metric_index, device);
   Eigen::TensorMap<Eigen::Tensor<double, 2>> error(error_ptr, n_metrics, memory_size);
-  assert(assert_close(error(0, 0.0), 0.0));
-  assert(assert_close(error(1, 0.0), 0.5));
-  assert(assert_close(error(0, 1), 0.0));
-  assert(assert_close(error(1, 1), 0.0));
+  AssertPrint(assert_close(error(0, 0), 0.0));
+  AssertPrint(assert_close(error(1, 0), 0.5));
+  AssertPrint(assert_close(error(0, 1), 0.0));
+  AssertPrint(assert_close(error(1, 1), 0.0));
 }
 
 void test_operationfunctionRecallMCMicroOp()
@@ -247,14 +249,14 @@ void test_operationfunctionRecallMCMicroOp()
     });
 
   double error_ptr[] = { 0, 0, 0, 0 };
-  cudaStream_t stream; assert(cudaStreamCreateWithFlags(&stream, cudaStreamNonBlocking) == cudaSuccess); Eigen::GpuStreamDevice stream_device(&stream, 0.0); Eigen::GpuDevice device(&stream_device);
+  cudaStream_t stream; AssertPrint(cudaStreamCreateWithFlags(&stream, cudaStreamNonBlocking) == cudaSuccess); Eigen::GpuStreamDevice stream_device(&stream, 0.0); Eigen::GpuDevice device(&stream_device);
 
   operation(y_pred.data(), y_true.data(), error_ptr, batch_size, memory_size, layer_size, n_metrics, time_step, metric_index, device);
   Eigen::TensorMap<Eigen::Tensor<double, 2>> error(error_ptr, n_metrics, memory_size);
-  assert(assert_close(error(0, 0.0), 0.0));
-  assert(assert_close(error(1, 0.0), 0.5));
-  assert(assert_close(error(0, 1), 0.0));
-  assert(assert_close(error(1, 1), 0.0));
+  AssertPrint(assert_close(error(0, 0), 0.0));
+  AssertPrint(assert_close(error(1, 0), 0.5));
+  AssertPrint(assert_close(error(0, 1), 0.0));
+  AssertPrint(assert_close(error(1, 1), 0.0));
 }
 
 void test_operationfunctionRecallMCMacroOp()
@@ -278,14 +280,14 @@ void test_operationfunctionRecallMCMacroOp()
     });
 
   double error_ptr[] = { 0, 0, 0, 0 };
-  cudaStream_t stream; assert(cudaStreamCreateWithFlags(&stream, cudaStreamNonBlocking) == cudaSuccess); Eigen::GpuStreamDevice stream_device(&stream, 0.0); Eigen::GpuDevice device(&stream_device);
+  cudaStream_t stream; AssertPrint(cudaStreamCreateWithFlags(&stream, cudaStreamNonBlocking) == cudaSuccess); Eigen::GpuStreamDevice stream_device(&stream, 0.0); Eigen::GpuDevice device(&stream_device);
 
   operation(y_pred.data(), y_true.data(), error_ptr, batch_size, memory_size, layer_size, n_metrics, time_step, metric_index, device);
   Eigen::TensorMap<Eigen::Tensor<double, 2>> error(error_ptr, n_metrics, memory_size);
-  //assert(assert_close(error(0, 0.0), 0.0));
-  //assert(assert_close(error(1, 0.0), 0.5));
-  //assert(assert_close(error(0, 1), 0.0));
-  //assert(assert_close(error(1, 1), 0.0));
+  //AssertPrint(assert_close(error(0, 0), 0.0));
+  //AssertPrint(assert_close(error(1, 0), 0.5));
+  //AssertPrint(assert_close(error(0, 1), 0.0));
+  //AssertPrint(assert_close(error(1, 1), 0.0));
 }
 
 void test_operationfunctionPredictionBiasOp()
@@ -309,14 +311,14 @@ void test_operationfunctionPredictionBiasOp()
     });
 
   double error_ptr[] = { 0, 0, 0, 0 };
-  cudaStream_t stream; assert(cudaStreamCreateWithFlags(&stream, cudaStreamNonBlocking) == cudaSuccess); Eigen::GpuStreamDevice stream_device(&stream, 0.0); Eigen::GpuDevice device(&stream_device);
+  cudaStream_t stream; AssertPrint(cudaStreamCreateWithFlags(&stream, cudaStreamNonBlocking) == cudaSuccess); Eigen::GpuStreamDevice stream_device(&stream, 0.0); Eigen::GpuDevice device(&stream_device);
 
   operation(y_pred.data(), y_true.data(), error_ptr, batch_size, memory_size, layer_size, n_metrics, time_step, metric_index, device);
   Eigen::TensorMap<Eigen::Tensor<double, 2>> error(error_ptr, n_metrics, memory_size);
-  //assert(assert_close(error(0, 0.0), 0.0));
-  //assert(assert_close(error(1, 0.0), 0.5));
-  //assert(assert_close(error(0, 1), 0.0));
-  //assert(assert_close(error(1, 1), 0.0));
+  //AssertPrint(assert_close(error(0, 0), 0.0));
+  //AssertPrint(assert_close(error(1, 0), 0.5));
+  //AssertPrint(assert_close(error(0, 1), 0.0));
+  //AssertPrint(assert_close(error(1, 1), 0.0));
 }
 
 void test_operationfunctionF1ScoreBCOp()
@@ -340,14 +342,14 @@ void test_operationfunctionF1ScoreBCOp()
     });
 
   double error_ptr[] = { 0, 0, 0, 0 };
-  cudaStream_t stream; assert(cudaStreamCreateWithFlags(&stream, cudaStreamNonBlocking) == cudaSuccess); Eigen::GpuStreamDevice stream_device(&stream, 0.0); Eigen::GpuDevice device(&stream_device);
+  cudaStream_t stream; AssertPrint(cudaStreamCreateWithFlags(&stream, cudaStreamNonBlocking) == cudaSuccess); Eigen::GpuStreamDevice stream_device(&stream, 0.0); Eigen::GpuDevice device(&stream_device);
 
   operation(y_pred.data(), y_true.data(), error_ptr, batch_size, memory_size, layer_size, n_metrics, time_step, metric_index, device);
   Eigen::TensorMap<Eigen::Tensor<double, 2>> error(error_ptr, n_metrics, memory_size);
-  assert(assert_close(error(0, 0.0), 0.0));
-  assert(assert_close(error(1, 0.0), 0.333333343));
-  assert(assert_close(error(0, 1), 0.0));
-  assert(assert_close(error(1, 1), 0.0));
+  AssertPrint(assert_close(error(0, 0), 0.0));
+  AssertPrint(assert_close(error(1, 0), 0.333333343));
+  AssertPrint(assert_close(error(0, 1), 0.0));
+  AssertPrint(assert_close(error(1, 1), 0.0));
 }
 
 void test_operationfunctionF1ScoreMCMicroOp()
@@ -371,14 +373,14 @@ void test_operationfunctionF1ScoreMCMicroOp()
     });
 
   double error_ptr[] = { 0, 0, 0, 0 };
-  cudaStream_t stream; assert(cudaStreamCreateWithFlags(&stream, cudaStreamNonBlocking) == cudaSuccess); Eigen::GpuStreamDevice stream_device(&stream, 0.0); Eigen::GpuDevice device(&stream_device);
+  cudaStream_t stream; AssertPrint(cudaStreamCreateWithFlags(&stream, cudaStreamNonBlocking) == cudaSuccess); Eigen::GpuStreamDevice stream_device(&stream, 0.0); Eigen::GpuDevice device(&stream_device);
 
   operation(y_pred.data(), y_true.data(), error_ptr, batch_size, memory_size, layer_size, n_metrics, time_step, metric_index, device);
   Eigen::TensorMap<Eigen::Tensor<double, 2>> error(error_ptr, n_metrics, memory_size);
-  assert(assert_close(error(0, 0.0), 0.0));
-  assert(assert_close(error(1, 0.0), 0.5));
-  assert(assert_close(error(0, 1), 0.0));
-  assert(assert_close(error(1, 1), 0.0));
+  AssertPrint(assert_close(error(0, 0), 0.0));
+  AssertPrint(assert_close(error(1, 0), 0.5));
+  AssertPrint(assert_close(error(0, 1), 0.0));
+  AssertPrint(assert_close(error(1, 1), 0.0));
 }
 
 void test_operationfunctionF1ScoreMCMacroOp()
@@ -402,14 +404,14 @@ void test_operationfunctionF1ScoreMCMacroOp()
     });
 
   double error_ptr[] = { 0, 0, 0, 0 };
-  cudaStream_t stream; assert(cudaStreamCreateWithFlags(&stream, cudaStreamNonBlocking) == cudaSuccess); Eigen::GpuStreamDevice stream_device(&stream, 0.0); Eigen::GpuDevice device(&stream_device);
+  cudaStream_t stream; AssertPrint(cudaStreamCreateWithFlags(&stream, cudaStreamNonBlocking) == cudaSuccess); Eigen::GpuStreamDevice stream_device(&stream, 0.0); Eigen::GpuDevice device(&stream_device);
 
   operation(y_pred.data(), y_true.data(), error_ptr, batch_size, memory_size, layer_size, n_metrics, time_step, metric_index, device);
   Eigen::TensorMap<Eigen::Tensor<double, 2>> error(error_ptr, n_metrics, memory_size);
-  //assert(assert_close(error(0, 0.0), 0.0));
-  //assert(assert_close(error(1, 0.0), 0.66666667));
-  //assert(assert_close(error(0, 1), 0.0));
-  //assert(assert_close(error(1, 1), 0.0));
+  //AssertPrint(assert_close(error(0, 0), 0.0));
+  //AssertPrint(assert_close(error(1, 0), 0.66666667));
+  //AssertPrint(assert_close(error(0, 1), 0.0));
+  //AssertPrint(assert_close(error(1, 1), 0.0));
 }
 
 void test_operationfunctionAUROCOp()
@@ -433,14 +435,14 @@ void test_operationfunctionAUROCOp()
     });
 
   double error_ptr[] = { 0, 0, 0, 0 };
-  cudaStream_t stream; assert(cudaStreamCreateWithFlags(&stream, cudaStreamNonBlocking) == cudaSuccess); Eigen::GpuStreamDevice stream_device(&stream, 0.0); Eigen::GpuDevice device(&stream_device);
+  cudaStream_t stream; AssertPrint(cudaStreamCreateWithFlags(&stream, cudaStreamNonBlocking) == cudaSuccess); Eigen::GpuStreamDevice stream_device(&stream, 0.0); Eigen::GpuDevice device(&stream_device);
 
   operation(y_pred.data(), y_true.data(), error_ptr, batch_size, memory_size, layer_size, n_metrics, time_step, metric_index, device);
   Eigen::TensorMap<Eigen::Tensor<double, 2>> error(error_ptr, n_metrics, memory_size);
-  //assert(assert_close(error(0, 0.0), 0.0));
-  //assert(assert_close(error(1, 0.0), 0.5));
-  //assert(assert_close(error(0, 1), 0.0));
-  //assert(assert_close(error(1, 1), 0.0));
+  //AssertPrint(assert_close(error(0, 0), 0.0));
+  //AssertPrint(assert_close(error(1, 0), 0.5));
+  //AssertPrint(assert_close(error(0, 1), 0.0));
+  //AssertPrint(assert_close(error(1, 1), 0.0));
 }
 
 void test_operationfunctionMCCBCTensorOp()
@@ -464,14 +466,14 @@ void test_operationfunctionMCCBCTensorOp()
     });
 
   double error_ptr[] = { 0, 0, 0, 0 };
-  cudaStream_t stream; assert(cudaStreamCreateWithFlags(&stream, cudaStreamNonBlocking) == cudaSuccess); Eigen::GpuStreamDevice stream_device(&stream, 0.0); Eigen::GpuDevice device(&stream_device);
+  cudaStream_t stream; AssertPrint(cudaStreamCreateWithFlags(&stream, cudaStreamNonBlocking) == cudaSuccess); Eigen::GpuStreamDevice stream_device(&stream, 0.0); Eigen::GpuDevice device(&stream_device);
 
   operation(y_pred.data(), y_true.data(), error_ptr, batch_size, memory_size, layer_size, n_metrics, time_step, metric_index, device);
   Eigen::TensorMap<Eigen::Tensor<double, 2>> error(error_ptr, n_metrics, memory_size);
-  //assert(assert_close(error(0, 0.0), 0.0));
-  //assert(assert_close(error(1, 0.0), 0.5));
-  //assert(assert_close(error(0, 1), 0.0));
-  //assert(assert_close(error(1, 1), 0.0));
+  //AssertPrint(assert_close(error(0, 0), 0.0));
+  //AssertPrint(assert_close(error(1, 0), 0.5));
+  //AssertPrint(assert_close(error(0, 1), 0.0));
+  //AssertPrint(assert_close(error(1, 1), 0.0));
 }
 
 void test_operationfunctionMCCMCMicroTensorOp()
@@ -495,14 +497,14 @@ void test_operationfunctionMCCMCMicroTensorOp()
     });
 
   double error_ptr[] = { 0, 0, 0, 0 };
-  cudaStream_t stream; assert(cudaStreamCreateWithFlags(&stream, cudaStreamNonBlocking) == cudaSuccess); Eigen::GpuStreamDevice stream_device(&stream, 0.0); Eigen::GpuDevice device(&stream_device);
+  cudaStream_t stream; AssertPrint(cudaStreamCreateWithFlags(&stream, cudaStreamNonBlocking) == cudaSuccess); Eigen::GpuStreamDevice stream_device(&stream, 0.0); Eigen::GpuDevice device(&stream_device);
 
   operation(y_pred.data(), y_true.data(), error_ptr, batch_size, memory_size, layer_size, n_metrics, time_step, metric_index, device);
   Eigen::TensorMap<Eigen::Tensor<double, 2>> error(error_ptr, n_metrics, memory_size);
-  //assert(assert_close(error(0, 0.0), 0.0));
-  //assert(assert_close(error(1, 0.0), 0.5));
-  //assert(assert_close(error(0, 1), 0.0));
-  //assert(assert_close(error(1, 1), 0.0));
+  //AssertPrint(assert_close(error(0, 0), 0.0));
+  //AssertPrint(assert_close(error(1, 0), 0.5));
+  //AssertPrint(assert_close(error(0, 1), 0.0));
+  //AssertPrint(assert_close(error(1, 1), 0.0));
 }
 
 void test_operationfunctionMAEOp()
@@ -526,14 +528,14 @@ void test_operationfunctionMAEOp()
     });
 
   double error_ptr[] = { 0, 0, 0, 0 };
-  cudaStream_t stream; assert(cudaStreamCreateWithFlags(&stream, cudaStreamNonBlocking) == cudaSuccess); Eigen::GpuStreamDevice stream_device(&stream, 0.0); Eigen::GpuDevice device(&stream_device);
+  cudaStream_t stream; AssertPrint(cudaStreamCreateWithFlags(&stream, cudaStreamNonBlocking) == cudaSuccess); Eigen::GpuStreamDevice stream_device(&stream, 0.0); Eigen::GpuDevice device(&stream_device);
 
   operation(y_pred.data(), y_true.data(), error_ptr, batch_size, memory_size, layer_size, n_metrics, time_step, metric_index, device);
   Eigen::TensorMap<Eigen::Tensor<double, 2>> error(error_ptr, n_metrics, memory_size);
-  assert(assert_close(error(0, 0.0), 0.0));
-  assert(assert_close(error(1, 0.0), 1.5));
-  assert(assert_close(error(0, 1), 0.0));
-  assert(assert_close(error(1, 1), 0.0));
+  AssertPrint(assert_close(error(0, 0), 0.0));
+  AssertPrint(assert_close(error(1, 0), 1.5));
+  AssertPrint(assert_close(error(0, 1), 0.0));
+  AssertPrint(assert_close(error(1, 1), 0.0));
 }
 
 void test_operationfunctionCosineSimilarityOp()
@@ -554,31 +556,31 @@ void test_operationfunctionCosineSimilarityOp()
     {{0, 1, 2, 3}, {0, 0, 0, 0}}
     });
 
-  cudaStream_t stream; assert(cudaStreamCreateWithFlags(&stream, cudaStreamNonBlocking) == cudaSuccess); Eigen::GpuStreamDevice stream_device(&stream, 0.0); Eigen::GpuDevice device(&stream_device);
+  cudaStream_t stream; AssertPrint(cudaStreamCreateWithFlags(&stream, cudaStreamNonBlocking) == cudaSuccess); Eigen::GpuStreamDevice stream_device(&stream, 0.0); Eigen::GpuDevice device(&stream_device);
 
   CosineSimilarityTensorOp<double, Eigen::GpuDevice> operation_sum(std::string("Sum"));
   Eigen::Tensor<double, 2> error_sum(n_metrics, memory_size); error_sum.setZero();
   operation_sum(y_pred.data(), y_true.data(), error_sum.data(), batch_size, memory_size, layer_size, n_metrics, time_step, metric_index, device);
-  assert(assert_close(error_sum(0, 0.0), 0.0));
-  assert(assert_close(error_sum(1, 0.0), 0.801783681));
-  assert(assert_close(error_sum(0, 1), 0.0));
-  assert(assert_close(error_sum(1, 1), 0.0));
+  AssertPrint(assert_close(error_sum(0, 0.0), 0.0));
+  AssertPrint(assert_close(error_sum(1, 0.0), 0.801783681));
+  AssertPrint(assert_close(error_sum(0, 1), 0.0));
+  AssertPrint(assert_close(error_sum(1, 1), 0.0));
 
   CosineSimilarityTensorOp<double, Eigen::GpuDevice> operation_mean(std::string("Mean"));
   Eigen::Tensor<double, 2> error_mean(n_metrics, memory_size); error_mean.setZero();
   operation_mean(y_pred.data(), y_true.data(), error_mean.data(), batch_size, memory_size, layer_size, n_metrics, time_step, metric_index, device);
-  assert(assert_close(error_mean(0, 0.0), 0.0));
-  assert(assert_close(error_mean(1, 0.0), 0.40089184));
-  assert(assert_close(error_mean(0, 1), 0.0));
-  assert(assert_close(error_mean(1, 1), 0.0));
+  AssertPrint(assert_close(error_mean(0, 0.0), 0.0));
+  AssertPrint(assert_close(error_mean(1, 0.0), 0.40089184));
+  AssertPrint(assert_close(error_mean(0, 1), 0.0));
+  AssertPrint(assert_close(error_mean(1, 1), 0.0));
 
   CosineSimilarityTensorOp<double, Eigen::GpuDevice> operation_var(std::string("Var"));
   Eigen::Tensor<double, 2> error_var(n_metrics, memory_size); error_var.setZero();
   operation_var(y_pred.data(), y_true.data(), error_var.data(), batch_size, memory_size, layer_size, n_metrics, time_step, metric_index, device);
-  assert(assert_close(error_var(0, 0.0), 0.0));
-  assert(assert_close(error_var(1, 0.0), 0.321428537));
-  assert(assert_close(error_var(0, 1), 0.0));
-  assert(assert_close(error_var(1, 1), 0.0));
+  AssertPrint(assert_close(error_var(0, 0.0), 0.0));
+  AssertPrint(assert_close(error_var(1, 0.0), 0.321428537));
+  AssertPrint(assert_close(error_var(0, 1), 0.0));
+  AssertPrint(assert_close(error_var(1, 1), 0.0));
 }
 
 void test_operationfunctionPearsonROp()
@@ -599,31 +601,31 @@ void test_operationfunctionPearsonROp()
     {{2, 3, 2, 3}, {0, 0, 0, 0}}
     });
 
-  cudaStream_t stream; assert(cudaStreamCreateWithFlags(&stream, cudaStreamNonBlocking) == cudaSuccess); Eigen::GpuStreamDevice stream_device(&stream, 0.0); Eigen::GpuDevice device(&stream_device);
+  cudaStream_t stream; AssertPrint(cudaStreamCreateWithFlags(&stream, cudaStreamNonBlocking) == cudaSuccess); Eigen::GpuStreamDevice stream_device(&stream, 0.0); Eigen::GpuDevice device(&stream_device);
 
   PearsonRTensorOp<double, Eigen::GpuDevice> operation_sum(std::string("Sum"));
   Eigen::Tensor<double, 2> error_sum(n_metrics, memory_size); error_sum.setZero();
   operation_sum(y_pred.data(), y_true.data(), error_sum.data(), batch_size, memory_size, layer_size, n_metrics, time_step, metric_index, device);
-  assert(assert_close(error_sum(0, 0.0), 0.0));
-  assert(assert_close(error_sum(1, 0.0), 0.197246432));
-  assert(assert_close(error_sum(0, 1), 0.0));
-  assert(assert_close(error_sum(1, 1), 0.0));
+  AssertPrint(assert_close(error_sum(0, 0.0), 0.0));
+  AssertPrint(assert_close(error_sum(1, 0.0), 0.197246432));
+  AssertPrint(assert_close(error_sum(0, 1), 0.0));
+  AssertPrint(assert_close(error_sum(1, 1), 0.0));
 
   PearsonRTensorOp<double, Eigen::GpuDevice> operation_mean(std::string("Mean"));
   Eigen::Tensor<double, 2> error_mean(n_metrics, memory_size); error_mean.setZero();
   operation_mean(y_pred.data(), y_true.data(), error_mean.data(), batch_size, memory_size, layer_size, n_metrics, time_step, metric_index, device);
-  assert(assert_close(error_mean(0, 0.0), 0.0));
-  assert(assert_close(error_mean(1, 0.0), 0.0986232162));
-  assert(assert_close(error_mean(0, 1), 0.0));
-  assert(assert_close(error_mean(1, 1), 0.0));
+  AssertPrint(assert_close(error_mean(0, 0.0), 0.0));
+  AssertPrint(assert_close(error_mean(1, 0.0), 0.0986232162));
+  AssertPrint(assert_close(error_mean(0, 1), 0.0));
+  AssertPrint(assert_close(error_mean(1, 1), 0.0));
 
   PearsonRTensorOp<double, Eigen::GpuDevice> operation_var(std::string("Var"));
   Eigen::Tensor<double, 2> error_var(n_metrics, memory_size); error_var.setZero();
   operation_var(y_pred.data(), y_true.data(), error_var.data(), batch_size, memory_size, layer_size, n_metrics, time_step, metric_index, device);
-  assert(assert_close(error_var(0, 0.0), 0.0));
-  assert(assert_close(error_var(1, 0.0), 0.913880289));
-  assert(assert_close(error_var(0, 1), 0.0));
-  assert(assert_close(error_var(1, 1), 0.0));
+  AssertPrint(assert_close(error_var(0, 0.0), 0.0));
+  AssertPrint(assert_close(error_var(1, 0.0), 0.913880289));
+  AssertPrint(assert_close(error_var(0, 1), 0.0));
+  AssertPrint(assert_close(error_var(1, 1), 0.0));
 }
 
 void test_operationfunctionEuclideanDistOp()
@@ -644,31 +646,31 @@ void test_operationfunctionEuclideanDistOp()
     {{2, 3, 2, 3}, {0, 0, 0, 0}}
     });
 
-  cudaStream_t stream; assert(cudaStreamCreateWithFlags(&stream, cudaStreamNonBlocking) == cudaSuccess); Eigen::GpuStreamDevice stream_device(&stream, 0.0); Eigen::GpuDevice device(&stream_device);
+  cudaStream_t stream; AssertPrint(cudaStreamCreateWithFlags(&stream, cudaStreamNonBlocking) == cudaSuccess); Eigen::GpuStreamDevice stream_device(&stream, 0.0); Eigen::GpuDevice device(&stream_device);
 
   EuclideanDistTensorOp<double, Eigen::GpuDevice> operation_sum(std::string("Sum"));
   Eigen::Tensor<double, 2> error_sum(n_metrics, memory_size); error_sum.setZero();
   operation_sum(y_pred.data(), y_true.data(), error_sum.data(), batch_size, memory_size, layer_size, n_metrics, time_step, metric_index, device);
-  assert(assert_close(error_sum(0, 0.0), 0.0));
-  assert(assert_close(error_sum(1, 0.0), 7.79583168));
-  assert(assert_close(error_sum(0, 1), 0.0));
-  assert(assert_close(error_sum(1, 1), 0.0));
+  AssertPrint(assert_close(error_sum(0, 0.0), 0.0));
+  AssertPrint(assert_close(error_sum(1, 0.0), 7.79583168));
+  AssertPrint(assert_close(error_sum(0, 1), 0.0));
+  AssertPrint(assert_close(error_sum(1, 1), 0.0));
 
   EuclideanDistTensorOp<double, Eigen::GpuDevice> operation_mean(std::string("Mean"));
   Eigen::Tensor<double, 2> error_mean(n_metrics, memory_size); error_mean.setZero();
   operation_mean(y_pred.data(), y_true.data(), error_mean.data(), batch_size, memory_size, layer_size, n_metrics, time_step, metric_index, device);
-  assert(assert_close(error_mean(0, 0.0), 0.0));
-  assert(assert_close(error_mean(1, 0.0), 3.89791584));
-  assert(assert_close(error_mean(0, 1), 0.0));
-  assert(assert_close(error_mean(1, 1), 0.0));
+  AssertPrint(assert_close(error_mean(0, 0.0), 0.0));
+  AssertPrint(assert_close(error_mean(1, 0.0), 3.89791584));
+  AssertPrint(assert_close(error_mean(0, 1), 0.0));
+  AssertPrint(assert_close(error_mean(1, 1), 0.0));
 
   EuclideanDistTensorOp<double, Eigen::GpuDevice> operation_var(std::string("Var"));
   Eigen::Tensor<double, 2> error_var(n_metrics, memory_size); error_var.setZero();
   operation_var(y_pred.data(), y_true.data(), error_var.data(), batch_size, memory_size, layer_size, n_metrics, time_step, metric_index, device);
-  assert(assert_close(error_var(0, 0.0), 0.0));
-  assert(assert_close(error_var(1, 0.0), 1.61250567));
-  assert(assert_close(error_var(0, 1), 0.0));
-  assert(assert_close(error_var(1, 1), 0.0));
+  AssertPrint(assert_close(error_var(0, 0.0), 0.0));
+  AssertPrint(assert_close(error_var(1, 0.0), 1.61250567));
+  AssertPrint(assert_close(error_var(0, 1), 0.0));
+  AssertPrint(assert_close(error_var(1, 1), 0.0));
 }
 
 void test_operationfunctionManhattanDistOp()
@@ -689,31 +691,31 @@ void test_operationfunctionManhattanDistOp()
     {{2, 3, 2, 3}, {0, 0, 0, 0}}
     });
 
-  cudaStream_t stream; assert(cudaStreamCreateWithFlags(&stream, cudaStreamNonBlocking) == cudaSuccess); Eigen::GpuStreamDevice stream_device(&stream, 0.0); Eigen::GpuDevice device(&stream_device);
+  cudaStream_t stream; AssertPrint(cudaStreamCreateWithFlags(&stream, cudaStreamNonBlocking) == cudaSuccess); Eigen::GpuStreamDevice stream_device(&stream, 0.0); Eigen::GpuDevice device(&stream_device);
 
   ManhattanDistTensorOp<double, Eigen::GpuDevice> operation_sum(std::string("Sum"));
   Eigen::Tensor<double, 2> error_sum(n_metrics, memory_size); error_sum.setZero();
   operation_sum(y_pred.data(), y_true.data(), error_sum.data(), batch_size, memory_size, layer_size, n_metrics, time_step, metric_index, device);
-  assert(assert_close(error_sum(0, 0.0), 0.0));
-  assert(assert_close(error_sum(1, 0.0), 14.0));
-  assert(assert_close(error_sum(0, 1), 0.0));
-  assert(assert_close(error_sum(1, 1), 0.0));
+  AssertPrint(assert_close(error_sum(0, 0.0), 0.0));
+  AssertPrint(assert_close(error_sum(1, 0.0), 14.0));
+  AssertPrint(assert_close(error_sum(0, 1), 0.0));
+  AssertPrint(assert_close(error_sum(1, 1), 0.0));
 
   ManhattanDistTensorOp<double, Eigen::GpuDevice> operation_mean(std::string("Mean"));
   Eigen::Tensor<double, 2> error_mean(n_metrics, memory_size); error_mean.setZero();
   operation_mean(y_pred.data(), y_true.data(), error_mean.data(), batch_size, memory_size, layer_size, n_metrics, time_step, metric_index, device);
-  assert(assert_close(error_mean(0, 0.0), 0.0));
-  assert(assert_close(error_mean(1, 0.0), 7.0));
-  assert(assert_close(error_mean(0, 1), 0.0));
-  assert(assert_close(error_mean(1, 1), 0.0));
+  AssertPrint(assert_close(error_mean(0, 0.0), 0.0));
+  AssertPrint(assert_close(error_mean(1, 0.0), 7.0));
+  AssertPrint(assert_close(error_mean(0, 1), 0.0));
+  AssertPrint(assert_close(error_mean(1, 1), 0.0));
 
   ManhattanDistTensorOp<double, Eigen::GpuDevice> operation_var(std::string("Var"));
   Eigen::Tensor<double, 2> error_var(n_metrics, memory_size); error_var.setZero();
   operation_var(y_pred.data(), y_true.data(), error_var.data(), batch_size, memory_size, layer_size, n_metrics, time_step, metric_index, device);
-  assert(assert_close(error_var(0, 0.0), 0.0));
-  assert(assert_close(error_var(1, 0.0), 8.0));
-  assert(assert_close(error_var(0, 1), 0.0));
-  assert(assert_close(error_var(1, 1), 0.0));
+  AssertPrint(assert_close(error_var(0, 0.0), 0.0));
+  AssertPrint(assert_close(error_var(1, 0.0), 8.0));
+  AssertPrint(assert_close(error_var(0, 1), 0.0));
+  AssertPrint(assert_close(error_var(1, 1), 0.0));
 }
 
 void test_operationfunctionJeffreysAndMatusitaDistOp()
@@ -734,31 +736,31 @@ void test_operationfunctionJeffreysAndMatusitaDistOp()
     {{2, 3, 2, 3}, {0, 0, 0, 0}}
     });
 
-  cudaStream_t stream; assert(cudaStreamCreateWithFlags(&stream, cudaStreamNonBlocking) == cudaSuccess); Eigen::GpuStreamDevice stream_device(&stream, 0.0); Eigen::GpuDevice device(&stream_device);
+  cudaStream_t stream; AssertPrint(cudaStreamCreateWithFlags(&stream, cudaStreamNonBlocking) == cudaSuccess); Eigen::GpuStreamDevice stream_device(&stream, 0.0); Eigen::GpuDevice device(&stream_device);
 
   JeffreysAndMatusitaDistTensorOp<double, Eigen::GpuDevice> operation_sum(std::string("Sum"));
   Eigen::Tensor<double, 2> error_sum(n_metrics, memory_size); error_sum.setZero();
   operation_sum(y_pred.data(), y_true.data(), error_sum.data(), batch_size, memory_size, layer_size, n_metrics, time_step, metric_index, device);
-  assert(assert_close(error_sum(0, 0.0), 0.0));
-  assert(assert_close(error_sum(1, 0.0), 4.7389946));
-  assert(assert_close(error_sum(0, 1), 0.0));
-  assert(assert_close(error_sum(1, 1), 0.0));
+  AssertPrint(assert_close(error_sum(0, 0.0), 0.0));
+  AssertPrint(assert_close(error_sum(1, 0.0), 4.7389946));
+  AssertPrint(assert_close(error_sum(0, 1), 0.0));
+  AssertPrint(assert_close(error_sum(1, 1), 0.0));
 
   JeffreysAndMatusitaDistTensorOp<double, Eigen::GpuDevice> operation_mean(std::string("Mean"));
   Eigen::Tensor<double, 2> error_mean(n_metrics, memory_size); error_mean.setZero();
   operation_mean(y_pred.data(), y_true.data(), error_mean.data(), batch_size, memory_size, layer_size, n_metrics, time_step, metric_index, device);
-  assert(assert_close(error_mean(0, 0.0), 0.0));
-  assert(assert_close(error_mean(1, 0.0), 2.3694973));
-  assert(assert_close(error_mean(0, 1), 0.0));
-  assert(assert_close(error_mean(1, 1), 0.0));
+  AssertPrint(assert_close(error_mean(0, 0.0), 0.0));
+  AssertPrint(assert_close(error_mean(1, 0.0), 2.3694973));
+  AssertPrint(assert_close(error_mean(0, 1), 0.0));
+  AssertPrint(assert_close(error_mean(1, 1), 0.0));
 
   JeffreysAndMatusitaDistTensorOp<double, Eigen::GpuDevice> operation_var(std::string("Var"));
   Eigen::Tensor<double, 2> error_var(n_metrics, memory_size); error_var.setZero();
   operation_var(y_pred.data(), y_true.data(), error_var.data(), batch_size, memory_size, layer_size, n_metrics, time_step, metric_index, device);
-  assert(assert_close(error_var(0, 0.0), 0.0));
-  assert(assert_close(error_var(1, 0.0), 0.478435606));
-  assert(assert_close(error_var(0, 1), 0.0));
-  assert(assert_close(error_var(1, 1), 0.0));
+  AssertPrint(assert_close(error_var(0, 0.0), 0.0));
+  AssertPrint(assert_close(error_var(1, 0.0), 0.478435606));
+  AssertPrint(assert_close(error_var(0, 1), 0.0));
+  AssertPrint(assert_close(error_var(1, 1), 0.0));
 }
 
 void test_operationfunctionLogarithmicDistOp()
@@ -779,31 +781,31 @@ void test_operationfunctionLogarithmicDistOp()
     {{2, 3, 2, 3}, {0, 0, 0, 0}}
     });
 
-  cudaStream_t stream; assert(cudaStreamCreateWithFlags(&stream, cudaStreamNonBlocking) == cudaSuccess); Eigen::GpuStreamDevice stream_device(&stream, 0.0); Eigen::GpuDevice device(&stream_device);
+  cudaStream_t stream; AssertPrint(cudaStreamCreateWithFlags(&stream, cudaStreamNonBlocking) == cudaSuccess); Eigen::GpuStreamDevice stream_device(&stream, 0.0); Eigen::GpuDevice device(&stream_device);
 
   LogarithmicDistTensorOp<double, Eigen::GpuDevice> operation_sum(std::string("Sum"));
   Eigen::Tensor<double, 2> error_sum(n_metrics, memory_size); error_sum.setZero();
   operation_sum(y_pred.data(), y_true.data(), error_sum.data(), batch_size, memory_size, layer_size, n_metrics, time_step, metric_index, device);
-  assert(assert_close(error_sum(0, 0.0), 0.0));
-  assert(assert_close(error_sum(1, 0.0), 3.58351898));
-  assert(assert_close(error_sum(0, 1), 0.0));
-  assert(assert_close(error_sum(1, 1), 0.0));
+  AssertPrint(assert_close(error_sum(0, 0.0), 0.0));
+  AssertPrint(assert_close(error_sum(1, 0.0), 3.58351898));
+  AssertPrint(assert_close(error_sum(0, 1), 0.0));
+  AssertPrint(assert_close(error_sum(1, 1), 0.0));
 
   LogarithmicDistTensorOp<double, Eigen::GpuDevice> operation_mean(std::string("Mean"));
   Eigen::Tensor<double, 2> error_mean(n_metrics, memory_size); error_mean.setZero();
   operation_mean(y_pred.data(), y_true.data(), error_mean.data(), batch_size, memory_size, layer_size, n_metrics, time_step, metric_index, device);
-  assert(assert_close(error_mean(0, 0.0), 0.0));
-  assert(assert_close(error_mean(1, 0.0), 1.79175949));
-  assert(assert_close(error_mean(0, 1), 0.0));
-  assert(assert_close(error_mean(1, 1), 0.0));
+  AssertPrint(assert_close(error_mean(0, 0.0), 0.0));
+  AssertPrint(assert_close(error_mean(1, 0.0), 1.79175949));
+  AssertPrint(assert_close(error_mean(0, 1), 0.0));
+  AssertPrint(assert_close(error_mean(1, 1), 0.0));
 
   LogarithmicDistTensorOp<double, Eigen::GpuDevice> operation_var(std::string("Var"));
   Eigen::Tensor<double, 2> error_var(n_metrics, memory_size); error_var.setZero();
   operation_var(y_pred.data(), y_true.data(), error_var.data(), batch_size, memory_size, layer_size, n_metrics, time_step, metric_index, device);
-  assert(assert_close(error_var(0, 0.0), 0.0));
-  assert(assert_close(error_var(1, 0.0), 0.0));
-  assert(assert_close(error_var(0, 1), 0.0));
-  assert(assert_close(error_var(1, 1), 0.0));
+  AssertPrint(assert_close(error_var(0, 0.0), 0.0));
+  AssertPrint(assert_close(error_var(1, 0.0), 0.0));
+  AssertPrint(assert_close(error_var(0, 1), 0.0));
+  AssertPrint(assert_close(error_var(1, 1), 0.0));
 }
 
 void test_operationfunctionPercentDifferenceOp()
@@ -824,31 +826,31 @@ void test_operationfunctionPercentDifferenceOp()
     {{2, 3, 2, 3}, {0, 0, 0, 0}}
     });
 
-  cudaStream_t stream; assert(cudaStreamCreateWithFlags(&stream, cudaStreamNonBlocking) == cudaSuccess); Eigen::GpuStreamDevice stream_device(&stream, 0.0); Eigen::GpuDevice device(&stream_device);
+  cudaStream_t stream; AssertPrint(cudaStreamCreateWithFlags(&stream, cudaStreamNonBlocking) == cudaSuccess); Eigen::GpuStreamDevice stream_device(&stream, 0.0); Eigen::GpuDevice device(&stream_device);
 
   PercentDifferenceTensorOp<double, Eigen::GpuDevice> operation_sum(std::string("Sum"));
   Eigen::Tensor<double, 2> error_sum(n_metrics, memory_size); error_sum.setZero();
   operation_sum(y_pred.data(), y_true.data(), error_sum.data(), batch_size, memory_size, layer_size, n_metrics, time_step, metric_index, device);
-  assert(assert_close(error_sum(0, 0.0), 0.0));
-  assert(assert_close(error_sum(1, 0.0), 9.99999046));
-  assert(assert_close(error_sum(0, 1), 0.0));
-  assert(assert_close(error_sum(1, 1), 0.0));
+  AssertPrint(assert_close(error_sum(0, 0.0), 0.0));
+  AssertPrint(assert_close(error_sum(1, 0.0), 9.99999046));
+  AssertPrint(assert_close(error_sum(0, 1), 0.0));
+  AssertPrint(assert_close(error_sum(1, 1), 0.0));
 
   PercentDifferenceTensorOp<double, Eigen::GpuDevice> operation_mean(std::string("Mean"));
   Eigen::Tensor<double, 2> error_mean(n_metrics, memory_size); error_mean.setZero();
   operation_mean(y_pred.data(), y_true.data(), error_mean.data(), batch_size, memory_size, layer_size, n_metrics, time_step, metric_index, device);
-  assert(assert_close(error_mean(0, 0.0), 0.0));
-  assert(assert_close(error_mean(1, 0.0), 4.99999523));
-  assert(assert_close(error_mean(0, 1), 0.0));
-  assert(assert_close(error_mean(1, 1), 0.0));
+  AssertPrint(assert_close(error_mean(0, 0.0), 0.0));
+  AssertPrint(assert_close(error_mean(1, 0.0), 4.99999523));
+  AssertPrint(assert_close(error_mean(0, 1), 0.0));
+  AssertPrint(assert_close(error_mean(1, 1), 0.0));
 
   PercentDifferenceTensorOp<double, Eigen::GpuDevice> operation_var(std::string("Var"));
   Eigen::Tensor<double, 2> error_var(n_metrics, memory_size); error_var.setZero();
   operation_var(y_pred.data(), y_true.data(), error_var.data(), batch_size, memory_size, layer_size, n_metrics, time_step, metric_index, device);
-  assert(assert_close(error_var(0, 0.0), 0.0));
-  assert(assert_close(error_var(1, 0.0), 1.99999619));
-  assert(assert_close(error_var(0, 1), 0.0));
-  assert(assert_close(error_var(1, 1), 0.0));
+  AssertPrint(assert_close(error_var(0, 0.0), 0.0));
+  AssertPrint(assert_close(error_var(1, 0.0), 1.99999619));
+  AssertPrint(assert_close(error_var(0, 1), 0.0));
+  AssertPrint(assert_close(error_var(1, 1), 0.0));
 }
 
 int main(int argc, char** argv)

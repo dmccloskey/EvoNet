@@ -544,7 +544,7 @@ namespace SmartPeak
 
 	template<typename TensorT>
 	inline void ModelInterpreterGpu<TensorT>::allocateModelErrorTensor(const int& batch_size, const int& memory_size, const int& n_metrics) {
-		std::shared_ptr<ModelErrorData<TensorT, Eigen::GpuDevice>> model_error_data(new ModelErrorDataGpu<TensorT>());
+		std::shared_ptr<ModelErrorData<TensorT, Eigen::GpuDevice>> model_error_data = std:: make_shared<ModelErrorDataGpu<TensorT>>(ModelErrorDataGpu<TensorT>());
 		model_error_data->initModelErrorData(batch_size, memory_size, n_metrics);
 		this->model_error_ = model_error_data;
 	}
