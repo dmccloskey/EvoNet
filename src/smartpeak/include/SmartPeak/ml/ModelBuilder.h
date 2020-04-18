@@ -590,6 +590,7 @@ public:
 			node.setModuleName(module_name);
 			if (specify_layer) node.setLayerName(module_name);
 			model.addNodes({ node });
+      delete[] node_name_char;
 		}
 		return node_names;
 	}
@@ -618,6 +619,7 @@ public:
 			node.setDropProbability(drop_out_prob);
 			if (specify_layer) node.setLayerName(module_name);
 			model.addNodes({ node });
+      delete[] node_name_char;
 
 			if (biases) {
 				char bias_name_char[512];
@@ -626,14 +628,17 @@ public:
 				Node<TensorT> bias(bias_name, NodeType::bias, NodeStatus::activated, std::make_shared<LinearOp<TensorT>>(LinearOp<TensorT>()), std::make_shared<LinearGradOp<TensorT>>(LinearGradOp<TensorT>()), std::make_shared<SumOp<TensorT>>(SumOp<TensorT>()), std::make_shared<SumErrorOp<TensorT>>(SumErrorOp<TensorT>()), std::make_shared<SumWeightGradOp<TensorT>>(SumWeightGradOp<TensorT>()));
 				bias.setModuleName(module_name);
 				model.addNodes({ bias });
+        delete[] bias_name_char;
 
 				char weight_bias_name_char[512];
 				sprintf(weight_bias_name_char, "%s-bias_%012d_to_%s_%012d", name.data(), i, name.data(), i);
 				std::string weight_bias_name(weight_bias_name_char);
+        delete[] weight_bias_name_char;
 
 				char link_bias_name_char[512];
 				sprintf(link_bias_name_char, "%s-bias_%012d_to_%s_%012d", name.data(), i, name.data(), i);
 				std::string link_bias_name(link_bias_name_char);
+        delete[] link_bias_name_char;
 
 				std::shared_ptr<WeightInitOp<TensorT>>  bias_weight_init;
 				bias_weight_init = std::make_shared<ConstWeightInitOp<TensorT>>(ConstWeightInitOp<TensorT>((TensorT)0));
@@ -657,14 +662,17 @@ public:
 				char hidden_name_char[512];
 				sprintf(hidden_name_char, "%s_%012d", name.data(), j);
 				std::string hidden_name(hidden_name_char);
+        delete[] hidden_name_char;
 
 				char link_name_char[512];
 				sprintf(link_name_char, "%s_to_%s_%012d", source_node_names[i].data(), name.data(), j);
 				std::string link_name(link_name_char);
+        delete[] link_name_char;
 
 				char weight_name_char[512];
 				sprintf(weight_name_char, "%s_to_%s_%012d", source_node_names[i].data(), name.data(), j);
 				std::string weight_name(weight_name_char);
+        delete[] weight_name_char;
 
 				std::shared_ptr<WeightInitOp<TensorT>>  hidden_weight_init = weight_init;
 				std::shared_ptr<SolverOp<TensorT>>  hidden_solver = solver;
@@ -694,10 +702,12 @@ public:
 				char link_name_char[512];
 				sprintf(link_name_char, "%s_to_%s", source_node_name.data(), sink_node_name.data());
 				std::string link_name(link_name_char);
+        delete[] link_name_char;
 
 				char weight_name_char[512];
 				sprintf(weight_name_char, "%s_to_%s", source_node_name.data(), sink_node_name.data());
 				std::string weight_name(weight_name_char);
+        delete[] weight_name_char;
 
 				std::shared_ptr<WeightInitOp<TensorT>>  hidden_weight_init = weight_init;
 				std::shared_ptr<SolverOp<TensorT>>  hidden_solver = solver;
@@ -740,6 +750,7 @@ public:
 			node.setDropProbability(drop_out_prob);
 			if (specify_layer) node.setLayerName(module_name);
 			model.addNodes({ node });
+      delete[] node_name_char;
 
 			if (biases) {
 				char bias_name_char[512];
@@ -748,14 +759,17 @@ public:
 				Node<TensorT> bias(bias_name, NodeType::bias, NodeStatus::activated, std::make_shared<LinearOp<TensorT>>(LinearOp<TensorT>()), std::make_shared<LinearGradOp<TensorT>>(LinearGradOp<TensorT>()), std::make_shared<SumOp<TensorT>>(SumOp<TensorT>()), std::make_shared<SumErrorOp<TensorT>>(SumErrorOp<TensorT>()), std::make_shared<SumWeightGradOp<TensorT>>(SumWeightGradOp<TensorT>()));
 				bias.setModuleName(module_name);
 				model.addNodes({ bias });
+        delete[] bias_name_char;
 
 				char weight_bias_name_char[512];
 				sprintf(weight_bias_name_char, "%s-bias_%012d_to_%s_%012d", name.data(), i, name.data(), i);
 				std::string weight_bias_name(weight_bias_name_char);
+        delete[] weight_bias_name_char;
 
 				char link_bias_name_char[512];
 				sprintf(link_bias_name_char, "%s-bias_%012d_to_%s_%012d", name.data(), i, name.data(), i);
 				std::string link_bias_name(link_bias_name_char);
+        delete[] link_bias_name_char;
 
 				std::shared_ptr<WeightInitOp<TensorT>>  bias_weight_init;
 				bias_weight_init = std::make_shared<ConstWeightInitOp<TensorT>>(ConstWeightInitOp<TensorT>(0));
@@ -774,14 +788,17 @@ public:
 			char hidden_name_char[512];
 			sprintf(hidden_name_char, "%s_%012d", name.data(), i);
 			std::string hidden_name(hidden_name_char);
+      delete[] hidden_name_char;
 
 			char link_name_char[512];
 			sprintf(link_name_char, "%s_to_%s_%012d", source_node_names[i].data(), name.data(), i);
 			std::string link_name(link_name_char);
+      delete[] link_name_char;
 
 			char weight_name_char[512];
 			sprintf(weight_name_char, "%s_to_%s_%012d", source_node_names[i].data(), name.data(), i);
 			std::string weight_name(weight_name_char);
+      delete[] weight_name_char;
 
 			std::shared_ptr<WeightInitOp<TensorT>>  hidden_weight_init = weight_init;
 			std::shared_ptr<SolverOp<TensorT>>  hidden_solver = solver;
@@ -810,10 +827,12 @@ public:
 			char link_name_char[512];
 			sprintf(link_name_char, "%s_to_%s", source_node_names[i].data(), sink_node_names[i].data());
 			std::string link_name(link_name_char);
+      delete[] link_name_char;
 
 			char weight_name_char[512];
 			sprintf(weight_name_char, "%s_to_%s", source_node_names[i].data(), sink_node_names[i].data());
 			std::string weight_name(weight_name_char);
+      delete[] weight_name_char;
 
 			std::shared_ptr<WeightInitOp<TensorT>>  hidden_weight_init = weight_init;
 			std::shared_ptr<SolverOp<TensorT>>  hidden_solver = solver;
@@ -845,6 +864,7 @@ public:
       if (specify_layer) bias.setLayerName(module_name + "-bias");
       model.addNodes({ bias });
       biases_names.push_back(bias_name);
+      delete[] bias_name_char;
 
       // make the bias weight
       char weight_bias_name_char[512];
@@ -854,6 +874,7 @@ public:
       weight_bias.setModuleName(module_name);
       weight_bias.setDropProbability(drop_connection_prob);
       model.addWeights({ weight_bias });
+      delete[] weight_bias_name_char;
 
       // make the bias link
       char link_bias_name_char[512];
@@ -862,6 +883,7 @@ public:
       Link link_bias(link_bias_name, bias_name, node, weight_bias_name);
       link_bias.setModuleName(module_name);
       model.addLinks({ link_bias });
+      delete[] link_bias_name_char;
     }
     return biases_names;
   }
@@ -879,6 +901,7 @@ public:
 		sms_node.setModuleName(module_name);
     if (specify_layer) sms_node.setLayerName(module_name + "-SoftMaxSum");
 		model.addNodes({ sms_node });
+    delete[] sms_node_name_char;
 
 		// Create the Softmax input/output layer
 		for (int i = 0; i < source_node_names.size(); ++i)
@@ -891,6 +914,7 @@ public:
       smi_node.setModuleName(module_name);
       if (specify_layer) smi_node.setLayerName(module_name + "-SoftMaxIn");
       smi_node.setModuleName(module_name);
+      delete[] smi_node_name_char;
 
 			// Create the output layer
 			char smo_node_name_char[512];
@@ -902,6 +926,7 @@ public:
       smo_node.setModuleName(module_name);
       if (specify_layer) smo_node.setLayerName(module_name + "-SoftMaxOut");
       smo_node.setModuleName(module_name);
+      delete[] smo_node_name_char;
 
 			model.addNodes({ smi_node, smo_node });
 
@@ -913,6 +938,7 @@ public:
 			Link ismi_link(ismi_link_name, source_node_names[i], smi_node_name, unity_weight_name);
 			ismi_link.setModuleName(module_name);
 			model.addLinks({ ismi_link });
+      delete[] ismi_link_name_char;
 
 			// Create the weights and links for the softmax input layer to softmax sum layer
 			unity_weight_name = makeUnityWeight(model, 1.0, module_name, "%s_to_%s", smi_node_name, sms_node_name);
@@ -922,6 +948,7 @@ public:
 			Link smisms_link(smisms_link_name, smi_node_name, sms_node_name, unity_weight_name);
 			smisms_link.setModuleName(module_name);
 			model.addLinks({ smisms_link });
+      delete[] smisms_link_name_char;
 
 			// Create the weights and links for the softmax input layer to softmax output layer
 			unity_weight_name = makeUnityWeight(model, 1.0, module_name, "%s_to_%s", smi_node_name, smo_node_name);
@@ -931,6 +958,7 @@ public:
 			Link smismo_link(smismo_link_name, smi_node_name, smo_node_name, unity_weight_name);
 			smismo_link.setModuleName(module_name);
 			model.addLinks({ smismo_link });
+      delete[] smismo_link_name_char;
 
 			// Create the weights and links for the softmax sum layer to softmax output layer
 			unity_weight_name = makeUnityWeight(model, 1.0, module_name, "%s_to_%s", sms_node_name, smo_node_name);
@@ -940,6 +968,7 @@ public:
 			Link smssmo_link(smssmo_link_name, sms_node_name, smo_node_name, unity_weight_name);
 			smssmo_link.setModuleName(module_name);
 			model.addLinks({ smssmo_link });
+      delete[] smssmo_link_name_char;
 		}
 
 		return node_names;
@@ -959,6 +988,7 @@ public:
 		smm_node.setModuleName(module_name);
 		if (specify_layer) smm_node.setLayerName(module_name +"-Max");
 		model.addNodes({ smm_node });
+    delete[] smm_node_name_char;
 
 		// Create the Softmax Inverse/Sum node
 		char sms_node_name_char[512];
@@ -968,6 +998,7 @@ public:
 		sms_node.setModuleName(module_name);
 		if (specify_layer) sms_node.setLayerName(module_name + "-Sum");
 		model.addNodes({ sms_node });
+    delete[] sms_node_name_char;
 
 		// Create the Softmax input/output layer
 		for (int i = 0; i < source_node_names.size(); ++i)
@@ -979,6 +1010,7 @@ public:
 			Node<TensorT> smi_node(smi_node_name, NodeType::hidden, NodeStatus::initialized, std::make_shared<ExponentialOp<TensorT>>(ExponentialOp<TensorT>()), std::make_shared<ExponentialGradOp<TensorT>>(ExponentialGradOp<TensorT>()), std::make_shared<SumOp<TensorT>>(SumOp<TensorT>()), std::make_shared<SumErrorOp<TensorT>>(SumErrorOp<TensorT>()), std::make_shared<SumWeightGradOp<TensorT>>(SumWeightGradOp<TensorT>()));
 			smi_node.setModuleName(module_name);
 			if (specify_layer) smi_node.setLayerName(module_name + "-SoftMaxIn");
+      delete[] smi_node_name_char;
 
 			// Create the output layer
 			char smo_node_name_char[512];
@@ -988,6 +1020,7 @@ public:
 			Node<TensorT> smo_node(smo_node_name, NodeType::hidden, NodeStatus::initialized, std::make_shared<LinearOp<TensorT>>(LinearOp<TensorT>()), std::make_shared<LinearGradOp<TensorT>>(LinearGradOp<TensorT>()), std::make_shared<ProdOp<TensorT>>(ProdOp<TensorT>()),std::make_shared<ProdErrorOp<TensorT>>(ProdErrorOp<TensorT>()), std::make_shared<ProdWeightGradOp<TensorT>>(ProdWeightGradOp<TensorT>()));
 			smo_node.setModuleName(module_name);
 			if (specify_layer) smo_node.setLayerName(module_name + "-SoftMaxOut");
+      delete[] smo_node_name_char;
 
 			model.addNodes({ smi_node, smo_node });
 
@@ -999,6 +1032,7 @@ public:
 			Link ismm_link(ismm_link_name, source_node_names[i], smm_node_name, unity_weight_name);
 			ismm_link.setModuleName(module_name);
 			model.addLinks({ ismm_link });
+      delete[] ismm_link_name_char;
 
 			// Create the weights and links for the softmax Max node softmax input layer
 			negunity_weight_name = makeUnityWeight(model, -1.0, module_name, "%s_to_%s", smm_node_name, smi_node_name);
@@ -1008,6 +1042,7 @@ public:
 			Link smmsmi_link(smmsmi_link_name, smm_node_name, smi_node_name, negunity_weight_name);
 			smmsmi_link.setModuleName(module_name);
 			model.addLinks({ smmsmi_link });
+      delete[] smmsmi_link_name_char;
 
 			// Create the weights and links for the input to softmax input layer
 			unity_weight_name = makeUnityWeight(model, 1.0, module_name, "%s_to_%s", source_node_names[i], smi_node_name);
@@ -1017,6 +1052,7 @@ public:
 			Link ismi_link(ismi_link_name, source_node_names[i], smi_node_name, unity_weight_name);
 			ismi_link.setModuleName(module_name);
 			model.addLinks({ ismi_link });
+      delete[] ismi_link_name_char;
 
 			// Create the weights and links for the softmax input layer to softmax sum layer
 			unity_weight_name = makeUnityWeight(model, 1.0, module_name, "%s_to_%s", smi_node_name, sms_node_name);
@@ -1026,6 +1062,7 @@ public:
 			Link smisms_link(smisms_link_name, smi_node_name, sms_node_name, unity_weight_name);
 			smisms_link.setModuleName(module_name);
 			model.addLinks({ smisms_link });
+      delete[] smisms_link_name_char;
 
 			// Create the weights and links for the softmax input layer to softmax output layer
 			unity_weight_name = makeUnityWeight(model, 1.0, module_name, "%s_to_%s", smi_node_name, smo_node_name);
@@ -1035,6 +1072,7 @@ public:
 			Link smismo_link(smismo_link_name, smi_node_name, smo_node_name, unity_weight_name);
 			smismo_link.setModuleName(module_name);
 			model.addLinks({ smismo_link });
+      delete[] smismo_link_name_char;
 
 			// Create the weights and links for the softmax sum layer to softmax output layer
 			unity_weight_name = makeUnityWeight(model, 1.0, module_name, "%s_to_%s", sms_node_name, smo_node_name);
@@ -1044,6 +1082,7 @@ public:
 			Link smssmo_link(smssmo_link_name, sms_node_name, smo_node_name, unity_weight_name);
 			smssmo_link.setModuleName(module_name);
 			model.addLinks({ smssmo_link });
+      delete[] smssmo_link_name_char;
 		}
 
 		return node_names;
@@ -1089,6 +1128,7 @@ public:
 			Node<TensorT> bias(bias_name, NodeType::bias, NodeStatus::activated, std::make_shared<LinearOp<TensorT>>(LinearOp<TensorT>()), std::make_shared<LinearGradOp<TensorT>>(LinearGradOp<TensorT>()), std::make_shared<SumOp<TensorT>>(SumOp<TensorT>()), std::make_shared<SumErrorOp<TensorT>>(SumErrorOp<TensorT>()), std::make_shared<SumWeightGradOp<TensorT>>(SumWeightGradOp<TensorT>()));
 			bias.setModuleName(module_name);
 			model.addNodes({ bias });
+      delete[] bias_name_char;
 
 			// Create the shared weights for each bias to output node
 			char weight_bias_name_char[512];
@@ -1097,6 +1137,7 @@ public:
 			Weight<TensorT> weight_bias(weight_bias_name, weight_init, solver);
 			weight_bias.setModuleName(module_name);
 			model.addWeights({ weight_bias });
+      delete[] weight_bias_name_char;
 		}
 
 		// Create the output zero padding nodes
@@ -1111,6 +1152,7 @@ public:
 					if (split_filter_layers) bias.setLayerName(module_name);
 					model.addNodes({ bias });
 					node_names.push_back(bias_name);
+          delete[] bias_name_char;
 				}
 				else if (output_width_iter < output_width_zero_padding || output_width_iter >= output_padded_width - output_width_zero_padding) {
 					char bias_name_char[512];
@@ -1121,6 +1163,7 @@ public:
 					if (split_filter_layers) bias.setLayerName(module_name);
 					model.addNodes({ bias });
 					node_names.push_back(bias_name);
+          delete[] bias_name_char;
 				}
 				else {
 					char output_name_char[512];
@@ -1132,6 +1175,7 @@ public:
 					if (split_filter_layers) output.setLayerName(module_name);
 					model.addNodes({ output });
 					node_names.push_back(output_name);
+          delete[] output_name_char;
 
 					if (biases && share_weights) {
 						// Create the links between the bias and output nodes
@@ -1141,6 +1185,7 @@ public:
 						Link link_bias(link_bias_name, bias_name, output_name, weight_bias_name);
 						link_bias.setModuleName(module_name);
 						model.addLinks({ link_bias });
+            delete[] link_bias_name_char;
 					}
           else if (biases) {
             // Create the filter bias
@@ -1150,6 +1195,7 @@ public:
             Node<TensorT> bias(bias_name, NodeType::bias, NodeStatus::activated, std::make_shared<LinearOp<TensorT>>(LinearOp<TensorT>()), std::make_shared<LinearGradOp<TensorT>>(LinearGradOp<TensorT>()), std::make_shared<SumOp<TensorT>>(SumOp<TensorT>()), std::make_shared<SumErrorOp<TensorT>>(SumErrorOp<TensorT>()), std::make_shared<SumWeightGradOp<TensorT>>(SumWeightGradOp<TensorT>()));
             bias.setModuleName(module_name);
             model.addNodes({ bias });
+            delete[] bias_name_char;
 
             // Create the shared weights for each bias to output node
             char weight_bias_name_char[512];
@@ -1158,6 +1204,7 @@ public:
             Weight<TensorT> weight_bias(weight_bias_name, weight_init, solver);
             weight_bias.setModuleName(module_name);
             model.addWeights({ weight_bias });
+            delete[] weight_bias_name_char;
 
             // Create the links between the bias and output nodes
             char link_bias_name_char[512];
@@ -1166,6 +1213,7 @@ public:
             Link link_bias(link_bias_name, bias_name, output_name, weight_bias_name);
             link_bias.setModuleName(module_name);
             model.addLinks({ link_bias });
+            delete[] link_bias_name_char;
           }
 				}
 			}
@@ -1183,6 +1231,7 @@ public:
           weight_filter.setDropProbability(drop_connection_prob);
           if (split_filter_layers) weight_filter.setLayerName(module_name);
           model.addWeights({ weight_filter });
+          delete[] weight_filter_name_char;
         }
       }
     }
@@ -1243,6 +1292,7 @@ public:
             char output_name_char[512];
             sprintf(output_name_char, "%s-out_H%012d-W%012d", name.data(), output_height_iter + output_height_zero_padding, output_width_iter + output_width_zero_padding);
             std::string output_name(output_name_char);
+            delete[] output_name_char;
 
             // Weight<TensorT> name
             std::string weight_filter_name;
@@ -1250,6 +1300,7 @@ public:
               char weight_filter_name_char[512];
               sprintf(weight_filter_name_char, "%s-%s_H%012d-W%012d", name.data(), module_name.data(), filter_height_iter, filter_width_iter);
               weight_filter_name = std::string(weight_filter_name_char);
+              delete[] weight_filter_name_char;
             }
             else {
               char weight_filter_name_char[512];
@@ -1260,12 +1311,14 @@ public:
               weight_filter.setDropProbability(drop_connection_prob);
               if (split_filter_layers) weight_filter.setLayerName(module_name);
               model.addWeights({ weight_filter });
+              delete[] weight_filter_name_char;
             }
 
 						// Link name
 						char link_filter_name_char[512];
 						sprintf(link_filter_name_char, "%s_to_%s_%s", source_node_names[source_node_iter].data(), output_name.data(), module_name.data());
 						std::string link_filter_name(link_filter_name_char);
+            delete[] link_filter_name_char;
 
 						Link link_filter(link_filter_name, source_node_names[source_node_iter], output_name, weight_filter_name);
 						link_filter.setModuleName(module_name);
