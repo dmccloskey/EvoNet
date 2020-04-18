@@ -233,7 +233,7 @@ void main_reconstruction(const std::string& data_dir, const std::string& biochem
   const int& device_id, const bool& KL_divergence_warmup)
 {
   // global local variables
-  const int n_epochs = 20000;
+  const int n_epochs = 1000;// 20000;
   const int batch_size = 64;
   const int memory_size = 1;
   //const int n_reps_per_sample = 10000;
@@ -337,7 +337,7 @@ void main_reconstruction(const std::string& data_dir, const std::string& biochem
   }
 
   // define the model trainers and resources for the trainers
-  ModelResources model_resources = { ModelDevice(device_id, 1) };
+  ModelResources model_resources = { ModelDevice(device_id, 0) };
   ModelInterpreterGpu<float> model_interpreter(model_resources);
   ModelTrainerExt<float> model_trainer;
   model_trainer.setBatchSize(batch_size);

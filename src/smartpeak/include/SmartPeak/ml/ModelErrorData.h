@@ -77,8 +77,8 @@ public:
       return *this;
     }
 
-		void setBatchSize(const size_t& batch_size) { batch_size_ = batch_size; }
-		void setMemorySize(const size_t& memory_size) { memory_size_ = memory_size; }
+		void setBatchSize(const size_t& batch_size) { (batch_size <= 0) ? batch_size_ = 1 : batch_size_ = batch_size; }
+		void setMemorySize(const size_t& memory_size) { (memory_size <= 0) ? memory_size_ = 1 : memory_size_ = memory_size; }
     void setNMetrics(const size_t& n_metrics) { (n_metrics <= 0) ? n_metrics_ = 1: n_metrics_ = n_metrics; }
 		size_t getBatchSize() const { return batch_size_; }
 		size_t getMemorySize() const	{ return memory_size_; }
