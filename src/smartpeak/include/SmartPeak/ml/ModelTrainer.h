@@ -1519,9 +1519,9 @@ private:
       // Calculate the errors
       for (int loss_iter = 0; loss_iter < helper.loss_functions_.size(); ++loss_iter) {
         if (this->getNTETTSteps() < 0)
-          model_interpreter.CETT(model, expected, helper.output_nodes_, helper.loss_functions_.at(loss_iter).get(), helper.loss_function_grads_.at(loss_iter).get(), this->getMemorySize());
+          model_interpreter.CETT(model, expected, helper.output_nodes_, helper.loss_functions_.at(loss_iter), helper.loss_function_grads_.at(loss_iter), this->getMemorySize());
         else
-          model_interpreter.CETT(model, expected, helper.output_nodes_, helper.loss_functions_.at(loss_iter).get(), helper.loss_function_grads_.at(loss_iter).get(), this->getNTETTSteps());
+          model_interpreter.CETT(model, expected, helper.output_nodes_, helper.loss_functions_.at(loss_iter), helper.loss_function_grads_.at(loss_iter), this->getNTETTSteps());
       }
       output_node_cnt += helper.output_nodes_.size();
     }
@@ -1539,9 +1539,9 @@ private:
       // Calculate the metrics
       for (size_t metric_iter = 0; metric_iter < helper.metric_functions_.size(); ++metric_iter) {
         if (this->getNTETTSteps() < 0)
-          model_interpreter.CMTT(model, expected, helper.output_nodes_, helper.metric_functions_.at(metric_iter).get(), this->getMemorySize(), metric_iter);
+          model_interpreter.CMTT(model, expected, helper.output_nodes_, helper.metric_functions_.at(metric_iter), this->getMemorySize(), metric_iter);
         else
-          model_interpreter.CMTT(model, expected, helper.output_nodes_, helper.metric_functions_.at(metric_iter).get(), this->getNTETTSteps(), metric_iter);
+          model_interpreter.CMTT(model, expected, helper.output_nodes_, helper.metric_functions_.at(metric_iter), this->getNTETTSteps(), metric_iter);
       }
       output_node_cnt += helper.output_nodes_.size();
     }

@@ -135,9 +135,9 @@ protected:
 	inline void ModelErrorData<TensorT, DeviceT>::initModelErrorData(const int& batch_size, const int& memory_size, const int& n_metrics)
 	{
 		setBatchSize(batch_size);	setMemorySize(memory_size); setNMetrics(n_metrics);
-		Eigen::Tensor<TensorT, 2> zero(batch_size, memory_size); zero.setZero();
+		Eigen::Tensor<TensorT, 2> zero(getBatchSize(), getMemorySize()); zero.setZero();
 		setError(zero);
-    Eigen::Tensor<TensorT, 2> zero_metric(n_metrics, memory_size); zero_metric.setZero();
+    Eigen::Tensor<TensorT, 2> zero_metric(getNMetrics(), getMemorySize()); zero_metric.setZero();
     setMetric(zero_metric);
 	}
 
