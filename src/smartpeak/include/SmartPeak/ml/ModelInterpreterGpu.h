@@ -87,34 +87,34 @@ namespace SmartPeak
 				if (make_sink_tensors[iter]) {
           sink_node_data->initNodeTensorData(batch_size, memory_size, sink_layer_sizes[iter],
             FP_operations[operations.second[0]].result.sink_node->getType(),
-            FP_operations[operations.second[0]].result.sink_node->getIntegration()->getName(),
+            FP_operations[operations.second[0]].result.sink_node->getIntegrationShared()->getName(),
             train);
 					this->layer_tensors_.push_back(sink_node_data);
 					operation_step.sink_layer.time_step = FP_operations[operations.second[0]].result.time_step;
-					activation_conv(FP_operations[operations.second[0]].result.sink_node->getActivation(), activation, std::vector<TensorT>() = {});
+					activation_conv(FP_operations[operations.second[0]].result.sink_node->getActivationShared(), activation, std::vector<TensorT>() = {});
 					operation_step.sink_layer.activation = activation;
-					activation_conv(FP_operations[operations.second[0]].result.sink_node->getActivationGrad(), activation_grad, std::vector<TensorT>() = {});
+					activation_conv(FP_operations[operations.second[0]].result.sink_node->getActivationGradShared(), activation_grad, std::vector<TensorT>() = {});
 					operation_step.sink_layer.activation_grad = activation_grad;
-					integration_conv(FP_operations[operations.second[0]].result.sink_node->getIntegration(), integration, std::vector<TensorT>() = {});
+					integration_conv(FP_operations[operations.second[0]].result.sink_node->getIntegrationShared(), integration, std::vector<TensorT>() = {});
 					operation_step.sink_layer.integration = integration;
-					integration_error_conv(FP_operations[operations.second[0]].result.sink_node->getIntegrationError(), integration_error, std::vector<TensorT>() = {});
+					integration_error_conv(FP_operations[operations.second[0]].result.sink_node->getIntegrationErrorShared(), integration_error, std::vector<TensorT>() = {});
 					operation_step.sink_layer.integration_error = integration_error;
-					integration_weight_grad_conv(FP_operations[operations.second[0]].result.sink_node->getIntegrationWeightGrad(), integration_weight_grad, std::vector<TensorT>() = {});
+					integration_weight_grad_conv(FP_operations[operations.second[0]].result.sink_node->getIntegrationWeightGradShared(), integration_weight_grad, std::vector<TensorT>() = {});
 					operation_step.sink_layer.integration_weight_grad = integration_weight_grad;
 					operation_step.sink_layer.tensor_index = FP_operations[operations.second[0]].result.sink_node->getTensorIndex().first;
 				}
 				else {
 					operation_step.sink_layer.tensor_index = FP_operations[operations.second[0]].result.sink_node->getTensorIndex().first;
 					operation_step.sink_layer.time_step = FP_operations[operations.second[0]].result.time_step;
-					activation_conv(FP_operations[operations.second[0]].result.sink_node->getActivation(), activation, std::vector<TensorT>() = {});
+					activation_conv(FP_operations[operations.second[0]].result.sink_node->getActivationShared(), activation, std::vector<TensorT>() = {});
 					operation_step.sink_layer.activation = activation;
-					activation_conv(FP_operations[operations.second[0]].result.sink_node->getActivationGrad(), activation_grad, std::vector<TensorT>() = {});
+					activation_conv(FP_operations[operations.second[0]].result.sink_node->getActivationGradShared(), activation_grad, std::vector<TensorT>() = {});
 					operation_step.sink_layer.activation_grad = activation_grad;
-					integration_conv(FP_operations[operations.second[0]].result.sink_node->getIntegration(), integration, std::vector<TensorT>() = {});
+					integration_conv(FP_operations[operations.second[0]].result.sink_node->getIntegrationShared(), integration, std::vector<TensorT>() = {});
 					operation_step.sink_layer.integration = integration;
-					integration_error_conv(FP_operations[operations.second[0]].result.sink_node->getIntegrationError(), integration_error, std::vector<TensorT>() = {});
+					integration_error_conv(FP_operations[operations.second[0]].result.sink_node->getIntegrationErrorShared(), integration_error, std::vector<TensorT>() = {});
 					operation_step.sink_layer.integration_error= integration_error;
-					integration_weight_grad_conv(FP_operations[operations.second[0]].result.sink_node->getIntegrationWeightGrad(), integration_weight_grad, std::vector<TensorT>() = {});
+					integration_weight_grad_conv(FP_operations[operations.second[0]].result.sink_node->getIntegrationWeightGradShared(), integration_weight_grad, std::vector<TensorT>() = {});
 					operation_step.sink_layer.integration_weight_grad = integration_weight_grad;
 					operation_step.sink_layer.time_step = FP_operations[operations.second[0]].result.time_step;
 				}
@@ -130,33 +130,33 @@ namespace SmartPeak
 				if (make_source_tensors[iter]) {
           source_node_data->initNodeTensorData(batch_size, memory_size, source_layer_sizes[iter],
             FP_operations[operations.second[0]].arguments[0].source_node->getType(),
-            FP_operations[operations.second[0]].arguments[0].source_node->getIntegration()->getName(), train);
+            FP_operations[operations.second[0]].arguments[0].source_node->getIntegrationShared()->getName(), train);
 					operation_step.source_layer.time_step = FP_operations[operations.second[0]].arguments[0].time_step;
 					this->layer_tensors_.push_back(source_node_data);
-					activation_conv(FP_operations[operations.second[0]].arguments[0].source_node->getActivation(), activation, std::vector<TensorT>() = {});
+					activation_conv(FP_operations[operations.second[0]].arguments[0].source_node->getActivationShared(), activation, std::vector<TensorT>() = {});
 					operation_step.source_layer.activation = activation;
-					activation_conv(FP_operations[operations.second[0]].arguments[0].source_node->getActivationGrad(), activation_grad, std::vector<TensorT>() = {});
+					activation_conv(FP_operations[operations.second[0]].arguments[0].source_node->getActivationGradShared(), activation_grad, std::vector<TensorT>() = {});
 					operation_step.source_layer.activation_grad = activation_grad;
-					integration_conv(FP_operations[operations.second[0]].arguments[0].source_node->getIntegration(), integration, std::vector<TensorT>() = {});
+					integration_conv(FP_operations[operations.second[0]].arguments[0].source_node->getIntegrationShared(), integration, std::vector<TensorT>() = {});
 					operation_step.source_layer.integration = integration;
-					integration_error_conv(FP_operations[operations.second[0]].arguments[0].source_node->getIntegrationError(), integration_error, std::vector<TensorT>() = {});
+					integration_error_conv(FP_operations[operations.second[0]].arguments[0].source_node->getIntegrationErrorShared(), integration_error, std::vector<TensorT>() = {});
 					operation_step.source_layer.integration_error = integration_error;
-					integration_weight_grad_conv(FP_operations[operations.second[0]].arguments[0].source_node->getIntegrationWeightGrad(), integration_weight_grad, std::vector<TensorT>() = {});
+					integration_weight_grad_conv(FP_operations[operations.second[0]].arguments[0].source_node->getIntegrationWeightGradShared(), integration_weight_grad, std::vector<TensorT>() = {});
 					operation_step.source_layer.integration_weight_grad = integration_weight_grad;
 					operation_step.source_layer.tensor_index = FP_operations[operations.second[0]].arguments[0].source_node->getTensorIndex().first;
 				}
 				else {
 					operation_step.source_layer.tensor_index = FP_operations[operations.second[0]].arguments[0].source_node->getTensorIndex().first;
 					operation_step.source_layer.time_step = FP_operations[operations.second[0]].arguments[0].time_step;
-					activation_conv(FP_operations[operations.second[0]].arguments[0].source_node->getActivation(), activation, std::vector<TensorT>() = {});
+					activation_conv(FP_operations[operations.second[0]].arguments[0].source_node->getActivationShared(), activation, std::vector<TensorT>() = {});
 					operation_step.source_layer.activation = activation;
-					activation_conv(FP_operations[operations.second[0]].arguments[0].source_node->getActivationGrad(), activation_grad, std::vector<TensorT>() = {});
+					activation_conv(FP_operations[operations.second[0]].arguments[0].source_node->getActivationGradShared(), activation_grad, std::vector<TensorT>() = {});
 					operation_step.source_layer.activation_grad = activation_grad;
-					integration_conv(FP_operations[operations.second[0]].arguments[0].source_node->getIntegration(), integration, std::vector<TensorT>() = {});
+					integration_conv(FP_operations[operations.second[0]].arguments[0].source_node->getIntegrationShared(), integration, std::vector<TensorT>() = {});
 					operation_step.source_layer.integration = integration;
-					integration_error_conv(FP_operations[operations.second[0]].arguments[0].source_node->getIntegrationError(), integration_error, std::vector<TensorT>() = {});
+					integration_error_conv(FP_operations[operations.second[0]].arguments[0].source_node->getIntegrationErrorShared(), integration_error, std::vector<TensorT>() = {});
 					operation_step.source_layer.integration_error = integration_error;
-					integration_weight_grad_conv(FP_operations[operations.second[0]].arguments[0].source_node->getIntegrationWeightGrad(), integration_weight_grad, std::vector<TensorT>() = {});
+					integration_weight_grad_conv(FP_operations[operations.second[0]].arguments[0].source_node->getIntegrationWeightGradShared(), integration_weight_grad, std::vector<TensorT>() = {});
 					operation_step.source_layer.integration_weight_grad = integration_weight_grad;
 				}
 			}
@@ -166,9 +166,9 @@ namespace SmartPeak
 			if (make_weight_tensors[iter]) {
 				std::shared_ptr<SolverTensorOp<TensorT, Eigen::GpuDevice>> solver = nullptr;
 				std::vector<TensorT> solver_params;
-				solver_conv(FP_operations[operations.second[0]].arguments[0].weight->getSolverOp(), solver, solver_params);
+				solver_conv(FP_operations[operations.second[0]].arguments[0].weight->getSolverOpShared(), solver, solver_params);
 				weight_data->initWeightTensorData(source_layer_sizes[iter], sink_layer_sizes[iter], weight_indices[iter], shared_weight_indices[iter], weight_values[iter], train,
-					solver_params, FP_operations[operations.second[0]].result.sink_node->getIntegration()->getName());
+					solver_params, FP_operations[operations.second[0]].result.sink_node->getIntegrationShared()->getName());
 				this->weight_tensors_.push_back(weight_data);
 				operation_step.weight.tensor_index = std::get<0>(FP_operations[operations.second[0]].arguments[0].weight->getTensorIndex()[0]);
 				operation_step.weight.solver = solver;

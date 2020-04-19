@@ -862,10 +862,10 @@ void test_weightUpdateGpuDevice(){
 
 	for (int source_iter = 0; source_iter < source_layer_size; ++source_iter) {
 		for (int sink_iter = 0; sink_iter < sink_layer_size; ++sink_iter) {
-			std::cout << "[Weight] Source iter: " << source_iter << ", Sink Iter: " << sink_iter << " = " << weight(source_iter, sink_iter) << std::endl;
+			//std::cout << "[Weight] Source iter: " << source_iter << ", Sink Iter: " << sink_iter << " = " << weight(source_iter, sink_iter) << std::endl;
 			assert(assert_close(weight(source_iter, sink_iter),expected_weights(source_iter, sink_iter)));
 			for (int param_iter = 0; param_iter < 2; ++param_iter) { // [NOTE: should be `param_iter < 3`]
-				std::cout << "[Params] Source iter: " << source_iter << ", Sink Iter: " << sink_iter << ", Param Iter: " << param_iter << " = " << solver_params(source_iter, sink_iter, param_iter) << std::endl;
+				//std::cout << "[Params] Source iter: " << source_iter << ", Sink Iter: " << sink_iter << ", Param Iter: " << param_iter << " = " << solver_params(source_iter, sink_iter, param_iter) << std::endl;
 				assert(assert_close(solver_params(source_iter, sink_iter, param_iter),expected_params(source_iter, sink_iter, param_iter))); // Not sure why the last param does not pass...
 			}
 		}

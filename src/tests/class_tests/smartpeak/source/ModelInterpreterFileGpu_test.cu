@@ -134,7 +134,7 @@ void test_loadModelBinary2()
 	// update the model solver
 	std::shared_ptr<SolverOp<float>> solver(new AdamOp<float>(0.001, 0.9, 0.999, 1e-8));
 	for (auto& weight_map : model2.getWeightsMap()) {
-		if (weight_map.second->getSolverOp()->getName() == "SGDOp")
+		if (weight_map.second->getSolverOpShared()->getName() == "SGDOp")
 			weight_map.second->setSolverOp(solver);
 	}
 
