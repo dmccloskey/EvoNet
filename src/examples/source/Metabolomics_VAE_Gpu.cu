@@ -233,7 +233,7 @@ void main_reconstruction(const std::string& data_dir, const std::string& biochem
   const int& device_id, const bool& KL_divergence_warmup)
 {
   // global local variables
-  const int n_epochs = 1000;// 20000;
+  const int n_epochs = 20000;
   const int batch_size = 64;
   const int memory_size = 1;
   //const int n_reps_per_sample = 10000;

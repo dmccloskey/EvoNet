@@ -750,9 +750,13 @@ private:
   inline std::pair<std::vector<TensorT>, std::vector<TensorT>> ModelTrainer<TensorT, InterpreterT>::trainModel(Model<TensorT>& model, DataSimulator<TensorT>& data_simulator, const std::vector<std::string>& input_nodes, ModelLogger<TensorT>& model_logger, InterpreterT & model_interpreter)
   {
     std::vector<TensorT> model_error_training;
+    model_error_training.reserve(this->getNEpochsTraining());
     std::vector<TensorT> model_error_validation;
-    std::vector<Eigen::Tensor<TensorT, 1>> model_metrics_training; /// metric values
-    std::vector<Eigen::Tensor<TensorT, 1>> model_metrics_validation;
+    model_error_validation.reserve(this->getNEpochsTraining());
+    //std::vector<Eigen::Tensor<TensorT, 1>> model_metrics_training; /// metric values
+    //model_metrics_training.reserve(this->getNEpochsTraining());
+    //std::vector<Eigen::Tensor<TensorT, 1>> model_metrics_validation;
+    //model_metrics_validation.reserve(this->getNEpochsTraining());
 
     // Check the loss and metric functions
     if (!this->checkLossFunctions()) {
@@ -833,7 +837,7 @@ private:
       const Eigen::Tensor<TensorT, 0> total_error_validation = model.getError().sum();
       model_error_validation.push_back(total_error_validation(0));
       Eigen::Tensor<TensorT, 1> total_metrics_validation = model.getMetric().sum(Eigen::array<Eigen::Index, 1>({ 1 }));
-      model_metrics_validation.push_back(total_metrics_validation);
+      //model_metrics_validation.push_back(total_metrics_validation);
 
       // re-initialize the model
       model_interpreter.reInitNodes();
@@ -873,7 +877,7 @@ private:
       const Eigen::Tensor<TensorT, 0> total_error_training = model.getError().sum();
       model_error_training.push_back(total_error_training(0));
       const Eigen::Tensor<TensorT, 1> total_metrics_training = model.getMetric().sum(Eigen::array<Eigen::Index, 1>({ 1 }));
-      model_metrics_training.push_back(total_metrics_training);
+      //model_metrics_training.push_back(total_metrics_training);
       if (this->getVerbosityLevel() >= 1)
         std::cout << "Model " << model.getName() << " error: " << total_error_training(0) << std::endl;
 
