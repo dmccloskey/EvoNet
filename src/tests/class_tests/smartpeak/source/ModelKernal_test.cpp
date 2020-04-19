@@ -29,7 +29,7 @@ BOOST_AUTO_TEST_CASE(nodeActivationDefaultDevice)
 	ModelKernalDefaultDevice<float> kernal;
 	const int device_id = 0;
 
-	ActivationTensorOp<float, Eigen::DefaultDevice>* activation_function = new ReLUTensorOp<float, Eigen::DefaultDevice>();
+	std::shared_ptr<ActivationTensorOp<float, Eigen::DefaultDevice>> activation_function = std::make_shared<ReLUTensorOp<float, Eigen::DefaultDevice>>(ReLUTensorOp<float, Eigen::DefaultDevice>());
 	const int batch_size = 4;
 	const int memory_size = 2;
 	const int layer_size = 2;
@@ -128,7 +128,7 @@ BOOST_AUTO_TEST_CASE(nodeDerivativeDefaultDevice)
 	ModelKernalDefaultDevice<float> kernal;
 	const int device_id = 0;
 
-	ActivationTensorOp<float, Eigen::DefaultDevice>* activation_grad_function = new ReLUGradTensorOp<float, Eigen::DefaultDevice>();
+	std::shared_ptr<ActivationTensorOp<float, Eigen::DefaultDevice>> activation_grad_function = std::make_shared<ReLUGradTensorOp<float, Eigen::DefaultDevice>>(ReLUGradTensorOp<float, Eigen::DefaultDevice>());
 	const int batch_size = 4;
 	const int memory_size = 2;
 	const int layer_size = 2;
@@ -215,7 +215,7 @@ BOOST_AUTO_TEST_CASE(forwardPropogationDefaultDevice)
 	ModelKernalDefaultDevice<float> kernal;
 	const int device_id = 0;
 
-	IntegrationTensorOp<float, Eigen::DefaultDevice>* integration_function = new SumTensorOp<float, Eigen::DefaultDevice>();
+	std::shared_ptr<IntegrationTensorOp<float, Eigen::DefaultDevice>> integration_function = std::make_shared<SumTensorOp<float, Eigen::DefaultDevice>>(SumTensorOp<float, Eigen::DefaultDevice>());
 	const int batch_size = 4;
 	const int memory_size = 2;
 	const int source_layer_size = 2;
@@ -310,7 +310,7 @@ BOOST_AUTO_TEST_CASE(backwardPropogationDefaultDevice)
 	const int device_id = 0;
 	ModelKernalDefaultDevice<float> kernal;
 
-	IntegrationErrorTensorOp<float, Eigen::DefaultDevice>* integration_function = new SumErrorTensorOp<float, Eigen::DefaultDevice>();
+	std::shared_ptr<IntegrationErrorTensorOp<float, Eigen::DefaultDevice>> integration_function = std::make_shared<SumErrorTensorOp<float, Eigen::DefaultDevice>>(SumErrorTensorOp<float, Eigen::DefaultDevice>());
 	const int batch_size = 4;
 	const int memory_size = 2;
 	const int source_layer_size = 2;
@@ -440,8 +440,8 @@ BOOST_AUTO_TEST_CASE(modelErrorDefaultDevice)
 	const int device_id = 0;
 	ModelKernalDefaultDevice<float> kernal;
 
-	MSELossTensorOp<float, Eigen::DefaultDevice>* loss_function = new MSELossTensorOp<float, Eigen::DefaultDevice>;
-	MSELossGradTensorOp<float, Eigen::DefaultDevice>* loss_grad_function = new MSELossGradTensorOp<float, Eigen::DefaultDevice>;
+	std::shared_ptr<LossFunctionTensorOp<float, Eigen::DefaultDevice>> loss_function = std::make_shared<MSELossTensorOp<float, Eigen::DefaultDevice>>(MSELossTensorOp<float, Eigen::DefaultDevice>());
+	std::shared_ptr<LossFunctionGradTensorOp<float, Eigen::DefaultDevice>> loss_grad_function = std::make_shared<MSELossGradTensorOp<float, Eigen::DefaultDevice>>(MSELossGradTensorOp<float, Eigen::DefaultDevice>());
 	const int batch_size = 4;
 	const int memory_size = 2;
 	const int layer_size = 2;
@@ -521,7 +521,7 @@ BOOST_AUTO_TEST_CASE(modelMetricDefaultDevice)
   const int device_id = 0;
   ModelKernalDefaultDevice<float> kernal;
 
-  MAETensorOp<float, Eigen::DefaultDevice>* metric_function = new MAETensorOp<float, Eigen::DefaultDevice>;
+  std::shared_ptr<MetricFunctionTensorOp<float, Eigen::DefaultDevice>> metric_function = std::make_shared<MAETensorOp<float, Eigen::DefaultDevice>>(MAETensorOp<float, Eigen::DefaultDevice>());
   const int batch_size = 4;
   const int memory_size = 2;
   const int layer_size = 2;
@@ -586,7 +586,7 @@ BOOST_AUTO_TEST_CASE(weightErrorDefaultDevice)
 	const int device_id = 0;
 	ModelKernalDefaultDevice<float> kernal;
 
-	IntegrationWeightGradTensorOp<float, Eigen::DefaultDevice>* integration_function = new SumWeightGradTensorOp<float, Eigen::DefaultDevice>();
+	std::shared_ptr<IntegrationWeightGradTensorOp<float, Eigen::DefaultDevice>> integration_function = std::make_shared<SumWeightGradTensorOp<float, Eigen::DefaultDevice>>(SumWeightGradTensorOp<float, Eigen::DefaultDevice>());
 	const int batch_size = 4;
 	const int memory_size = 2;
 	const int source_layer_size = 2;
@@ -729,7 +729,7 @@ BOOST_AUTO_TEST_CASE(weightUpdateDefaultDevice)
 	const int device_id = 0;
 	ModelKernalDefaultDevice<float> kernal;
 
-	SolverTensorOp<float, Eigen::DefaultDevice>* solver_function = new SGDTensorOp<float, Eigen::DefaultDevice>();
+	std::shared_ptr<SolverTensorOp<float, Eigen::DefaultDevice>> solver_function = std::make_shared<SGDTensorOp<float, Eigen::DefaultDevice>>(SGDTensorOp<float, Eigen::DefaultDevice>());
 	const int source_layer_size = 2;
 	const int sink_layer_size = 1;
   const int iter = 0;

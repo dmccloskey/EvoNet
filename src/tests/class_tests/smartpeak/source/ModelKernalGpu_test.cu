@@ -32,7 +32,7 @@ void test_nodeActivationGpuDevice()
 	ModelKernalGpu<float> kernal;
 	const int device_id = 0;
 
-	ActivationTensorOp<float, Eigen::GpuDevice>* activation_function = new ReLUTensorOp<float, Eigen::GpuDevice>();
+	std::shared_ptr<ActivationTensorOp<float, Eigen::GpuDevice>> activation_function = std::make_shared<ReLUTensorOp<float, Eigen::GpuDevice>>(ReLUTensorOp<float, Eigen::GpuDevice>());
 	const int batch_size = 4;
 	const int memory_size = 2;
 	const int layer_size = 2;
@@ -123,7 +123,7 @@ void test_nodeDerivativeGpuDevice()
 	ModelKernalGpu<float> kernal;
 	const int device_id = 0;
 
-	ActivationTensorOp<float, Eigen::GpuDevice>* activation_grad_function = new ReLUGradTensorOp<float, Eigen::GpuDevice>();
+	std::shared_ptr<ActivationTensorOp<float, Eigen::GpuDevice>> activation_grad_function = std::make_shared<ReLUGradTensorOp<float, Eigen::GpuDevice>>(ReLUGradTensorOp<float, Eigen::GpuDevice>());
 	const int batch_size = 4;
 	const int memory_size = 2;
 	const int layer_size = 2;
@@ -204,7 +204,7 @@ void test_forwardPropogationGpuDevice()
 	ModelKernalGpu<float> kernal;
 	const int device_id = 0;
 
-	IntegrationTensorOp<float, Eigen::GpuDevice>* integration_function = new SumTensorOp<float, Eigen::GpuDevice>();
+	std::shared_ptr<IntegrationTensorOp<float, Eigen::GpuDevice>> integration_function = std::make_shared<SumTensorOp<float, Eigen::GpuDevice>>(SumTensorOp<float, Eigen::GpuDevice>());
 	const int batch_size = 4;
 	const int memory_size = 2;
 	const int source_layer_size = 2;
@@ -300,7 +300,7 @@ void test_backwardPropogationGpuDevice()
 	const int device_id = 0;
 	ModelKernalGpu<float> kernal;
 
-	IntegrationErrorTensorOp<float, Eigen::GpuDevice>* integration_function = new SumErrorTensorOp<float, Eigen::GpuDevice>();
+	std::shared_ptr<IntegrationErrorTensorOp<float, Eigen::GpuDevice>> integration_function = std::make_shared<SumErrorTensorOp<float, Eigen::GpuDevice>>(SumErrorTensorOp<float, Eigen::GpuDevice>());
 	const int batch_size = 4;
 	const int memory_size = 2;
 	const int source_layer_size = 2;
@@ -429,8 +429,8 @@ void test_modelErrorGpuDevice()
 	const int device_id = 0;
 	ModelKernalGpu<float> kernal;
 
-	MSELossTensorOp<float, Eigen::GpuDevice>* loss_function = new MSELossTensorOp<float, Eigen::GpuDevice>;
-	MSELossGradTensorOp<float, Eigen::GpuDevice>* loss_grad_function = new MSELossGradTensorOp<float, Eigen::GpuDevice>;
+	std::shared_ptr<LossFunctionTensorOp<float, Eigen::GpuDevice>> loss_function = std::make_shared<MSELossTensorOp<float, Eigen::GpuDevice>>(MSELossTensorOp<float, Eigen::GpuDevice>());
+	std::shared_ptr<LossFunctionGradTensorOp<float, Eigen::GpuDevice>> loss_grad_function = std::make_shared<MSELossGradTensorOp<float, Eigen::GpuDevice>>(MSELossGradTensorOp<float, Eigen::GpuDevice>());
 	const int batch_size = 4;
 	const int memory_size = 2;
 	const int layer_size = 2;
@@ -529,7 +529,7 @@ void test_modelMetricGpuDevice()
   const int device_id = 0;
   ModelKernalGpu<float> kernal;
 
-  MAETensorOp<float, Eigen::GpuDevice>* metric_function = new MAETensorOp<float, Eigen::GpuDevice>;
+  std::shared_ptr<MetricFunctionTensorOp<float, Eigen::GpuDevice>> metric_function = std::make_shared<MAETensorOp<float, Eigen::GpuDevice>>(MAETensorOp<float, Eigen::GpuDevice>());
   const int batch_size = 4;
   const int memory_size = 2;
   const int layer_size = 2;
@@ -611,7 +611,7 @@ void test_weightErrorGpuDevice()
 	const int device_id = 0;
 	ModelKernalGpu<float> kernal;
 
-	IntegrationWeightGradTensorOp<float, Eigen::GpuDevice>* integration_function = new SumWeightGradTensorOp<float, Eigen::GpuDevice>();
+	std::shared_ptr<IntegrationWeightGradTensorOp<float, Eigen::GpuDevice>> integration_function = std::make_shared<SumWeightGradTensorOp<float, Eigen::GpuDevice>>(SumWeightGradTensorOp<float, Eigen::GpuDevice>());
 	const int batch_size = 4;
 	const int memory_size = 2;
 	const int source_layer_size = 2;
@@ -795,7 +795,7 @@ void test_weightUpdateGpuDevice(){
 	const int device_id = 0;
 	ModelKernalGpu<float> kernal;
 
-	SolverTensorOp<float, Eigen::GpuDevice>* solver_function = new SGDTensorOp<float, Eigen::GpuDevice>();
+	std::shared_ptr<SolverTensorOp<float, Eigen::GpuDevice>> solver_function = std::make_shared<SGDTensorOp<float, Eigen::GpuDevice>>(SGDTensorOp<float, Eigen::GpuDevice>());
 	const int source_layer_size = 2;
 	const int sink_layer_size = 1;
   const int iter = 0;
@@ -862,11 +862,11 @@ void test_weightUpdateGpuDevice(){
 
 	for (int source_iter = 0; source_iter < source_layer_size; ++source_iter) {
 		for (int sink_iter = 0; sink_iter < sink_layer_size; ++sink_iter) {
-			//std::cout << "[Weight] Source iter: " << source_iter << ", Sink Iter: " << sink_iter << " = " << weight(source_iter, sink_iter) << std::endl;
-			assert(weight(source_iter, sink_iter) == expected_weights(source_iter, sink_iter));
+			std::cout << "[Weight] Source iter: " << source_iter << ", Sink Iter: " << sink_iter << " = " << weight(source_iter, sink_iter) << std::endl;
+			assert(assert_close(weight(source_iter, sink_iter),expected_weights(source_iter, sink_iter)));
 			for (int param_iter = 0; param_iter < 2; ++param_iter) { // [NOTE: should be `param_iter < 3`]
-				//std::cout << "[Params] Source iter: " << source_iter << ", Sink Iter: " << sink_iter << ", Param Iter: " << param_iter << " = " << solver_params(source_iter, sink_iter, param_iter) << std::endl;
-				assert(solver_params(source_iter, sink_iter, param_iter) == expected_params(source_iter, sink_iter, param_iter)); // Not sure why the last param does not pass...
+				std::cout << "[Params] Source iter: " << source_iter << ", Sink Iter: " << sink_iter << ", Param Iter: " << param_iter << " = " << solver_params(source_iter, sink_iter, param_iter) << std::endl;
+				assert(assert_close(solver_params(source_iter, sink_iter, param_iter),expected_params(source_iter, sink_iter, param_iter))); // Not sure why the last param does not pass...
 			}
 		}
 	}

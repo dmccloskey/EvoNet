@@ -447,14 +447,14 @@ namespace SmartPeak
 
 		@param[in] time_step The current time-step to operate on
 		*/
-		virtual void executeModelErrorOperations(Eigen::Tensor<TensorT, 2>& expected, const int& layer_id, LossFunctionTensorOp<TensorT, DeviceT>* loss_function, LossFunctionGradTensorOp<TensorT, DeviceT>* loss_function_grad, const int& time_step) = 0;
+		virtual void executeModelErrorOperations(Eigen::Tensor<TensorT, 2>& expected, const int& layer_id, std::shared_ptr<LossFunctionTensorOp<TensorT,DeviceT>>& loss_function, std::shared_ptr<LossFunctionGradTensorOp<TensorT, DeviceT>>& loss_function_grad, const int& time_step) = 0;
     
     /**
     @brief Execute model kernal methods required for calculating the model metrics (e.g., accuracy)
 
     @param[in] time_step The current time-step to operate on
     */
-    virtual void executeModelMetricOperations(Eigen::Tensor<TensorT, 2>& expected, const int& layer_id, MetricFunctionTensorOp<TensorT, DeviceT>* metric_function, const int& time_step, const int& metric_index) = 0;
+    virtual void executeModelMetricOperations(Eigen::Tensor<TensorT, 2>& expected, const int& layer_id, std::shared_ptr<MetricFunctionTensorOp<TensorT, DeviceT>> metric_function, const int& time_step, const int& metric_index) = 0;
 
 		/**
 		@brief Execute model kernal methods required for backward propogation
@@ -513,7 +513,7 @@ namespace SmartPeak
 			where t=n to t=0
 		@param[in] node_names Output nodes
 		*/
-		void CETT(Model<TensorT>& model, const Eigen::Tensor<TensorT, 3>& values, const std::vector<std::string>& node_names, LossFunctionOp<TensorT>* loss_function, LossFunctionGradOp<TensorT>* loss_function_grad, const int& time_steps);
+		void CETT(Model<TensorT>& model, const Eigen::Tensor<TensorT, 3>& values, const std::vector<std::string>& node_names, std::shared_ptr<LossFunctionOp<TensorT>>& loss_function, std::shared_ptr<LossFunctionGradOp<TensorT>>& loss_function_grad, const int& time_steps);
 
 
     /**
@@ -528,7 +528,7 @@ namespace SmartPeak
     @param[in] time_steps The number of time_steps to evaluate in time
     @param[in] metric_index The index of the metric function to evaluate
     */
-    void CMTT(Model<TensorT>& model, const Eigen::Tensor<TensorT, 3>& values, const std::vector<std::string>& node_names, MetricFunctionOp<TensorT>* metric_function, 
+    void CMTT(Model<TensorT>& model, const Eigen::Tensor<TensorT, 3>& values, const std::vector<std::string>& node_names, std::shared_ptr<MetricFunctionOp<TensorT>>& metric_function, 
       const int& time_steps, const int& metric_index);
 
 		/**
@@ -2023,8 +2023,8 @@ namespace SmartPeak
 	}
 
 	template<typename TensorT, typename DeviceT>
-	inline void ModelInterpreter<TensorT, DeviceT>::CETT(Model<TensorT>& model, const Eigen::Tensor<TensorT, 3>& values, const std::vector<std::string>& node_names, 
-		LossFunctionOp<TensorT>* loss_function, LossFunctionGradOp<TensorT>* loss_function_grad, const int & time_steps)
+	inline void ModelInterpreter<TensorT, DeviceT>::CETT(Model<TensorT>& model, const Eigen::Tensor<TensorT, 3>& values,
+ const std::vector<std::string>& node_names, std::shared_ptr<LossFunctionOp<TensorT>>& loss_function, std::shared_ptr<LossFunctionGradOp<TensorT>>& loss_function_grad, const int & time_steps)
 	{
 		// check time_steps vs memory_size
 		// [NOTE: was changed form memory_size to memory_size - 1]
@@ -2054,10 +2054,10 @@ namespace SmartPeak
 		}
 
 		// convert the loss function
-		LossFunctionTensorOp<TensorT, DeviceT>* loss_function_tensor = nullptr;
+    std::shared_ptr<LossFunctionTensorOp<TensorT, DeviceT>> loss_function_tensor;
 		LossFunctionOpToLossFunctionTensorOp<TensorT, DeviceT> loss_conv;
 		loss_conv(loss_function, loss_function_tensor, std::vector<TensorT>() = {});
-		LossFunctionGradTensorOp<TensorT, DeviceT>* loss_function_grad_tensor = nullptr;
+		std::shared_ptr<LossFunctionGradTensorOp<TensorT, DeviceT>> loss_function_grad_tensor;
 		LossFunctionGradOpToLossFunctionGradTensorOp<TensorT, DeviceT> loss_grad_conv;
 		loss_grad_conv(loss_function_grad, loss_function_grad_tensor, std::vector<TensorT>() = {});
 
@@ -2072,7 +2072,7 @@ namespace SmartPeak
 	}
 
   template<typename TensorT, typename DeviceT>
-  inline void ModelInterpreter<TensorT, DeviceT>::CMTT(Model<TensorT>& model, const Eigen::Tensor<TensorT, 3>& values, const std::vector<std::string>& node_names, MetricFunctionOp<TensorT>* metric_function, const int & time_steps, const int & metric_index)
+  inline void ModelInterpreter<TensorT, DeviceT>::CMTT(Model<TensorT>& model, const Eigen::Tensor<TensorT, 3>& values, const std::vector<std::string>& node_names, std::shared_ptr<MetricFunctionOp<TensorT>>& metric_function, const int & time_steps, const int & metric_index)
   {
     // check time_steps vs memory_size
     int max_steps = time_steps;
@@ -2101,7 +2101,7 @@ namespace SmartPeak
     }
 
     // convert the metric function
-    MetricFunctionTensorOp<TensorT, DeviceT>* metric_function_tensor = nullptr;
+    std::shared_ptr<MetricFunctionTensorOp<TensorT, DeviceT>> metric_function_tensor;
     MetricFunctionOpToMetricFunctionTensorOp<TensorT, DeviceT> metric_conv;
     metric_conv(metric_function, metric_function_tensor, std::vector<TensorT>() = {});
 

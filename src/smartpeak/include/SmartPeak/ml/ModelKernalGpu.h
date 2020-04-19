@@ -23,8 +23,8 @@ namespace SmartPeak
 			TensorT* h_node_outputs,
 			TensorT* d_node_outputs,
 			TensorT* h_sink_dt,
-			TensorT* d_sink_dt,
-			ActivationTensorOp<TensorT, Eigen::GpuDevice>* activation_function,
+			TensorT* d_sink_dt, 
+      std::shared_ptr<ActivationTensorOp<TensorT, Eigen::GpuDevice>>& activation_function,
 			const int& batch_size,
 			const int& memory_size,
 			const int& layer_size,
@@ -33,8 +33,8 @@ namespace SmartPeak
 			bool copyHostToDevice = false,
 			bool copyDeviceToHost = false) override {
 			// check that source and weights lengths match
-
 			const size_t bytes = batch_size * memory_size * layer_size * sizeof(TensorT);
+
 			// Copy host to device
 			if (copyHostToDevice) {
 				device.memcpyHostToDevice(d_node_inputs, h_node_inputs, bytes);
@@ -56,8 +56,7 @@ namespace SmartPeak
 			TensorT* h_node_outputs,
 			TensorT* d_node_outputs,
 			TensorT* h_node_derivative,
-			TensorT* d_node_derivative,
-			ActivationTensorOp<TensorT, Eigen::GpuDevice>* activation_grad_function,
+			TensorT* d_node_derivative, std::shared_ptr<ActivationTensorOp<TensorT, Eigen::GpuDevice>>& activation_grad_function,
 			const int& batch_size,
 			const int& memory_size,
 			const int& layer_size,
@@ -66,8 +65,8 @@ namespace SmartPeak
 			bool copyHostToDevice = false,
 			bool copyDeviceToHost = false) override {
 			// check that source and weights lengths match
-
 			const size_t bytes = batch_size * memory_size * layer_size * sizeof(TensorT);
+
 			// Copy host to device
 			if (copyHostToDevice) {
 				device.memcpyHostToDevice(d_node_outputs, h_node_outputs, bytes); // only if testing
@@ -90,7 +89,7 @@ namespace SmartPeak
 			TensorT* d_weights,
 			TensorT* h_sink_inputs,
 			TensorT* d_sink_inputs,
-			IntegrationTensorOp<TensorT, Eigen::GpuDevice>* sink_integration_function,
+      std::shared_ptr<IntegrationTensorOp<TensorT, Eigen::GpuDevice>>& sink_integration_function,
 			const int& batch_size,
 			const int& memory_size,
 			const int& source_layer_size,
@@ -134,7 +133,7 @@ namespace SmartPeak
 			TensorT* h_sink_derivative,
 			TensorT* d_sink_derivative,
 			const int& n_input_nodes,
-			IntegrationErrorTensorOp<TensorT, Eigen::GpuDevice>* source_integration_functions,
+      std::shared_ptr<IntegrationErrorTensorOp<TensorT, Eigen::GpuDevice>>& source_integration_functions,
 			const int& batch_size,
 			const int& memory_size,
 			const int& source_layer_size,
@@ -180,8 +179,8 @@ namespace SmartPeak
 			TensorT* d_model_error,
 			TensorT* h_node_errors,
 			TensorT* d_node_errors,
-			LossFunctionTensorOp<TensorT, Eigen::GpuDevice>* loss_function,
-			LossFunctionGradTensorOp<TensorT, Eigen::GpuDevice>* loss_grad_function,
+      std::shared_ptr<LossFunctionTensorOp<TensorT, Eigen::GpuDevice>>& loss_function,
+      std::shared_ptr<LossFunctionGradTensorOp<TensorT, Eigen::GpuDevice>>& loss_grad_function,
 			const int& batch_size,
 			const int& memory_size,
 			const int& layer_size,
@@ -233,7 +232,7 @@ namespace SmartPeak
       TensorT* d_node_output,
       TensorT* h_model_metric,
       TensorT* d_model_metric,
-      MetricFunctionTensorOp<TensorT, Eigen::GpuDevice>* metric_function,
+      std::shared_ptr<MetricFunctionTensorOp<TensorT, Eigen::GpuDevice>>& metric_function,
       const int& batch_size,
       const int& memory_size,
       const int& layer_size,
@@ -283,7 +282,7 @@ namespace SmartPeak
 			TensorT* h_source_inputs,
 			TensorT* d_source_inputs,
 			const int& n_input_nodes,
-			IntegrationWeightGradTensorOp<TensorT, Eigen::GpuDevice>* sink_integration_function,
+      std::shared_ptr<IntegrationWeightGradTensorOp<TensorT, Eigen::GpuDevice>>& sink_integration_function,
 			TensorT* h_weight,
 			TensorT* d_weight,
 			TensorT* h_weight_error,
@@ -355,7 +354,7 @@ namespace SmartPeak
 			TensorT* d_solver_params,
 			TensorT* h_weight_error,
 			TensorT* d_weight_error,
-			SolverTensorOp<TensorT, Eigen::GpuDevice>* solver_function,
+      std::shared_ptr<SolverTensorOp<TensorT, Eigen::GpuDevice>>& solver_function,
 			const int& source_layer_size,
 			const int& sink_layer_size,
       const int& iter,
