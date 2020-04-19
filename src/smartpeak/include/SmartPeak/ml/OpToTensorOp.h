@@ -244,7 +244,7 @@ namespace SmartPeak
 				return op_tensor_class;
 			}
 			else if (op_class->getName() == "CrossEntropyWithLogitsLossOp") {
-				CrossEntropyWithLogitsLossTensorOp<TensorT, DeviceT>* op_tensor_class = std::make_shared<CrossEntropyWithLogitsLossTensorOp<TensorT, DeviceT>>( CrossEntropyWithLogitsLossTensorOp<TensorT, DeviceT>(op_class->getParameters()[0], op_class->getParameters()[1]));
+        std::shared_ptr<LossFunctionTensorOp<TensorT, DeviceT>> op_tensor_class = std::make_shared<CrossEntropyWithLogitsLossTensorOp<TensorT, DeviceT>>( CrossEntropyWithLogitsLossTensorOp<TensorT, DeviceT>(op_class->getParameters()[0], op_class->getParameters()[1]));
 				return op_tensor_class;
 			}
       else if (op_class->getName() == "MSERangeUBLossOp") {
@@ -322,7 +322,7 @@ namespace SmartPeak
 				return op_tensor_class;
 			}
 			else if (op_class->getName() == "CrossEntropyWithLogitsLossGradOp") {
-				CrossEntropyWithLogitsLossGradTensorOp<TensorT, DeviceT>* op_tensor_class = std::make_shared<CrossEntropyWithLogitsLossGradTensorOp<TensorT, DeviceT>>( CrossEntropyWithLogitsLossGradTensorOp<TensorT, DeviceT>(op_class->getParameters()[0], op_class->getParameters()[1]));
+        std::shared_ptr<LossFunctionGradTensorOp<TensorT, DeviceT>> op_tensor_class = std::make_shared<CrossEntropyWithLogitsLossGradTensorOp<TensorT, DeviceT>>( CrossEntropyWithLogitsLossGradTensorOp<TensorT, DeviceT>(op_class->getParameters()[0], op_class->getParameters()[1]));
 				return op_tensor_class;
 			}
       else if (op_class->getName() == "MSERangeLBLossGradOp") {

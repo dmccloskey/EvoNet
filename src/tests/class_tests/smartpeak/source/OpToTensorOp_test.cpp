@@ -412,7 +412,7 @@ BOOST_AUTO_TEST_CASE(getTensorParamsSolverOpToSolverTensorOp)
 	BOOST_CHECK_EQUAL(params.size(), 3);
 	BOOST_CHECK_EQUAL(params[0], 1); BOOST_CHECK_EQUAL(params[1], 2); BOOST_CHECK_EQUAL(params[2], 0);
 
-  op_class = std::make_shared<SSDOp<float>>(SSDOp<float>(1, 2);
+  op_class = std::make_shared<SSDOp<float>>(SSDOp<float>(1, 2));
   params = op_to_tensor_op.getTensorParams(op_class);
   BOOST_CHECK_EQUAL(params.size(), 3);
   BOOST_CHECK_EQUAL(params[0], 1); BOOST_CHECK_EQUAL(params[1], 2); BOOST_CHECK_EQUAL(params[2], 0);
@@ -732,141 +732,132 @@ BOOST_AUTO_TEST_CASE(convertOpToTensorOpLossFunctionGradOpToLossFunctionGradTens
 	std::shared_ptr<LossFunctionGradOp<float>> op_class;
 	std::shared_ptr<LossFunctionGradTensorOp<float, Eigen::DefaultDevice>> op_tensor_class;
 
-	op_class = std::make_shared<ManhattanDistanceLossGradOp<float>>(ManhattanDistanceLossGradOp<float>();
+	op_class = std::make_shared<ManhattanDistanceLossGradOp<float>>(ManhattanDistanceLossGradOp<float>());
 	op_tensor_class = op_to_tensor_op.convertOpToTensorOp(op_class);
 	BOOST_CHECK_EQUAL(op_tensor_class->getName(), "ManhattanDistanceLossGradTensorOp");
 
-	op_class = std::make_shared<L2NormLossGradOp<float>>(L2NormLossGradOp<float>();
+	op_class = std::make_shared<L2NormLossGradOp<float>>(L2NormLossGradOp<float>());
 	op_tensor_class = op_to_tensor_op.convertOpToTensorOp(op_class);
 	BOOST_CHECK_EQUAL(op_tensor_class->getName(), "L2NormLossGradTensorOp");
 
-	op_class = std::make_shared<NegativeLogLikelihoodLossGradOp<float>>(NegativeLogLikelihoodLossGradOp<float>();
+	op_class = std::make_shared<NegativeLogLikelihoodLossGradOp<float>>(NegativeLogLikelihoodLossGradOp<float>());
 	op_tensor_class = op_to_tensor_op.convertOpToTensorOp(op_class);
 	BOOST_CHECK_EQUAL(op_tensor_class->getName(), "NegativeLogLikelihoodLossGradTensorOp");
 
-	op_class = std::make_shared<MSELossGradOp<float>>(MSELossGradOp<float>();
+	op_class = std::make_shared<MSELossGradOp<float>>(MSELossGradOp<float>());
 	op_tensor_class = op_to_tensor_op.convertOpToTensorOp(op_class);
 	BOOST_CHECK_EQUAL(op_tensor_class->getName(), "MSELossGradTensorOp");
 
-  op_class = std::make_shared<MAELossGradOp<float>>(MAELossGradOp<float>();
+  op_class = std::make_shared<MAELossGradOp<float>>(MAELossGradOp<float>());
   op_tensor_class = op_to_tensor_op.convertOpToTensorOp(op_class);
   BOOST_CHECK_EQUAL(op_tensor_class->getName(), "MAELossGradTensorOp");
 
-  op_class = std::make_shared<MRSELossGradOp<float>>(MRSELossGradOp<float>();
+  op_class = std::make_shared<MRSELossGradOp<float>>(MRSELossGradOp<float>());
   op_tensor_class = op_to_tensor_op.convertOpToTensorOp(op_class);
   BOOST_CHECK_EQUAL(op_tensor_class->getName(), "MRSELossGradTensorOp");
 
-  op_class = std::make_shared<MLELossGradOp<float>>(MLELossGradOp<float>();
+  op_class = std::make_shared<MLELossGradOp<float>>(MLELossGradOp<float>());
   op_tensor_class = op_to_tensor_op.convertOpToTensorOp(op_class);
   BOOST_CHECK_EQUAL(op_tensor_class->getName(), "MLELossGradTensorOp");
 
-	op_class = new KLDivergenceMuLossGradOp<float>();
+	op_class = std::make_shared<KLDivergenceMuLossGradOp<float>>(KLDivergenceMuLossGradOp<float>());
 	op_tensor_class = op_to_tensor_op.convertOpToTensorOp(op_class);
 	BOOST_CHECK_EQUAL(op_tensor_class->getName(), "KLDivergenceMuLossGradTensorOp");
 
-	op_class = new KLDivergenceLogVarLossGradOp<float>();
+	op_class = std::make_shared<KLDivergenceLogVarLossGradOp<float>>(KLDivergenceLogVarLossGradOp<float>());
 	op_tensor_class = op_to_tensor_op.convertOpToTensorOp(op_class);
 	BOOST_CHECK_EQUAL(op_tensor_class->getName(), "KLDivergenceLogVarLossGradTensorOp");
 
-	op_class = new BCEWithLogitsLossGradOp<float>();
+	op_class = std::make_shared<BCEWithLogitsLossGradOp<float>>(BCEWithLogitsLossGradOp<float>());
 	op_tensor_class = op_to_tensor_op.convertOpToTensorOp(op_class);
 	BOOST_CHECK_EQUAL(op_tensor_class->getName(), "BCEWithLogitsLossGradTensorOp");
 
-	op_class = new CrossEntropyWithLogitsLossGradOp<float>();
+	op_class = std::make_shared<CrossEntropyWithLogitsLossGradOp<float>>(CrossEntropyWithLogitsLossGradOp<float>());
 	op_tensor_class = op_to_tensor_op.convertOpToTensorOp(op_class);
 	BOOST_CHECK_EQUAL(op_tensor_class->getName(), "CrossEntropyWithLogitsLossGradTensorOp");
 
-  op_class = new MSERangeLBLossGradOp<float>();
+  op_class = std::make_shared<MSERangeLBLossGradOp<float>>(MSERangeLBLossGradOp<float>());
   op_tensor_class = op_to_tensor_op.convertOpToTensorOp(op_class);
   BOOST_CHECK_EQUAL(op_tensor_class->getName(), "MSERangeLBLossGradTensorOp");
 
-  op_class = new MSERangeUBLossGradOp<float>();
+  op_class = std::make_shared<MSERangeUBLossGradOp<float>>(MSERangeUBLossGradOp<float>());
   op_tensor_class = op_to_tensor_op.convertOpToTensorOp(op_class);
   BOOST_CHECK_EQUAL(op_tensor_class->getName(), "MSERangeUBLossGradTensorOp");
 
-  op_class = new KLDivergenceCatLossGradOp<float>();
+  op_class = std::make_shared<KLDivergenceCatLossGradOp<float>>(KLDivergenceCatLossGradOp<float>());
   op_tensor_class = op_to_tensor_op.convertOpToTensorOp(op_class);
   BOOST_CHECK_EQUAL(op_tensor_class->getName(), "KLDivergenceCatLossGradTensorOp");
 
-  op_class = new MAPELossGradOp<float>();
+  op_class = std::make_shared<MAPELossGradOp<float>>(MAPELossGradOp<float>());
   op_tensor_class = op_to_tensor_op.convertOpToTensorOp(op_class);
   BOOST_CHECK_EQUAL(op_tensor_class->getName(), "MAPELossGradTensorOp");
-
-  delete op_class;
-  delete op_tensor_class;
 }
 
 BOOST_AUTO_TEST_CASE(getTensorParamsLossFunctionGradOpToLossFunctionGradTensorOp)
 {
 	LossFunctionGradOpToLossFunctionGradTensorOp<float, Eigen::DefaultDevice> op_to_tensor_op;
-	LossFunctionGradOp<float>* op_class = nullptr;
+	std::shared_ptr<LossFunctionGradOp<float>> op_class;
 	std::vector<float> params;
 
-	op_class = std::make_shared<ManhattanDistanceLossGradOp<float>>(ManhattanDistanceLossGradOp<float>();
+	op_class = std::make_shared<ManhattanDistanceLossGradOp<float>>(ManhattanDistanceLossGradOp<float>());
 	params = op_to_tensor_op.getTensorParams(op_class);
 	BOOST_CHECK_EQUAL(params.size(), 0);
 
-	op_class = std::make_shared<L2NormLossGradOp<float>>(L2NormLossGradOp<float>();
+	op_class = std::make_shared<L2NormLossGradOp<float>>(L2NormLossGradOp<float>());
 	params = op_to_tensor_op.getTensorParams(op_class);
 	BOOST_CHECK_EQUAL(params.size(), 0);
 
-	op_class = std::make_shared<L2NormLossGradOp<float>>(L2NormLossGradOp<float>();
+	op_class = std::make_shared<NegativeLogLikelihoodLossGradOp<float>>(NegativeLogLikelihoodLossGradOp<float>());
 	params = op_to_tensor_op.getTensorParams(op_class);
 	BOOST_CHECK_EQUAL(params.size(), 0);
 
-	op_class = std::make_shared<NegativeLogLikelihoodLossGradOp<float>>(NegativeLogLikelihoodLossGradOp<float>();
+	op_class = std::make_shared<MSELossGradOp<float>>(MSELossGradOp<float>());
 	params = op_to_tensor_op.getTensorParams(op_class);
 	BOOST_CHECK_EQUAL(params.size(), 0);
 
-	op_class = std::make_shared<MSELossGradOp<float>>(MSELossGradOp<float>();
-	params = op_to_tensor_op.getTensorParams(op_class);
-	BOOST_CHECK_EQUAL(params.size(), 0);
-
-  op_class = std::make_shared<MAELossGradOp<float>>(MAELossGradOp<float>();
+  op_class = std::make_shared<MAELossGradOp<float>>(MAELossGradOp<float>());
   params = op_to_tensor_op.getTensorParams(op_class);
   BOOST_CHECK_EQUAL(params.size(), 0);
 
-  op_class = std::make_shared<MRSELossGradOp<float>>(MRSELossGradOp<float>();
+  op_class = std::make_shared<MRSELossGradOp<float>>(MRSELossGradOp<float>());
   params = op_to_tensor_op.getTensorParams(op_class);
   BOOST_CHECK_EQUAL(params.size(), 0);
 
-  op_class = std::make_shared<MLELossGradOp<float>>(MLELossGradOp<float>();
+  op_class = std::make_shared<MLELossGradOp<float>>(MLELossGradOp<float>());
   params = op_to_tensor_op.getTensorParams(op_class);
   BOOST_CHECK_EQUAL(params.size(), 0);
 
-	op_class = new KLDivergenceMuLossGradOp<float>();
+	op_class = std::make_shared<KLDivergenceMuLossGradOp<float>>(KLDivergenceMuLossGradOp<float>());
 	params = op_to_tensor_op.getTensorParams(op_class);
 	BOOST_CHECK_EQUAL(params.size(), 0);
 
-	op_class = new KLDivergenceLogVarLossGradOp<float>();
+	op_class = std::make_shared<KLDivergenceLogVarLossGradOp<float>>(KLDivergenceLogVarLossGradOp<float>());
 	params = op_to_tensor_op.getTensorParams(op_class);
 	BOOST_CHECK_EQUAL(params.size(), 0);
 
-	op_class = new BCEWithLogitsLossGradOp<float>();
+	op_class = std::make_shared<BCEWithLogitsLossGradOp<float>>(BCEWithLogitsLossGradOp<float>());
 	params = op_to_tensor_op.getTensorParams(op_class);
 	BOOST_CHECK_EQUAL(params.size(), 0);
 
-	op_class = new CrossEntropyWithLogitsLossGradOp<float>();
+	op_class = std::make_shared<CrossEntropyWithLogitsLossGradOp<float>>(CrossEntropyWithLogitsLossGradOp<float>());
 	params = op_to_tensor_op.getTensorParams(op_class);
 	BOOST_CHECK_EQUAL(params.size(), 0);
 
-  op_class = new MSERangeLBLossGradOp<float>();
+  op_class = std::make_shared<MSERangeLBLossGradOp<float>>(MSERangeLBLossGradOp<float>());
   params = op_to_tensor_op.getTensorParams(op_class);
   BOOST_CHECK_EQUAL(params.size(), 0);
 
-  op_class = new MSERangeUBLossGradOp<float>();
+  op_class = std::make_shared<MSERangeUBLossGradOp<float>>(MSERangeUBLossGradOp<float>());
   params = op_to_tensor_op.getTensorParams(op_class);
   BOOST_CHECK_EQUAL(params.size(), 0);
 
-  op_class = new KLDivergenceCatLossGradOp<float>();
+  op_class = std::make_shared<KLDivergenceCatLossGradOp<float>>(KLDivergenceCatLossGradOp<float>());
   params = op_to_tensor_op.getTensorParams(op_class);
   BOOST_CHECK_EQUAL(params.size(), 0);
 
-  op_class = new MAPELossGradOp<float>();
+  op_class = std::make_shared<MAPELossGradOp<float>>(MAPELossGradOp<float>());
   params = op_to_tensor_op.getTensorParams(op_class);
   BOOST_CHECK_EQUAL(params.size(), 0);
-
-  delete op_class;
 }
 
 BOOST_AUTO_TEST_CASE(constructorLossFunctionOpToLossFunctionTensorOp)
@@ -887,148 +878,135 @@ BOOST_AUTO_TEST_CASE(destructorLossFunctionOpToLossFunctionTensorOp)
 BOOST_AUTO_TEST_CASE(convertOpToTensorOpLossFunctionOpToLossFunctionTensorOp)
 {
 	LossFunctionOpToLossFunctionTensorOp<float, Eigen::DefaultDevice> op_to_tensor_op;
-	LossFunctionOp<float>* op_class;
-	LossFunctionTensorOp<float, Eigen::DefaultDevice>* op_tensor_class;
+	std::shared_ptr<LossFunctionOp<float>> op_class;
+	std::shared_ptr<LossFunctionTensorOp<float, Eigen::DefaultDevice>> op_tensor_class;
 
-	op_class = new ManhattanDistanceLossOp<float>();
+	op_class = std::make_shared<ManhattanDistanceLossOp<float>>(ManhattanDistanceLossOp<float>());
 	op_tensor_class = op_to_tensor_op.convertOpToTensorOp(op_class);
 	BOOST_CHECK_EQUAL(op_tensor_class->getName(), "ManhattanDistanceLossTensorOp");
 
-	op_class = new L2NormLossOp<float>();
+	op_class = std::make_shared<L2NormLossOp<float>>(L2NormLossOp<float>());
 	op_tensor_class = op_to_tensor_op.convertOpToTensorOp(op_class);
 	BOOST_CHECK_EQUAL(op_tensor_class->getName(), "L2NormLossTensorOp");
 
-	op_class = new L2NormLossOp<float>();
-	op_tensor_class = op_to_tensor_op.convertOpToTensorOp(op_class);
-	BOOST_CHECK_EQUAL(op_tensor_class->getName(), "L2NormLossTensorOp");
-
-	op_class = new NegativeLogLikelihoodLossOp<float>();
+	op_class = std::make_shared<NegativeLogLikelihoodLossOp<float>>(NegativeLogLikelihoodLossOp<float>());
 	op_tensor_class = op_to_tensor_op.convertOpToTensorOp(op_class);
 	BOOST_CHECK_EQUAL(op_tensor_class->getName(), "NegativeLogLikelihoodLossTensorOp");
 
-	op_class = new MSELossOp<float>();
+	op_class = std::make_shared<MSELossOp<float>>(MSELossOp<float>());
 	op_tensor_class = op_to_tensor_op.convertOpToTensorOp(op_class);
 	BOOST_CHECK_EQUAL(op_tensor_class->getName(), "MSELossTensorOp");
 
-  op_class = new MAELossOp<float>();
+  op_class = std::make_shared<MAELossOp<float>>(MAELossOp<float>());
   op_tensor_class = op_to_tensor_op.convertOpToTensorOp(op_class);
   BOOST_CHECK_EQUAL(op_tensor_class->getName(), "MAELossTensorOp");
 
-  op_class = new MRSELossOp<float>();
+  op_class = std::make_shared<MRSELossOp<float>>(MRSELossOp<float>());
   op_tensor_class = op_to_tensor_op.convertOpToTensorOp(op_class);
   BOOST_CHECK_EQUAL(op_tensor_class->getName(), "MRSELossTensorOp");
 
-  op_class = new MLELossOp<float>();
+  op_class = std::make_shared<MLELossOp<float>>(MLELossOp<float>());
   op_tensor_class = op_to_tensor_op.convertOpToTensorOp(op_class);
   BOOST_CHECK_EQUAL(op_tensor_class->getName(), "MLELossTensorOp");
 
-	op_class = new KLDivergenceMuLossOp<float>();
+	op_class = std::make_shared<KLDivergenceMuLossOp<float>>(KLDivergenceMuLossOp<float>());
 	op_tensor_class = op_to_tensor_op.convertOpToTensorOp(op_class);
 	BOOST_CHECK_EQUAL(op_tensor_class->getName(), "KLDivergenceMuLossTensorOp");
 
-	op_class = new KLDivergenceLogVarLossOp<float>();
+	op_class = std::make_shared<KLDivergenceLogVarLossOp<float>>(KLDivergenceLogVarLossOp<float>());
 	op_tensor_class = op_to_tensor_op.convertOpToTensorOp(op_class);
 	BOOST_CHECK_EQUAL(op_tensor_class->getName(), "KLDivergenceLogVarLossTensorOp");
 
-	op_class = new BCEWithLogitsLossOp<float>();
+	op_class = std::make_shared<BCEWithLogitsLossOp<float>>(BCEWithLogitsLossOp<float>());
 	op_tensor_class = op_to_tensor_op.convertOpToTensorOp(op_class);
 	BOOST_CHECK_EQUAL(op_tensor_class->getName(), "BCEWithLogitsLossTensorOp");
 
-	op_class = new CrossEntropyWithLogitsLossOp<float>();
+	op_class = std::make_shared<CrossEntropyWithLogitsLossOp<float>>(CrossEntropyWithLogitsLossOp<float>());
 	op_tensor_class = op_to_tensor_op.convertOpToTensorOp(op_class);
 	BOOST_CHECK_EQUAL(op_tensor_class->getName(), "CrossEntropyWithLogitsLossTensorOp");
 
-  op_class = new MSERangeLBLossOp<float>();
+  op_class = std::make_shared<MSERangeLBLossOp<float>>(MSERangeLBLossOp<float>());
   op_tensor_class = op_to_tensor_op.convertOpToTensorOp(op_class);
   BOOST_CHECK_EQUAL(op_tensor_class->getName(), "MSERangeLBLossTensorOp");
 
-  op_class = new MSERangeUBLossOp<float>();
+  op_class = std::make_shared<MSERangeUBLossOp<float>>(MSERangeUBLossOp<float>());
   op_tensor_class = op_to_tensor_op.convertOpToTensorOp(op_class);
   BOOST_CHECK_EQUAL(op_tensor_class->getName(), "MSERangeUBLossTensorOp");
 
-  op_class = new KLDivergenceCatLossOp<float>();
+  op_class = std::make_shared<KLDivergenceCatLossOp<float>>(KLDivergenceCatLossOp<float>());
   op_tensor_class = op_to_tensor_op.convertOpToTensorOp(op_class);
   BOOST_CHECK_EQUAL(op_tensor_class->getName(), "KLDivergenceCatLossTensorOp");
 
-  op_class = new MAPELossOp<float>();
+  op_class = std::make_shared<MAPELossOp<float>>(MAPELossOp<float>());
   op_tensor_class = op_to_tensor_op.convertOpToTensorOp(op_class);
   BOOST_CHECK_EQUAL(op_tensor_class->getName(), "MAPELossTensorOp");
-
-  delete op_class;
-  delete op_tensor_class;
 }
 
 BOOST_AUTO_TEST_CASE(getTensorParamsLossFunctionOpToLossFunctionTensorOp)
 {
 	LossFunctionOpToLossFunctionTensorOp<float, Eigen::DefaultDevice> op_to_tensor_op;
-	LossFunctionOp<float>* op_class = nullptr;
+  std::shared_ptr<LossFunctionOp<float>> op_class;
 	std::vector<float> params;
 
-	op_class = new ManhattanDistanceLossOp<float>();
+	op_class = std::make_shared<ManhattanDistanceLossOp<float>>(ManhattanDistanceLossOp<float>());
 	params = op_to_tensor_op.getTensorParams(op_class);
 	BOOST_CHECK_EQUAL(params.size(), 0);
 
-	op_class = new L2NormLossOp<float>();
+	op_class = std::make_shared<L2NormLossOp<float>>(L2NormLossOp<float>());
 	params = op_to_tensor_op.getTensorParams(op_class);
 	BOOST_CHECK_EQUAL(params.size(), 0);
 
-	op_class = new L2NormLossOp<float>();
+	op_class = std::make_shared<NegativeLogLikelihoodLossOp<float>>(NegativeLogLikelihoodLossOp<float>());
 	params = op_to_tensor_op.getTensorParams(op_class);
 	BOOST_CHECK_EQUAL(params.size(), 0);
 
-	op_class = new NegativeLogLikelihoodLossOp<float>();
+	op_class = std::make_shared<MSELossOp<float>>(MSELossOp<float>());
 	params = op_to_tensor_op.getTensorParams(op_class);
 	BOOST_CHECK_EQUAL(params.size(), 0);
 
-	op_class = new MSELossOp<float>();
-	params = op_to_tensor_op.getTensorParams(op_class);
-	BOOST_CHECK_EQUAL(params.size(), 0);
-
-  op_class = new MAELossOp<float>();
+  op_class = std::make_shared<MAELossOp<float>>(MAELossOp<float>());
   params = op_to_tensor_op.getTensorParams(op_class);
   BOOST_CHECK_EQUAL(params.size(), 0);
 
-  op_class = new MRSELossOp<float>();
+  op_class = std::make_shared<MRSELossOp<float>>(MRSELossOp<float>());
   params = op_to_tensor_op.getTensorParams(op_class);
   BOOST_CHECK_EQUAL(params.size(), 0);
 
-  op_class = new MLELossOp<float>();
+  op_class = std::make_shared<MLELossOp<float>>(MLELossOp<float>());
   params = op_to_tensor_op.getTensorParams(op_class);
   BOOST_CHECK_EQUAL(params.size(), 0);
 
-	op_class = new KLDivergenceMuLossOp<float>();
+	op_class = std::make_shared<KLDivergenceMuLossOp<float>>(KLDivergenceMuLossOp<float>());
 	params = op_to_tensor_op.getTensorParams(op_class);
 	BOOST_CHECK_EQUAL(params.size(), 0);
 
-	op_class = new KLDivergenceLogVarLossOp<float>();
+	op_class = std::make_shared<KLDivergenceLogVarLossOp<float>>(KLDivergenceLogVarLossOp<float>());
 	params = op_to_tensor_op.getTensorParams(op_class);
 	BOOST_CHECK_EQUAL(params.size(), 0);
 
-	op_class = new BCEWithLogitsLossOp<float>();
+	op_class = std::make_shared<BCEWithLogitsLossOp<float>>(BCEWithLogitsLossOp<float>());
 	params = op_to_tensor_op.getTensorParams(op_class);
 	BOOST_CHECK_EQUAL(params.size(), 0);
 
-	op_class = new CrossEntropyWithLogitsLossOp<float>();
+	op_class = std::make_shared<CrossEntropyWithLogitsLossOp<float>>(CrossEntropyWithLogitsLossOp<float>());
 	params = op_to_tensor_op.getTensorParams(op_class);
 	BOOST_CHECK_EQUAL(params.size(), 0);
 
-  op_class = new MSERangeLBLossOp<float>();
+  op_class = std::make_shared<MSERangeLBLossOp<float>>(MSERangeLBLossOp<float>());
   params = op_to_tensor_op.getTensorParams(op_class);
   BOOST_CHECK_EQUAL(params.size(), 0);
 
-  op_class = new MSERangeUBLossOp<float>();
+  op_class = std::make_shared<MSERangeUBLossOp<float>>(MSERangeUBLossOp<float>());
   params = op_to_tensor_op.getTensorParams(op_class);
   BOOST_CHECK_EQUAL(params.size(), 0);
 
-  op_class = new KLDivergenceCatLossOp<float>();
+  op_class = std::make_shared<KLDivergenceCatLossOp<float>>(KLDivergenceCatLossOp<float>());
   params = op_to_tensor_op.getTensorParams(op_class);
   BOOST_CHECK_EQUAL(params.size(), 0);
 
-  op_class = new MAPELossOp<float>();
+  op_class = std::make_shared<MAPELossOp<float>>(MAPELossOp<float>());
   params = op_to_tensor_op.getTensorParams(op_class);
   BOOST_CHECK_EQUAL(params.size(), 0);
-
-  delete op_class;
 }
 
 BOOST_AUTO_TEST_CASE(constructorMetricFunctionOpToMetricFunctionTensorOp)
@@ -1049,180 +1027,175 @@ BOOST_AUTO_TEST_CASE(destructorMetricFunctionOpToMetricFunctionTensorOp)
 BOOST_AUTO_TEST_CASE(convertOpToTensorOpMetricFunctionOpToMetricFunctionTensorOp)
 {
   MetricFunctionOpToMetricFunctionTensorOp<float, Eigen::DefaultDevice> op_to_tensor_op;
-  MetricFunctionOp<float>* op_class;
-  MetricFunctionTensorOp<float, Eigen::DefaultDevice>* op_tensor_class;
+  std::shared_ptr<MetricFunctionOp<float>> op_class;
+  std::shared_ptr<MetricFunctionTensorOp<float, Eigen::DefaultDevice>> op_tensor_class;
 
-  op_class = new AccuracyBCOp<float>();
+  op_class = std::make_shared<AccuracyBCOp<float>>(AccuracyBCOp<float>());
   op_tensor_class = op_to_tensor_op.convertOpToTensorOp(op_class);
   BOOST_CHECK_EQUAL(op_tensor_class->getName(), "AccuracyBCTensorOp");
 
-  op_class = new AccuracyMCMicroOp<float>();
+  op_class = std::make_shared<AccuracyMCMicroOp<float>>(AccuracyMCMicroOp<float>());
   op_tensor_class = op_to_tensor_op.convertOpToTensorOp(op_class);
   BOOST_CHECK_EQUAL(op_tensor_class->getName(), "AccuracyMCMicroTensorOp");
 
-  op_class = new AccuracyMCMacroOp<float>();
+  op_class = std::make_shared<AccuracyMCMacroOp<float>>(AccuracyMCMacroOp<float>());
   op_tensor_class = op_to_tensor_op.convertOpToTensorOp(op_class);
   BOOST_CHECK_EQUAL(op_tensor_class->getName(), "AccuracyMCMacroTensorOp");
 
-  op_class = new PrecisionBCOp<float>();
+  op_class = std::make_shared<PrecisionBCOp<float>>(PrecisionBCOp<float>());
   op_tensor_class = op_to_tensor_op.convertOpToTensorOp(op_class);
   BOOST_CHECK_EQUAL(op_tensor_class->getName(), "PrecisionBCTensorOp");
 
-  op_class = new PrecisionMCMicroOp<float>();
+  op_class = std::make_shared<PrecisionMCMicroOp<float>>(PrecisionMCMicroOp<float>());
   op_tensor_class = op_to_tensor_op.convertOpToTensorOp(op_class);
   BOOST_CHECK_EQUAL(op_tensor_class->getName(), "PrecisionMCMicroTensorOp");
 
-  op_class = new PrecisionMCMacroOp<float>();
+  op_class = std::make_shared<PrecisionMCMacroOp<float>>(PrecisionMCMacroOp<float>());
   op_tensor_class = op_to_tensor_op.convertOpToTensorOp(op_class);
   BOOST_CHECK_EQUAL(op_tensor_class->getName(), "PrecisionMCMacroTensorOp");
 
-  op_class = new RecallBCOp<float>();
+  op_class = std::make_shared<RecallBCOp<float>>(RecallBCOp<float>());
   op_tensor_class = op_to_tensor_op.convertOpToTensorOp(op_class);
   BOOST_CHECK_EQUAL(op_tensor_class->getName(), "RecallBCTensorOp");
 
-  op_class = new RecallMCMicroOp<float>();
+  op_class = std::make_shared<RecallMCMicroOp<float>>(RecallMCMicroOp<float>());
   op_tensor_class = op_to_tensor_op.convertOpToTensorOp(op_class);
   BOOST_CHECK_EQUAL(op_tensor_class->getName(), "RecallMCMicroTensorOp");
 
-  op_class = new RecallMCMacroOp<float>();
+  op_class = std::make_shared<RecallMCMacroOp<float>>(RecallMCMacroOp<float>());
   op_tensor_class = op_to_tensor_op.convertOpToTensorOp(op_class);
   BOOST_CHECK_EQUAL(op_tensor_class->getName(), "RecallMCMacroTensorOp");
 
-  op_class = new F1ScoreBCOp<float>();
+  op_class = std::make_shared<F1ScoreBCOp<float>>(F1ScoreBCOp<float>());
   op_tensor_class = op_to_tensor_op.convertOpToTensorOp(op_class);
   BOOST_CHECK_EQUAL(op_tensor_class->getName(), "F1ScoreBCTensorOp");
 
-  op_class = new F1ScoreMCMicroOp<float>();
+  op_class = std::make_shared<F1ScoreMCMicroOp<float>>(F1ScoreMCMicroOp<float>());
   op_tensor_class = op_to_tensor_op.convertOpToTensorOp(op_class);
   BOOST_CHECK_EQUAL(op_tensor_class->getName(), "F1ScoreMCMicroTensorOp");
 
-  op_class = new F1ScoreMCMacroOp<float>();
+  op_class = std::make_shared<F1ScoreMCMacroOp<float>>(F1ScoreMCMacroOp<float>());
   op_tensor_class = op_to_tensor_op.convertOpToTensorOp(op_class);
   BOOST_CHECK_EQUAL(op_tensor_class->getName(), "F1ScoreMCMacroTensorOp");
 
-  op_class = new MAEOp<float>();
+  op_class = std::make_shared<MAEOp<float>>(MAEOp<float>());
   op_tensor_class = op_to_tensor_op.convertOpToTensorOp(op_class);
   BOOST_CHECK_EQUAL(op_tensor_class->getName(), "MAETensorOp");
 
-  op_class = new CosineSimilarityOp<float>();
+  op_class = std::make_shared<CosineSimilarityOp<float>>(CosineSimilarityOp<float>());
   op_tensor_class = op_to_tensor_op.convertOpToTensorOp(op_class);
   BOOST_CHECK_EQUAL(op_tensor_class->getName(), "CosineSimilarityTensorOp");
 
-  op_class = new PearsonROp<float>();
+  op_class = std::make_shared<PearsonROp<float>>(PearsonROp<float>());
   op_tensor_class = op_to_tensor_op.convertOpToTensorOp(op_class);
   BOOST_CHECK_EQUAL(op_tensor_class->getName(), "PearsonRTensorOp");
 
-  op_class = new EuclideanDistOp<float>();
+  op_class = std::make_shared<EuclideanDistOp<float>>(EuclideanDistOp<float>());
   op_tensor_class = op_to_tensor_op.convertOpToTensorOp(op_class);
   BOOST_CHECK_EQUAL(op_tensor_class->getName(), "EuclideanDistTensorOp");
 
-  op_class = new ManhattanDistOp<float>();
+  op_class = std::make_shared<ManhattanDistOp<float>>(ManhattanDistOp<float>());
   op_tensor_class = op_to_tensor_op.convertOpToTensorOp(op_class);
   BOOST_CHECK_EQUAL(op_tensor_class->getName(), "ManhattanDistTensorOp");
 
-  op_class = new LogarithmicDistOp<float>();
+  op_class = std::make_shared<LogarithmicDistOp<float>>(LogarithmicDistOp<float>());
   op_tensor_class = op_to_tensor_op.convertOpToTensorOp(op_class);
   BOOST_CHECK_EQUAL(op_tensor_class->getName(), "LogarithmicDistTensorOp");
 
-  op_class = new JeffreysAndMatusitaDistOp<float>();
+  op_class = std::make_shared<JeffreysAndMatusitaDistOp<float>>(JeffreysAndMatusitaDistOp<float>());
   op_tensor_class = op_to_tensor_op.convertOpToTensorOp(op_class);
   BOOST_CHECK_EQUAL(op_tensor_class->getName(), "JeffreysAndMatusitaDistTensorOp");
 
-  op_class = new PercentDifferenceOp<float>();
+  op_class = std::make_shared<PercentDifferenceOp<float>>(PercentDifferenceOp<float>());
   op_tensor_class = op_to_tensor_op.convertOpToTensorOp(op_class);
   BOOST_CHECK_EQUAL(op_tensor_class->getName(), "PercentDifferenceTensorOp");
-
-  delete op_class;
-  delete op_tensor_class;
 }
 
 BOOST_AUTO_TEST_CASE(getTensorParamsMetricFunctionOpToMetricFunctionTensorOp)
 {
   MetricFunctionOpToMetricFunctionTensorOp<float, Eigen::DefaultDevice> op_to_tensor_op;
-  MetricFunctionOp<float>* op_class = nullptr;
+  std::shared_ptr<MetricFunctionOp<float>> op_class;
   std::vector<float> params;
 
-  op_class = new AccuracyBCOp<float>();
+  op_class = std::make_shared<AccuracyBCOp<float>>(AccuracyBCOp<float>());
   params = op_to_tensor_op.getTensorParams(op_class);
   BOOST_CHECK_EQUAL(params.size(), 0);
 
-  op_class = new AccuracyMCMicroOp<float>();
+  op_class = std::make_shared<AccuracyMCMicroOp<float>>(AccuracyMCMicroOp<float>());
   params = op_to_tensor_op.getTensorParams(op_class);
   BOOST_CHECK_EQUAL(params.size(), 0);
 
-  op_class = new AccuracyMCMacroOp<float>();
+  op_class = std::make_shared<AccuracyMCMacroOp<float>>(AccuracyMCMacroOp<float>());
   params = op_to_tensor_op.getTensorParams(op_class);
   BOOST_CHECK_EQUAL(params.size(), 0);
 
-  op_class = new PrecisionBCOp<float>();
+  op_class = std::make_shared<PrecisionBCOp<float>>(PrecisionBCOp<float>());
   params = op_to_tensor_op.getTensorParams(op_class);
   BOOST_CHECK_EQUAL(params.size(), 0);
 
-  op_class = new PrecisionMCMicroOp<float>();
+  op_class = std::make_shared<PrecisionMCMicroOp<float>>(PrecisionMCMicroOp<float>());
   params = op_to_tensor_op.getTensorParams(op_class);
   BOOST_CHECK_EQUAL(params.size(), 0);
 
-  op_class = new PrecisionMCMacroOp<float>();
+  op_class = std::make_shared<PrecisionMCMacroOp<float>>(PrecisionMCMacroOp<float>());
   params = op_to_tensor_op.getTensorParams(op_class);
   BOOST_CHECK_EQUAL(params.size(), 0);
 
-  op_class = new RecallBCOp<float>();
+  op_class = std::make_shared<RecallBCOp<float>>(RecallBCOp<float>());
   params = op_to_tensor_op.getTensorParams(op_class);
   BOOST_CHECK_EQUAL(params.size(), 0);
 
-  op_class = new RecallMCMicroOp<float>();
+  op_class = std::make_shared<RecallMCMicroOp<float>>(RecallMCMicroOp<float>());
   params = op_to_tensor_op.getTensorParams(op_class);
   BOOST_CHECK_EQUAL(params.size(), 0);
 
-  op_class = new RecallMCMacroOp<float>();
+  op_class = std::make_shared<RecallMCMacroOp<float>>(RecallMCMacroOp<float>());
   params = op_to_tensor_op.getTensorParams(op_class);
   BOOST_CHECK_EQUAL(params.size(), 0);
 
-  op_class = new F1ScoreBCOp<float>();
+  op_class = std::make_shared<F1ScoreBCOp<float>>(F1ScoreBCOp<float>());
   params = op_to_tensor_op.getTensorParams(op_class);
   BOOST_CHECK_EQUAL(params.size(), 0);
 
-  op_class = new F1ScoreMCMicroOp<float>();
+  op_class = std::make_shared<F1ScoreMCMicroOp<float>>(F1ScoreMCMicroOp<float>());
   params = op_to_tensor_op.getTensorParams(op_class);
   BOOST_CHECK_EQUAL(params.size(), 0);
 
-  op_class = new F1ScoreMCMacroOp<float>();
+  op_class = std::make_shared<F1ScoreMCMacroOp<float>>(F1ScoreMCMacroOp<float>());
   params = op_to_tensor_op.getTensorParams(op_class);
   BOOST_CHECK_EQUAL(params.size(), 0);
 
-  op_class = new MAEOp<float>();
+  op_class = std::make_shared<MAEOp<float>>(MAEOp<float>());
   params = op_to_tensor_op.getTensorParams(op_class);
   BOOST_CHECK_EQUAL(params.size(), 0);
 
-  op_class = new CosineSimilarityOp<float>();
+  op_class = std::make_shared<CosineSimilarityOp<float>>(CosineSimilarityOp<float>());
   params = op_to_tensor_op.getTensorParams(op_class);
   BOOST_CHECK_EQUAL(params.size(), 0);
 
-  op_class = new PearsonROp<float>();
+  op_class = std::make_shared<PearsonROp<float>>(PearsonROp<float>());
   params = op_to_tensor_op.getTensorParams(op_class);
   BOOST_CHECK_EQUAL(params.size(), 0);
 
-  op_class = new EuclideanDistOp<float>();
+  op_class = std::make_shared<EuclideanDistOp<float>>(EuclideanDistOp<float>());
   params = op_to_tensor_op.getTensorParams(op_class);
   BOOST_CHECK_EQUAL(params.size(), 0);
 
-  op_class = new ManhattanDistOp<float>();
+  op_class = std::make_shared<ManhattanDistOp<float>>(ManhattanDistOp<float>());
   params = op_to_tensor_op.getTensorParams(op_class);
   BOOST_CHECK_EQUAL(params.size(), 0);
 
-  op_class = new LogarithmicDistOp<float>();
+  op_class = std::make_shared<LogarithmicDistOp<float>>(LogarithmicDistOp<float>());
   params = op_to_tensor_op.getTensorParams(op_class);
   BOOST_CHECK_EQUAL(params.size(), 0);
 
-  op_class = new JeffreysAndMatusitaDistOp<float>();
+  op_class = std::make_shared<JeffreysAndMatusitaDistOp<float>>(JeffreysAndMatusitaDistOp<float>());
   params = op_to_tensor_op.getTensorParams(op_class);
   BOOST_CHECK_EQUAL(params.size(), 0);
 
-  op_class = new PercentDifferenceOp<float>();
+  op_class = std::make_shared<PercentDifferenceOp<float>>(PercentDifferenceOp<float>());
   params = op_to_tensor_op.getTensorParams(op_class);
   BOOST_CHECK_EQUAL(params.size(), 0);
-
-  delete op_class;
 }
 
 BOOST_AUTO_TEST_SUITE_END()
