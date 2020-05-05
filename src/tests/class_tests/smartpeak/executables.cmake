@@ -59,7 +59,6 @@ set(ml_executables_list
   PopulationLogger_test
   PopulationTrainer_test
   PopulationTrainerGpu_test
-  SharedFunctions_test
   Solver_test
   SolverTensor_test
   Weight_test
@@ -75,6 +74,7 @@ set(simulator_executables_list
   EMGModel_test
   PeakSimulator_test
   MetabolomicsClassificationDataSimulator_test
+  MetabolomicsReconstructionDataSimulator_test
   MNISTSimulator_test
 )
 

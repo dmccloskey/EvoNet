@@ -613,11 +613,11 @@ public:
     TensorT beta = 1 / 2.5e4 * n_epochs;
     if (beta > 1) beta = 1;
     TensorT capacity_z = 0.0 / 2.5e4 * n_epochs;
-    //if (capacity_z > 5) capacity_z = 5;
-    this->getLossFunctions().at(1) = std::make_shared<KLDivergenceMuLossOp<float>>(KLDivergenceMuLossOp<float>(1e-6, beta, capacity_z));
-    this->getLossFunctions().at(2) = std::make_shared<KLDivergenceLogVarLossOp<float>>(KLDivergenceLogVarLossOp<float>(1e-6, beta, capacity_z));
-    this->getLossFunctionGrads().at(1) = std::make_shared<KLDivergenceMuLossGradOp<float>>(KLDivergenceMuLossGradOp<float>(1e-6, beta, capacity_z));
-    this->getLossFunctionGrads().at(2) = std::make_shared<KLDivergenceLogVarLossGradOp<float>>(KLDivergenceLogVarLossGradOp<float>(1e-6, beta, capacity_z));
+    if (capacity_z > 5) capacity_z = 5;
+    this->getLossFunctionHelpers().at(1).loss_functions_.at(0) = std::make_shared<KLDivergenceMuLossOp<float>>(KLDivergenceMuLossOp<float>(1e-6, beta, capacity_z));
+    this->getLossFunctionHelpers().at(2).loss_functions_.at(0) = std::make_shared<KLDivergenceLogVarLossOp<float>>(KLDivergenceLogVarLossOp<float>(1e-6, beta, capacity_z));
+    this->getLossFunctionHelpers().at(1).loss_function_grads_.at(0) = std::make_shared<KLDivergenceMuLossGradOp<float>>(KLDivergenceMuLossGradOp<float>(1e-6, beta, capacity_z));
+    this->getLossFunctionHelpers().at(2).loss_function_grads_.at(0) = std::make_shared<KLDivergenceLogVarLossGradOp<float>>(KLDivergenceLogVarLossGradOp<float>(1e-6, beta, capacity_z));
 
     if (n_epochs % 1000 == 0 && n_epochs != 0) {
       // save the model every 1000 epochs
@@ -668,7 +668,7 @@ public:
     std::vector<TensorT> log_train_values = { model_error_train };
     std::vector<TensorT> log_test_values = { model_error_test };
     int metric_iter = 0;
-    for (const std::string& metric_name : this->metric_names_) {
+    for (const std::string& metric_name : this->getMetricNamesLinearized()) {
       log_train_headers.push_back(metric_name);
       log_test_headers.push_back(metric_name);
       log_train_values.push_back(model_metrics_train(metric_iter));
@@ -869,22 +869,30 @@ void main_MNIST(const std::string& data_dir, const bool& make_model, const bool&
   model_trainer.setLogging(true, true, false);
   model_trainer.setFindCycles(false);
   model_trainer.setFastInterpreter(true);
-  model_trainer.setLossFunctions({
-    std::make_shared<MSELossOp<float>>(MSELossOp<float>(1e-6, 1.0)),
-    //std::make_shared<BCEWithLogitsLossOp<float>>(BCEWithLogitsLossOp<float>(1e-6, 1.0 / float(input_size))),
-    //std::make_shared<BCELossOp<float>>(BCELossOp<float>(1e-6, 1.0 / float(input_size))),
-    std::make_shared<KLDivergenceMuLossOp<float>>(KLDivergenceMuLossOp<float>(1e-6, 0.0, 0.0)),
-    std::make_shared<KLDivergenceLogVarLossOp<float>>(KLDivergenceLogVarLossOp<float>(1e-6, 0.0, 0.0)) });
-  model_trainer.setLossFunctionGrads({
-    std::make_shared<MSELossGradOp<float>>(MSELossGradOp<float>(1e-6, 1.0)),
-    //std::make_shared<BCEWithLogitsLossGradOp<float>>(BCEWithLogitsLossGradOp<float>(1e-6, 1.0 / float(input_size))),
-    //std::make_shared<BCELossGradOp<float>>(BCELossGradOp<float>(1e-6, 1.0 / float(input_size))),
-    std::make_shared<KLDivergenceMuLossGradOp<float>>(KLDivergenceMuLossGradOp<float>(1e-6, 0.0, 0.0)),
-    std::make_shared<KLDivergenceLogVarLossGradOp<float>>(KLDivergenceLogVarLossGradOp<float>(1e-6, 0.0, 0.0)) });
-  model_trainer.setLossOutputNodes({ output_nodes, encoding_nodes_mu, encoding_nodes_logvar });
-  model_trainer.setMetricFunctions({ std::make_shared<MAEOp<float>>(MAEOp<float>()) });
-  model_trainer.setMetricOutputNodes({ output_nodes });
-  model_trainer.setMetricNames({ "MAE" });
+
+  std::vector<LossFunctionHelper<float>> loss_function_helpers;
+  LossFunctionHelper<float> loss_function_helper1, loss_function_helper2, loss_function_helper3;
+  loss_function_helper1.output_nodes_ = output_nodes;
+  loss_function_helper1.loss_functions_ = { std::make_shared<BCEWithLogitsLossOp<float>>(BCEWithLogitsLossOp<float>(1e-6, 1.0 / float(input_size))) };
+  loss_function_helper1.loss_function_grads_ = { std::make_shared<BCEWithLogitsLossGradOp<float>>(BCEWithLogitsLossGradOp<float>(1e-6, 1.0 / float(input_size))) };
+  loss_function_helpers.push_back(loss_function_helper1);
+  loss_function_helper2.output_nodes_ = encoding_nodes_mu;
+  loss_function_helper2.loss_functions_ = { std::make_shared<KLDivergenceMuLossOp<float>>(KLDivergenceMuLossOp<float>(1e-6, 0.0, 0.0)) };
+  loss_function_helper2.loss_function_grads_ = { std::make_shared<KLDivergenceMuLossGradOp<float>>(KLDivergenceMuLossGradOp<float>(1e-6, 0.0, 0.0)) };
+  loss_function_helpers.push_back(loss_function_helper2);
+  loss_function_helper3.output_nodes_ = encoding_nodes_logvar;
+  loss_function_helper3.loss_functions_ = { std::make_shared<KLDivergenceLogVarLossOp<float>>(KLDivergenceLogVarLossOp<float>(1e-6, 0.0, 0.0)) };
+  loss_function_helper3.loss_function_grads_ = { std::make_shared<KLDivergenceLogVarLossGradOp<float>>(KLDivergenceLogVarLossGradOp<float>(1e-6, 0.0, 0.0)) };
+  loss_function_helpers.push_back(loss_function_helper3);
+  model_trainer.setLossFunctionHelpers(loss_function_helpers);
+
+  std::vector<MetricFunctionHelper<float>> metric_function_helpers;
+  MetricFunctionHelper<float> metric_function_helper1;
+  metric_function_helper1.output_nodes_ = output_nodes;
+  metric_function_helper1.metric_functions_ = { std::make_shared<MAEOp<float>>(MAEOp<float>()) };
+  metric_function_helper1.metric_names_ = { "MAE" };
+  metric_function_helpers.push_back(metric_function_helper1);
+  model_trainer.setMetricFunctionHelpers(metric_function_helpers);
 
   // define the initial population
   Model<float> model;

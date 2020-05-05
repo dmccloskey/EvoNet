@@ -79,10 +79,11 @@ namespace SmartPeak
     @param[in] n_input_nodes
     @param[in] n_loss_output_nodes
     @param[in] n_metric_output_nodes
+    @param[in] shuffle_data_and_labels If true, will shuffle the expanded data and label tensors prior to initializing the training/validation data caches
     */
     virtual void makeTrainingDataForCache(const std::vector<std::string>& features, const Eigen::Tensor<TensorT, 2>& data_training, const std::vector<std::string>& labels_training,
       const int& n_epochs, const int& batch_size, const int& memory_size,
-      const int& n_input_nodes, const int& n_loss_output_nodes, const int& n_metric_output_nodes) = 0;
+      const int& n_input_nodes, const int& n_loss_output_nodes, const int& n_metric_output_nodes, const bool& shuffle_data_and_labels) = 0;
 
     /*
     @brief Make the validation data cache from the validation data.  The classification and reconstruction version of this method will be different,
@@ -97,12 +98,14 @@ namespace SmartPeak
     @param[in] n_input_nodes
     @param[in] n_loss_output_nodes
     @param[in] n_metric_output_nodes
+    @param[in] shuffle_data_and_labels If true, will shuffle the expanded data and label tensors prior to initializing the training/validation data caches
     */
     virtual void makeValidationDataForCache(const std::vector<std::string>& features, const Eigen::Tensor<TensorT, 2>& data_validation, const std::vector<std::string>& labels_validation, 
       const int& n_epochs, const int& batch_size, const int& memory_size,
-      const int& n_input_nodes, const int& n_loss_output_nodes, const int& n_metric_output_nodes) = 0;
+      const int& n_input_nodes, const int& n_loss_output_nodes, const int& n_metric_output_nodes, const bool& shuffle_data_and_labels) = 0;
 
-    bool use_train_for_eval_ = true;    Eigen::Tensor<TensorT, 4> input_data_training_;
+    bool use_train_for_eval_ = true;    
+    Eigen::Tensor<TensorT, 4> input_data_training_;
     Eigen::Tensor<TensorT, 4> loss_output_data_training_;
     Eigen::Tensor<TensorT, 4> metric_output_data_training_;
     Eigen::Tensor<TensorT, 3> time_steps_training_;
@@ -210,7 +213,7 @@ namespace SmartPeak
     input_data = this->input_data_training_.chip(this->n_epochs_training_, 3);
     loss_output_data = this->loss_output_data_training_.chip(this->n_epochs_training_, 3);
     metric_output_data = this->metric_output_data_training_.chip(this->n_epochs_training_, 3);
-    time_steps = this->time_steps_training_.chip(this->n_epochs_training_, 2);
+    //time_steps = this->time_steps_training_.chip(this->n_epochs_training_, 2);
 
     // Increment the iterator
     this->n_epochs_training_++;
@@ -225,7 +228,7 @@ namespace SmartPeak
     input_data = this->input_data_validation_.chip(this->n_epochs_validation_, 3);
     loss_output_data = this->loss_output_data_validation_.chip(this->n_epochs_validation_, 3);
     metric_output_data = this->metric_output_data_validation_.chip(this->n_epochs_validation_, 3);
-    time_steps = this->time_steps_validation_.chip(this->n_epochs_validation_, 2);
+    //time_steps = this->time_steps_validation_.chip(this->n_epochs_validation_, 2);
 
     // Increment the iterator
     this->n_epochs_validation_++;

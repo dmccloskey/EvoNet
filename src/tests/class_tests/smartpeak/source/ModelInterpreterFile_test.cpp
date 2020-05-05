@@ -150,7 +150,7 @@ BOOST_AUTO_TEST_CASE(loadModelBinary2)
 	// update the model solver
 	std::shared_ptr<SolverOp<float>> solver(new AdamOp<float>(0.001, 0.9, 0.999, 1e-8));
 	for (auto& weight_map : model2.getWeightsMap()) {
-		if (weight_map.second->getSolverOp()->getName() == "SGDOp")
+		if (weight_map.second->getSolverOpShared()->getName() == "SGDOp")
 			weight_map.second->setSolverOp(solver);
 	}
 
@@ -191,7 +191,7 @@ BOOST_AUTO_TEST_CASE(loadModelBinary2)
 
 		model_interpreter.executeBackwardPropogationOperations(0); // BP
 		model_interpreter.executeWeightErrorOperations(); // Weight error
-		model_interpreter.executeWeightUpdateOperations(); // Weight update
+		model_interpreter.executeWeightUpdateOperations(0); // Weight update
 
 		// reinitialize the model
 		if (iter != max_iter - 1) {
@@ -237,7 +237,7 @@ BOOST_AUTO_TEST_CASE(loadModelBinary2)
 
 		model_interpreter_test.executeBackwardPropogationOperations(0); // BP
 		model_interpreter_test.executeWeightErrorOperations(); // Weight error
-		model_interpreter_test.executeWeightUpdateOperations(); // Weight update
+		model_interpreter_test.executeWeightUpdateOperations(0); // Weight update
 
 		// reinitialize the model
 		if (iter != max_iter - 1) {

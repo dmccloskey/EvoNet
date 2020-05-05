@@ -3,7 +3,6 @@
 #ifndef SMARTPEAK_INTEGRATIONFUNCTION_H
 #define SMARTPEAK_INTEGRATIONFUNCTION_H
 
-#include <SmartPeak/ml/SharedFunctions.h>
 #include <unsupported/Eigen/CXX11/Tensor>
 
 #include <cereal/access.hpp>  // serialiation of private members

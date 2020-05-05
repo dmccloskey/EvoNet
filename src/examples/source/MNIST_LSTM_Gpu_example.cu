@@ -316,7 +316,7 @@ public:
     std::vector<TensorT> log_train_values = { model_error_train };
     std::vector<TensorT> log_test_values = { model_error_test };
     int metric_iter = 0;
-    for (const std::string& metric_name : this->metric_names_) {
+    for (const std::string& metric_name : this->getMetricNamesLinearized()) {
       log_train_headers.push_back(metric_name);
       log_test_headers.push_back(metric_name);
       log_train_values.push_back(model_metrics_train(metric_iter));
@@ -363,7 +363,7 @@ public:
       // Assign the input data
       for (int memory_iter = 0; memory_iter < memory_size; ++memory_iter) {
         for (int nodes_iter = 0; nodes_iter < n_input_nodes; ++nodes_iter) {
-          int iter = memory_size * memory_iter + nodes_iter;
+          int iter = n_input_nodes * memory_iter + nodes_iter;
           input_data(batch_iter, memory_iter, nodes_iter) = this->training_data(sample_indices[batch_iter], iter);
         }
       }
@@ -397,7 +397,7 @@ public:
       // Assign the input data
       for (int memory_iter = 0; memory_iter < memory_size; ++memory_iter) {
         for (int nodes_iter = 0; nodes_iter < n_input_nodes; ++nodes_iter) {
-          int iter = memory_size * memory_iter + nodes_iter;
+          int iter = n_input_nodes * memory_iter + nodes_iter;
           input_data(batch_iter, memory_iter, nodes_iter) = this->validation_data(sample_indices[batch_iter], iter);
         }
       }
@@ -440,7 +440,7 @@ void main_MNIST(const std::string& data_dir, const bool& make_model, const bool&
 
   // define the data simulator
   const std::size_t input_size = 784;
-  const std::size_t n_input_nodes = 28; // per column)
+  const std::size_t n_input_nodes = 1; // per pixel 28; // per column
   const std::size_t memory_size = input_size / n_input_nodes;
   const std::size_t n_tbptt = (memory_size > 256) ? 256 : memory_size;
   const std::size_t n_labels = 10;
@@ -520,20 +520,26 @@ void main_MNIST(const std::string& data_dir, const bool& make_model, const bool&
   model_trainer.setPreserveOoO(true);
   model_trainer.setFindCycles(false);
   model_trainer.setFastInterpreter(true);
-  model_trainer.setLossFunctions({
-    std::make_shared<MSELossOp<float>>(MSELossOp<float>(1e-24, 0.0)),
-    std::make_shared<CrossEntropyWithLogitsLossOp<float>>(CrossEntropyWithLogitsLossOp<float>(1e-24, 1.0))
-    });
-  model_trainer.setLossFunctionGrads({
-    std::make_shared<MSELossGradOp<float>>(MSELossGradOp<float>(1e-24, 0.0)),
-    std::make_shared<CrossEntropyWithLogitsLossGradOp<float>>(CrossEntropyWithLogitsLossGradOp<float>(1e-24, 1.0))
-    });
-  model_trainer.setLossOutputNodes({
-    output_nodes,
-    output_nodes });
-  model_trainer.setMetricFunctions({ std::make_shared<PrecisionMCMicroOp<float>>(PrecisionMCMicroOp<float>()) });
-  model_trainer.setMetricOutputNodes({ output_nodes });
-  model_trainer.setMetricNames({ "PrecisionMCMicro" });
+
+  std::vector<LossFunctionHelper<float>> loss_function_helpers;
+  LossFunctionHelper<float> loss_function_helper1, loss_function_helper2;
+  loss_function_helper1.output_nodes_ = output_nodes;
+  loss_function_helper1.loss_functions_ = { std::make_shared<CrossEntropyWithLogitsLossOp<float>>(CrossEntropyWithLogitsLossOp<float>(1e-24, 1.0)) };
+  loss_function_helper1.loss_function_grads_ = { std::make_shared<CrossEntropyWithLogitsLossGradOp<float>>(CrossEntropyWithLogitsLossGradOp<float>(1e-24, 1.0)) };
+  loss_function_helpers.push_back(loss_function_helper1);
+  loss_function_helper2.output_nodes_ = output_nodes;
+  loss_function_helper2.loss_functions_ = { std::make_shared<MSELossOp<float>>(MSELossOp<float>(1e-24, 0.0)) };
+  loss_function_helper2.loss_function_grads_ = { std::make_shared<MSELossGradOp<float>>(MSELossGradOp<float>(1e-24, 0.0)) };
+  loss_function_helpers.push_back(loss_function_helper2);
+  model_trainer.setLossFunctionHelpers(loss_function_helpers);
+
+  std::vector<MetricFunctionHelper<float>> metric_function_helpers;
+  MetricFunctionHelper<float> metric_function_helper1;
+  metric_function_helper1.output_nodes_ = output_nodes;
+  metric_function_helper1.metric_functions_ = { std::make_shared<AccuracyMCMicroOp<float>>(AccuracyMCMicroOp<float>()), std::make_shared<PrecisionMCMicroOp<float>>(PrecisionMCMicroOp<float>()) };
+  metric_function_helper1.metric_names_ = { "AccuracyMCMicro", "PrecisionMCMicro" };
+  metric_function_helpers.push_back(metric_function_helper1);
+  model_trainer.setMetricFunctionHelpers(metric_function_helpers);
 
   // define the model replicator
   ModelReplicatorExt<float> model_replicator;
@@ -542,8 +548,8 @@ void main_MNIST(const std::string& data_dir, const bool& make_model, const bool&
   std::cout << "Initializing the population..." << std::endl;
   Model<float> model;
   if (make_model) {
-    //model_trainer.makeRNN(model, input_nodes.size(), output_nodes.size(), 128, 0, false, false, true);
-    model_trainer.makeLSTM(model, input_nodes.size(), output_nodes.size(), n_blocks_1, n_cells_1, n_blocks_2, n_cells_2, n_hidden, add_forget_gate, false, true, true);
+    model_trainer.makeRNN(model, input_nodes.size(), output_nodes.size(), 128, 0, true, false, true); model_trainer.setFindCycles(true);
+    //model_trainer.makeLSTM(model, input_nodes.size(), output_nodes.size(), n_blocks_1, n_cells_1, n_blocks_2, n_cells_2, n_hidden, add_forget_gate, false, true, true);
   }
   else {
     // read in the trained model

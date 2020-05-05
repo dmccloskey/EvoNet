@@ -24,6 +24,10 @@ namespace SmartPeak
 		virtual ~MetricFunctionOp() = default;
 		virtual std::string getName() = 0;
 		virtual std::vector<TensorT> getParameters() const = 0;
+    std::string getReductionFunc() { return reduction_func_; }
+    void setReductionFunc(const std::string& reduction_func) { reduction_func_ = reduction_func; }
+  protected:
+    std::string reduction_func_ = "Sum";
 	};
 
   /**
@@ -249,7 +253,9 @@ namespace SmartPeak
   class MAEOp : public MetricFunctionOp<TensorT>
   {
   public:
-		using MetricFunctionOp<TensorT>::MetricFunctionOp;
+    MAEOp() = default;
+    ~MAEOp() = default;
+    MAEOp(const std::string& reduction_func){ this->setReductionFunc(reduction_func); }; ///< Options are Sum, Mean, Var
 		std::string getName() { return "MAEOp"; };
 		std::vector<TensorT> getParameters() const { return std::vector<TensorT>(); }
   };
@@ -261,7 +267,9 @@ namespace SmartPeak
   class CosineSimilarityOp : public MetricFunctionOp<TensorT>
   {
   public:
-    using MetricFunctionOp<TensorT>::MetricFunctionOp;
+    CosineSimilarityOp() = default;
+    ~CosineSimilarityOp() = default;
+    CosineSimilarityOp(const std::string& reduction_func){ this->setReductionFunc(reduction_func); }; ///< Options are Sum, Mean, Var
     std::string getName() { return "CosineSimilarityOp"; };
     std::vector<TensorT> getParameters() const { return std::vector<TensorT>(); }
   };
@@ -273,8 +281,80 @@ namespace SmartPeak
   class PearsonROp : public MetricFunctionOp<TensorT>
   {
   public:
-    using MetricFunctionOp<TensorT>::MetricFunctionOp;
+    PearsonROp() = default;
+    ~PearsonROp() = default;
+    PearsonROp(const std::string& reduction_func){ this->setReductionFunc(reduction_func); }; ///< Options are Sum, Mean, Var
     std::string getName() { return "PearsonROp"; };
+    std::vector<TensorT> getParameters() const { return std::vector<TensorT>(); }
+  };
+
+  /**
+    @brief EuclideanDist function.
+  */
+  template<typename TensorT>
+  class EuclideanDistOp : public MetricFunctionOp<TensorT>
+  {
+  public:
+    EuclideanDistOp() = default;
+    ~EuclideanDistOp() = default;
+    EuclideanDistOp(const std::string& reduction_func){ this->setReductionFunc(reduction_func); }; ///< Options are Sum, Mean, Var
+    std::string getName() { return "EuclideanDistOp"; };
+    std::vector<TensorT> getParameters() const { return std::vector<TensorT>(); }
+  };
+
+  /**
+    @brief ManhattanDist function.
+  */
+  template<typename TensorT>
+  class ManhattanDistOp : public MetricFunctionOp<TensorT>
+  {
+  public:
+    ManhattanDistOp() = default;
+    ~ManhattanDistOp() = default;
+    ManhattanDistOp(const std::string& reduction_func){ this->setReductionFunc(reduction_func); }; ///< Options are Sum, Mean, Var
+    std::string getName() { return "ManhattanDistOp"; };
+    std::vector<TensorT> getParameters() const { return std::vector<TensorT>(); }
+  };
+
+  /**
+    @brief JeffreysAndMatusitaDist function.
+  */
+  template<typename TensorT>
+  class JeffreysAndMatusitaDistOp : public MetricFunctionOp<TensorT>
+  {
+  public:
+    JeffreysAndMatusitaDistOp() = default;
+    ~JeffreysAndMatusitaDistOp() = default;
+    JeffreysAndMatusitaDistOp(const std::string& reduction_func){ this->setReductionFunc(reduction_func); }; ///< Options are Sum, Mean, Var
+    std::string getName() { return "JeffreysAndMatusitaDistOp"; };
+    std::vector<TensorT> getParameters() const { return std::vector<TensorT>(); }
+  };
+
+  /**
+    @brief LogarithmicDist function.
+  */
+  template<typename TensorT>
+  class LogarithmicDistOp : public MetricFunctionOp<TensorT>
+  {
+  public:
+    LogarithmicDistOp() = default;
+    ~LogarithmicDistOp() = default;
+    LogarithmicDistOp(const std::string& reduction_func){ this->setReductionFunc(reduction_func); }; ///< Options are Sum, Mean, Var
+    std::string getName() { return "LogarithmicDistOp"; };
+    std::vector<TensorT> getParameters() const { return std::vector<TensorT>(); }
+  };
+
+  /**
+    @brief PercentDifference function.
+  */
+  template<typename TensorT>
+  class PercentDifferenceOp : public MetricFunctionOp<TensorT>
+  {
+  public:
+    PercentDifferenceOp() = default;
+    ~PercentDifferenceOp() = default;
+    PercentDifferenceOp(const std::string& reduction_func){ this->setReductionFunc(reduction_func); }; ///< Options are Sum, Mean, Var
+    std::string getName() { return "PercentDifferenceOp"; };
     std::vector<TensorT> getParameters() const { return std::vector<TensorT>(); }
   };
 }

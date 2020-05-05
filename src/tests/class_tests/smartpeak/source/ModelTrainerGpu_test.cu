@@ -182,9 +182,13 @@ void test_DAGToy()
 	trainer.setLogging(false, false);
   const std::vector<std::string> input_nodes = {"0", "1", "6", "7"}; // true inputs + biases
   const std::vector<std::string> output_nodes = {"4", "5"};
-	trainer.setLossFunctions({ std::make_shared<MSELossOp<float>>(MSELossOp<float>()) });
-	trainer.setLossFunctionGrads({ std::make_shared<MSELossGradOp<float>>(MSELossGradOp<float>()) });
-	trainer.setLossOutputNodes({ output_nodes });
+  std::vector<LossFunctionHelper<float>> loss_function_helpers;
+  LossFunctionHelper<float> loss_function_helper1;
+  loss_function_helper1.output_nodes_ = output_nodes;
+  loss_function_helper1.loss_functions_ = { std::make_shared<MSELossOp<float>>(MSELossOp<float>(1e-6, 1.0)) };
+  loss_function_helper1.loss_function_grads_ = { std::make_shared<MSELossGradOp<float>>(MSELossGradOp<float>(1e-6, 1.0)) };
+  loss_function_helpers.push_back(loss_function_helper1);
+  trainer.setLossFunctionHelpers(loss_function_helpers);
 
   // Make the input data
   Eigen::Tensor<float, 4> input_data(trainer.getBatchSize(), trainer.getMemorySize(), (int)input_nodes.size(), trainer.getNEpochsTraining());
@@ -260,12 +264,22 @@ void test_DAGToy2()
   trainer.setLogging(false, false);
   const std::vector<std::string> input_nodes = { "0", "1", "6", "7" }; // true inputs + biases
   const std::vector<std::string> output_nodes = { "4", "5" };
-  trainer.setLossFunctions({ std::make_shared<MSELossOp<float>>(MSELossOp<float>()) });
-  trainer.setLossFunctionGrads({ std::make_shared<MSELossGradOp<float>>(MSELossGradOp<float>()) });
-  trainer.setLossOutputNodes({ output_nodes });
-  trainer.setMetricFunctions({ std::make_shared<MAEOp<float>>(MAEOp<float>()) });
-  trainer.setMetricOutputNodes({ output_nodes });
-  trainer.setMetricNames({ "MAE" });
+
+  std::vector<LossFunctionHelper<float>> loss_function_helpers;
+  LossFunctionHelper<float> loss_function_helper1;
+  loss_function_helper1.output_nodes_ = output_nodes;
+  loss_function_helper1.loss_functions_ = { std::make_shared<MSELossOp<float>>(MSELossOp<float>(1e-6, 1.0)) };
+  loss_function_helper1.loss_function_grads_ = { std::make_shared<MSELossGradOp<float>>(MSELossGradOp<float>(1e-6, 1.0)) };
+  loss_function_helpers.push_back(loss_function_helper1);
+  trainer.setLossFunctionHelpers(loss_function_helpers);
+
+  std::vector<MetricFunctionHelper<float>> metric_function_helpers;
+  MetricFunctionHelper<float> metric_function_helper1;
+  metric_function_helper1.output_nodes_ = output_nodes;
+  metric_function_helper1.metric_functions_ = { std::make_shared<MAEOp<float>>(MAEOp<float>("Sum")) };
+  metric_function_helper1.metric_names_ = { "MAE" };
+  metric_function_helpers.push_back(metric_function_helper1);
+  trainer.setMetricFunctionHelpers(metric_function_helpers);
 
   DataSimulatorDAGToy<float> data_simulator;
 
@@ -282,9 +296,9 @@ void test_DAGToy2()
     input_nodes, ModelLogger<float>(), ModelInterpreterGpu<float>(model_resources));
 
   const Eigen::Tensor<float, 0> total_error_validation = model1.getError().sum();
-  assert(total_error_validation(0) <= 749.843);
-  assert(validation_errors.first.back() <= 749.843);
-  assert(validation_errors.second.back() <= 455.844);
+  assert(total_error_validation(0) <= 749.853395);
+  assert(validation_errors.first.back() <= 749.853395);
+  assert(validation_errors.second.back() <= 455.849305);
 
   // TODO evaluateModel
 }
@@ -364,9 +378,14 @@ void test_DCGToy()
 	trainer.setNEpochsValidation(50);
   const std::vector<std::string> input_nodes = {"0", "3", "4"}; // true inputs + biases
   const std::vector<std::string> output_nodes = {"2"};
-	trainer.setLossFunctions({ std::make_shared<MSELossOp<float>>(MSELossOp<float>()) });
-	trainer.setLossFunctionGrads({ std::make_shared<MSELossGradOp<float>>(MSELossGradOp<float>()) });
-	trainer.setLossOutputNodes({ output_nodes });
+
+  std::vector<LossFunctionHelper<float>> loss_function_helpers;
+  LossFunctionHelper<float> loss_function_helper1;
+  loss_function_helper1.output_nodes_ = output_nodes;
+  loss_function_helper1.loss_functions_ = { std::make_shared<MSELossOp<float>>(MSELossOp<float>(1e-6, 1.0)) };
+  loss_function_helper1.loss_function_grads_ = { std::make_shared<MSELossGradOp<float>>(MSELossGradOp<float>(1e-6, 1.0)) };
+  loss_function_helpers.push_back(loss_function_helper1);
+  trainer.setLossFunctionHelpers(loss_function_helpers);
 
   // Make the input data
   Eigen::Tensor<float, 4> input_data(trainer.getBatchSize(), trainer.getMemorySize(), (int)input_nodes.size(), trainer.getNEpochsTraining());
@@ -446,12 +465,22 @@ void test_DCGToy2()
   trainer.setNEpochsValidation(50);
   const std::vector<std::string> input_nodes = { "0", "3", "4" }; // true inputs + biases
   const std::vector<std::string> output_nodes = { "2" };
-  trainer.setLossFunctions({ std::make_shared<MSELossOp<float>>(MSELossOp<float>()) });
-  trainer.setLossFunctionGrads({ std::make_shared<MSELossGradOp<float>>(MSELossGradOp<float>()) });
-  trainer.setLossOutputNodes({ output_nodes });
-  trainer.setMetricFunctions({ std::make_shared<MAEOp<float>>(MAEOp<float>()) });
-  trainer.setMetricOutputNodes({ output_nodes });
-  trainer.setMetricNames({ "MAE" });
+
+  std::vector<LossFunctionHelper<float>> loss_function_helpers;
+  LossFunctionHelper<float> loss_function_helper1;
+  loss_function_helper1.output_nodes_ = output_nodes;
+  loss_function_helper1.loss_functions_ = { std::make_shared<MSELossOp<float>>(MSELossOp<float>(1e-6, 1.0)) };
+  loss_function_helper1.loss_function_grads_ = { std::make_shared<MSELossGradOp<float>>(MSELossGradOp<float>(1e-6, 1.0)) };
+  loss_function_helpers.push_back(loss_function_helper1);
+  trainer.setLossFunctionHelpers(loss_function_helpers);
+
+  std::vector<MetricFunctionHelper<float>> metric_function_helpers;
+  MetricFunctionHelper<float> metric_function_helper1;
+  metric_function_helper1.output_nodes_ = output_nodes;
+  metric_function_helper1.metric_functions_ = { std::make_shared<MAEOp<float>>(MAEOp<float>("Sum")) };
+  metric_function_helper1.metric_names_ = { "MAE" };
+  metric_function_helpers.push_back(metric_function_helper1);
+  trainer.setMetricFunctionHelpers(metric_function_helpers);
 
   // Make data simulator
   DataSimulatorDCGToy<float> data_simulator;

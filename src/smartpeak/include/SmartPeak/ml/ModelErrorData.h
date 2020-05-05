@@ -77,9 +77,9 @@ public:
       return *this;
     }
 
-		void setBatchSize(const size_t& batch_size) { batch_size_ = batch_size; }
-		void setMemorySize(const size_t& memory_size) { memory_size_ = memory_size; }
-    void setNMetrics(const size_t& n_metrics) { n_metrics_ = n_metrics; }
+		void setBatchSize(const size_t& batch_size) { (batch_size <= 0) ? batch_size_ = 1 : batch_size_ = batch_size; }
+		void setMemorySize(const size_t& memory_size) { (memory_size <= 0) ? memory_size_ = 1 : memory_size_ = memory_size; }
+    void setNMetrics(const size_t& n_metrics) { (n_metrics <= 0) ? n_metrics_ = 1: n_metrics_ = n_metrics; }
 		size_t getBatchSize() const { return batch_size_; }
 		size_t getMemorySize() const	{ return memory_size_; }
     size_t getNMetrics() const { return n_metrics_; }
@@ -135,9 +135,9 @@ protected:
 	inline void ModelErrorData<TensorT, DeviceT>::initModelErrorData(const int& batch_size, const int& memory_size, const int& n_metrics)
 	{
 		setBatchSize(batch_size);	setMemorySize(memory_size); setNMetrics(n_metrics);
-		Eigen::Tensor<TensorT, 2> zero(batch_size, memory_size); zero.setZero();
+		Eigen::Tensor<TensorT, 2> zero(getBatchSize(), getMemorySize()); zero.setZero();
 		setError(zero);
-    Eigen::Tensor<TensorT, 2> zero_metric(n_metrics, memory_size); zero_metric.setZero();
+    Eigen::Tensor<TensorT, 2> zero_metric(getNMetrics(), getMemorySize()); zero_metric.setZero();
     setMetric(zero_metric);
 	}
 
@@ -187,8 +187,8 @@ protected:
 			Eigen::TensorMap<Eigen::Tensor<TensorT, 2>> error_copy(h_error, this->batch_size_, this->memory_size_);
 			error_copy = error;
 			// define the deleters
-			auto h_deleter = [&](TensorT* ptr) { cudaFreeHost(ptr); };
-			auto d_deleter = [&](TensorT* ptr) { cudaFree(ptr); };
+      auto h_deleter = [&](TensorT* ptr) { assert(cudaFreeHost(ptr) == cudaSuccess); };
+      auto d_deleter = [&](TensorT* ptr) { assert(cudaFree(ptr) == cudaSuccess); };
 			this->h_error_.reset(h_error, h_deleter);
 			this->d_error_.reset(d_error, d_deleter);
 			this->h_error_updated_ = true;
@@ -222,8 +222,8 @@ protected:
       Eigen::TensorMap<Eigen::Tensor<TensorT, 2>> metric_copy(h_metric, this->n_metrics_, this->memory_size_);
       metric_copy = metric;
       // define the deleters
-      auto h_deleter = [&](TensorT* ptr) { cudaFreeHost(ptr); };
-      auto d_deleter = [&](TensorT* ptr) { cudaFree(ptr); };
+      auto h_deleter = [&](TensorT* ptr) { assert(cudaFreeHost(ptr) == cudaSuccess); };
+      auto d_deleter = [&](TensorT* ptr) { assert(cudaFree(ptr) == cudaSuccess); };
       this->h_metric_.reset(h_metric, h_deleter);
       this->d_metric_.reset(d_metric, d_deleter);
       this->h_metric_updated_ = true;

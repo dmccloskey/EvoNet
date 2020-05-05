@@ -454,10 +454,10 @@ void test_executeModelErrorOperations()
 	std::vector<std::string> output_nodes = { "4", "5" };
 	Eigen::Tensor<float, 2> expected(batch_size, (int)output_nodes.size());
 	expected.setValues({ {0, 1}, {0, 1}, {0, 1}, {0, 1} });
-	LossFunctionTensorOp<float, Eigen::GpuDevice>* solver = new MSELossTensorOp<float, Eigen::GpuDevice>();
-	LossFunctionGradTensorOp<float, Eigen::GpuDevice>* solver_grad = new MSELossGradTensorOp<float, Eigen::GpuDevice>();
+	std::shared_ptr<LossFunctionTensorOp<float, Eigen::GpuDevice>> loss_function = std::make_shared<MSELossTensorOp<float, Eigen::GpuDevice>>(MSELossTensorOp<float, Eigen::GpuDevice>());
+	std::shared_ptr<LossFunctionGradTensorOp<float, Eigen::GpuDevice>> loss_grad_function = std::make_shared<MSELossGradTensorOp<float, Eigen::GpuDevice>>(MSELossGradTensorOp<float, Eigen::GpuDevice>());
 	const int layer_id = model_executeModelErrorOperations.getNode("4").getTensorIndex().first;
-	model_interpreter.executeModelErrorOperations(expected, layer_id, solver, solver_grad, 0);
+	model_interpreter.executeModelErrorOperations(expected, layer_id, loss_function, loss_grad_function, 0);
 
 	// Retrieve the model and node errors from the device
 	cudaStream_t stream; // The stream will be destroyed by GpuStreamDevice once the function goes out of scope!
@@ -529,7 +529,7 @@ void test_executeModelMetricOperations()
   std::vector<std::string> output_nodes = { "4", "5" };
   Eigen::Tensor<float, 2> expected(batch_size, (int)output_nodes.size());
   expected.setValues({ {0, 1}, {0, 1}, {0, 1}, {0, 1} });
-  MetricFunctionTensorOp<float, Eigen::GpuDevice>* solver = new MAETensorOp<float, Eigen::GpuDevice>();
+  std::shared_ptr<MetricFunctionTensorOp<float, Eigen::GpuDevice>> solver = std::make_shared<MAETensorOp<float, Eigen::GpuDevice>>(MAETensorOp<float, Eigen::GpuDevice>());
   const int layer_id = model_executeModelMetricOperations.getNode("4").getTensorIndex().first;
   model_interpreter.executeModelMetricOperations(expected, layer_id, solver, 0, 0);
 
@@ -585,10 +585,10 @@ void test_executeBackwardPropogationOperations()
 	std::vector<std::string> output_nodes = { "4", "5" };
 	Eigen::Tensor<float, 2> expected(batch_size, (int)output_nodes.size());
 	expected.setValues({ {0, 1}, {0, 1}, {0, 1}, {0, 1} });
-	LossFunctionTensorOp<float, Eigen::GpuDevice>* solver = new MSELossTensorOp<float, Eigen::GpuDevice>();
-	LossFunctionGradTensorOp<float, Eigen::GpuDevice>* solver_grad = new MSELossGradTensorOp<float, Eigen::GpuDevice>();
+	std::shared_ptr<LossFunctionTensorOp<float, Eigen::GpuDevice>> loss_function = std::make_shared<MSELossTensorOp<float, Eigen::GpuDevice>>(MSELossTensorOp<float, Eigen::GpuDevice>());
+	std::shared_ptr<LossFunctionGradTensorOp<float, Eigen::GpuDevice>> loss_grad_function = std::make_shared<MSELossGradTensorOp<float, Eigen::GpuDevice>>(MSELossGradTensorOp<float, Eigen::GpuDevice>());
 	const int layer_id = model_executeBackwardPropogationOperations.getNode("4").getTensorIndex().first;
-	model_interpreter.executeModelErrorOperations(expected, layer_id, solver, solver_grad, 0);
+	model_interpreter.executeModelErrorOperations(expected, layer_id, loss_function, loss_grad_function, 0);
 
 	model_interpreter.executeBackwardPropogationOperations(0); // BP
 
@@ -657,10 +657,10 @@ void test_executeWeightErrorOperations()
 	std::vector<std::string> output_nodes = { "4", "5" };
 	Eigen::Tensor<float, 2> expected(batch_size, (int)output_nodes.size());
 	expected.setValues({ {0, 1}, {0, 1}, {0, 1}, {0, 1} });
-	LossFunctionTensorOp<float, Eigen::GpuDevice>* solver = new MSELossTensorOp<float, Eigen::GpuDevice>();
-	LossFunctionGradTensorOp<float, Eigen::GpuDevice>* solver_grad = new MSELossGradTensorOp<float, Eigen::GpuDevice>();
+	std::shared_ptr<LossFunctionTensorOp<float, Eigen::GpuDevice>> loss_function = std::make_shared<MSELossTensorOp<float, Eigen::GpuDevice>>(MSELossTensorOp<float, Eigen::GpuDevice>());
+	std::shared_ptr<LossFunctionGradTensorOp<float, Eigen::GpuDevice>> loss_grad_function = std::make_shared<MSELossGradTensorOp<float, Eigen::GpuDevice>>(MSELossGradTensorOp<float, Eigen::GpuDevice>());
 	const int layer_id = model_executeWeightErrorOperations.getNode("4").getTensorIndex().first;
-	model_interpreter.executeModelErrorOperations(expected, layer_id, solver, solver_grad, 0);
+	model_interpreter.executeModelErrorOperations(expected, layer_id, loss_function, loss_grad_function, 0);
 
 	model_interpreter.executeBackwardPropogationOperations(0); // BP
 	model_interpreter.executeWeightErrorOperations(); // Weight error
@@ -724,10 +724,10 @@ void test_executeWeightUpdateOperations()
 	std::vector<std::string> output_nodes = { "4", "5" };
 	Eigen::Tensor<float, 2> expected(batch_size, (int)output_nodes.size());
 	expected.setValues({ {0, 1}, {0, 1}, {0, 1}, {0, 1} });
-	LossFunctionTensorOp<float, Eigen::GpuDevice>* solver = new MSELossTensorOp<float, Eigen::GpuDevice>();
-	LossFunctionGradTensorOp<float, Eigen::GpuDevice>* solver_grad = new MSELossGradTensorOp<float, Eigen::GpuDevice>();
+	std::shared_ptr<LossFunctionTensorOp<float, Eigen::GpuDevice>> loss_function = std::make_shared<MSELossTensorOp<float, Eigen::GpuDevice>>(MSELossTensorOp<float, Eigen::GpuDevice>());
+	std::shared_ptr<LossFunctionGradTensorOp<float, Eigen::GpuDevice>> loss_grad_function = std::make_shared<MSELossGradTensorOp<float, Eigen::GpuDevice>>(MSELossGradTensorOp<float, Eigen::GpuDevice>());
 	const int layer_id = model_executeWeightUpdateOperations.getNode("4").getTensorIndex().first;
-	model_interpreter.executeModelErrorOperations(expected, layer_id, solver, solver_grad, 0);
+	model_interpreter.executeModelErrorOperations(expected, layer_id, loss_function, loss_grad_function, 0);
 
 	model_interpreter.executeBackwardPropogationOperations(0); // BP
 	model_interpreter.executeWeightErrorOperations(); // Weight error
@@ -795,8 +795,8 @@ void test_modelTrainer1()
 	std::vector<std::string> output_nodes = { "4", "5" };
 	Eigen::Tensor<float, 2> expected(batch_size, (int)output_nodes.size());
 	expected.setValues({ {0, 1}, {0, 1}, {0, 1}, {0, 1} });
-	LossFunctionTensorOp<float, Eigen::GpuDevice>* loss_function = new MSELossTensorOp<float, Eigen::GpuDevice>();
-	LossFunctionGradTensorOp<float, Eigen::GpuDevice>* loss_function_grad = new MSELossGradTensorOp<float, Eigen::GpuDevice>();
+	std::shared_ptr<LossFunctionTensorOp<float, Eigen::GpuDevice>> loss_function = std::make_shared<MSELossTensorOp<float, Eigen::GpuDevice>>(MSELossTensorOp<float, Eigen::GpuDevice>());
+	std::shared_ptr<LossFunctionGradTensorOp<float, Eigen::GpuDevice>> loss_grad_function = std::make_shared<MSELossGradTensorOp<float, Eigen::GpuDevice>>(MSELossGradTensorOp<float, Eigen::GpuDevice>());
 	const int layer_id = model_modelTrainer1.getNode("4").getTensorIndex().first;
 
 	// iterate until we find the optimal values
@@ -810,7 +810,7 @@ void test_modelTrainer1()
 		model_interpreter.executeForwardPropogationOperations(0); //FP
 
 		// calculate the model error and node output error
-		model_interpreter.executeModelErrorOperations(expected, layer_id, loss_function, loss_function_grad, 0);
+		model_interpreter.executeModelErrorOperations(expected, layer_id, loss_function, loss_grad_function, 0);
 
 		model_interpreter.executeBackwardPropogationOperations(0); // BP
 		model_interpreter.executeWeightErrorOperations(); // Weight error
@@ -1001,8 +1001,8 @@ void test_CETT()
 		{ { 6 },{ 5 },{ 5 },{ 4 },{ 4 },{ 3 },{ 3 },{ 2 } },
 		{ { 6 },{ 6 },{ 5 },{ 5 },{ 4 },{ 4 },{ 3 },{ 3 } } }
 	);
-	LossFunctionOp<float>* loss_function = new MSELossOp<float>();
-	LossFunctionGradOp<float>* loss_function_grad = new MSELossGradOp<float>();
+	std::shared_ptr<LossFunctionOp<float>> loss_function = std::make_shared<MSELossOp<float>>(MSELossOp<float>());
+	std::shared_ptr<LossFunctionGradOp<float>> loss_function_grad = std::make_shared<MSELossGradOp<float>>(MSELossGradOp<float>());
 	model_interpreter.CETT(model_CETT, expected, output_nodes, loss_function, loss_function_grad, 4);
 
 	// Retrieve the model and node errors from the device
@@ -1091,7 +1091,7 @@ void test_CMTT()
     { { 6 },{ 5 },{ 5 },{ 4 },{ 4 },{ 3 },{ 3 },{ 2 } },
     { { 6 },{ 6 },{ 5 },{ 5 },{ 4 },{ 4 },{ 3 },{ 3 } } }
   );
-  MetricFunctionOp<float>* metric_function = new MAEOp<float>();
+  std::shared_ptr<MetricFunctionOp<float>> metric_function = std::make_shared<MAEOp<float>>(MAEOp<float>());
   model_interpreter.CMTT(model_CMTT, expected, output_nodes, metric_function, 4, 0);
 
   // Retrieve the model and node metrics from the device
@@ -1157,8 +1157,8 @@ void test_TBPTT()
 		{ { 6 },{ 5 },{ 5 },{ 4 },{ 4 },{ 3 },{ 3 },{ 2 } },
 		{ { 6 },{ 6 },{ 5 },{ 5 },{ 4 },{ 4 },{ 3 },{ 3 } } }
 	);
-	LossFunctionOp<float>* loss_function = new MSELossOp<float>();
-	LossFunctionGradOp<float>* loss_function_grad = new MSELossGradOp<float>();
+	std::shared_ptr<LossFunctionOp<float>> loss_function = std::make_shared<MSELossOp<float>>(MSELossOp<float>());
+	std::shared_ptr<LossFunctionGradOp<float>> loss_function_grad = std::make_shared<MSELossGradOp<float>>(MSELossGradOp<float>());
 	model_interpreter.CETT(model_TBPTT, expected, output_nodes, loss_function, loss_function_grad, 4);
 
 	model_interpreter.TBPTT(4);
@@ -1180,20 +1180,20 @@ void test_TBPTT()
 
 	// test values of output nodes
 	Eigen::Tensor<float, 3> node_error(batch_size, memory_size, 5); // dim2: # of model nodes
-	node_error.setValues({
-		{ { -22, -22, -22, -22, -22 },{-36, -36, -14, -36, -14 },{ -44, -44, -8, -44, -8 },{ -46, -46, -2, -46, -2 },{ 0, 0, 0, 0, 0 },{ 0, 0, 0, 0, 0 },{ 0, 0, 0, 0, 0 },{ 0, 0, 0, 0, 0 } },
-		{ { -25, -25, -25, -25, -25 },{ -42, -42, -17, -42, -17 },{ -51, -51, -9, -51, -9 },{ -54, -54, -3, -54, -3 },{ 0, 0, 0, 0, 0 },{ 0, 0, 0, 0, 0 },{ 0, 0, 0, 0, 0 },{ 0, 0, 0, 0, 0 } },
-		{ { -29, -29, -29, -29, -29 },{ -48, -48, -19, -48, -19 },{ -59, -59, -11, -59, -11 },{ -62, -62, -3, -62, -3 },{ 0, 0, 0, 0, 0 },{ 0, 0, 0, 0, 0 },{ 0, 0, 0, 0, 0 },{ 0, 0, 0, 0, 0 } },
-		{ { -32, -32, -32, -32, -32 },{ -54, -54, -22, -54, -22 },{ -66, -66, -12, -66, -12 },{ -70, -70, -4, -70, -4 },{ 0, 0, 0, 0, 0 },{ 0, 0, 0, 0, 0 },{ 0, 0, 0, 0, 0 },{ 0, 0, 0, 0, 0 } },
-		{ {-36, -36, -36, -36, -36 },{-60, -60, -24, -60, -24 },{-74, -74, -14, -74, -14 },{ -78, -78, -4, -78, -4 },{ 0, 0, 0, 0, 0 },{ 0, 0, 0, 0, 0 },{ 0, 0, 0, 0, 0 },{ 0, 0, 0, 0, 0 } } }
-	);
-	Eigen::Tensor<float, 3> derivative(batch_size, memory_size, 5);
-	derivative.setValues({
-		{{1, 1, 0, 1, 1}, {1, 1, 0, 1, 1}, {1, 1, 0, 1, 1}, {1, 1, 0, 1, 1}, {0, 0, 0, 0, 0}, {0, 0, 0, 0, 0}, {0, 0, 0, 0, 0}, {0, 0, 0, 0, 0}},
-		{{1, 1, 0, 1, 1}, {1, 1, 0, 1, 1}, {1, 1, 0, 1, 1}, {1, 1, 0, 1, 1}, {0, 0, 0, 0, 0}, {0, 0, 0, 0, 0}, {0, 0, 0, 0, 0}, {0, 0, 0, 0, 0}},
-		{{1, 1, 0, 1, 1}, {1, 1, 0, 1, 1}, {1, 1, 0, 1, 1}, {1, 1, 0, 1, 1}, {0, 0, 0, 0, 0}, {0, 0, 0, 0, 0}, {0, 0, 0, 0, 0}, {0, 0, 0, 0, 0}},
-		{{1, 1, 0, 1, 1}, {1, 1, 0, 1, 1}, {1, 1, 0, 1, 1}, {1, 1, 0, 1, 1}, {0, 0, 0, 0, 0}, {0, 0, 0, 0, 0}, {0, 0, 0, 0, 0}, {0, 0, 0, 0, 0}},
-		{{1, 1, 0, 1, 1}, {1, 1, 0, 1, 1}, {1, 1, 0, 1, 1}, {1, 1, 0, 1, 1}, {0, 0, 0, 0, 0}, {0, 0, 0, 0, 0}, {0, 0, 0, 0, 0}, {0, 0, 0, 0, 0}} }
+  node_error.setValues({
+    { { -22, -22, -22, -22, -22 },{-36, -36, -14, -36, -14 },{ -44, -44, -8, -44, -8 },{ -46, -46, -2, -46, -2 },{ 0, -46, 0, 0, 0 },{ 0, 0, 0, 0, 0 },{ 0, 0, 0, 0, 0 },{ 0, 0, 0, 0, 0 } },
+    { { -25, -25, -25, -25, -25 },{ -42, -42, -17, -42, -17 },{ -51, -51, -9, -51, -9 },{ -54, -54, -3, -54, -3 },{ 0, -54, 0, 0, 0 },{ 0, 0, 0, 0, 0 },{ 0, 0, 0, 0, 0 },{ 0, 0, 0, 0, 0 } },
+    { { -29, -29, -29, -29, -29 },{ -48, -48, -19, -48, -19 },{ -59, -59, -11, -59, -11 },{ -62, -62, -3, -62, -3 },{ 0, -62, 0, 0, 0 },{ 0, 0, 0, 0, 0 },{ 0, 0, 0, 0, 0 },{ 0, 0, 0, 0, 0 } },
+    { { -32, -32, -32, -32, -32 },{ -54, -54, -22, -54, -22 },{ -66, -66, -12, -66, -12 },{ -70, -70, -4, -70, -4 },{ 0, -70, 0, 0, 0 },{ 0, 0, 0, 0, 0 },{ 0, 0, 0, 0, 0 },{ 0, 0, 0, 0, 0 } },
+    { {-36, -36, -36, -36, -36 },{-60, -60, -24, -60, -24 },{-74, -74, -14, -74, -14 },{ -78, -78, -4, -78, -4 },{ 0, -78, 0, 0, 0 },{ 0, 0, 0, 0, 0 },{ 0, 0, 0, 0, 0 },{ 0, 0, 0, 0, 0 } } }
+  );
+  Eigen::Tensor<float, 3> derivative(batch_size, memory_size, 5);
+  derivative.setValues({
+    {{1, 1, 0, 1, 1}, {1, 1, 0, 1, 1}, {1, 1, 0, 1, 1}, {1, 1, 0, 1, 1}, {0, 1, 0, 0, 0}, {0, 0, 0, 0, 0}, {0, 0, 0, 0, 0}, {0, 0, 0, 0, 0}},
+    {{1, 1, 0, 1, 1}, {1, 1, 0, 1, 1}, {1, 1, 0, 1, 1}, {1, 1, 0, 1, 1}, {0, 1, 0, 0, 0}, {0, 0, 0, 0, 0}, {0, 0, 0, 0, 0}, {0, 0, 0, 0, 0}},
+    {{1, 1, 0, 1, 1}, {1, 1, 0, 1, 1}, {1, 1, 0, 1, 1}, {1, 1, 0, 1, 1}, {0, 1, 0, 0, 0}, {0, 0, 0, 0, 0}, {0, 0, 0, 0, 0}, {0, 0, 0, 0, 0}},
+    {{1, 1, 0, 1, 1}, {1, 1, 0, 1, 1}, {1, 1, 0, 1, 1}, {1, 1, 0, 1, 1}, {0, 1, 0, 0, 0}, {0, 0, 0, 0, 0}, {0, 0, 0, 0, 0}, {0, 0, 0, 0, 0}},
+    {{1, 1, 0, 1, 1}, {1, 1, 0, 1, 1}, {1, 1, 0, 1, 1}, {1, 1, 0, 1, 1}, {0, 1, 0, 0, 0}, {0, 0, 0, 0, 0}, {0, 0, 0, 0, 0}, {0, 0, 0, 0, 0}} }
 	);
 
 	for (int j = 0; j < batch_size; ++j) {
@@ -1249,8 +1249,8 @@ void test_updateWeights()
 		{ { 5 },{ 5 },{ 4 },{ 4 },{ 3 },{ 3 },{ 2 },{ 2 } },
 		{ { 6 },{ 5 },{ 5 },{ 4 },{ 4 },{ 3 },{ 3 },{ 2 } },
 		{ { 6 },{ 6 },{ 5 },{ 5 },{ 4 },{ 4 },{ 3 },{ 3 } } });
-	LossFunctionOp<float>* loss_function = new MSELossOp<float>();
-	LossFunctionGradOp<float>* loss_function_grad = new MSELossGradOp<float>();
+	std::shared_ptr<LossFunctionOp<float>> loss_function = std::make_shared<MSELossOp<float>>(MSELossOp<float>());
+	std::shared_ptr<LossFunctionGradOp<float>> loss_function_grad = std::make_shared<MSELossGradOp<float>>(MSELossGradOp<float>());
 	model_interpreter.CETT(model_updateWeights, expected, output_nodes, loss_function, loss_function_grad, 4);
 
 	model_interpreter.TBPTT(4);
@@ -1271,7 +1271,7 @@ void test_updateWeights()
 
 	// test values of output nodes
 	Eigen::Tensor<float, 1> weights(weight_ids.size());
-	weights.setValues({ -15.7439995f, -15.744f, -34.572f, 1.0f, 1.0f });
+	weights.setValues({ -19.6240005f, -15.744f, -34.572f, 1.0f, 1.0f });
 	for (int i = 0; i < weight_ids.size(); ++i) {
 		//std::cout << "Weight: " << weight_ids[i] << "; Calculated: " << model_interpreter.getWeightTensor(
 		//	std::get<0>(weights_map.at(weight_ids[i])->getTensorIndex()[0]))->getWeight()(
@@ -1323,8 +1323,8 @@ void test_modelTrainer2()
 		{ { 5 },{ 5 },{ 4 },{ 4 },{ 3 },{ 3 },{ 2 },{ 2 } },
 		{ { 6 },{ 5 },{ 5 },{ 4 },{ 4 },{ 3 },{ 3 },{ 2 } },
 		{ { 6 },{ 6 },{ 5 },{ 5 },{ 4 },{ 4 },{ 3 },{ 3 } } });
-	LossFunctionOp<float>* loss_function = new MSELossOp<float>();
-	LossFunctionGradOp<float>* loss_function_grad = new MSELossGradOp<float>();
+	std::shared_ptr<LossFunctionOp<float>> loss_function = std::make_shared<MSELossOp<float>>(MSELossOp<float>());
+	std::shared_ptr<LossFunctionGradOp<float>> loss_function_grad = std::make_shared<MSELossGradOp<float>>(MSELossGradOp<float>());
 
 	// iterate until we find the optimal values
 	const int max_iter = 50;
@@ -1403,10 +1403,10 @@ void test_getModelResults()
 		{ { 5 },{ 5 },{ 4 },{ 4 },{ 3 },{ 3 },{ 2 },{ 2 } },
 		{ { 6 },{ 5 },{ 5 },{ 4 },{ 4 },{ 3 },{ 3 },{ 2 } },
 		{ { 6 },{ 6 },{ 5 },{ 5 },{ 4 },{ 4 },{ 3 },{ 3 } } });
-	LossFunctionOp<float>* loss_function = new MSELossOp<float>();
-	LossFunctionGradOp<float>* loss_function_grad = new MSELossGradOp<float>();
+	std::shared_ptr<LossFunctionOp<float>> loss_function = std::make_shared<MSELossOp<float>>(MSELossOp<float>());
+	std::shared_ptr<LossFunctionGradOp<float>> loss_function_grad = std::make_shared<MSELossGradOp<float>>(MSELossGradOp<float>());
 	model_interpreter.CETT(model_getModelResults, expected, output_nodes, loss_function, loss_function_grad, 4);
-  MetricFunctionOp<float>* metric_function = new MAEOp<float>();
+  std::shared_ptr<MetricFunctionOp<float>> metric_function = std::make_shared<MAEOp<float>>(MAEOp<float>());
   model_interpreter.CMTT(model_getModelResults, expected, output_nodes, metric_function, 4, 0);
 
 	model_interpreter.TBPTT(4);
@@ -1466,7 +1466,7 @@ void test_getModelResults()
 	// test values of weights
 	std::vector<std::string> weight_ids = { "0", "1", "2", "3", "4" };
 	Eigen::Tensor<float, 1> weights(weight_ids.size());
-	weights.setValues({ -15.7439995f, -15.744f, -34.572f, 1.0f, 1.0f });
+	weights.setValues({ -19.6240005f, -15.744f, -34.572f, 1.0f, 1.0f });
 	for (int i = 0; i < weight_ids.size(); ++i) {
 		//std::cout << "Calc Weight: " << model_getModelResults.getWeightsMap().at(weight_ids[i])->getWeight()<< ", Expected Weight: " << weights(i) << std::endl;
 		assert(assert_close(model_getModelResults.getWeightsMap().at(weight_ids[i])->getWeight(), weights(i)));

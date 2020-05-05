@@ -335,8 +335,8 @@ protected:
 			Eigen::TensorMap<Eigen::Tensor<TensorT, 2>> weight_copy(h_weight, this->layer1_size_, this->layer2_size_);
 			weight_copy = weight;
 			// define the deleters
-			auto h_deleter = [&](TensorT* ptr) { cudaFreeHost(ptr); };
-			auto d_deleter = [&](TensorT* ptr) { cudaFree(ptr); };
+      auto h_deleter = [&](TensorT* ptr) { assert(cudaFreeHost(ptr) == cudaSuccess); };
+      auto d_deleter = [&](TensorT* ptr) { assert(cudaFree(ptr) == cudaSuccess); };
 			this->h_weight_.reset(h_weight, h_deleter); 
 			this->d_weight_.reset(d_weight, d_deleter);
 			this->h_weight_updated_ = true;
@@ -352,8 +352,8 @@ protected:
 			Eigen::TensorMap<Eigen::Tensor<TensorT, 3>> solver_params_copy(h_solver_params, this->layer1_size_, this->layer2_size_, this->n_solver_params_);
 			solver_params_copy = solver_params;
 			// define the deleters
-			auto h_deleter = [&](TensorT* ptr) { cudaFreeHost(ptr); };
-			auto d_deleter = [&](TensorT* ptr) { cudaFree(ptr); };
+			auto h_deleter = [&](TensorT* ptr) { assert(cudaFreeHost(ptr) == cudaSuccess); };
+			auto d_deleter = [&](TensorT* ptr) { assert(cudaFree(ptr) == cudaSuccess); };
 			this->h_solver_params_.reset(h_solver_params, h_deleter);
 			this->d_solver_params_.reset(d_solver_params, d_deleter);
 			this->h_solver_params_updated_ = true;
@@ -369,8 +369,8 @@ protected:
 			Eigen::TensorMap<Eigen::Tensor<TensorT, 2>> error_copy(h_error, this->layer1_size_, this->layer2_size_);
 			error_copy = error;
 			// define the deleters
-			auto h_deleter = [&](TensorT* ptr) { cudaFreeHost(ptr); };
-			auto d_deleter = [&](TensorT* ptr) { cudaFree(ptr); };
+      auto h_deleter = [&](TensorT* ptr) { assert(cudaFreeHost(ptr) == cudaSuccess); };
+      auto d_deleter = [&](TensorT* ptr) { assert(cudaFree(ptr) == cudaSuccess); };
 			this->h_error_.reset(h_error, h_deleter);
 			this->d_error_.reset(d_error, d_deleter);
 			this->h_error_updated_ = true;
@@ -386,8 +386,8 @@ protected:
 			Eigen::TensorMap<Eigen::Tensor<TensorT, 3>> shared_weights_copy(h_shared_weights, this->layer1_size_, this->layer2_size_, this->n_shared_weights_);
 			shared_weights_copy = shared_weights;
 			// define the deleters
-			auto h_deleter = [&](TensorT* ptr) { cudaFreeHost(ptr); };
-			auto d_deleter = [&](TensorT* ptr) { cudaFree(ptr); };
+      auto h_deleter = [&](TensorT* ptr) { assert(cudaFreeHost(ptr) == cudaSuccess); };
+      auto d_deleter = [&](TensorT* ptr) { assert(cudaFree(ptr) == cudaSuccess); };
 			this->h_shared_weights_.reset(h_shared_weights, h_deleter);
 			this->d_shared_weights_.reset(d_shared_weights, d_deleter);
 			this->h_shared_weights_updated_ = true;

@@ -749,7 +749,7 @@ void main_MNIST(const std::string& data_dir, const bool& make_model, const bool&
     //// Modify the learning rate
     //std::cout << "Modifying the learning rate..." << std::endl;
     //for (auto& weight_map : model.weights_) {
-    //  if (weight_map.second->getSolverOp()->getName() == "AdamOp") {
+    //  if (weight_map.second->getSolverOpShared()->getName() == "AdamOp") {
     //    weight_map.second->getSolverOpShared()->setLearningRate(1e-5);
     //  }
     //}

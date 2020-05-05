@@ -306,7 +306,7 @@ namespace SmartPeak
       const bool& use_concentrations, const bool& use_MARs, 
       const bool& sample_values, const bool& iter_values,
       const bool& fill_sampling, const bool& fill_mean, const bool& fill_zero,
-      const bool& apply_fold_change, const std::string& fold_change_ref, const TensorT& fold_change_log_base) const;
+      const bool& apply_fold_change, const std::string& fold_change_ref, const TensorT& fold_change_log_base, const bool& randomize_labels) const;
 
     /*
     @brief Estimate the maximum number of replicates in the data set
@@ -778,7 +778,7 @@ namespace SmartPeak
     const bool& use_concentrations, const bool& use_MARs,
     const bool& sample_values, const bool& iter_values,
     const bool& fill_sampling, const bool& fill_mean, const bool& fill_zero,
-    const bool& apply_fold_change, const std::string& fold_change_ref, const TensorT& fold_change_log_base) const {
+    const bool& apply_fold_change, const std::string& fold_change_ref, const TensorT& fold_change_log_base, const bool& randomize_sample_group_names) const {
     // clear the data structures
     data.setZero();
     labels.clear();
@@ -792,10 +792,37 @@ namespace SmartPeak
       TensorT mean = sum / met_data.size();
       return mean;
     };
+    auto calcFC = [](const TensorT& value, const TensorT& ref, const TensorT& fold_change_log_base) {
+      TensorT fc = 0;
+      if (value > 0 && ref > 0) {
+        fc = minFunc(maxFunc(std::log(value / ref) / std::log(fold_change_log_base), -1), 1);
+      }
+      return fc;
+    };
+
+    // determine the number of total samples
+    int total_samples = 0;
+    int samples_cnt = 0;
+    std::vector<int> sample_indices;
+    for (const std::string& sample_group_name : sample_group_names) {
+      total_samples += sample_group_name_to_reps.at(sample_group_name);
+      for (int rep_iter = 0; rep_iter < sample_group_name_to_reps.at(sample_group_name); ++rep_iter) {
+        sample_indices.push_back(samples_cnt);
+        ++samples_cnt;
+      }
+    }
+    labels.resize(total_samples);
+
+    // Shuffle the indices for the labels
+    if (randomize_sample_group_names) {
+      auto rng = std::default_random_engine{};
+      std::shuffle(std::begin(sample_indices), std::end(sample_indices), rng);
+    }
 
     // optimization: create a cache for the means
     // create the data matrix
     int sample_iter = -1; // track the number of samples
+    samples_cnt = 0;
     for (const std::string& sample_group_name : sample_group_names) {
       ++sample_iter;
       // Check for missing sample_group_names
@@ -814,17 +841,16 @@ namespace SmartPeak
         }
 
         // Iterate through each replicate and add the data to the data matrix
-        int label_iter = labels.size(); // track the number of labels
+        int samples_cnt_prev = samples_cnt;
         for (int rep_iter = 0; rep_iter < sample_group_name_to_reps.at(sample_group_name); ++rep_iter) {
-          TensorT value;
+          TensorT value = 0;
           if (use_concentrations && sample_values) {
             // Assign the value for each replicate through random sampling of the replicates
             MetabolomicsDatum random_met = selectRandomElement(metabolomicsData_.at(sample_group_name).at(component_group_name));
             value = random_met.calculated_concentration;
             if (apply_fold_change) {
-              random_met = selectRandomElement(metabolomicsData_.at(fold_change_ref).at(component_group_name));
-              value /= random_met.calculated_concentration;
-              value = minFunc(maxFunc(std::log(value) / std::log(fold_change_log_base), -1), 1);
+              if (metabolomicsData_.at(fold_change_ref).count(component_group_name) > 0) value = calcFC(value, selectRandomElement(metabolomicsData_.at(fold_change_ref).at(component_group_name)).calculated_concentration, fold_change_log_base);
+              else value = 0;
             }
           }
           else if (use_concentrations && iter_values) {
@@ -843,22 +869,20 @@ namespace SmartPeak
               value = metabolomicsData_.at(sample_group_name).at(component_group_name).at(rep_iter).calculated_concentration;
             }
             if (apply_fold_change) {
-              if (rep_iter >= metabolomicsData_.at(fold_change_ref).at(component_group_name).size() && fill_sampling) {
-                MetabolomicsDatum random_met = selectRandomElement(metabolomicsData_.at(fold_change_ref).at(component_group_name));
-                value /= random_met.calculated_concentration;
-                value = minFunc(maxFunc(std::log(value) / std::log(fold_change_log_base), -1), 1);
+              if (metabolomicsData_.at(fold_change_ref).count(component_group_name) > 0 && rep_iter >= metabolomicsData_.at(fold_change_ref).at(component_group_name).size() && fill_sampling) {
+                value = calcFC(value, selectRandomElement(metabolomicsData_.at(fold_change_ref).at(component_group_name)).calculated_concentration, fold_change_log_base);
               }
-              else if (rep_iter >= metabolomicsData_.at(fold_change_ref).at(component_group_name).size() && fill_mean) {
-                value /= calcMean(metabolomicsData_.at(fold_change_ref).at(component_group_name));
-                value = minFunc(maxFunc(std::log(value) / std::log(fold_change_log_base), -1), 1);
+              else if (metabolomicsData_.at(fold_change_ref).count(component_group_name) > 0 && rep_iter >= metabolomicsData_.at(fold_change_ref).at(component_group_name).size() && fill_mean) {
+                value = calcFC(value, calcMean(metabolomicsData_.at(fold_change_ref).at(component_group_name)), fold_change_log_base);
               }
-              else if (rep_iter >= metabolomicsData_.at(fold_change_ref).at(component_group_name).size() && fill_zero) {
-                value /= 1e-6;
-                value = minFunc(maxFunc(std::log(value) / std::log(fold_change_log_base), -1), 1);
+              else if (metabolomicsData_.at(fold_change_ref).count(component_group_name) > 0 && rep_iter >= metabolomicsData_.at(fold_change_ref).at(component_group_name).size() && fill_zero) {
+                value = 0;
+              }
+              else if (metabolomicsData_.at(fold_change_ref).count(component_group_name) == 0) {
+                value = 0;
               }
               else {
-                value /= metabolomicsData_.at(fold_change_ref).at(component_group_name).at(rep_iter).calculated_concentration;
-                value = minFunc(maxFunc(std::log(value) / std::log(fold_change_log_base), -1), 1);
+                value = calcFC(value, metabolomicsData_.at(fold_change_ref).at(component_group_name).at(rep_iter).calculated_concentration, fold_change_log_base);
               }
             }
           }
@@ -866,18 +890,18 @@ namespace SmartPeak
             // OR by sampling mass action ratios
             value = calculateMAR(metabolomicsData_.at(sample_group_name), biochemicalReactions_.at(component_group_name));
             if (apply_fold_change) {
-              value /= calculateMAR(metabolomicsData_.at(fold_change_ref), biochemicalReactions_.at(component_group_name));
-              value = minFunc(maxFunc(std::log(value) / std::log(fold_change_log_base), -1), 1);
+              value = calcFC(value, calculateMAR(metabolomicsData_.at(fold_change_ref), biochemicalReactions_.at(component_group_name)), fold_change_log_base);
             }
           }
-          data(feature_iter, label_iter) = value;
-          ++label_iter;
+          data(feature_iter, sample_indices.at(samples_cnt_prev)) = value;
+          ++samples_cnt_prev;
         } 
       }
 
       // Iterate through each replicate and add the label to the label matrix
       for (int rep_iter = 0; rep_iter < sample_group_name_to_reps.at(sample_group_name); ++rep_iter) {
-        labels.push_back(sample_group_name_to_label.at(sample_group_name));
+        labels.at(sample_indices.at(samples_cnt)) = sample_group_name_to_label.at(sample_group_name);
+        ++samples_cnt;
       }
     }
   }

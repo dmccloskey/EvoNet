@@ -159,7 +159,7 @@ public:
     std::vector<TensorT> log_train_values = { model_error_train };
     std::vector<TensorT> log_test_values = { model_error_test };
     int metric_iter = 0;
-    for (const std::string& metric_name : this->metric_names_) {
+    for (const std::string& metric_name : this->getMetricNamesLinearized()) {
       log_train_headers.push_back(metric_name);
       log_test_headers.push_back(metric_name);
       log_train_values.push_back(model_metrics_train(metric_iter));
@@ -180,14 +180,24 @@ void main_classification(const std::string& data_dir, const std::string& biochem
   const bool& fill_sampling, const bool& fill_mean, const bool& fill_zero,
   const bool& apply_fold_change, const std::string& fold_change_ref, const float& fold_change_log_base,
   const bool& offline_linear_scale_input, const bool& offline_log_transform_input, const bool& offline_standardize_input,
-  const bool& online_linear_scale_input, const bool& online_log_transform_input, const bool& online_standardize_input)
+  const bool& online_linear_scale_input, const bool& online_log_transform_input, const bool& online_standardize_input,
+  const int& device_id)
 {
   // global local variables
-  const int n_epochs = 100000;
+  const int n_epochs = 20000;
   const int batch_size = 64;
   const int memory_size = 1;
-  const int n_reps_per_sample = 1000;
-  std::string model_name = "0_Metabolomics";
+  //const int n_reps_per_sample = 10000;
+
+  // prior to using shuffle when making the data caches
+  const int n_labels = 7; // IndustrialStrains0103
+  const int n_reps_per_sample = n_epochs*batch_size/n_labels;
+
+  //std::string model_name = "MetClass_" + std::to_string(use_concentrations) + "-" + std::to_string(use_MARs) + "-" + std::to_string(sample_values) + "-" + std::to_string(iter_values) + "-"
+  //  + std::to_string(fill_sampling) + "-" + std::to_string(fill_mean) + "-" + std::to_string(fill_zero) + "-" + std::to_string(apply_fold_change) + "-" + std::to_string(fold_change_log_base) + "-"
+  //  + std::to_string(offline_linear_scale_input) + "-" + std::to_string(offline_log_transform_input) + "-" + std::to_string(offline_standardize_input) + "-"
+  //  + std::to_string(online_linear_scale_input) + "-" + std::to_string(online_log_transform_input) + "-" + std::to_string(online_standardize_input);
+  std::string model_name = "Classifier";
 
   // define the data simulator
   std::cout << "Making the training and validation data..." << std::endl;
@@ -199,7 +209,7 @@ void main_classification(const std::string& data_dir, const std::string& biochem
     biochem_rxns_filename, metabo_data_filename_train, meta_data_filename_train, metabo_data_filename_test, meta_data_filename_test,
     use_concentrations, use_MARs, sample_values, iter_values, fill_sampling, fill_mean, fill_zero, apply_fold_change, fold_change_ref, fold_change_log_base,
     offline_linear_scale_input, offline_log_transform_input, offline_standardize_input, online_linear_scale_input, online_log_transform_input, online_standardize_input,
-    n_reps_per_sample, n_epochs, batch_size, memory_size);
+    n_reps_per_sample, true, false, n_epochs, batch_size, memory_size);
 
   // define the model input/output nodes
   int n_input_nodes;
@@ -226,25 +236,33 @@ void main_classification(const std::string& data_dir, const std::string& biochem
   }
 
   // define the model trainers and resources for the trainers
-  ModelResources model_resources = { ModelDevice(1, 1) };
+  ModelResources model_resources = { ModelDevice(device_id, 1) };
   ModelInterpreterGpu<float> model_interpreter(model_resources);
   ModelTrainerExt<float> model_trainer;
   model_trainer.setBatchSize(batch_size);
   model_trainer.setMemorySize(memory_size);
-  model_trainer.setNEpochsTraining(n_epochs);
+  model_trainer.setNEpochsTraining(n_epochs*5); // Iterate through the stored data 5 times
   model_trainer.setNEpochsValidation(0);
   model_trainer.setVerbosityLevel(1);
   model_trainer.setLogging(true, false, false);
   model_trainer.setFindCycles(false);
   model_trainer.setFastInterpreter(true);
   model_trainer.setPreserveOoO(true);
-  model_trainer.setLossFunctions({ std::make_shared<CrossEntropyWithLogitsLossOp<float>>(CrossEntropyWithLogitsLossOp<float>(1e-8, 1)) });
-  model_trainer.setLossFunctionGrads({ std::make_shared<CrossEntropyWithLogitsLossGradOp<float>>(CrossEntropyWithLogitsLossGradOp<float>(1e-8, 1)) });
-  model_trainer.setLossOutputNodes({ output_nodes });
-  model_trainer.setMetricFunctions({ std::make_shared<AccuracyMCMicroOp<float>>(AccuracyMCMicroOp<float>()), std::make_shared<PrecisionMCMicroOp<float>>(PrecisionMCMicroOp<float>())
-    });
-  model_trainer.setMetricOutputNodes({ output_nodes, output_nodes });
-  model_trainer.setMetricNames({ "AccuracyMCMicro", "PrecisionMCMicro" });
+
+  std::vector<LossFunctionHelper<float>> loss_function_helpers;
+  LossFunctionHelper<float> loss_function_helper1, loss_function_helper2, loss_function_helper3;
+  loss_function_helper1.output_nodes_ = output_nodes;
+  loss_function_helper1.loss_functions_ = { std::make_shared<CrossEntropyWithLogitsLossOp<float>>(CrossEntropyWithLogitsLossOp<float>(1e-8, 1)) };
+  loss_function_helper1.loss_function_grads_ = { std::make_shared<CrossEntropyWithLogitsLossGradOp<float>>(CrossEntropyWithLogitsLossGradOp<float>(1e-8, 1)) };
+  model_trainer.setLossFunctionHelpers(loss_function_helpers);
+
+  std::vector<MetricFunctionHelper<float>> metric_function_helpers;
+  MetricFunctionHelper<float> metric_function_helper1;
+  metric_function_helper1.output_nodes_ = output_nodes;
+  metric_function_helper1.metric_functions_ = { std::make_shared<AccuracyMCMicroOp<float>>(AccuracyMCMicroOp<float>()), std::make_shared<PrecisionMCMicroOp<float>>(PrecisionMCMicroOp<float>()) };
+  metric_function_helper1.metric_names_ = { "AccuracyMCMicro", "PrecisionMCMicro" };
+  metric_function_helpers.push_back(metric_function_helper1);
+  model_trainer.setMetricFunctionHelpers(metric_function_helpers);
 
   // define the model logger
   ModelLogger<float> model_logger(true, true, false, false, false, false, false, false);
@@ -258,7 +276,7 @@ void main_classification(const std::string& data_dir, const std::string& biochem
   else {
     // TODO
   }
-  model.setName(data_dir + "Classifier"); //So that all output will be written to a specific directory
+  model.setName(data_dir + model_name); //So that all output will be written to a specific directory
 
   // Train the model
   std::cout << "Training the model..." << std::endl;
@@ -296,12 +314,12 @@ void calculateInputLayer0Correlation() {
 int main(int argc, char** argv)
 {
   // Set the data directories
-  std::string data_dir = "C:/Users/dmccloskey/Dropbox (UCSD SBRG)/Metabolomics_KALE/";
+  //std::string data_dir = "C:/Users/dmccloskey/Dropbox (UCSD SBRG)/Metabolomics_KALE/";
   //const std::string data_dir = "C:/Users/domccl/Dropbox (UCSD SBRG)/Metabolomics_KALE/";
   //std::string data_dir = "C:/Users/dmccloskey/Documents/GitHub/mnist/";
 
   // Initialize the defaults
-  //std::string data_dir = "";
+  std::string data_dir = "";
   std::string biochem_rxns_filename = data_dir + "iJO1366.csv";
   std::string metabo_data_filename_train = data_dir + "ALEsKOs01_Metabolomics_train.csv"; // IndustrialStrains0103_
   std::string meta_data_filename_train = data_dir + "ALEsKOs01_MetaData_train.csv";
@@ -325,6 +343,7 @@ int main(int argc, char** argv)
   bool online_linear_scale_input = false;
   bool online_log_transform_input = false;
   bool online_standardize_input = false;
+  int device_id = 1;
 
   // Parse the input
   std::cout << "Parsing the user input..." << std::endl;
@@ -332,19 +351,19 @@ int main(int argc, char** argv)
     data_dir = argv[1];
   }
   if (argc >= 3) {
-    biochem_rxns_filename = data_dir + argv[2];
+    biochem_rxns_filename = argv[2];
   }
   if (argc >= 4) {
-    metabo_data_filename_train = data_dir + argv[3];
+    metabo_data_filename_train = argv[3];
   }
   if (argc >= 5) {
-    meta_data_filename_train = data_dir + argv[4];
+    meta_data_filename_train = argv[4];
   }
   if (argc >= 6) {
-    metabo_data_filename_test = data_dir + argv[5];
+    metabo_data_filename_test = argv[5];
   }
   if (argc >= 7) {
-    meta_data_filename_test = data_dir + argv[6];
+    meta_data_filename_test = argv[6];
   }
   if (argc >= 8) {
     make_model = (argv[7] == std::string("true")) ? true : false;
@@ -353,7 +372,7 @@ int main(int argc, char** argv)
     train_model = (argv[8] == std::string("true")) ? true : false;
   }
   if (argc >= 10) {
-    use_concentrations = (argv[10] == std::string("true")) ? true : false;
+    use_concentrations = (argv[9] == std::string("true")) ? true : false;
   }
   if (argc >= 11) {
     use_MARs = (argv[10] == std::string("true")) ? true : false;
@@ -405,6 +424,14 @@ int main(int argc, char** argv)
   if (argc >= 25) {
     online_standardize_input = (argv[24] == std::string("true")) ? true : false;
   }
+  if (argc >= 26) {
+    try {
+      device_id = std::stoi(argv[25]);
+    }
+    catch (std::exception & e) {
+      std::cout << e.what() << std::endl;
+    }
+  }
 
   // Cout the parsed input
   std::cout << "data_dir: " << data_dir << std::endl;
@@ -431,6 +458,7 @@ int main(int argc, char** argv)
   std::cout << "online_linear_scale_input: " << online_linear_scale_input << std::endl;
   std::cout << "online_log_transform_input: " << online_log_transform_input << std::endl;
   std::cout << "online_standardize_input: " << online_standardize_input << std::endl;
+  std::cout << "device_id: " << device_id << std::endl;
 
   // Run the classification
   main_classification(data_dir, biochem_rxns_filename, metabo_data_filename_train, meta_data_filename_train, metabo_data_filename_test, meta_data_filename_test,
@@ -438,7 +466,8 @@ int main(int argc, char** argv)
     use_concentrations, use_MARs, sample_values, iter_values, fill_sampling, fill_mean, fill_zero,
     apply_fold_change, fold_change_ref, fold_change_log_base,
     offline_linear_scale_input, offline_log_transform_input, offline_standardize_input,
-    online_linear_scale_input, online_log_transform_input, online_standardize_input
+    online_linear_scale_input, online_log_transform_input, online_standardize_input,
+    device_id
   );
   return 0;
 }

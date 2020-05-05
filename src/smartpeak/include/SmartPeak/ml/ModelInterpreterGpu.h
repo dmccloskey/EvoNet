@@ -36,8 +36,8 @@ namespace SmartPeak
 			const std::vector<bool>& make_source_tensors, const std::vector<bool>& make_sink_tensors, const std::vector<bool>& make_weight_tensors,
 			const int& batch_size, const int& memory_size, const bool& train) override;
 		void executeForwardPropogationOperations(const int& time_step) override;
-		void executeModelErrorOperations(Eigen::Tensor<TensorT, 2>& expected, const int& layer_id, LossFunctionTensorOp<TensorT, Eigen::GpuDevice>* loss_function, LossFunctionGradTensorOp<TensorT, Eigen::GpuDevice>* loss_function_grad, const int& time_step) override;
-    void executeModelMetricOperations(Eigen::Tensor<TensorT, 2>& expected, const int& layer_id, MetricFunctionTensorOp<TensorT, Eigen::GpuDevice>* metric_function, const int& time_step, const int& metric_index) override;
+		void executeModelErrorOperations(Eigen::Tensor<TensorT, 2>& expected, const int& layer_id, std::shared_ptr<LossFunctionTensorOp<TensorT,Eigen::GpuDevice>>& loss_function, std::shared_ptr<LossFunctionGradTensorOp<TensorT,Eigen::GpuDevice>>& loss_function_grad, const int& time_step) override;
+    void executeModelMetricOperations(Eigen::Tensor<TensorT, 2>& expected, const int& layer_id, std::shared_ptr<MetricFunctionTensorOp<TensorT,Eigen::GpuDevice>> metric_function, const int& time_step, const int& metric_index) override;
 		void executeBackwardPropogationOperations(const int& time_step) override;
 		void executeWeightErrorOperations() override;
 		void executeWeightUpdateOperations(const int& iter) override;
@@ -79,99 +79,99 @@ namespace SmartPeak
 			//  the ordering generated in getForwardPropogationTensorDimensions.]
 			std::shared_ptr<NodeTensorData<TensorT, Eigen::GpuDevice>> sink_node_data(new NodeTensorDataGpu<TensorT>());
 			{ // make the sink layer tensor and add it to the cache and operation step
-				ActivationTensorOp<TensorT, Eigen::GpuDevice>* activation = nullptr;
-				ActivationTensorOp<TensorT, Eigen::GpuDevice>* activation_grad = nullptr;
-				IntegrationTensorOp<TensorT, Eigen::GpuDevice>* integration = nullptr;
-				IntegrationErrorTensorOp<TensorT, Eigen::GpuDevice>* integration_error = nullptr;
-				IntegrationWeightGradTensorOp<TensorT, Eigen::GpuDevice>* integration_weight_grad = nullptr;
+				std::shared_ptr<ActivationTensorOp<TensorT, Eigen::GpuDevice>> activation = nullptr;
+				std::shared_ptr<ActivationTensorOp<TensorT, Eigen::GpuDevice>> activation_grad = nullptr;
+				std::shared_ptr<IntegrationTensorOp<TensorT, Eigen::GpuDevice>> integration = nullptr;
+				std::shared_ptr<IntegrationErrorTensorOp<TensorT, Eigen::GpuDevice>> integration_error = nullptr;
+				std::shared_ptr<IntegrationWeightGradTensorOp<TensorT, Eigen::GpuDevice>> integration_weight_grad = nullptr;
 				if (make_sink_tensors[iter]) {
           sink_node_data->initNodeTensorData(batch_size, memory_size, sink_layer_sizes[iter],
             FP_operations[operations.second[0]].result.sink_node->getType(),
-            FP_operations[operations.second[0]].result.sink_node->getIntegration()->getName(),
+            FP_operations[operations.second[0]].result.sink_node->getIntegrationShared()->getName(),
             train);
 					this->layer_tensors_.push_back(sink_node_data);
 					operation_step.sink_layer.time_step = FP_operations[operations.second[0]].result.time_step;
-					activation_conv(FP_operations[operations.second[0]].result.sink_node->getActivation(), activation, std::vector<TensorT>() = {});
-					operation_step.sink_layer.activation.reset(activation);
-					activation_conv(FP_operations[operations.second[0]].result.sink_node->getActivationGrad(), activation_grad, std::vector<TensorT>() = {});
-					operation_step.sink_layer.activation_grad.reset(activation_grad);
-					integration_conv(FP_operations[operations.second[0]].result.sink_node->getIntegration(), integration, std::vector<TensorT>() = {});
-					operation_step.sink_layer.integration.reset(integration);
-					integration_error_conv(FP_operations[operations.second[0]].result.sink_node->getIntegrationError(), integration_error, std::vector<TensorT>() = {});
-					operation_step.sink_layer.integration_error.reset(integration_error);
-					integration_weight_grad_conv(FP_operations[operations.second[0]].result.sink_node->getIntegrationWeightGrad(), integration_weight_grad, std::vector<TensorT>() = {});
-					operation_step.sink_layer.integration_weight_grad.reset(integration_weight_grad);
+					activation_conv(FP_operations[operations.second[0]].result.sink_node->getActivationShared(), activation, std::vector<TensorT>() = {});
+					operation_step.sink_layer.activation = activation;
+					activation_conv(FP_operations[operations.second[0]].result.sink_node->getActivationGradShared(), activation_grad, std::vector<TensorT>() = {});
+					operation_step.sink_layer.activation_grad = activation_grad;
+					integration_conv(FP_operations[operations.second[0]].result.sink_node->getIntegrationShared(), integration, std::vector<TensorT>() = {});
+					operation_step.sink_layer.integration = integration;
+					integration_error_conv(FP_operations[operations.second[0]].result.sink_node->getIntegrationErrorShared(), integration_error, std::vector<TensorT>() = {});
+					operation_step.sink_layer.integration_error = integration_error;
+					integration_weight_grad_conv(FP_operations[operations.second[0]].result.sink_node->getIntegrationWeightGradShared(), integration_weight_grad, std::vector<TensorT>() = {});
+					operation_step.sink_layer.integration_weight_grad = integration_weight_grad;
 					operation_step.sink_layer.tensor_index = FP_operations[operations.second[0]].result.sink_node->getTensorIndex().first;
 				}
 				else {
 					operation_step.sink_layer.tensor_index = FP_operations[operations.second[0]].result.sink_node->getTensorIndex().first;
 					operation_step.sink_layer.time_step = FP_operations[operations.second[0]].result.time_step;
-					activation_conv(FP_operations[operations.second[0]].result.sink_node->getActivation(), activation, std::vector<TensorT>() = {});
-					operation_step.sink_layer.activation.reset(std::move(activation));
-					activation_conv(FP_operations[operations.second[0]].result.sink_node->getActivationGrad(), activation_grad, std::vector<TensorT>() = {});
-					operation_step.sink_layer.activation_grad.reset(std::move(activation_grad));
-					integration_conv(FP_operations[operations.second[0]].result.sink_node->getIntegration(), integration, std::vector<TensorT>() = {});
-					operation_step.sink_layer.integration.reset(std::move(integration));
-					integration_error_conv(FP_operations[operations.second[0]].result.sink_node->getIntegrationError(), integration_error, std::vector<TensorT>() = {});
-					operation_step.sink_layer.integration_error.reset(std::move(integration_error));
-					integration_weight_grad_conv(FP_operations[operations.second[0]].result.sink_node->getIntegrationWeightGrad(), integration_weight_grad, std::vector<TensorT>() = {});
-					operation_step.sink_layer.integration_weight_grad.reset(std::move(integration_weight_grad));
+					activation_conv(FP_operations[operations.second[0]].result.sink_node->getActivationShared(), activation, std::vector<TensorT>() = {});
+					operation_step.sink_layer.activation = activation;
+					activation_conv(FP_operations[operations.second[0]].result.sink_node->getActivationGradShared(), activation_grad, std::vector<TensorT>() = {});
+					operation_step.sink_layer.activation_grad = activation_grad;
+					integration_conv(FP_operations[operations.second[0]].result.sink_node->getIntegrationShared(), integration, std::vector<TensorT>() = {});
+					operation_step.sink_layer.integration = integration;
+					integration_error_conv(FP_operations[operations.second[0]].result.sink_node->getIntegrationErrorShared(), integration_error, std::vector<TensorT>() = {});
+					operation_step.sink_layer.integration_error= integration_error;
+					integration_weight_grad_conv(FP_operations[operations.second[0]].result.sink_node->getIntegrationWeightGradShared(), integration_weight_grad, std::vector<TensorT>() = {});
+					operation_step.sink_layer.integration_weight_grad = integration_weight_grad;
 					operation_step.sink_layer.time_step = FP_operations[operations.second[0]].result.time_step;
 				}
 			}
 
 			std::shared_ptr<NodeTensorData<TensorT, Eigen::GpuDevice>> source_node_data(new NodeTensorDataGpu<TensorT>());
 			{ // make the source layer tensor and add it to the cache and operation step
-				ActivationTensorOp<TensorT, Eigen::GpuDevice>* activation = nullptr;
-				ActivationTensorOp<TensorT, Eigen::GpuDevice>* activation_grad = nullptr;
-				IntegrationTensorOp<TensorT, Eigen::GpuDevice>* integration = nullptr;
-				IntegrationErrorTensorOp<TensorT, Eigen::GpuDevice>* integration_error = nullptr;
-				IntegrationWeightGradTensorOp<TensorT, Eigen::GpuDevice>* integration_weight_grad = nullptr;
+				std::shared_ptr<ActivationTensorOp<TensorT, Eigen::GpuDevice>> activation = nullptr;
+				std::shared_ptr<ActivationTensorOp<TensorT, Eigen::GpuDevice>> activation_grad = nullptr;
+				std::shared_ptr<IntegrationTensorOp<TensorT, Eigen::GpuDevice>> integration = nullptr;
+				std::shared_ptr<IntegrationErrorTensorOp<TensorT, Eigen::GpuDevice>> integration_error = nullptr;
+				std::shared_ptr<IntegrationWeightGradTensorOp<TensorT, Eigen::GpuDevice>> integration_weight_grad = nullptr;
 				if (make_source_tensors[iter]) {
           source_node_data->initNodeTensorData(batch_size, memory_size, source_layer_sizes[iter],
             FP_operations[operations.second[0]].arguments[0].source_node->getType(),
-            FP_operations[operations.second[0]].arguments[0].source_node->getIntegration()->getName(), train);
+            FP_operations[operations.second[0]].arguments[0].source_node->getIntegrationShared()->getName(), train);
 					operation_step.source_layer.time_step = FP_operations[operations.second[0]].arguments[0].time_step;
 					this->layer_tensors_.push_back(source_node_data);
-					activation_conv(FP_operations[operations.second[0]].arguments[0].source_node->getActivation(), activation, std::vector<TensorT>() = {});
-					operation_step.source_layer.activation.reset(activation);
-					activation_conv(FP_operations[operations.second[0]].arguments[0].source_node->getActivationGrad(), activation_grad, std::vector<TensorT>() = {});
-					operation_step.source_layer.activation_grad.reset(activation_grad);
-					integration_conv(FP_operations[operations.second[0]].arguments[0].source_node->getIntegration(), integration, std::vector<TensorT>() = {});
-					operation_step.source_layer.integration.reset(integration);
-					integration_error_conv(FP_operations[operations.second[0]].arguments[0].source_node->getIntegrationError(), integration_error, std::vector<TensorT>() = {});
-					operation_step.source_layer.integration_error.reset(integration_error);
-					integration_weight_grad_conv(FP_operations[operations.second[0]].arguments[0].source_node->getIntegrationWeightGrad(), integration_weight_grad, std::vector<TensorT>() = {});
-					operation_step.source_layer.integration_weight_grad.reset(integration_weight_grad);
+					activation_conv(FP_operations[operations.second[0]].arguments[0].source_node->getActivationShared(), activation, std::vector<TensorT>() = {});
+					operation_step.source_layer.activation = activation;
+					activation_conv(FP_operations[operations.second[0]].arguments[0].source_node->getActivationGradShared(), activation_grad, std::vector<TensorT>() = {});
+					operation_step.source_layer.activation_grad = activation_grad;
+					integration_conv(FP_operations[operations.second[0]].arguments[0].source_node->getIntegrationShared(), integration, std::vector<TensorT>() = {});
+					operation_step.source_layer.integration = integration;
+					integration_error_conv(FP_operations[operations.second[0]].arguments[0].source_node->getIntegrationErrorShared(), integration_error, std::vector<TensorT>() = {});
+					operation_step.source_layer.integration_error = integration_error;
+					integration_weight_grad_conv(FP_operations[operations.second[0]].arguments[0].source_node->getIntegrationWeightGradShared(), integration_weight_grad, std::vector<TensorT>() = {});
+					operation_step.source_layer.integration_weight_grad = integration_weight_grad;
 					operation_step.source_layer.tensor_index = FP_operations[operations.second[0]].arguments[0].source_node->getTensorIndex().first;
 				}
 				else {
 					operation_step.source_layer.tensor_index = FP_operations[operations.second[0]].arguments[0].source_node->getTensorIndex().first;
 					operation_step.source_layer.time_step = FP_operations[operations.second[0]].arguments[0].time_step;
-					activation_conv(FP_operations[operations.second[0]].arguments[0].source_node->getActivation(), activation, std::vector<TensorT>() = {});
-					operation_step.source_layer.activation.reset(activation);
-					activation_conv(FP_operations[operations.second[0]].arguments[0].source_node->getActivationGrad(), activation_grad, std::vector<TensorT>() = {});
-					operation_step.source_layer.activation_grad.reset(activation_grad);
-					integration_conv(FP_operations[operations.second[0]].arguments[0].source_node->getIntegration(), integration, std::vector<TensorT>() = {});
-					operation_step.source_layer.integration.reset(integration);
-					integration_error_conv(FP_operations[operations.second[0]].arguments[0].source_node->getIntegrationError(), integration_error, std::vector<TensorT>() = {});
-					operation_step.source_layer.integration_error.reset(integration_error);
-					integration_weight_grad_conv(FP_operations[operations.second[0]].arguments[0].source_node->getIntegrationWeightGrad(), integration_weight_grad, std::vector<TensorT>() = {});
-					operation_step.source_layer.integration_weight_grad.reset(integration_weight_grad);
+					activation_conv(FP_operations[operations.second[0]].arguments[0].source_node->getActivationShared(), activation, std::vector<TensorT>() = {});
+					operation_step.source_layer.activation = activation;
+					activation_conv(FP_operations[operations.second[0]].arguments[0].source_node->getActivationGradShared(), activation_grad, std::vector<TensorT>() = {});
+					operation_step.source_layer.activation_grad = activation_grad;
+					integration_conv(FP_operations[operations.second[0]].arguments[0].source_node->getIntegrationShared(), integration, std::vector<TensorT>() = {});
+					operation_step.source_layer.integration = integration;
+					integration_error_conv(FP_operations[operations.second[0]].arguments[0].source_node->getIntegrationErrorShared(), integration_error, std::vector<TensorT>() = {});
+					operation_step.source_layer.integration_error = integration_error;
+					integration_weight_grad_conv(FP_operations[operations.second[0]].arguments[0].source_node->getIntegrationWeightGradShared(), integration_weight_grad, std::vector<TensorT>() = {});
+					operation_step.source_layer.integration_weight_grad = integration_weight_grad;
 				}
 			}
 
 			// make the weight tensor and add it to the cache and operation step
-			std::shared_ptr<WeightTensorData<TensorT, Eigen::GpuDevice>> weight_data(new WeightTensorDataGpu<TensorT>());
+			std::shared_ptr<WeightTensorData<TensorT, Eigen::GpuDevice>> weight_data = std::make_shared<WeightTensorDataGpu<TensorT>>(WeightTensorDataGpu<TensorT>());
 			if (make_weight_tensors[iter]) {
-				SolverTensorOp<TensorT, Eigen::GpuDevice>* solver = nullptr;
+				std::shared_ptr<SolverTensorOp<TensorT, Eigen::GpuDevice>> solver = nullptr;
 				std::vector<TensorT> solver_params;
-				solver_conv(FP_operations[operations.second[0]].arguments[0].weight->getSolverOp(), solver, solver_params);
+				solver_conv(FP_operations[operations.second[0]].arguments[0].weight->getSolverOpShared(), solver, solver_params);
 				weight_data->initWeightTensorData(source_layer_sizes[iter], sink_layer_sizes[iter], weight_indices[iter], shared_weight_indices[iter], weight_values[iter], train,
-					solver_params, FP_operations[operations.second[0]].result.sink_node->getIntegration()->getName());
+					solver_params, FP_operations[operations.second[0]].result.sink_node->getIntegrationShared()->getName());
 				this->weight_tensors_.push_back(weight_data);
 				operation_step.weight.tensor_index = std::get<0>(FP_operations[operations.second[0]].arguments[0].weight->getTensorIndex()[0]);
-				operation_step.weight.solver.reset(solver);
+				operation_step.weight.solver = solver;
 			}
 			else {
 				std::cout << "Weight tensor is not being created...Check!" << std::endl;
@@ -219,7 +219,7 @@ namespace SmartPeak
 					this->weight_tensors_.at(operation.weight.tensor_index)->getDWeightPointer().get(),
 					this->layer_tensors_.at(operation.sink_layer.tensor_index)->getHInputPointer().get(),
 					this->layer_tensors_.at(operation.sink_layer.tensor_index)->getDInputPointer().get(),
-					operation.sink_layer.integration.get(),
+					operation.sink_layer.integration,
 					this->layer_tensors_.at(operation.source_layer.tensor_index)->getBatchSize(),
 					this->layer_tensors_.at(operation.source_layer.tensor_index)->getMemorySize(),
 					this->layer_tensors_.at(operation.source_layer.tensor_index)->getLayerSize(),
@@ -240,7 +240,7 @@ namespace SmartPeak
 					this->layer_tensors_.at(operation.sink_layer.tensor_index)->getDOutputPointer().get(),
 					this->layer_tensors_.at(operation.sink_layer.tensor_index)->getHDtPointer().get(),
 					this->layer_tensors_.at(operation.sink_layer.tensor_index)->getDDtPointer().get(),
-					operation.sink_layer.activation.get(),
+					operation.sink_layer.activation,
 					this->layer_tensors_.at(operation.sink_layer.tensor_index)->getBatchSize(),
 					this->layer_tensors_.at(operation.sink_layer.tensor_index)->getMemorySize(),
 					this->layer_tensors_.at(operation.sink_layer.tensor_index)->getLayerSize(),
@@ -288,7 +288,7 @@ namespace SmartPeak
 					this->layer_tensors_.at(operation.source_layer.tensor_index)->getDOutputPointer().get(),
 					this->layer_tensors_.at(operation.source_layer.tensor_index)->getHDerivativePointer().get(),
 					this->layer_tensors_.at(operation.source_layer.tensor_index)->getDDerivativePointer().get(),
-					operation.source_layer.activation_grad.get(),
+					operation.source_layer.activation_grad,
 					this->layer_tensors_.at(operation.source_layer.tensor_index)->getBatchSize(),
 					this->layer_tensors_.at(operation.source_layer.tensor_index)->getMemorySize(),
 					this->layer_tensors_.at(operation.source_layer.tensor_index)->getLayerSize(),
@@ -318,7 +318,7 @@ namespace SmartPeak
 					this->layer_tensors_.at(operation.source_layer.tensor_index)->getHDerivativePointer().get(),
 					this->layer_tensors_.at(operation.source_layer.tensor_index)->getDDerivativePointer().get(),
 					this->layer_tensors_.at(operation.source_layer.tensor_index)->getLayerSize(), // [TODO: replace with N]
-					operation.sink_layer.integration_error.get(), // changed from source_layer
+					operation.sink_layer.integration_error, // changed from source_layer
 					this->layer_tensors_.at(operation.sink_layer.tensor_index)->getBatchSize(),
 					this->layer_tensors_.at(operation.sink_layer.tensor_index)->getMemorySize(),
 					this->layer_tensors_.at(operation.sink_layer.tensor_index)->getLayerSize(),
@@ -339,7 +339,7 @@ namespace SmartPeak
 	}
 
 	template<typename TensorT>
-	inline void ModelInterpreterGpu<TensorT>::executeModelErrorOperations(Eigen::Tensor<TensorT, 2>& expected, const int& layer_id, LossFunctionTensorOp<TensorT, Eigen::GpuDevice>* loss_function, LossFunctionGradTensorOp<TensorT, Eigen::GpuDevice>* loss_function_grad, const int& time_step)
+	inline void ModelInterpreterGpu<TensorT>::executeModelErrorOperations(Eigen::Tensor<TensorT, 2>& expected, const int& layer_id, std::shared_ptr<LossFunctionTensorOp<TensorT,Eigen::GpuDevice>>& loss_function, std::shared_ptr<LossFunctionGradTensorOp<TensorT,Eigen::GpuDevice>>& loss_function_grad, const int& time_step)
 	{
 		// More performant if all model error calculations were passed at the same time
 		ModelKernalGpu<TensorT> model_kernal;
@@ -380,7 +380,7 @@ namespace SmartPeak
 	}
 
   template<typename TensorT>
-  inline void ModelInterpreterGpu<TensorT>::executeModelMetricOperations(Eigen::Tensor<TensorT, 2>& expected, const int & layer_id, MetricFunctionTensorOp<TensorT, Eigen::GpuDevice>* metric_function, const int & time_step, const int & metric_index)
+  inline void ModelInterpreterGpu<TensorT>::executeModelMetricOperations(Eigen::Tensor<TensorT, 2>& expected, const int & layer_id, std::shared_ptr<MetricFunctionTensorOp<TensorT,Eigen::GpuDevice>> metric_function, const int & time_step, const int & metric_index)
   {
     // More performant if all model error calculations were passed at the same time
     ModelKernalGpu<TensorT> model_kernal;
@@ -457,7 +457,7 @@ namespace SmartPeak
 					this->layer_tensors_.at(operation.source_layer.tensor_index)->getHInputPointer().get(),
 					this->layer_tensors_.at(operation.source_layer.tensor_index)->getDInputPointer().get(),
 					this->layer_tensors_.at(operation.source_layer.tensor_index)->getLayerSize(), // [TODO: change to N]
-					operation.sink_layer.integration_weight_grad.get(),
+					operation.sink_layer.integration_weight_grad,
 					this->weight_tensors_.at(operation.weight.tensor_index)->getHWeightPointer().get(),
 					this->weight_tensors_.at(operation.weight.tensor_index)->getDWeightPointer().get(),
 					this->weight_tensors_.at(operation.weight.tensor_index)->getHErrorPointer().get(),
@@ -526,7 +526,7 @@ namespace SmartPeak
 					this->weight_tensors_.at(operation.weight.tensor_index)->getDSolverParamsPointer().get(),
 					this->weight_tensors_.at(operation.weight.tensor_index)->getHErrorPointer().get(),
 					this->weight_tensors_.at(operation.weight.tensor_index)->getDErrorPointer().get(),
-					operation.weight.solver.get(),
+					operation.weight.solver,
 					this->layer_tensors_.at(operation.source_layer.tensor_index)->getLayerSize(),
 					this->layer_tensors_.at(operation.sink_layer.tensor_index)->getLayerSize(),
           iter,
@@ -544,7 +544,7 @@ namespace SmartPeak
 
 	template<typename TensorT>
 	inline void ModelInterpreterGpu<TensorT>::allocateModelErrorTensor(const int& batch_size, const int& memory_size, const int& n_metrics) {
-		std::shared_ptr<ModelErrorData<TensorT, Eigen::GpuDevice>> model_error_data(new ModelErrorDataGpu<TensorT>());
+		std::shared_ptr<ModelErrorData<TensorT, Eigen::GpuDevice>> model_error_data = std:: make_shared<ModelErrorDataGpu<TensorT>>(ModelErrorDataGpu<TensorT>());
 		model_error_data->initModelErrorData(batch_size, memory_size, n_metrics);
 		this->model_error_ = model_error_data;
 	}

@@ -325,8 +325,8 @@ protected:
 			Eigen::TensorMap<Eigen::Tensor<TensorT, 3>> input_copy(h_input, this->batch_size_, this->memory_size_, this->layer_size_);
 			input_copy = input;
 			// define the deleters
-			auto h_deleter = [&](TensorT* ptr) { cudaFreeHost(ptr); };
-			auto d_deleter = [&](TensorT* ptr) { cudaFree(ptr); };
+      auto h_deleter = [&](TensorT* ptr) { assert(cudaFreeHost(ptr) == cudaSuccess); };
+      auto d_deleter = [&](TensorT* ptr) { assert(cudaFree(ptr) == cudaSuccess); };
 			this->h_input_.reset(h_input, h_deleter); 
 			this->d_input_.reset(d_input, d_deleter);
 			this->h_input_updated_ = true;
@@ -342,8 +342,8 @@ protected:
 			Eigen::TensorMap<Eigen::Tensor<TensorT, 3>> output_copy(h_output, this->batch_size_, this->memory_size_, this->layer_size_);
 			output_copy = output;
 			// define the deleters
-			auto h_deleter = [&](TensorT* ptr) { cudaFreeHost(ptr); };
-			auto d_deleter = [&](TensorT* ptr) { cudaFree(ptr); };
+      auto h_deleter = [&](TensorT* ptr) { assert(cudaFreeHost(ptr) == cudaSuccess); };
+      auto d_deleter = [&](TensorT* ptr) { assert(cudaFree(ptr) == cudaSuccess); };
 			this->h_output_.reset(h_output, h_deleter);
 			this->d_output_.reset(d_output, d_deleter);
 			this->h_output_updated_ = true;
@@ -359,8 +359,8 @@ protected:
 			Eigen::TensorMap<Eigen::Tensor<TensorT, 3>> error_copy(h_error, this->batch_size_, this->memory_size_, this->layer_size_);
 			error_copy = error;
 			// define the deleters
-			auto h_deleter = [&](TensorT* ptr) { cudaFreeHost(ptr); };
-			auto d_deleter = [&](TensorT* ptr) { cudaFree(ptr); };
+      auto h_deleter = [&](TensorT* ptr) { assert(cudaFreeHost(ptr) == cudaSuccess); };
+      auto d_deleter = [&](TensorT* ptr) { assert(cudaFree(ptr) == cudaSuccess); };
 			this->h_error_.reset(h_error, h_deleter);
 			this->d_error_.reset(d_error, d_deleter);
 			this->h_error_updated_ = true;
@@ -376,8 +376,8 @@ protected:
 			Eigen::TensorMap<Eigen::Tensor<TensorT, 3>> derivative_copy(h_derivative, this->batch_size_, this->memory_size_, this->layer_size_);
 			derivative_copy = derivative;
 			// define the deleters
-			auto h_deleter = [&](TensorT* ptr) { cudaFreeHost(ptr); };
-			auto d_deleter = [&](TensorT* ptr) { cudaFree(ptr); };
+      auto h_deleter = [&](TensorT* ptr) { assert(cudaFreeHost(ptr) == cudaSuccess); };
+      auto d_deleter = [&](TensorT* ptr) { assert(cudaFree(ptr) == cudaSuccess); };
 			this->h_derivative_.reset(h_derivative, h_deleter);
 			this->d_derivative_.reset(d_derivative, d_deleter);
 			this->h_derivative_updated_ = true;
@@ -393,8 +393,8 @@ protected:
 			Eigen::TensorMap<Eigen::Tensor<TensorT, 3>> dt_copy(h_dt, this->batch_size_, this->memory_size_, this->layer_size_);
 			dt_copy = dt;
 			// define the deleters
-			auto h_deleter = [&](TensorT* ptr) { cudaFreeHost(ptr); };
-			auto d_deleter = [&](TensorT* ptr) { cudaFree(ptr); };
+      auto h_deleter = [&](TensorT* ptr) { assert(cudaFreeHost(ptr) == cudaSuccess); };
+      auto d_deleter = [&](TensorT* ptr) { assert(cudaFree(ptr) == cudaSuccess); };
 			this->h_dt_.reset(h_dt, h_deleter);
 			this->d_dt_.reset(d_dt, d_deleter);
 			this->h_dt_updated_ = true;

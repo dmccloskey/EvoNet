@@ -37,7 +37,6 @@ set(sources_list_h
 	PopulationTrainerExperimentalDefaultDevice.h
 	PopulationTrainerExperimentalGpu.h
 	PopulationTrainerGpu.h
-	SharedFunctions.h
 	Solver.h
 	SolverTensor.h
 	Weight.h
