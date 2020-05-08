@@ -157,7 +157,7 @@ public:
       //std::make_shared<SigmoidOp<TensorT>>(SigmoidOp<TensorT>()), std::make_shared<SigmoidGradOp<TensorT>>(SigmoidGradOp<TensorT>()),
       std::make_shared<SumOp<TensorT>>(SumOp<TensorT>()), std::make_shared<SumErrorOp<TensorT>>(SumErrorOp<TensorT>()), std::make_shared<SumWeightGradOp<TensorT>>(SumWeightGradOp<TensorT>()),
       std::make_shared<RangeWeightInitOp<TensorT>>(RangeWeightInitOp<TensorT>(0.0, 2.0)),
-      std::make_shared<AdamOp<TensorT>>(AdamOp<TensorT>(5e-4, 0.9, 0.999, 1e-8, 10)), false, true, true);
+      std::make_shared<AdamOp<TensorT>>(AdamOp<TensorT>(1e-6, 0.9, 0.999, 1e-8, 10)), false, true, true);
 
     // define the internal metabolite nodes (20)
     auto add_c = [](std::string& met_id) { met_id += "_c"; };

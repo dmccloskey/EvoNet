@@ -174,7 +174,7 @@ public:
 
     // Define the solver and weight init
     auto weight_init = std::make_shared<ConstWeightInitOp<TensorT>>(ConstWeightInitOp<TensorT>(1.0));
-    auto solver_op = std::make_shared<SGDOp<TensorT>>(SGDOp<TensorT>(1e-5, 0.9, 10));
+    auto solver_op = std::make_shared<AdamOp<TensorT>>(AdamOp<TensorT>(1e-5, 0.9, 0.999, 1e-8, 10));
 
     // Make the input nodes
     std::vector<std::string> node_names_input = model_builder.addInputNodes(model, "Input", "Input", n_masses, specify_layers);
@@ -464,7 +464,7 @@ void main_HarmonicOscillator1D(const bool& make_model, const bool& train_model) 
   ModelTrainerExt<float> model_trainer;
   model_trainer.setBatchSize(32);
   //model_trainer.setBatchSize(1);
-  model_trainer.setMemorySize(64);
+  model_trainer.setMemorySize(128);
   model_trainer.setNEpochsTraining(10000);
   model_trainer.setNEpochsValidation(25);
   model_trainer.setNTBPTTSteps(model_trainer.getMemorySize() - 5);

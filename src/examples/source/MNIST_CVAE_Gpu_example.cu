@@ -495,7 +495,7 @@ public:
     input_data.slice(offsets, extents) = input_data.slice(offsets, extents).random();
 
     // Assign the encoding values by sampling the 95% confidence limits of the inverse normal distribution
-    const TensorT step_size = (0.95 - 0.05) / (batch_size - 1);
+    const TensorT step_size = (0.95 - 0.05) / batch_size;
     input_data.chip(encodings_traversal_iter_, 2) = (input_data.chip(encodings_traversal_iter_, 2).constant(step_size).cumsum(0) +
       input_data.chip(encodings_traversal_iter_, 2).constant(TensorT(0.05))).ndtri();
 
