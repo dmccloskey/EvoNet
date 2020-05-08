@@ -464,7 +464,7 @@ void main_HarmonicOscillator1D(const bool& make_model, const bool& train_model) 
   ModelTrainerExt<float> model_trainer;
   model_trainer.setBatchSize(32);
   //model_trainer.setBatchSize(1);
-  model_trainer.setMemorySize(128);
+  model_trainer.setMemorySize(64);
   model_trainer.setNEpochsTraining(10000);
   model_trainer.setNEpochsValidation(25);
   model_trainer.setNTBPTTSteps(model_trainer.getMemorySize() - 5);
