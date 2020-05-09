@@ -56,6 +56,41 @@ public:
     }
     time_steps.setConstant(1.0f);
   }
+  void simulateDataWeightSpring3W2S1D(Eigen::Tensor<TensorT, 3>& input_data, Eigen::Tensor<TensorT, 3>& output_data, Eigen::Tensor<TensorT, 3>& metric_output_data, Eigen::Tensor<TensorT, 2>& time_steps)
+  {
+    // infer data dimensions based on the input tensors
+    const int batch_size = input_data.dimension(0);
+    const int memory_size = input_data.dimension(1);
+    const int n_input_nodes = input_data.dimension(2);
+    const int n_output_nodes = output_data.dimension(2);
+
+    HarmonicOscillatorSimulator<float> WeightSpring;
+    std::random_device rd{};
+    std::mt19937 gen{ rd() };
+    std::normal_distribution<> dist{ 0.0f, 1.0f };
+
+    // Generate the input and output data for training
+    for (int batch_iter = 0; batch_iter < batch_size; ++batch_iter) {
+
+      // Simulate a 3 weight and 2 spring 1D harmonic system
+      // where the middle weight has been displaced by a random amount
+      Eigen::Tensor<float, 1> time_steps(memory_size);
+      Eigen::Tensor<float, 2> displacements(memory_size, 3);
+      WeightSpring.WeightSpring3W2S1D(time_steps, displacements, memory_size, 0.1,
+        1, 1, 1, //A
+        1, 1, 1, //m
+        0, dist(gen), 0, //xo
+        1);
+
+      for (int memory_iter = 0; memory_iter < memory_size; ++memory_iter) {
+        if (memory_iter >= memory_size - 1)	input_data(batch_iter, memory_iter, 0) = displacements(memory_size - 1 - memory_iter, 1); // m2
+        else input_data(batch_iter, memory_iter, 0) = TensorT(0);
+        output_data(batch_iter, memory_iter, 0) = displacements(memory_size - 1 - memory_iter, 0); // m1
+        output_data(batch_iter, memory_iter, 1) = displacements(memory_size - 1 - memory_iter, 2); // m3
+      }
+    }
+    time_steps.setConstant(1.0f);
+  }
   void simulateDataWeightSpring1W1S1D(Eigen::Tensor<TensorT, 4>& input_data, Eigen::Tensor<TensorT, 4>& output_data, Eigen::Tensor<TensorT, 3>& time_steps)
   {
     // infer data dimensions based on the input tensors
@@ -86,6 +121,37 @@ public:
           else input_data(batch_iter, memory_iter, 0, epochs_iter) = TensorT(0);
           output_data(batch_iter, memory_iter, 0, epochs_iter) = displacements(memory_size - 1 - memory_iter, 0);
         }
+      }
+    }
+    time_steps.setConstant(1.0f);
+  }
+  void simulateDataWeightSpring1W1S1D(Eigen::Tensor<TensorT, 3>& input_data, Eigen::Tensor<TensorT, 3>& output_data, Eigen::Tensor<TensorT, 3>& metric_output_data, Eigen::Tensor<TensorT, 2>& time_steps)
+  {
+    // infer data dimensions based on the input tensors
+    const int batch_size = input_data.dimension(0);
+    const int memory_size = input_data.dimension(1);
+    const int n_input_nodes = input_data.dimension(2);
+    const int n_output_nodes = output_data.dimension(2);
+
+    HarmonicOscillatorSimulator<float> WeightSpring;
+    std::random_device rd{};
+    std::mt19937 gen{ rd() };
+    std::normal_distribution<> dist{ 0.0f, 1.0f };
+
+    // Generate the input and output data for training
+    for (int batch_iter = 0; batch_iter < batch_size; ++batch_iter) {
+
+      // Simulate a 1 weight and 1 spring 1D harmonic system
+      // where the weight has been displaced by a random amount
+      Eigen::Tensor<float, 1> time_steps(memory_size);
+      Eigen::Tensor<float, 2> displacements(memory_size, 1);
+      WeightSpring.WeightSpring1W1S1D(time_steps, displacements, memory_size, 0.1,
+        1, 1, dist(gen), 0);
+
+      for (int memory_iter = 0; memory_iter < memory_size; ++memory_iter) {
+        if (memory_iter >= memory_size - 1)	input_data(batch_iter, memory_iter, 0) = displacements(memory_size - 1 - memory_iter, 0);
+        else input_data(batch_iter, memory_iter, 0) = TensorT(0);
+        output_data(batch_iter, memory_iter, 0) = displacements(memory_size - 1 - memory_iter, 0);
       }
     }
     time_steps.setConstant(1.0f);
@@ -124,6 +190,37 @@ public:
     }
     time_steps.setConstant(1.0f);
   }
+  void simulateDataWeightSpring1W1S1DwDamping(Eigen::Tensor<TensorT, 3>& input_data, Eigen::Tensor<TensorT, 3>& output_data, Eigen::Tensor<TensorT, 3>& metric_output_data, Eigen::Tensor<TensorT, 2>& time_steps)
+  {
+    // infer data dimensions based on the input tensors
+    const int batch_size = input_data.dimension(0);
+    const int memory_size = input_data.dimension(1);
+    const int n_input_nodes = input_data.dimension(2);
+    const int n_output_nodes = output_data.dimension(2);
+
+    HarmonicOscillatorSimulator<float> WeightSpring;
+    std::random_device rd{};
+    std::mt19937 gen{ rd() };
+    std::normal_distribution<> dist{ 0.0f, 1.0f };
+
+    // Generate the input and output data for training
+    for (int batch_iter = 0; batch_iter < batch_size; ++batch_iter) {
+
+      // Simulate a 1 weight and 1 spring 1D harmonic system
+      // where the weight has been displaced by a random amount
+      Eigen::Tensor<float, 1> time_steps(memory_size);
+      Eigen::Tensor<float, 2> displacements(memory_size, 1);
+      WeightSpring.WeightSpring1W1S1DwDamping(time_steps, displacements, memory_size, 0.1,
+        1, 1, 0.5, dist(gen), 0);
+
+      for (int memory_iter = 0; memory_iter < memory_size; ++memory_iter) {
+        if (memory_iter < 1)	input_data(batch_iter, memory_size - 1 - memory_iter, 0) = displacements(memory_iter, 0);
+        else input_data(batch_iter, memory_size - 1 - memory_iter, 0) = TensorT(0);
+        output_data(batch_iter, memory_size - 1 - memory_iter, 0) = displacements(memory_iter, 0);
+      }
+    }
+    time_steps.setConstant(1.0f);
+  }
 
   void simulateTrainingData(Eigen::Tensor<TensorT, 4>& input_data, Eigen::Tensor<TensorT, 4>& output_data, Eigen::Tensor<TensorT, 3>& time_steps)
   {
@@ -131,13 +228,26 @@ public:
     else if (simulation_name_ == "WeightSpring1W1S1DwDamping")	simulateDataWeightSpring1W1S1DwDamping(input_data, output_data, time_steps);
     else if (simulation_name_ == "WeightSpring3W2S1D")	simulateDataWeightSpring3W2S1D(input_data, output_data, time_steps);
   }
+  void simulateTrainingData(Eigen::Tensor<TensorT, 3>& input_data, Eigen::Tensor<TensorT, 3>& output_data, Eigen::Tensor<TensorT, 3>& metric_output_data, Eigen::Tensor<TensorT, 2>& time_steps)
+  {
+    if (simulation_name_ == "WeightSpring1W1S1D")	simulateDataWeightSpring1W1S1D(input_data, output_data, metric_output_data, time_steps);
+    else if (simulation_name_ == "WeightSpring1W1S1DwDamping")	simulateDataWeightSpring1W1S1DwDamping(input_data, output_data, metric_output_data, time_steps);
+    else if (simulation_name_ == "WeightSpring3W2S1D")	simulateDataWeightSpring3W2S1D(input_data, output_data, metric_output_data, time_steps);
+  }
   void simulateValidationData(Eigen::Tensor<TensorT, 4>& input_data, Eigen::Tensor<TensorT, 4>& output_data, Eigen::Tensor<TensorT, 3>& time_steps)
   {
     if (simulation_name_ == "WeightSpring1W1S1D")	simulateDataWeightSpring1W1S1D(input_data, output_data, time_steps);
     else if (simulation_name_ == "WeightSpring1W1S1DwDamping")	simulateDataWeightSpring1W1S1DwDamping(input_data, output_data, time_steps);
     else if (simulation_name_ == "WeightSpring3W2S1D")	simulateDataWeightSpring3W2S1D(input_data, output_data, time_steps);
   }
+  void simulateValidationData(Eigen::Tensor<TensorT, 3>& input_data, Eigen::Tensor<TensorT, 3>& output_data, Eigen::Tensor<TensorT, 3>& metric_output_data, Eigen::Tensor<TensorT, 2>& time_steps)
+  {
+    if (simulation_name_ == "WeightSpring1W1S1D")	simulateDataWeightSpring1W1S1D(input_data, output_data, metric_output_data, time_steps);
+    else if (simulation_name_ == "WeightSpring1W1S1DwDamping")	simulateDataWeightSpring1W1S1DwDamping(input_data, output_data, metric_output_data, time_steps);
+    else if (simulation_name_ == "WeightSpring3W2S1D")	simulateDataWeightSpring3W2S1D(input_data, output_data, metric_output_data, time_steps);
+  }
   void simulateEvaluationData(Eigen::Tensor<TensorT, 4>& input_data, Eigen::Tensor<TensorT, 3>& time_steps) {};
+  void simulateEvaluationData(Eigen::Tensor<TensorT, 3>& input_data, Eigen::Tensor<TensorT, 2>& time_steps) {};
 };
 
 // Extended classes
@@ -418,7 +528,7 @@ public:
   }
 };
 
-void main_HarmonicOscillator1D(const bool& make_model, const bool& train_model) {
+void main_HarmonicOscillator1D(const std::string& data_dir, const bool& make_model, const bool& train_model, const bool& evolve_model, const std::string& simulation_type) {
   // define the population trainer parameters
   PopulationTrainerExt<float> population_trainer;
   population_trainer.setNGenerations(1);
@@ -452,7 +562,7 @@ void main_HarmonicOscillator1D(const bool& make_model, const bool& train_model) 
 
   // define the data simulator
   DataSimulatorExt<float> data_simulator;
-  data_simulator.simulation_name_ = "WeightSpring1W1S1DwDamping";
+  data_simulator.simulation_name_ = simulation_type;
 
   // define the model trainers and resources for the trainers
   std::vector<ModelInterpreterGpu<float>> model_interpreters;
@@ -465,7 +575,7 @@ void main_HarmonicOscillator1D(const bool& make_model, const bool& train_model) 
   model_trainer.setBatchSize(32);
   //model_trainer.setBatchSize(1);
   model_trainer.setMemorySize(64);
-  model_trainer.setNEpochsTraining(10000);
+  model_trainer.setNEpochsTraining(100000);
   model_trainer.setNEpochsValidation(25);
   model_trainer.setNTBPTTSteps(model_trainer.getMemorySize() - 5);
   model_trainer.setNTETTSteps(model_trainer.getMemorySize() - 5);
@@ -505,17 +615,16 @@ void main_HarmonicOscillator1D(const bool& make_model, const bool& train_model) 
     });
 
   // define the initial population
-  std::cout << "Initializing the population..." << std::endl;
   Model<float> model;
   if (make_model) {
+    std::cout << "Making the model..." << std::endl;
     ModelTrainerExt<float>().makeHarmonicOscillator1D(model, 1, 32, 0, false, true);
   }
   else {
     // read in the trained model
     std::cout << "Reading in the model..." << std::endl;
-    const std::string data_dir = "C:/Users/domccl/GitHub/smartPeak_cpp/build_win_cuda/bin/Debug/";
-    const std::string model_filename = data_dir + "0_HarmonicOscillator_model.binary";
-    const std::string interpreter_filename = data_dir + "0_HarmonicOscillator_interpreter.binary";
+    const std::string model_filename = data_dir + "HarmonicOscillator_model.binary";
+    const std::string interpreter_filename = data_dir + "HarmonicOscillator_interpreter.binary";
     ModelFile<float> model_file;
     model_file.loadModelBinary(model_filename, model);
     model.setId(1);
@@ -523,10 +632,15 @@ void main_HarmonicOscillator1D(const bool& make_model, const bool& train_model) 
     ModelInterpreterFileGpu<float> model_interpreter_file;
     model_interpreter_file.loadModelInterpreterBinary(interpreter_filename, model_interpreters[0]); // FIX ME!
   }
-  std::vector<Model<float>> population = { model };
 
   if (train_model) {
+    // Train the model
+    std::pair<std::vector<float>, std::vector<float>> model_errors = model_trainer.trainModel(model, data_simulator,
+      input_nodes, model_logger, model_interpreters.front());
+  }
+  else if (evolve_model) {
     // Evolve the population
+    std::vector<Model<float>> population = { model };
     std::vector<std::vector<std::tuple<int, std::string, float>>> models_validation_errors_per_generation = population_trainer.evolveModels(
       population, model_trainer, model_interpreters, model_replicator, data_simulator, model_logger, population_logger, input_nodes);
 
@@ -536,14 +650,52 @@ void main_HarmonicOscillator1D(const bool& make_model, const bool& train_model) 
   }
   else {
     // Evaluate the population
+    std::vector<Model<float>> population = { model };
     population_trainer.evaluateModels(
       population, model_trainer, model_interpreters, model_replicator, data_simulator, model_logger, input_nodes);
   }
 }
 
-// Main
+/*
+@brief Run the training/evolution/evaluation from the command line
+
+@param data_dir The data director
+@param make_model Whether to make the model or read in a trained model/interpreter called 'HarmonicOscillator_model'/'HarmonicOscillator_interpreter'
+@param train_model Whether to train the model
+@param evolve_model Whether to evolve the model
+@param simulation_type The type of simulation to run
+*/
 int main(int argc, char** argv)
 {
-  main_HarmonicOscillator1D(true, true);
+  // Parse the user commands
+  //std::string data_dir = "C:/Users/dmccloskey/Dropbox (UCSD SBRG)/Project_EvoNet/";
+  //std::string data_dir = "C:/Users/domccl/Dropbox (UCSD SBRG)/Project_EvoNet/";
+  std::string data_dir = "C:/Users/dmccloskey/Documents/GitHub/mnist/";
+  bool make_model = true, train_model = true, evolve_model = false;
+  std::string simulation_type = "WeightSpring1W1S1DwDamping";
+  if (argc >= 2) {
+    data_dir = argv[1];
+  }
+  if (argc >= 3) {
+    make_model = (argv[2] == std::string("true")) ? true : false;
+  }
+  if (argc >= 4) {
+    train_model = (argv[3] == std::string("true")) ? true : false;
+  }
+  if (argc >= 5) {
+    evolve_model = (argv[4] == std::string("true")) ? true : false;
+  }
+  if (argc >= 6) {
+    simulation_type = argv[5];
+  }
+
+  // Cout the parsed input
+  std::cout << "data_dir: " << data_dir << std::endl;
+  std::cout << "make_model: " << make_model << std::endl;
+  std::cout << "train_model: " << train_model << std::endl;
+  std::cout << "evolve_model: " << evolve_model << std::endl;
+  std::cout << "simulation_type: " << simulation_type << std::endl;
+
+  main_HarmonicOscillator1D(data_dir, make_model, train_model, evolve_model, simulation_type);
   return 0;
 }

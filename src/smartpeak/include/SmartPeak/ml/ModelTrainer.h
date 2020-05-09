@@ -617,7 +617,7 @@ private:
   {
     if (metric_function_helpers_.size() == 0) {
       std::cout << "No metric function helpers have been set!" << std::endl;
-      return false;
+      //return false;
     }
     for (const auto& helper : metric_function_helpers_) {
       if (helper.metric_functions_.size() != helper.metric_names_.size()) {
