@@ -383,7 +383,7 @@ void main_KineticModel(const std::string& data_dir, const bool& make_model, cons
   model_trainer.setBatchSize(32);
   //model_trainer.setBatchSize(1);
   model_trainer.setMemorySize(128);
-  model_trainer.setNEpochsTraining(50000);
+  model_trainer.setNEpochsTraining(10000);
   model_trainer.setNEpochsValidation(25);
   //model_trainer.setNTETTSteps(1);
   model_trainer.setNTETTSteps(model_trainer.getMemorySize() - 3);
