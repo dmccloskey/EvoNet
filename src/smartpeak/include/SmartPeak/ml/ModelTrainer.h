@@ -263,6 +263,13 @@ public:
       @brief Entry point for users to code their script
         for model forward evaluations
 
+      Default workflow executes the following methods:
+      1. Model interpretation and tensor memory allocation
+      2. Evaluation data generation
+      3. Evaluation FPTT, METT
+      4. Logging
+      5. Adaptive trainer scheduling
+
       @param[in, out] model The model to train
       @param[in] data_simulator The training, validation, and test data generator
       @param[in] input_nodes Input node names
@@ -405,6 +412,29 @@ public:
 			ModelLogger<TensorT>& model_logger,
 			const std::vector<std::string>& output_nodes,
       const std::vector<std::string>& input_nodes);
+
+    /**
+    @brief Entry point for users to code their training logger
+
+    [TODO: add tests]
+
+    @param[in] n_generations The number of evolution generations
+    @param[in] n_epochs The number of training/validation epochs
+    @param[in, out] model The model
+    @param[in, out] model_interpreter The model interpreter
+    @param[in, out] model_logger The model logger
+    @param[in] expected_values The expected values
+
+    */
+    virtual void evaluationModelLogger(
+      const int& n_epochs,
+      Model<TensorT>& model,
+      InterpreterT& model_interpreter,
+      ModelLogger<TensorT>& model_logger,
+      const Eigen::Tensor<TensorT, 3>& expected_values,
+      const std::vector<std::string>& output_nodes,
+      const std::vector<std::string>& input_nodes,
+      const Eigen::Tensor<TensorT, 1>& model_metrics);
 
     /*
     @brief Determine the decay factor to reduce the learning rate by if the model_errors has not
@@ -744,7 +774,6 @@ private:
     }
 		return model_error;
 	}
-
   template<typename TensorT, typename InterpreterT>
   inline std::pair<std::vector<TensorT>, std::vector<TensorT>> ModelTrainer<TensorT, InterpreterT>::trainModel(Model<TensorT>& model, DataSimulator<TensorT>& data_simulator, const std::vector<std::string>& input_nodes, ModelLogger<TensorT>& model_logger, InterpreterT & model_interpreter)
   {
@@ -924,7 +953,6 @@ private:
     }
     return std::make_pair(model_error_training, model_error_validation);
   }
-
 	template<typename TensorT, typename InterpreterT>
 	inline std::vector<TensorT> ModelTrainer<TensorT, InterpreterT>::validateModel(Model<TensorT>& model, const Eigen::Tensor<TensorT, 4>& input, const Eigen::Tensor<TensorT, 4>& output, const Eigen::Tensor<TensorT, 3>& time_steps,
 		const std::vector<std::string>& input_nodes,
@@ -1280,6 +1308,11 @@ private:
     std::vector<std::string> output_nodes = this->getLossOutputNodesLinearized();
     Eigen::Tensor<TensorT, 4> model_output(this->getBatchSize(), this->getMemorySize(), (int)output_nodes.size(), this->getNEpochsEvaluation()); // for each epoch, for each output node, batch_size x memory_size
 
+    // Check the loss and metric functions
+    if (!this->checkMetricFunctions()) {
+      return model_output;
+    }
+
     // Check inputs
     if (!model.checkNodeNames(input_nodes))
     {
@@ -1287,6 +1320,12 @@ private:
     }
     if (!model.checkNodeNames(output_nodes))
     {
+      return model_output;
+    }
+
+    // Check the metric output node names
+    std::vector<std::string> metric_output_nodes = this->getMetricOutputNodesLinearized();
+    if (!model.checkNodeNames(metric_output_nodes)) {
       return model_output;
     }
 
@@ -1300,6 +1339,7 @@ private:
         std::cout << "Interpreting the model..." << std::endl;
       model_interpreter.checkMemory(model, this->getBatchSize(), this->getMemorySize());
       model_interpreter.getForwardPropogationOperations(model, this->getBatchSize(), this->getMemorySize(), true, this->getFastInterpreter(), this->getFindCycles(), this->getPreserveOoO());
+      model_interpreter.allocateModelErrorTensor(this->getBatchSize(), this->getMemorySize(), this->getNMetricFunctions());
     }
 
     for (int iter = 0; iter < this->getNEpochsEvaluation(); ++iter) // use n_epochs here
@@ -1308,8 +1348,9 @@ private:
       if (this->getVerbosityLevel() >= 2)
         std::cout << "Generating the input/output data for evaluation..." << std::endl;
       Eigen::Tensor<TensorT, 3> input_data(this->getBatchSize(), this->getMemorySize(), (int)input_nodes.size());
+      Eigen::Tensor<TensorT, 3> metric_output_data(this->getBatchSize(), this->getMemorySize(), (int)metric_output_nodes.size());
       Eigen::Tensor<TensorT, 2> time_steps(this->getBatchSize(), this->getMemorySize());
-      data_simulator.simulateEvaluationData(input_data, time_steps);
+      data_simulator.simulateEvaluationData(input_data, metric_output_data, time_steps);
 
       // assign the input data
       model_interpreter.initBiases(model); // create the bias	
@@ -1320,6 +1361,15 @@ private:
       if (this->getVerbosityLevel() >= 2)
         std::cout << "Foward Propogation..." << std::endl;
       model_interpreter.FPTT(this->getMemorySize());
+
+      // calculate the model metrics
+      if (this->getVerbosityLevel() >= 2)
+        std::cout << "Metric Calculation..." << std::endl;
+      this->ApplyModelMetrics_(model, metric_output_data, model_interpreter);
+
+      // get the model metrics
+      model_interpreter.getModelResults(model, false, false, true, false);
+      Eigen::Tensor<TensorT, 1> total_metrics = model.getMetric().sum(Eigen::array<Eigen::Index, 1>({ 1 }));
 
       // extract out the model output
       model_interpreter.getModelResults(model, true, false, false, false);
@@ -1338,7 +1388,7 @@ private:
       if (this->getLogEvaluation()) {
         if (this->getVerbosityLevel() >= 2)
           std::cout << "Logging..." << std::endl;
-        this->evaluationModelLogger(iter, model, model_interpreter, model_logger, output_nodes, input_nodes);
+        this->evaluationModelLogger(iter, model, model_interpreter, model_logger, metric_output_data, output_nodes, input_nodes, total_metrics);
       }
 
       // reinitialize the model
@@ -1480,6 +1530,34 @@ private:
 			model_logger.writeLogs(model, n_epochs, {}, {}, {}, {}, output_nodes, Eigen::Tensor<TensorT, 3>(), {}, output_nodes, {}, input_nodes, {});
 		}
 	}
+  template<typename TensorT, typename InterpreterT>
+  inline void ModelTrainer<TensorT, InterpreterT>::evaluationModelLogger(const int& n_epochs, Model<TensorT>& model, InterpreterT& model_interpreter, ModelLogger<TensorT>& model_logger,
+    const Eigen::Tensor<TensorT, 3>& expected_values,
+    const std::vector<std::string>& output_nodes, const std::vector<std::string>& input_nodes,
+    const Eigen::Tensor<TensorT, 1>& model_metrics)
+  {
+    if (n_epochs == 0) {
+      model_logger.initLogs(model);
+    }
+    if (n_epochs % 10 == 0) {
+      // Get the node values if logging the expected and predicted
+      if (model_logger.getLogExpectedEpoch() || model_logger.getLogNodeOutputsEpoch())
+        model_interpreter.getModelResults(model, true, false, false, false);
+      if (model_logger.getLogNodeInputsEpoch())
+        model_interpreter.getModelResults(model, false, false, false, true);
+
+      // Create the metric headers and data arrays
+      std::vector<std::string> log_headers;
+      std::vector<TensorT> log_values;
+      int metric_iter = 0;
+      for (const std::string& metric_name : this->getMetricNamesLinearized()) {
+        log_headers.push_back(metric_name);
+        log_values.push_back(model_metrics(metric_iter));
+        ++metric_iter;
+      }
+      model_logger.writeLogs(model, n_epochs, log_headers, {}, log_values, {}, output_nodes, expected_values, {}, output_nodes, {}, input_nodes, {});
+    }
+  }
   template<typename TensorT, typename InterpreterT>
   inline TensorT ModelTrainer<TensorT, InterpreterT>::reduceLROnPlateau(const std::vector<float>& model_errors, const TensorT & decay, const int & n_epochs_avg, const int & n_epochs_win, const TensorT & min_perc_error_diff)
   {
