@@ -248,9 +248,10 @@ public:
   }
   void simulateEvaluationData(Eigen::Tensor<TensorT, 4>& input_data, Eigen::Tensor<TensorT, 3>& time_steps) {};
   void simulateEvaluationData(Eigen::Tensor<TensorT, 3>& input_data, Eigen::Tensor<TensorT, 3>& metric_output_data, Eigen::Tensor<TensorT, 2>& time_steps) {
-    if (simulation_name_ == "WeightSpring1W1S1D")	simulateDataWeightSpring1W1S1D(input_data, Eigen::Tensor<TensorT, 3>(), Eigen::Tensor<TensorT, 3>(), time_steps);
-    else if (simulation_name_ == "WeightSpring1W1S1DwDamping")	simulateDataWeightSpring1W1S1DwDamping(input_data, Eigen::Tensor<TensorT, 3>(), Eigen::Tensor<TensorT, 3>(), time_steps);
-    else if (simulation_name_ == "WeightSpring3W2S1D")	simulateDataWeightSpring3W2S1D(input_data, Eigen::Tensor<TensorT, 3>(), Eigen::Tensor<TensorT, 3>(), time_steps);
+    // HACK: using output_data as metric_output_data
+    if (simulation_name_ == "WeightSpring1W1S1D")	simulateDataWeightSpring1W1S1D(input_data, metric_output_data, Eigen::Tensor<TensorT, 3>(), time_steps);
+    else if (simulation_name_ == "WeightSpring1W1S1DwDamping")	simulateDataWeightSpring1W1S1DwDamping(input_data, metric_output_data, Eigen::Tensor<TensorT, 3>(), time_steps);
+    else if (simulation_name_ == "WeightSpring3W2S1D")	simulateDataWeightSpring3W2S1D(input_data, metric_output_data, Eigen::Tensor<TensorT, 3>(), time_steps);
   };
 };
 
@@ -567,7 +568,7 @@ public:
 };
 
 void main_HarmonicOscillator1D(const std::string& data_dir, const bool& make_model, const bool& train_model, const bool& evolve_model, const std::string& simulation_type,
-  const int& batch_size, const int& memory_size, const int& n_epochs_training) {
+  const int& batch_size, const int& memory_size, const int& n_epochs_training, const int& device_id) {
   // define the population trainer parameters
   PopulationTrainerExt<float> population_trainer;
   population_trainer.setNGenerations(1);
@@ -606,7 +607,7 @@ void main_HarmonicOscillator1D(const std::string& data_dir, const bool& make_mod
   // define the model trainers and resources for the trainers
   std::vector<ModelInterpreterGpu<float>> model_interpreters;
   for (size_t i = 0; i < n_threads; ++i) {
-    ModelResources model_resources = { ModelDevice(0, 1) };
+    ModelResources model_resources = { ModelDevice(device_id, 0) };
     ModelInterpreterGpu<float> model_interpreter(model_resources);
     model_interpreters.push_back(model_interpreter);
   }
@@ -615,6 +616,7 @@ void main_HarmonicOscillator1D(const std::string& data_dir, const bool& make_mod
   model_trainer.setMemorySize(memory_size);
   model_trainer.setNEpochsTraining(n_epochs_training);
   model_trainer.setNEpochsValidation(25);
+  model_trainer.setNEpochsEvaluation(n_epochs_training);
   model_trainer.setNTBPTTSteps(model_trainer.getMemorySize() - 3);
   model_trainer.setNTETTSteps(model_trainer.getMemorySize() - 3);
   model_trainer.setVerbosityLevel(1);
@@ -630,6 +632,16 @@ void main_HarmonicOscillator1D(const std::string& data_dir, const bool& make_mod
   loss_function_helper2.loss_function_grads_ = { std::make_shared<MSELossGradOp<float>>(MSELossGradOp<float>(1e-24, 1.0)) };
   loss_function_helpers.push_back(loss_function_helper2);
   model_trainer.setLossFunctionHelpers(loss_function_helpers);
+
+  std::vector<MetricFunctionHelper<float>> metric_function_helpers;
+  MetricFunctionHelper<float> metric_function_helper1;
+  metric_function_helper1.output_nodes_ = output_nodes;
+  metric_function_helper1.metric_functions_ = { std::make_shared<PearsonROp<float>>(PearsonROp<float>("Mean")), std::make_shared<PearsonROp<float>>(PearsonROp<float>("Var")),
+    std::make_shared<EuclideanDistOp<float>>(EuclideanDistOp<float>("Mean")), std::make_shared<EuclideanDistOp<float>>(EuclideanDistOp<float>("Var")) };
+  metric_function_helper1.metric_names_ = { "PearsonR-Mean", "PearsonR-Var",
+    "EuclideanDist-Mean", "EuclideanDist-Var" };
+  metric_function_helpers.push_back(metric_function_helper1);
+  model_trainer.setMetricFunctionHelpers(metric_function_helpers);
 
   // define the model logger
   ModelLogger<float> model_logger(true, true, true, false, false, true, false, true);
@@ -654,6 +666,7 @@ void main_HarmonicOscillator1D(const std::string& data_dir, const bool& make_mod
 
   // define the initial population
   Model<float> model;
+  std::string model_name = "HarmonicOscillator";
   if (make_model) {
     std::cout << "Making the model..." << std::endl;
     ModelTrainerExt<float>().makeHarmonicOscillator1D(model, 1, 32, 0, false, true);
@@ -666,10 +679,10 @@ void main_HarmonicOscillator1D(const std::string& data_dir, const bool& make_mod
     ModelFile<float> model_file;
     model_file.loadModelBinary(model_filename, model);
     model.setId(1);
-    model.setName("HarmonicOscillator-1");
     ModelInterpreterFileGpu<float> model_interpreter_file;
     model_interpreter_file.loadModelInterpreterBinary(interpreter_filename, model_interpreters[0]); // FIX ME!
   }
+  model.setName(data_dir + model_name); //So that all output will be written to a specific directory
 
   if (train_model) {
     // Train the model
@@ -699,6 +712,9 @@ void main_HarmonicOscillator1D(const std::string& data_dir, const bool& make_mod
 /*
 @brief Run the training/evolution/evaluation from the command line
 
+Example:
+./HarmonicOscillator_Gpu_example "C:/Users/dmccloskey/Documents/GitHub/EvoNetData/MNIST_examples/HarmonicOscillator/Gpu1-0a" true true false "WeightSpring1W1S1DwDamping" 32 64 100000
+
 @param data_dir The data director
 @param make_model Whether to make the model or read in a trained model/interpreter called 'HarmonicOscillator_model'/'HarmonicOscillator_interpreter'
 @param train_model Whether to train the model
@@ -708,12 +724,11 @@ void main_HarmonicOscillator1D(const std::string& data_dir, const bool& make_mod
 int main(int argc, char** argv)
 {
   // Parse the user commands
-  //std::string data_dir = "C:/Users/dmccloskey/Dropbox (UCSD SBRG)/Project_EvoNet/";
-  //std::string data_dir = "C:/Users/domccl/Dropbox (UCSD SBRG)/Project_EvoNet/";
-  std::string data_dir = "C:/Users/dmccloskey/Documents/GitHub/mnist/";
+  std::string data_dir = "";
   bool make_model = true, train_model = true, evolve_model = false;
   std::string simulation_type = "WeightSpring1W1S1DwDamping";
   int batch_size = 32, memory_size = 64, n_epochs_training = 100000;
+  int device_id = 0;
   if (argc >= 2) {
     data_dir = argv[1];
   }
@@ -753,6 +768,15 @@ int main(int argc, char** argv)
       std::cout << e.what() << std::endl;
     }
   }
+  if (argc >= 10) {
+    try {
+      device_id = std::stoi(argv[9]);
+      device_id = (device_id >= 0 && device_id < 4) ? device_id : 0; // TODO: assumes only 4 devices are available
+    }
+    catch (std::exception & e) {
+      std::cout << e.what() << std::endl;
+    }
+  }
 
   // Cout the parsed input
   std::cout << "data_dir: " << data_dir << std::endl;
@@ -763,7 +787,8 @@ int main(int argc, char** argv)
   std::cout << "batch_size: " << batch_size << std::endl;
   std::cout << "memory_size: " << memory_size << std::endl;
   std::cout << "n_epochs_training: " << n_epochs_training << std::endl;
+  std::cout << "device_id: " << device_id << std::endl;
 
-  main_HarmonicOscillator1D(data_dir, make_model, train_model, evolve_model, simulation_type, batch_size, memory_size, n_epochs_training);
+  main_HarmonicOscillator1D(data_dir, make_model, train_model, evolve_model, simulation_type, batch_size, memory_size, n_epochs_training, device_id);
   return 0;
 }

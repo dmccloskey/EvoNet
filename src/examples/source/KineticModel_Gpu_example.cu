@@ -442,7 +442,7 @@ public:
 };
 
 void main_KineticModel(const std::string& data_dir, const bool& make_model, const bool& train_model, const bool& evolve_model, const std::string& simulation_type,
-  const int& batch_size, const int& memory_size, const int& n_epochs_training) {
+  const int& batch_size, const int& memory_size, const int& n_epochs_training, const std::string& biochem_rxns_filename, const int& device_id) {
   // define the population trainer parameters
   PopulationTrainerExt<float> population_trainer;
   population_trainer.setNGenerations(1);
@@ -481,7 +481,7 @@ void main_KineticModel(const std::string& data_dir, const bool& make_model, cons
   // define the model trainers and resources for the trainers
   std::vector<ModelInterpreterGpu<float>> model_interpreters;
   for (size_t i = 0; i < n_threads; ++i) {
-    ModelResources model_resources = { ModelDevice(0, 1) };
+    ModelResources model_resources = { ModelDevice(device_id, 0) };
     ModelInterpreterGpu<float> model_interpreter(model_resources);
     model_interpreters.push_back(model_interpreter);
   }
@@ -490,6 +490,7 @@ void main_KineticModel(const std::string& data_dir, const bool& make_model, cons
   model_trainer.setMemorySize(memory_size);
   model_trainer.setNEpochsTraining(n_epochs_training);
   model_trainer.setNEpochsValidation(25);
+  model_trainer.setNEpochsEvaluation(n_epochs_training);
   model_trainer.setNTETTSteps(model_trainer.getMemorySize() - 3);
   model_trainer.setNTBPTTSteps(model_trainer.getMemorySize() - 3);
   model_trainer.setVerbosityLevel(1);
@@ -517,11 +518,12 @@ void main_KineticModel(const std::string& data_dir, const bool& make_model, cons
     });
 
   // define the initial population
-  std::cout << "Initializing the population..." << std::endl;
   Model<float> model;
+  std::string model_name = "RBCGlycolysis";
   if (make_model) {
-    const std::string model_filename = data_dir + "RBCGlycolysis.csv";
-    ModelTrainerExt<float>().makeRBCGlycolysis(model, model_filename);
+    std::cout << "Making the model..." << std::endl;
+    const std::string model_filename = data_dir + "";
+    ModelTrainerExt<float>().makeRBCGlycolysis(model, biochem_rxns_filename);
   }
   else {
     // read in the trained model
@@ -535,6 +537,7 @@ void main_KineticModel(const std::string& data_dir, const bool& make_model, cons
     ModelInterpreterFileGpu<float> model_interpreter_file;
     model_interpreter_file.loadModelInterpreterBinary(interpreter_filename, model_interpreters[0]); // FIX ME!
   }
+  model.setName(data_dir + model_name); //So that all output will be written to a specific directory
 
   if (train_model) {
     // Train the model
@@ -552,10 +555,12 @@ void main_KineticModel(const std::string& data_dir, const bool& make_model, cons
     population_trainer_file.storeModelValidations("RBCGlycolysisErrors.csv", models_validation_errors_per_generation);
   }
   else {
-    // Evaluate the population
-    std::vector<Model<float>> population = { model };
-    population_trainer.evaluateModels(
-      population, model_trainer, model_interpreters, model_replicator, data_simulator, model_logger, input_nodes);
+    //// Evaluate the population
+    //std::vector<Model<float>> population = { model };
+    //population_trainer.evaluateModels(
+    //  population, model_trainer, model_interpreters, model_replicator, data_simulator, model_logger, input_nodes);
+    // Evaluate the model
+    model_trainer.evaluateModel(model, data_simulator, input_nodes, model_logger, model_interpreters.front());
   }
 }
 
@@ -563,7 +568,7 @@ void main_KineticModel(const std::string& data_dir, const bool& make_model, cons
 @brief Run the training/evolution/evaluation from the command line
 
 Example:
-./KineticModel_Gpu_example "C:/Users/dmccloskey/Documents/GitHub/mnist/" true true false "steady_state" 32 64 100000
+./KineticModel_Gpu_example "C:/Users/dmccloskey/Documents/GitHub/EvoNetData/MNIST_examples/KineticModel/Gpu1-0a" "C:/Users/dmccloskey/Documents/GitHub/mnist/RBCGlycolysis.csv" true true false "steady_state" 32 64 100000
 
 Simulation types:
 "steady_state" Constant glucose from T = 0 to N, SS metabolite levels at T = 0 (maintenance of SS metabolite levels)
@@ -581,12 +586,12 @@ Simulation types:
 int main(int argc, char** argv)
 {
   // Parse the user commands
-  //std::string data_dir = "C:/Users/dmccloskey/Dropbox (UCSD SBRG)/Project_EvoNet/";
-  //std::string data_dir = "C:/Users/domccl/Dropbox (UCSD SBRG)/Project_EvoNet/";
-  std::string data_dir = "C:/Users/dmccloskey/Documents/GitHub/mnist/";
+  std::string data_dir = "";
+  std::string biochem_rxns_filename = data_dir + "iJO1366.csv";
   bool make_model = true, train_model = true, evolve_model = false;
   std::string simulation_type = "steady_state";
   int batch_size = 32, memory_size = 64, n_epochs_training = 100000;
+  int device_id = 0;
   if (argc >= 2) {
     data_dir = argv[1];
   }
@@ -626,6 +631,18 @@ int main(int argc, char** argv)
       std::cout << e.what() << std::endl;
     }
   }
+  if (argc >= 10) {
+    biochem_rxns_filename = argv[9];
+  }
+  if (argc >= 11) {
+    try {
+      device_id = std::stoi(argv[10]);
+      device_id = (device_id >= 0 && device_id < 4) ? device_id : 0; // TODO: assumes only 4 devices are available
+    }
+    catch (std::exception & e) {
+      std::cout << e.what() << std::endl;
+    }
+  }
 
   // Cout the parsed input
   std::cout << "data_dir: " << data_dir << std::endl;
@@ -636,7 +653,9 @@ int main(int argc, char** argv)
   std::cout << "batch_size: " << batch_size << std::endl;
   std::cout << "memory_size: " << memory_size << std::endl;
   std::cout << "n_epochs_training: " << n_epochs_training << std::endl;
+  std::cout << "biochem_rxns_filename: " << biochem_rxns_filename << std::endl;
+  std::cout << "device_id: " << device_id << std::endl;
 
-  main_KineticModel(data_dir, make_model, train_model, evolve_model, simulation_type, batch_size, memory_size, n_epochs_training);
+  main_KineticModel(data_dir, make_model, train_model, evolve_model, simulation_type, batch_size, memory_size, n_epochs_training, biochem_rxns_filename, device_id);
   return 0;
 }
