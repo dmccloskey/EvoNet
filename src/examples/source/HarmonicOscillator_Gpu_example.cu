@@ -247,7 +247,11 @@ public:
     else if (simulation_name_ == "WeightSpring3W2S1D")	simulateDataWeightSpring3W2S1D(input_data, output_data, metric_output_data, time_steps);
   }
   void simulateEvaluationData(Eigen::Tensor<TensorT, 4>& input_data, Eigen::Tensor<TensorT, 3>& time_steps) {};
-  void simulateEvaluationData(Eigen::Tensor<TensorT, 3>& input_data, Eigen::Tensor<TensorT, 2>& time_steps) {};
+  void simulateEvaluationData(Eigen::Tensor<TensorT, 3>& input_data, Eigen::Tensor<TensorT, 2>& time_steps) {
+    if (simulation_name_ == "WeightSpring1W1S1D")	simulateDataWeightSpring1W1S1D(input_data, Eigen::Tensor<TensorT, 3>(), Eigen::Tensor<TensorT, 3>(), time_steps);
+    else if (simulation_name_ == "WeightSpring1W1S1DwDamping")	simulateDataWeightSpring1W1S1DwDamping(input_data, Eigen::Tensor<TensorT, 3>(), Eigen::Tensor<TensorT, 3>(), time_steps);
+    else if (simulation_name_ == "WeightSpring3W2S1D")	simulateDataWeightSpring3W2S1D(input_data, Eigen::Tensor<TensorT, 3>(), Eigen::Tensor<TensorT, 3>(), time_steps);
+  };
 };
 
 // Extended classes
@@ -528,7 +532,8 @@ public:
   }
 };
 
-void main_HarmonicOscillator1D(const std::string& data_dir, const bool& make_model, const bool& train_model, const bool& evolve_model, const std::string& simulation_type) {
+void main_HarmonicOscillator1D(const std::string& data_dir, const bool& make_model, const bool& train_model, const bool& evolve_model, const std::string& simulation_type,
+  const int& batch_size, const int& memory_size, const int& n_epochs_training) {
   // define the population trainer parameters
   PopulationTrainerExt<float> population_trainer;
   population_trainer.setNGenerations(1);
@@ -572,13 +577,12 @@ void main_HarmonicOscillator1D(const std::string& data_dir, const bool& make_mod
     model_interpreters.push_back(model_interpreter);
   }
   ModelTrainerExt<float> model_trainer;
-  model_trainer.setBatchSize(32);
-  //model_trainer.setBatchSize(1);
-  model_trainer.setMemorySize(16);
-  model_trainer.setNEpochsTraining(100000);
+  model_trainer.setBatchSize(batch_size);
+  model_trainer.setMemorySize(memory_size);
+  model_trainer.setNEpochsTraining(n_epochs_training);
   model_trainer.setNEpochsValidation(25);
-  model_trainer.setNTBPTTSteps(model_trainer.getMemorySize() - 5);
-  model_trainer.setNTETTSteps(model_trainer.getMemorySize() - 5);
+  model_trainer.setNTBPTTSteps(model_trainer.getMemorySize() - 3);
+  model_trainer.setNTETTSteps(model_trainer.getMemorySize() - 3);
   model_trainer.setVerbosityLevel(1);
   model_trainer.setLogging(true, false);
   model_trainer.setFindCycles(false); // IG default
@@ -649,10 +653,12 @@ void main_HarmonicOscillator1D(const std::string& data_dir, const bool& make_mod
     population_trainer_file.storeModelValidations("HarmonicOscillatorErrors.csv", models_validation_errors_per_generation);
   }
   else {
-    // Evaluate the population
-    std::vector<Model<float>> population = { model };
-    population_trainer.evaluateModels(
-      population, model_trainer, model_interpreters, model_replicator, data_simulator, model_logger, input_nodes);
+    //// Evaluate the population
+    //std::vector<Model<float>> population = { model };
+    //population_trainer.evaluateModels(
+    //  population, model_trainer, model_interpreters, model_replicator, data_simulator, model_logger, input_nodes);
+    // Evaluate the model
+    model_trainer.evaluateModel(model, data_simulator, input_nodes, model_logger, model_interpreters.front());
   }
 }
 
@@ -673,6 +679,7 @@ int main(int argc, char** argv)
   std::string data_dir = "C:/Users/dmccloskey/Documents/GitHub/mnist/";
   bool make_model = true, train_model = true, evolve_model = false;
   std::string simulation_type = "WeightSpring1W1S1DwDamping";
+  int batch_size = 32, memory_size = 64, n_epochs_training = 100000;
   if (argc >= 2) {
     data_dir = argv[1];
   }
@@ -688,6 +695,30 @@ int main(int argc, char** argv)
   if (argc >= 6) {
     simulation_type = argv[5];
   }
+  if (argc >= 7) {
+    try {
+      batch_size = std::stoi(argv[6]);
+    }
+    catch (std::exception & e) {
+      std::cout << e.what() << std::endl;
+    }
+  }
+  if (argc >= 8) {
+    try {
+      memory_size = std::stoi(argv[7]);
+    }
+    catch (std::exception & e) {
+      std::cout << e.what() << std::endl;
+    }
+  }
+  if (argc >= 9) {
+    try {
+      n_epochs_training = std::stoi(argv[8]);
+    }
+    catch (std::exception & e) {
+      std::cout << e.what() << std::endl;
+    }
+  }
 
   // Cout the parsed input
   std::cout << "data_dir: " << data_dir << std::endl;
@@ -695,7 +726,10 @@ int main(int argc, char** argv)
   std::cout << "train_model: " << train_model << std::endl;
   std::cout << "evolve_model: " << evolve_model << std::endl;
   std::cout << "simulation_type: " << simulation_type << std::endl;
+  std::cout << "batch_size: " << batch_size << std::endl;
+  std::cout << "memory_size: " << memory_size << std::endl;
+  std::cout << "n_epochs_training: " << n_epochs_training << std::endl;
 
-  main_HarmonicOscillator1D(data_dir, make_model, train_model, evolve_model, simulation_type);
+  main_HarmonicOscillator1D(data_dir, make_model, train_model, evolve_model, simulation_type, batch_size, memory_size, n_epochs_training);
   return 0;
 }

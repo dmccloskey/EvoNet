@@ -316,10 +316,10 @@ public:
     //		model.getName() + "_" + std::to_string(n_epochs) + "_links.csv",
     //		model.getName() + "_" + std::to_string(n_epochs) + "_weights.csv", model, true, true, false);
     //}
-    // Record the interpreter layer allocation
-    if (n_epochs == 0) {
-      ModelInterpreterFileGpu<TensorT>::storeModelInterpreterCsv(model.getName() + "_interpreterOps.csv", model_interpreter);
-    }
+    //// Record the interpreter layer allocation
+    //if (n_epochs == 0) {
+    //  ModelInterpreterFileGpu<TensorT>::storeModelInterpreterCsv(model.getName() + "_interpreterOps.csv", model_interpreter);
+    //}
   }
   void trainingModelLogger(const int& n_epochs, Model<TensorT>& model, ModelInterpreterGpu<TensorT>& model_interpreter, ModelLogger<TensorT>& model_logger,
     const Eigen::Tensor<TensorT, 3>& expected_values, const std::vector<std::string>& output_nodes, const std::vector<std::string>& input_nodes, const TensorT& model_error_train, const TensorT& model_error_test,
@@ -561,6 +561,9 @@ void main_KineticModel(const std::string& data_dir, const bool& make_model, cons
 
 /*
 @brief Run the training/evolution/evaluation from the command line
+
+Example:
+./KineticModel_Gpu_example "C:/Users/dmccloskey/Documents/GitHub/mnist/" true true false "steady_state" 32 64 100000
 
 Simulation types:
 "steady_state" Constant glucose from T = 0 to N, SS metabolite levels at T = 0 (maintenance of SS metabolite levels)

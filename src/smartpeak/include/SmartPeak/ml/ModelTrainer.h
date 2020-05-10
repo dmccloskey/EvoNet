@@ -331,11 +331,10 @@ public:
 
     @param[in] n_generations The number of evolution generations
     @param[in] n_epochs The number of training/validation epochs
-    @param[in, out] model The model
-    @param[in, out] model_interpreter The model interpreter
-    @param[in, out] model_logger The model logger
+    @param[in,out] model The model
+    @param[in,out] model_interpreter The model interpreter
+    @param[in,out] model_logger The model logger
     @param[in] expected_values The expected values
-
     */
     virtual void trainingModelLogger(const int& n_epochs,
       Model<TensorT>& model, InterpreterT& model_interpreter, ModelLogger<TensorT>& model_logger,
