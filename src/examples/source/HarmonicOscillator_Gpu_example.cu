@@ -138,15 +138,25 @@ public:
     std::mt19937 gen{ rd() };
     std::normal_distribution<> dist{ 0.0f, 1.0f };
 
+    const int time_course_multiplier = 2; // How long to make the time course based on the memory size
+    const int n_batches_per_time_course = 4; // The number of chunks each simulation time course is chopped into
+    const int time_steps_size = memory_size * time_course_multiplier + 1; // The total number of time_steps per simulation time course
+    Eigen::Tensor<float, 1> time_steps_displacements(time_steps_size);
+    Eigen::Tensor<float, 2> displacements_all(time_steps_size, 1);
+
     // Generate the input and output data for training
     for (int batch_iter = 0; batch_iter < batch_size; ++batch_iter) {
 
-      // Simulate a 1 weight and 1 spring 1D harmonic system
-      // where the weight has been displaced by a random amount
-      Eigen::Tensor<float, 1> time_steps(memory_size + 1);
-      Eigen::Tensor<float, 2> displacements(memory_size + 1, 1);
-      WeightSpring.WeightSpring1W1S1D(time_steps, displacements, memory_size + 1, 0.1,
-        1, 1, dist(gen), 0);
+      // Simulate a 1 weight and 1 spring 1D harmonic system where the weight has been displaced by a random amount
+      const int remainder = batch_iter % n_batches_per_time_course;
+      const int increment = (time_course_multiplier * memory_size - memory_size) / (n_batches_per_time_course - 1);
+      if (remainder == 0) {
+        WeightSpring.WeightSpring1W1S1D(time_steps_displacements, displacements_all, time_steps_size, 0.1,
+          1, 1, 0.5, dist(gen), 0);
+      }
+      Eigen::array<Eigen::Index, 2> offset = { increment * remainder, 0 };
+      Eigen::array<Eigen::Index, 2> span = { memory_size + 1, 1 };
+      Eigen::Tensor<float, 2> displacements = displacements_all.slice(offset, span);
 
       for (int memory_iter = 0; memory_iter < memory_size; ++memory_iter) {
         if (memory_iter < 1)	input_data(batch_iter, memory_size - 1 - memory_iter, 0) = displacements(memory_iter, 0);
@@ -203,15 +213,25 @@ public:
     std::mt19937 gen{ rd() };
     std::normal_distribution<> dist{ 0.0f, 1.0f };
 
+    const int time_course_multiplier = 2; // How long to make the time course based on the memory size
+    const int n_batches_per_time_course = 4; // The number of chunks each simulation time course is chopped into
+    const int time_steps_size = ((memory_size > n_batches_per_time_course)? memory_size: n_batches_per_time_course) * time_course_multiplier + 1; // The total number of time_steps per simulation time course
+    Eigen::Tensor<float, 1> time_steps_displacements(time_steps_size);
+    Eigen::Tensor<float, 2> displacements_all(time_steps_size, 1);
+
     // Generate the input and output data for training
     for (int batch_iter = 0; batch_iter < batch_size; ++batch_iter) {
 
-      // Simulate a 1 weight and 1 spring 1D harmonic system
-      // where the weight has been displaced by a random amount
-      Eigen::Tensor<float, 1> time_steps(memory_size+1);
-      Eigen::Tensor<float, 2> displacements(memory_size + 1, 1);
-      WeightSpring.WeightSpring1W1S1DwDamping(time_steps, displacements, memory_size + 1, 0.1,
-        1, 1, 0.5, dist(gen), 0);
+      // Simulate a 1 weight and 1 spring 1D harmonic system where the weight has been displaced by a random amount
+      const int remainder = batch_iter % n_batches_per_time_course;
+      const int increment = (time_steps_size - 1 - memory_size) / (n_batches_per_time_course - 1);
+      if (remainder == 0) {
+        WeightSpring.WeightSpring1W1S1DwDamping(time_steps_displacements, displacements_all, time_steps_size, 0.1,
+          1, 1, 0.5, dist(gen), 0);
+      }
+      Eigen::array<Eigen::Index, 2> offset = { increment * remainder, 0 };
+      Eigen::array<Eigen::Index, 2> span = { memory_size + 1, 1 };
+      Eigen::Tensor<float, 2> displacements = displacements_all.slice(offset, span);
 
       for (int memory_iter = 0; memory_iter < memory_size; ++memory_iter) {
         if (memory_iter < 1)	input_data(batch_iter, memory_size - 1 - memory_iter, 0) = displacements(memory_iter, 0);
