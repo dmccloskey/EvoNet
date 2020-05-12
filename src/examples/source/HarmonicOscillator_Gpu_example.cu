@@ -292,35 +292,16 @@ public:
     auto solver_op = std::make_shared<AdamOp<TensorT>>(AdamOp<TensorT>(1e-5, 0.9, 0.999, 1e-8, 10));
 
     // Make the input nodes
-    std::vector<std::string> node_names_input = model_builder.addInputNodes(model, "Input", "Input", n_masses, specify_layers);
-
-    // Connect the input nodes to the masses
-    std::vector<std::string> node_names_masses = model_builder.addSinglyConnected(model, "Mass", "Mass", node_names_input, n_masses,
-      activation_masses, activation_masses_grad,
-      integration_op, integration_error_op, integration_weight_grad_op,
-      std::make_shared<ConstWeightInitOp<TensorT>>(ConstWeightInitOp<TensorT>(1)),
-      std::make_shared<DummySolverOp<TensorT>>(DummySolverOp<TensorT>()), 0.0f, 0.0f, add_biases, specify_layers);
+    std::vector<std::string> node_names_masses = model_builder.addInputNodes(model, "Mass", "Mass", n_masses, specify_layers);
 
     // Manually define the mass nodes
     for (const std::string& node_name : node_names_masses)
-      model.getNodesMap().at(node_name)->setType(NodeType::unmodifiable);
+      model.getNodesMap().at(node_name)->setType(NodeType::output);
 
     // Connect the masses to themselves
     model_builder.addSinglyConnected(model, "Mass", node_names_masses, node_names_masses,
       std::make_shared<ConstWeightInitOp<TensorT>>(ConstWeightInitOp<TensorT>(1)),
       std::make_shared<DummySolverOp<TensorT>>(DummySolverOp<TensorT>()), 0.0f, specify_layers);
-
-    // Connect the mass to the output nodes
-    std::vector<std::string> node_names_output = model_builder.addSinglyConnected(model, "Output", "Output", node_names_masses, n_masses,
-      std::make_shared<LinearOp<TensorT>>(LinearOp<TensorT>()),
-      std::make_shared<LinearGradOp<TensorT>>(LinearGradOp<TensorT>()),
-      integration_op, integration_error_op, integration_weight_grad_op,
-      std::make_shared<ConstWeightInitOp<TensorT>>(ConstWeightInitOp<TensorT>(1)),
-      std::make_shared<DummySolverOp<TensorT>>(DummySolverOp<TensorT>()), 0.0f, 0.0f, add_biases, specify_layers);
-
-    // Manually define the output nodes
-    for (const std::string& node_name : node_names_output)
-      model.getNodesMap().at(node_name)->setType(NodeType::output);
 
     // Make the deep learning layers between each of the masses (In the forward direction)
     for (int mass_iter = 1; mass_iter < n_masses; ++mass_iter) {
@@ -381,6 +362,7 @@ public:
         std::make_shared<RandWeightInitOp<TensorT>>(RandWeightInitOp<TensorT>(node_names.size() + 1, 2)), //weight_init,
         solver_op, 0.0f, specify_layers);
     }
+
     model.setInputAndOutputNodes();
   }
   void adaptiveTrainerScheduler(
@@ -568,7 +550,7 @@ public:
 };
 
 void main_HarmonicOscillator1D(const std::string& data_dir, const bool& make_model, const bool& train_model, const bool& evolve_model, const std::string& simulation_type,
-  const int& batch_size, const int& memory_size, const int& n_epochs_training, const int& device_id) {
+  const int& batch_size, const int& memory_size, const int& n_epochs_training, const int& n_tbtt_steps, const int& device_id) {
   // define the population trainer parameters
   PopulationTrainerExt<float> population_trainer;
   population_trainer.setNGenerations(1);
@@ -586,7 +568,7 @@ void main_HarmonicOscillator1D(const std::string& data_dir, const bool& make_mod
   std::vector<std::string> input_nodes;
   for (int i = 0; i < n_masses; ++i) {
     char name_char[512];
-    sprintf(name_char, "Input_%012d", i);
+    sprintf(name_char, "Mass_%012d", i);
     std::string name(name_char);
     input_nodes.push_back(name);
   }
@@ -595,7 +577,7 @@ void main_HarmonicOscillator1D(const std::string& data_dir, const bool& make_mod
   std::vector<std::string> output_nodes;
   for (int i = 0; i < n_masses; ++i) {
     char name_char[512];
-    sprintf(name_char, "Output_%012d", i);
+    sprintf(name_char, "Mass_%012d", i);
     std::string name(name_char);
     output_nodes.push_back(name);
   }
@@ -617,8 +599,8 @@ void main_HarmonicOscillator1D(const std::string& data_dir, const bool& make_mod
   model_trainer.setNEpochsTraining(n_epochs_training);
   model_trainer.setNEpochsValidation(25);
   model_trainer.setNEpochsEvaluation(n_epochs_training);
-  model_trainer.setNTBPTTSteps(model_trainer.getMemorySize() - 3);
-  model_trainer.setNTETTSteps(model_trainer.getMemorySize() - 3);
+  model_trainer.setNTBPTTSteps(n_tbtt_steps);
+  model_trainer.setNTETTSteps(n_tbtt_steps);
   model_trainer.setVerbosityLevel(1);
   model_trainer.setLogging(true, false, true);
   model_trainer.setFindCycles(false); // IG default
@@ -728,6 +710,7 @@ int main(int argc, char** argv)
   bool make_model = true, train_model = true, evolve_model = false;
   std::string simulation_type = "WeightSpring1W1S1DwDamping";
   int batch_size = 32, memory_size = 64, n_epochs_training = 100000;
+  int n_tbtt_steps = memory_size;
   int device_id = 0;
   if (argc >= 2) {
     data_dir = argv[1];
@@ -770,7 +753,15 @@ int main(int argc, char** argv)
   }
   if (argc >= 10) {
     try {
-      device_id = std::stoi(argv[9]);
+      n_tbtt_steps = std::stoi(argv[9]);
+    }
+    catch (std::exception & e) {
+      std::cout << e.what() << std::endl;
+    }
+  }
+  if (argc >= 11) {
+    try {
+      device_id = std::stoi(argv[10]);
       device_id = (device_id >= 0 && device_id < 4) ? device_id : 0; // TODO: assumes only 4 devices are available
     }
     catch (std::exception & e) {
@@ -787,8 +778,9 @@ int main(int argc, char** argv)
   std::cout << "batch_size: " << batch_size << std::endl;
   std::cout << "memory_size: " << memory_size << std::endl;
   std::cout << "n_epochs_training: " << n_epochs_training << std::endl;
+  std::cout << "n_tbtt_steps: " << n_tbtt_steps << std::endl;
   std::cout << "device_id: " << device_id << std::endl;
 
-  main_HarmonicOscillator1D(data_dir, make_model, train_model, evolve_model, simulation_type, batch_size, memory_size, n_epochs_training, device_id);
+  main_HarmonicOscillator1D(data_dir, make_model, train_model, evolve_model, simulation_type, batch_size, memory_size, n_epochs_training, n_tbtt_steps, device_id);
   return 0;
 }
