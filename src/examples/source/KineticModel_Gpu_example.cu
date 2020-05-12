@@ -98,21 +98,21 @@ public:
           for (int nodes_iter = 0; nodes_iter < n_output_nodes; ++nodes_iter) {
             if (simulation_type_ == "glucose_pulse") {
               if (memory_iter == 0)
-                output_data(batch_iter, memory_iter, nodes_iter, epochs_iter) = met_nodes_rand(nodes_iter, memory_iter, batch_iter * n_epochs + epochs_iter);
+                output_data(batch_iter, memory_iter, nodes_iter, epochs_iter) = met_nodes_rand(nodes_iter, memory_iter + 1, batch_iter * n_epochs + epochs_iter);
               else
                 output_data(batch_iter, memory_iter, nodes_iter, epochs_iter) = 0; // NOTE: TETT of 1
             }
             else if (simulation_type_ == "amp_sweep") {
               if (memory_iter == 0)
-                output_data(batch_iter, memory_iter, nodes_iter, epochs_iter) = met_nodes_rand(nodes_iter, memory_iter, batch_iter * n_epochs + epochs_iter);
+                output_data(batch_iter, memory_iter, nodes_iter, epochs_iter) = met_nodes_rand(nodes_iter, memory_iter + 1, batch_iter * n_epochs + epochs_iter);
               else
                 output_data(batch_iter, memory_iter, nodes_iter, epochs_iter) = 0; // NOTE: TETT of 1
             }
             else if (simulation_type_ == "steady_state") {
               if (nodes_iter >= 0 && nodes_iter < endo_met_nodes.size())
-                output_data(batch_iter, memory_iter, nodes_iter, epochs_iter) = met_data_stst_trunc(nodes_iter, memory_iter, batch_iter * n_epochs + epochs_iter);
+                output_data(batch_iter, memory_iter, nodes_iter, epochs_iter) = met_data_stst_trunc(nodes_iter, memory_iter + 1, batch_iter * n_epochs + epochs_iter);
               else if (nodes_iter >= endo_met_nodes.size() && nodes_iter < exo_met_nodes.size() + endo_met_nodes.size())
-                output_data(batch_iter, memory_iter, nodes_iter, epochs_iter) = exomet_data_stst_trunc(nodes_iter - endo_met_nodes.size(), memory_iter, batch_iter * n_epochs + epochs_iter);
+                output_data(batch_iter, memory_iter, nodes_iter, epochs_iter) = exomet_data_stst_trunc(nodes_iter - endo_met_nodes.size(), memory_iter + 1, batch_iter * n_epochs + epochs_iter);
             }
           }
         }
@@ -199,21 +199,21 @@ public:
         for (int nodes_iter = 0; nodes_iter < n_output_nodes; ++nodes_iter) {
           if (simulation_type_ == "glucose_pulse") {
             if (memory_iter == 0)
-              output_data(batch_iter, memory_iter, nodes_iter) = met_nodes_rand(nodes_iter, memory_iter, batch_iter);
+              output_data(batch_iter, memory_iter, nodes_iter) = met_nodes_rand(nodes_iter, memory_iter + 1, batch_iter);
             else
               output_data(batch_iter, memory_iter, nodes_iter) = 0; // NOTE: TETT of 1
           }
           else if (simulation_type_ == "amp_sweep") {
             if (memory_iter == 0)
-              output_data(batch_iter, memory_iter, nodes_iter) = met_nodes_rand(nodes_iter, memory_iter, batch_iter);
+              output_data(batch_iter, memory_iter, nodes_iter) = met_nodes_rand(nodes_iter, memory_iter + 1, batch_iter);
             else
               output_data(batch_iter, memory_iter, nodes_iter) = 0; // NOTE: TETT of 1
           }
           else if (simulation_type_ == "steady_state") {
             if (nodes_iter >= 0 && nodes_iter < endo_met_nodes.size())
-              output_data(batch_iter, memory_iter, nodes_iter) = met_data_stst_trunc(nodes_iter, memory_iter, batch_iter);
+              output_data(batch_iter, memory_iter, nodes_iter) = met_data_stst_trunc(nodes_iter, memory_iter + 1, batch_iter);
             else if (nodes_iter >= endo_met_nodes.size() && nodes_iter < exo_met_nodes.size() + endo_met_nodes.size())
-              output_data(batch_iter, memory_iter, nodes_iter) = exomet_data_stst_trunc(nodes_iter - endo_met_nodes.size(), memory_iter, batch_iter);
+              output_data(batch_iter, memory_iter, nodes_iter) = exomet_data_stst_trunc(nodes_iter - endo_met_nodes.size(), memory_iter + 1, batch_iter);
           }
         }
       }
@@ -257,7 +257,7 @@ public:
     // Convert the interaction graph to a network model
     ModelBuilderExperimental<TensorT> model_builder;
     model_builder.addBiochemicalReactionsMLP(model, biochemical_reaction_model.biochemicalReactions_, "RBC",
-      { 128, 128 },
+      { 32, 32 },
       std::make_shared<ReLUOp<TensorT>>(ReLUOp<TensorT>()), std::make_shared<ReLUGradOp<TensorT>>(ReLUGradOp<TensorT>()),
       //std::make_shared<SigmoidOp<TensorT>>(SigmoidOp<TensorT>()), std::make_shared<SigmoidGradOp<TensorT>>(SigmoidGradOp<TensorT>()),
       std::make_shared<SumOp<TensorT>>(SumOp<TensorT>()), std::make_shared<SumErrorOp<TensorT>>(SumErrorOp<TensorT>()), std::make_shared<SumWeightGradOp<TensorT>>(SumWeightGradOp<TensorT>()),
@@ -491,14 +491,13 @@ void main_KineticModel(const std::string& data_dir, const bool& make_model, cons
   model_trainer.setNEpochsTraining(n_epochs_training);
   model_trainer.setNEpochsValidation(25);
   model_trainer.setNEpochsEvaluation(n_epochs_training);
-  model_trainer.setNTETTSteps(model_trainer.getMemorySize() - 3);
-  model_trainer.setNTBPTTSteps(model_trainer.getMemorySize() - 3);
+  model_trainer.setNTETTSteps(memory_size);
+  model_trainer.setNTBPTTSteps(memory_size);
   model_trainer.setVerbosityLevel(1);
-  model_trainer.setLogging(true, false);
-  //model_trainer.setLogging(false, false);
-  model_trainer.setFindCycles(false);
+  model_trainer.setLogging(true, false, true);
+  model_trainer.setFindCycles(false); // Set in the model
   model_trainer.setFastInterpreter(true);
-  model_trainer.setPreserveOoO(false);
+  model_trainer.setPreserveOoO(true);
 
   std::vector<LossFunctionHelper<float>> loss_function_helpers;
   LossFunctionHelper<float> loss_function_helper2;
