@@ -2039,16 +2039,12 @@ namespace SmartPeak
 		// extract out the layer id
 		const int layer_id = model.nodes_.at(node_names[0])->getTensorIndex().first;
 		if (layer_id < 0) {
-			char error_char[512];
-			sprintf(error_char, "The output layer does not exist.");
-			std::string error(error_char);
-			throw std::runtime_error(error_char);
+			std::string error = "The output layer does not exist.";
+			throw std::runtime_error(error);
 		}
 		if (getLayerTensor(layer_id)->getLayerSize() != node_names.size()) {
-			char error_char[512];
-			sprintf(error_char, "The number of output nodes does not match the output layer tensor size.");
-			std::string error(error_char);
-			throw std::runtime_error(error_char);
+			std::string error = "The number of output nodes " + std::to_string(getLayerTensor(layer_id)->getLayerSize()) + " does not match the output layer tensor size " + std::to_string(node_names.size());
+			throw std::runtime_error(error);
 		}
 
 		// convert the loss function
