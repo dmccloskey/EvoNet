@@ -140,7 +140,7 @@ public:
 
     const int time_course_multiplier = 2; // How long to make the time course based on the memory size
     const int n_batches_per_time_course = 4; // The number of chunks each simulation time course is chopped into
-    const int time_steps_size = memory_size * time_course_multiplier + 1; // The total number of time_steps per simulation time course
+    const int time_steps_size = ((memory_size > n_batches_per_time_course) ? memory_size : n_batches_per_time_course)* time_course_multiplier + 1; // The total number of time_steps per simulation time course
     Eigen::Tensor<float, 1> time_steps_displacements(time_steps_size);
     Eigen::Tensor<float, 2> displacements_all(time_steps_size, 1);
 
