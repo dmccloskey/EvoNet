@@ -687,10 +687,8 @@ namespace SmartPeak
 			}
 			else {
 				clear_cache(); // clean up before exiting
-				char error_char[512];
-				sprintf(error_char, "Node %s has not been assigned a tensor index!", node->getName().data());
-				std::string error(error_char);
-				throw std::runtime_error(error_char);
+				const std::string error = "Node " + node->getName() + " has not been assigned a tensor index!";
+				throw std::runtime_error(error);
 				// Error is cause by an added recursive link that "blocks" forward propogation
 			}
 		}

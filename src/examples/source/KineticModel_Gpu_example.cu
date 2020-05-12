@@ -273,17 +273,23 @@ public:
     auto add_e = [](std::string& met_id) { met_id += "_e"; };
     std::vector<std::string> exo_met_nodes = { "glc__D","lac__L","pyr" };
     std::for_each(exo_met_nodes.begin(), exo_met_nodes.end(), add_e);
+    metabolite_nodes.insert(metabolite_nodes.end(), exo_met_nodes.begin(), exo_met_nodes.end());
 
     // Add the input layer
-    metabolite_nodes.insert(metabolite_nodes.end(), exo_met_nodes.begin(), exo_met_nodes.end());
+    auto add_t0 = [](std::string& met_id) { met_id += "(t)"; };
+    std::vector<std::string> input_met_nodes = metabolite_nodes;
+    std::for_each(input_met_nodes.begin(), input_met_nodes.end(), add_t0);
     std::vector<std::string> node_names = model_builder.addInputNodes(model, "Input", "Input", metabolite_nodes.size(), true);
 
     // Connect the input layer to the metabolite nodes
-    model_builder.addSinglyConnected(model, "RBC", node_names, metabolite_nodes, std::make_shared<ConstWeightInitOp<TensorT>>(ConstWeightInitOp<TensorT>(1)),
+    model_builder.addSinglyConnected(model, "RBC", node_names, input_met_nodes, std::make_shared<ConstWeightInitOp<TensorT>>(ConstWeightInitOp<TensorT>(1)),
       std::make_shared<DummySolverOp<TensorT>>(DummySolverOp<TensorT>()), 0.0f, true);
 
     // Connect the input/output metabolite nodes to the output layer
-    node_names = model_builder.addSinglyConnected(model, "Output", "Output", metabolite_nodes, metabolite_nodes.size(),
+    auto add_t1 = [](std::string& met_id) { met_id += "(t+1)"; };
+    std::vector<std::string> output_met_nodes = metabolite_nodes;
+    std::for_each(output_met_nodes.begin(), output_met_nodes.end(), add_t1);
+    node_names = model_builder.addSinglyConnected(model, "Output", "Output", output_met_nodes, metabolite_nodes.size(),
       std::make_shared<LinearOp<TensorT>>(LinearOp<TensorT>()),
       std::make_shared<LinearGradOp<TensorT>>(LinearGradOp<TensorT>()),
       std::make_shared<SumOp<TensorT>>(SumOp<TensorT>()), std::make_shared<SumErrorOp<TensorT>>(SumErrorOp<TensorT>()), std::make_shared<SumWeightGradOp<TensorT>>(SumWeightGradOp<TensorT>()),
@@ -507,6 +513,14 @@ void main_KineticModel(const std::string& data_dir, const bool& make_model, cons
   loss_function_helpers.push_back(loss_function_helper2);
   model_trainer.setLossFunctionHelpers(loss_function_helpers);
 
+  std::vector<MetricFunctionHelper<float>> metric_function_helpers;
+  MetricFunctionHelper<float> metric_function_helper1;
+  metric_function_helper1.output_nodes_ = output_nodes;
+  metric_function_helper1.metric_functions_ = { std::make_shared<EuclideanDistOp<float>>(EuclideanDistOp<float>("Mean")), std::make_shared<EuclideanDistOp<float>>(EuclideanDistOp<float>("Var")) };
+  metric_function_helper1.metric_names_ = { "EuclideanDist-Mean", "EuclideanDist-Var" };
+  metric_function_helpers.push_back(metric_function_helper1);
+  model_trainer.setMetricFunctionHelpers(metric_function_helpers);
+
   // define the model logger
   ModelLogger<float> model_logger(true, true, true, false, false, true, false, true);
 
@@ -532,7 +546,6 @@ void main_KineticModel(const std::string& data_dir, const bool& make_model, cons
     ModelFile<float> model_file;
     model_file.loadModelBinary(model_filename, model);
     model.setId(1);
-    model.setName("RBCGlycolysis-1");
     ModelInterpreterFileGpu<float> model_interpreter_file;
     model_interpreter_file.loadModelInterpreterBinary(interpreter_filename, model_interpreters[0]); // FIX ME!
   }
@@ -540,6 +553,7 @@ void main_KineticModel(const std::string& data_dir, const bool& make_model, cons
 
   if (train_model) {
     // Train the model
+    model.setName(model.getName() + "_train");
     std::pair<std::vector<float>, std::vector<float>> model_errors = model_trainer.trainModel(model, data_simulator,
       input_nodes, model_logger, model_interpreters.front());
   }
@@ -559,6 +573,7 @@ void main_KineticModel(const std::string& data_dir, const bool& make_model, cons
     //population_trainer.evaluateModels(
     //  population, model_trainer, model_interpreters, model_replicator, data_simulator, model_logger, input_nodes);
     // Evaluate the model
+    model.setName(model.getName() + "_evaluation");
     model_trainer.evaluateModel(model, data_simulator, input_nodes, model_logger, model_interpreters.front());
   }
 }

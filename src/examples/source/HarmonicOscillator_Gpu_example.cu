@@ -111,15 +111,15 @@ public:
 
         // Simulate a 1 weight and 1 spring 1D harmonic system
         // where the weight has been displaced by a random amount
-        Eigen::Tensor<float, 1> time_steps(memory_size);
-        Eigen::Tensor<float, 2> displacements(memory_size, 1);
-        WeightSpring.WeightSpring1W1S1D(time_steps, displacements, memory_size, 0.1,
-          1, 1, dist(gen), 0);
+        Eigen::Tensor<float, 1> time_steps(memory_size + 1);
+        Eigen::Tensor<float, 2> displacements(memory_size + 1, 1);
+        WeightSpring.WeightSpring1W1S1DwDamping(time_steps, displacements, memory_size + 1, 0.1,
+          1, 1, 0.5, dist(gen), 0);
 
         for (int memory_iter = 0; memory_iter < memory_size; ++memory_iter) {
-          if (memory_iter >= memory_size - 1)	input_data(batch_iter, memory_iter, 0, epochs_iter) = displacements(memory_size - 1 - memory_iter, 0);
-          else input_data(batch_iter, memory_iter, 0, epochs_iter) = TensorT(0);
-          output_data(batch_iter, memory_iter, 0, epochs_iter) = displacements(memory_size - 1 - memory_iter, 0);
+          if (memory_iter < 1)	input_data(batch_iter, memory_size - 1 - memory_iter, 0, epochs_iter) = displacements(memory_iter, 0);
+          else input_data(batch_iter, memory_size - 1 - memory_iter, 0, epochs_iter) = TensorT(0);
+          output_data(batch_iter, memory_size - 1 - memory_iter, 0, epochs_iter) = displacements(memory_iter + 1, 0);
         }
       }
     }
@@ -143,15 +143,15 @@ public:
 
       // Simulate a 1 weight and 1 spring 1D harmonic system
       // where the weight has been displaced by a random amount
-      Eigen::Tensor<float, 1> time_steps(memory_size);
-      Eigen::Tensor<float, 2> displacements(memory_size, 1);
-      WeightSpring.WeightSpring1W1S1D(time_steps, displacements, memory_size, 0.1,
+      Eigen::Tensor<float, 1> time_steps(memory_size + 1);
+      Eigen::Tensor<float, 2> displacements(memory_size + 1, 1);
+      WeightSpring.WeightSpring1W1S1D(time_steps, displacements, memory_size + 1, 0.1,
         1, 1, dist(gen), 0);
 
       for (int memory_iter = 0; memory_iter < memory_size; ++memory_iter) {
-        if (memory_iter >= memory_size - 1)	input_data(batch_iter, memory_iter, 0) = displacements(memory_size - 1 - memory_iter, 0);
-        else input_data(batch_iter, memory_iter, 0) = TensorT(0);
-        output_data(batch_iter, memory_iter, 0) = displacements(memory_size - 1 - memory_iter, 0);
+        if (memory_iter < 1)	input_data(batch_iter, memory_size - 1 - memory_iter, 0) = displacements(memory_iter, 0);
+        else input_data(batch_iter, memory_size - 1 - memory_iter, 0) = TensorT(0);
+        output_data(batch_iter, memory_size - 1 - memory_iter, 0) = displacements(memory_iter + 1, 0); // The next time point
       }
     }
     time_steps.setConstant(1.0f);
@@ -176,15 +176,15 @@ public:
 
         // Simulate a 1 weight and 1 spring 1D harmonic system
         // where the weight has been displaced by a random amount
-        Eigen::Tensor<float, 1> time_steps(memory_size);
-        Eigen::Tensor<float, 2> displacements(memory_size, 1);
-        WeightSpring.WeightSpring1W1S1DwDamping(time_steps, displacements, memory_size, 0.1,
+        Eigen::Tensor<float, 1> time_steps(memory_size + 1);
+        Eigen::Tensor<float, 2> displacements(memory_size + 1, 1);
+        WeightSpring.WeightSpring1W1S1DwDamping(time_steps, displacements, memory_size + 1, 0.1,
           1, 1, 0.5, dist(gen), 0);
 
         for (int memory_iter = 0; memory_iter < memory_size; ++memory_iter) {
           if (memory_iter < 1)	input_data(batch_iter, memory_size - 1 - memory_iter, 0, epochs_iter) = displacements(memory_iter, 0);
           else input_data(batch_iter, memory_size - 1 - memory_iter, 0, epochs_iter) = TensorT(0);
-          output_data(batch_iter, memory_size - 1 - memory_iter, 0, epochs_iter) = displacements(memory_iter, 0);
+          output_data(batch_iter, memory_size - 1 - memory_iter, 0, epochs_iter) = displacements(memory_iter + 1, 0);
         }
       }
     }
@@ -702,6 +702,7 @@ void main_HarmonicOscillator1D(const std::string& data_dir, const bool& make_mod
 
   if (train_model) {
     // Train the model
+    model.setName(model.getName() + "_train");
     std::pair<std::vector<float>, std::vector<float>> model_errors = model_trainer.trainModel(model, data_simulator,
       input_nodes, model_logger, model_interpreters.front());
   }
@@ -721,6 +722,7 @@ void main_HarmonicOscillator1D(const std::string& data_dir, const bool& make_mod
     //population_trainer.evaluateModels(
     //  population, model_trainer, model_interpreters, model_replicator, data_simulator, model_logger, input_nodes);
     // Evaluate the model
+    model.setName(model.getName() + "_evaluation");
     model_trainer.evaluateModel(model, data_simulator, input_nodes, model_logger, model_interpreters.front());
   }
 }
