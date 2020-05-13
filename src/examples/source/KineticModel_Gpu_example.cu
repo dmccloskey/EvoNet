@@ -159,8 +159,8 @@ public:
     Eigen::Tensor<TensorT, 3> met_nodes_rand = (met_data_stst_trunc + met_nodes_rand_3d * met_data_stst_trunc * met_nodes_rand_3d.constant(TensorT(0.1))).clip(TensorT(0), TensorT(1e3));
 
     // Add random noise to the exo metabolomics data
-    Eigen::Tensor<TensorT, 3> exomet_data_stst_trunc = exomet_data_stst.shuffle(Eigen::array<Eigen::Index, 3>({ 1, 0, 2 })).slice(Eigen::array<Eigen::Index, 3>({ 0, (int)exomet_data_stst_vec.size() / (int)exo_met_nodes.size() - memory_size + 1, 0 }), Eigen::array<Eigen::Index, 3>({ (int)exo_met_nodes.size(), memory_size + 1, 1 })).broadcast(Eigen::array<Eigen::Index, 3>({ 1, 1, batch_size }));
-    auto exo_met_nodes_rand_2d = GaussianSampler<TensorT>(exo_met_nodes.size(), batch_size * (memory_size+1));
+    Eigen::Tensor<TensorT, 3> exomet_data_stst_trunc = exomet_data_stst.shuffle(Eigen::array<Eigen::Index, 3>({ 1, 0, 2 })).slice(Eigen::array<Eigen::Index, 3>({ 0, (int)exomet_data_stst_vec.size() / (int)exo_met_nodes.size() - memory_size - 1, 0 }), Eigen::array<Eigen::Index, 3>({ (int)exo_met_nodes.size(), memory_size + 1, 1 })).broadcast(Eigen::array<Eigen::Index, 3>({ 1, 1, batch_size }));
+    auto exo_met_nodes_rand_2d = GaussianSampler<TensorT>(exo_met_nodes.size(), batch_size * (memory_size + 1));
     auto exo_met_nodes_rand_3d = exo_met_nodes_rand_2d.reshape(Eigen::array<Eigen::Index, 3>({ (int)exo_met_nodes.size(), memory_size + 1, batch_size }));
     Eigen::Tensor<TensorT, 3> exo_met_nodes_rand = (exomet_data_stst_trunc + exo_met_nodes_rand_3d * exomet_data_stst_trunc * exo_met_nodes_rand_3d.constant(TensorT(0.1))).clip(TensorT(0), TensorT(1e3));
 
