@@ -22,10 +22,7 @@ namespace SmartPeak
   class HarmonicOscillatorSimulator : public DataSimulator<TensorT>
   {
   public:
-    // TODO: replace...
-    void simulateValidationData(Eigen::Tensor<TensorT, 4>& input_data, Eigen::Tensor<TensorT, 4>& output_data, Eigen::Tensor<TensorT, 3>& time_steps) {};
-    void simulateTrainingData(Eigen::Tensor<TensorT, 4>& input_data, Eigen::Tensor<TensorT, 4>& output_data, Eigen::Tensor<TensorT, 3>& time_steps) {};
-    void simulateEvaluationData(Eigen::Tensor<TensorT, 4>& input_data, Eigen::Tensor<TensorT, 3>& time_steps) {};
+    // TODO: Move simulateValidation/Training/Evaluation methods from example and provide unit testing
 
     /*
     @brief 3 weight and 2 spring system (1D) without damping
@@ -102,8 +99,8 @@ namespace SmartPeak
     Analytical solution for 0 < beta < 1
     F1: x1 = exp(-beta1 * w * t * ((v1o + beta1 * w * x1o) / wd) * sin(wd * t) + x1o * cos(wd * t));
     where w = sqrt(k1 / m)
-  and where wd = w * sqrt(1-pow(beta1, 2))
-    and where x1o is the initial displacement with initial velocity v1o
+      and where wd = w * sqrt(1-pow(beta1, 2))
+      and where x1o is the initial displacement with initial velocity v1o
 
     [TODO: add tests]
 
@@ -129,9 +126,8 @@ namespace SmartPeak
     @brief 2 weight and 3 spring system (1D) without damping
     Where the two end springs are tethered to rigid bodies
 
-    Analytical solution
-    F1: x1 = x2 + A1*sin(wt) + A1*cos(wt)
-    F2: x2 = x1 + A2*sin(wt) + A2*cos(wt)
+    References:
+    See equations 13.30 and 13.31 in Chapter 13 Coupled Oscillators
 
     [TODO: add tests]
 
