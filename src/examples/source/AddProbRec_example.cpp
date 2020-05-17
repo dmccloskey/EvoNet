@@ -434,7 +434,6 @@ void main_AddProbRec(const std::string& data_dir, const int& n_generations, cons
   // define the population trainer parameters
   PopulationTrainerExt<float> population_trainer;
   population_trainer.setNGenerations(n_generations); // population training
-  //population_trainer.setNGenerations(1); // single model training
   population_trainer.setLogging(true);
   population_trainer.setResetModelCopyWeights(true);
 
@@ -508,9 +507,8 @@ void main_AddProbRec(const std::string& data_dir, const int& n_generations, cons
   Model<float> model;
   if (make_model) {
     std::cout << "Making the model..." << std::endl;
-    Model<float> model;
     if (model_type == "Minimal") model_trainer.makeModelMinimal(model);
-    else if (model_type == "Solution") model_trainer.makeModelSolution(model, true);
+    else if (model_type == "Solution") model_trainer.makeModelSolution(model, false);
     else if (model_type == "LSTM") model_trainer.makeModelLSTM(model, input_nodes.size(), 1, 1, false);
     model.setName(model.getName() + "_0");
     model.setId(0);
