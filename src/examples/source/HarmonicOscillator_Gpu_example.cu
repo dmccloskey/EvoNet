@@ -306,9 +306,6 @@ public:
     auto integration_op = std::make_shared<SumOp<TensorT>>(SumOp<TensorT>());
     auto integration_error_op = std::make_shared<SumErrorOp<TensorT>>(SumErrorOp<TensorT>());
     auto integration_weight_grad_op = std::make_shared<SumWeightGradOp<TensorT>>(SumWeightGradOp<TensorT>());
-    auto integration_op_t1 = std::make_shared<ProdOp<TensorT>>(ProdOp<TensorT>());
-    auto integration_error_op_t1 = std::make_shared<ProdErrorOp<TensorT>>(ProdErrorOp<TensorT>());
-    auto integration_weight_grad_op_t1 = std::make_shared<ProdWeightGradOp<TensorT>>(ProdWeightGradOp<TensorT>());
 
     // Define the solver and weight init
     auto weight_init = std::make_shared<ConstWeightInitOp<TensorT>>(ConstWeightInitOp<TensorT>(1.0));
@@ -326,17 +323,17 @@ public:
     for (const std::string& node_name : node_names_masses_t0)
       model.getNodesMap().at(node_name)->setType(NodeType::unmodifiable);
 
-    //// Make the mass(t+1) nodes
-    //std::vector<std::string> node_names_masses_t1 = model_builder.addHiddenNodes(model, "Mass(t+1)", "Mass(t+1)", n_masses,
+    // Make the mass(t+1) nodes
+    std::vector<std::string> node_names_masses_t1 = model_builder.addHiddenNodes(model, "Mass(t+1)", "Mass(t+1)", n_masses,
+      activation_masses, activation_masses_grad,
+      integration_op, integration_error_op, integration_weight_grad_op,
+      solver_op, 0.0f, 0.0f, add_biases, specify_layers);
+    //// Connect the mass(t) nodes to the mass(t+1) nodes
+    //std::vector<std::string> node_names_masses_t1 = model_builder.addSinglyConnected(model, "Mass(t+1)", "Mass(t+1)", node_names_masses_t0, n_masses,
     //  activation_masses, activation_masses_grad,
     //  integration_op, integration_error_op, integration_weight_grad_op,
-    //  solver_op, 0.0f, 0.0f, add_biases, specify_layers);
-    // Connect the mass(t) nodes to the mass(t+1) nodes
-    std::vector<std::string> node_names_masses_t1 = model_builder.addSinglyConnected(model, "Mass(t+1)", "Mass(t+1)", node_names_masses_t0, n_masses,
-      activation_masses, activation_masses_grad,
-      integration_op_t1, integration_error_op_t1, integration_weight_grad_op_t1,
-      std::make_shared<ConstWeightInitOp<TensorT>>(ConstWeightInitOp<TensorT>(1)),
-      std::make_shared<DummySolverOp<TensorT>>(DummySolverOp<TensorT>()), 0.0f, 0.0f, add_biases, specify_layers);
+    //  std::make_shared<ConstWeightInitOp<TensorT>>(ConstWeightInitOp<TensorT>(1)),
+    //  std::make_shared<DummySolverOp<TensorT>>(DummySolverOp<TensorT>()), 0.0f, 0.0f, add_biases, specify_layers);
     for (const std::string& node_name : node_names_masses_t1)
       model.getNodesMap().at(node_name)->setType(NodeType::unmodifiable);
 
@@ -446,11 +443,13 @@ public:
     model_logger.setLogTrainValMetricEpoch(true);
     model_logger.setLogExpectedEpoch(false);
     model_logger.setLogNodeInputsEpoch(false);
+    model_logger.setLogNodeOutputsEpoch(false);
 
     // initialize all logs
     if (n_epochs == 0) {
       model_logger.setLogExpectedEpoch(true);
       model_logger.setLogNodeInputsEpoch(true);
+      model_logger.setLogNodeOutputsEpoch(true);
       model_logger.initLogs(model);
     }
 
@@ -458,6 +457,7 @@ public:
     if (n_epochs % 1000 == 0) { // FIXME
       model_logger.setLogExpectedEpoch(true);
       model_logger.setLogNodeInputsEpoch(true);
+      model_logger.setLogNodeOutputsEpoch(true);
       model_interpreter.getModelResults(model, true, false, false, true);
     }
 
@@ -484,11 +484,13 @@ public:
     model_logger.setLogTrainValMetricEpoch(true);
     model_logger.setLogExpectedEpoch(false);
     model_logger.setLogNodeInputsEpoch(false);
+    model_logger.setLogNodeOutputsEpoch(false);
 
     // initialize all logs
     if (n_epochs == 0) {
       model_logger.setLogExpectedEpoch(true);
       model_logger.setLogNodeInputsEpoch(true);
+      model_logger.setLogNodeOutputsEpoch(true);
       model_logger.initLogs(model);
     }
 
@@ -496,6 +498,7 @@ public:
     if (n_epochs % 1000 == 0) { // FIXME
       model_logger.setLogExpectedEpoch(true);
       model_logger.setLogNodeInputsEpoch(true);
+      model_logger.setLogNodeOutputsEpoch(true);
       model_interpreter.getModelResults(model, true, false, false, true);
     }
 
@@ -747,7 +750,7 @@ void main_HarmonicOscillator1D(const std::string& data_dir, const bool& make_mod
     //  population, model_trainer, model_interpreters, model_replicator, data_simulator, model_logger, input_nodes);
     // Evaluate the model
     model.setName(model.getName() + "_evaluation");
-    model_trainer.evaluateModel(model, data_simulator, input_nodes, model_logger, model_interpreters.front());
+    Eigen::Tensor<float, 4> model_output = model_trainer.evaluateModel(model, data_simulator, input_nodes, model_logger, model_interpreters.front());
   }
 }
 

@@ -734,9 +734,9 @@ public:
 
     // add self metabolite links to the model
     if (add_met_self_links) {
-      this->addSinglyConnected(model, module_name, node_names_met_t0_vec, node_names_met_t1_vec,
-        std::make_shared<ConstWeightInitOp<TensorT>>(ConstWeightInitOp<TensorT>(1)),
-        std::make_shared<DummySolverOp<TensorT>>(DummySolverOp<TensorT>()), 0.0f, specify_layers);
+      //this->addSinglyConnected(model, module_name, node_names_met_t0_vec, node_names_met_t1_vec,
+      //  std::make_shared<ConstWeightInitOp<TensorT>>(ConstWeightInitOp<TensorT>(1)),
+      //  std::make_shared<DummySolverOp<TensorT>>(DummySolverOp<TensorT>()), 0.0f, specify_layers);
       this->addSinglyConnected(model, module_name, node_names_met_t1_vec, node_names_met_t0_vec,
         std::make_shared<ConstWeightInitOp<TensorT>>(ConstWeightInitOp<TensorT>(1)),
         std::make_shared<DummySolverOp<TensorT>>(DummySolverOp<TensorT>()), 0.0f, specify_layers);
@@ -769,22 +769,35 @@ public:
     const bool& add_biases, const bool& specify_layers, const bool& is_reverse)
   {
     // make the input nodes (reactants + products) and output nodes (products)
-    std::vector<std::string> node_names_all, node_names_reactants, node_names_reactants_t1, node_names_products, node_names_products_t0;
+    std::vector<std::string> node_names_all_t0, node_names_reactants_t0, node_names_reactants_t1, node_names_products_t1, node_names_products_t0;
     for (const std::string& met_id : reaction.reactants_ids) {
-      const std::string met_name = met_id + "(t)";
-      node_names_reactants.push_back(met_name);
-      node_names_all.push_back(met_name);
+      std::string met_name = met_id + "(t)";
+      node_names_reactants_t0.push_back(met_name);
+      node_names_all_t0.push_back(met_name);
+      met_name = met_id + "(t+1)";
+      node_names_reactants_t1.push_back(met_name);
     }
     for (const std::string& met_id : reaction.products_ids) {
-      const std::string met_name = met_id + "(t+1)";
-      node_names_products.push_back(met_name);
-      node_names_all.push_back(met_name);
+      std::string met_name = met_id + "(t+1)";
+      node_names_products_t1.push_back(met_name);
+      met_name = met_id + "(t)";
+      node_names_products_t0.push_back(met_name);
+      node_names_all_t0.push_back(met_name);
     }
 
+    // add the initial SC input layer
+    std::vector<std::string> node_names = node_names_all_t0;
+    std::string node_name_fc_input = reaction.reaction_name;
+    if (is_reverse) node_name_fc_input += "_reverse";
+    node_name_fc_input += "_FCInput";
+    node_names = this->addSinglyConnected(model, node_name_fc_input, node_name_fc_input, node_names, node_names_all_t0.size(),
+      node_activation, node_activation_grad, node_integration, node_integration_error, node_integration_weight_grad,
+      std::make_shared<ConstWeightInitOp<TensorT>>(ConstWeightInitOp<TensorT>(1)), // TODO: should correspond to stoichiometry
+      std::make_shared<DummySolverOp<TensorT>>(DummySolverOp<TensorT>()),
+      0.0f, 0.0f, add_biases, specify_layers);
+
     // make the internal FC layers
-    std::vector<std::string> node_names = node_names_all;
     int iter = 0;
-    assert(!n_fc.empty());
     for (const int& fc_size: n_fc) {
       std::string node_name = reaction.reaction_name;
       if (is_reverse) node_name += "_reverse";
@@ -793,13 +806,6 @@ public:
         node_activation, node_activation_grad, node_integration, node_integration_error, node_integration_weight_grad,
         std::make_shared<RandWeightInitOp<TensorT>>(RandWeightInitOp<TensorT>(node_names.size() + fc_size, 2)), //weight_init, 
         solver, 0.0f, 0.0f, add_biases, specify_layers);
-
-      // add the cyclic nodes corresponding to the final FC layer
-      if (iter == 0)
-        for (const std::string& second : node_names)
-          for (const std::string& first : node_names_products)
-            model.addCyclicPairs(std::make_pair(first, second));
-
       ++iter;
     }
 
@@ -807,39 +813,38 @@ public:
     std::string node_name_fc_output = reaction.reaction_name;
     if (is_reverse) node_name_fc_output += "_reverse";
     node_name_fc_output += "_FCOut";
-    node_names = this->addFullyConnected(model, node_name_fc_output, node_name_fc_output, node_names, node_names_all.size(),
+    node_names = this->addFullyConnected(model, node_name_fc_output, node_name_fc_output, node_names, node_names_all_t0.size(),
       node_activation, node_activation_grad, node_integration, node_integration_error, node_integration_weight_grad,
-      std::make_shared<RandWeightInitOp<TensorT>>(RandWeightInitOp<TensorT>(node_names.size() + node_names_all.size(), 2)), //weight_init, 
+      std::make_shared<RandWeightInitOp<TensorT>>(RandWeightInitOp<TensorT>(node_names.size() + node_names_all_t0.size(), 2)), //weight_init, 
       solver, 0.0f, 0.0f, add_biases, specify_layers);
 
     // parse the node_names into reactant and products
-    std::vector<std::string> node_names_input, node_names_output;
+    std::vector<std::string> node_names_FCOut_reactants, node_names_FCOut_products;
     iter = 0;
     for (const std::string& met_id : reaction.reactants_ids) {
-      node_names_input.push_back(node_names.at(iter));
+      node_names_FCOut_reactants.push_back(node_names.at(iter));
       ++iter;
     }
     for (const std::string& met_id : reaction.products_ids) {
-      node_names_output.push_back(node_names.at(iter));
+      node_names_FCOut_products.push_back(node_names.at(iter));
       ++iter;
     }
 
+    // NOTE: the below allows for learning mass balance; alternatively, mass balance could be hard-coded
     // connect the final SC layer to the input nodes (reactants)
     std::string node_name_reactant_out = reaction.reaction_name;
     if (is_reverse) node_name_reactant_out += "_reverse";
     node_name_reactant_out += "_ReactantsOut";
-    this->addSinglyConnected(model, node_name_reactant_out, node_names_input, node_names_reactants,
-      std::make_shared<ConstWeightInitOp<TensorT>>(ConstWeightInitOp<TensorT>(-1)), // simulate inverse ReLU
+    this->addSinglyConnected(model, node_name_reactant_out, node_names_FCOut_reactants, node_names_reactants_t1,
+      std::make_shared<ConstWeightInitOp<TensorT>>(ConstWeightInitOp<TensorT>(-1)), // simulate inverse ReLU; TOOD: should correspond to stoichiometry
       std::make_shared<DummySolverOp<TensorT>>(DummySolverOp<TensorT>()), 0.0f, specify_layers);
-    for (int i = 0; i < node_names_reactants.size(); ++i)
-      model.addCyclicPairs(std::make_pair(node_names_input.at(i),node_names_reactants.at(i)));
 
     // connect the final SC layer to the output nodes (products)
     std::string node_name_product_out = reaction.reaction_name;
     if (is_reverse) node_name_product_out += "_reverse";
     node_name_product_out += "_ProductsOut";
-    this->addSinglyConnected(model, node_name_product_out, node_names_output, node_names_products,
-      std::make_shared<ConstWeightInitOp<TensorT>>(ConstWeightInitOp<TensorT>(1)),
+    this->addSinglyConnected(model, node_name_product_out, node_names_FCOut_products, node_names_products_t1,
+      std::make_shared<ConstWeightInitOp<TensorT>>(ConstWeightInitOp<TensorT>(1)), // TOOD: should correspond to stoichiometry
       std::make_shared<DummySolverOp<TensorT>>(DummySolverOp<TensorT>()), 0.0f, specify_layers);
   }
 }

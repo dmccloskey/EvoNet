@@ -111,15 +111,15 @@ public:
 
         // Simulate a 1 weight and 1 spring 1D harmonic system
         // where the weight has been displaced by a random amount
-        Eigen::Tensor<float, 1> time_steps(memory_size);
-        Eigen::Tensor<float, 2> displacements(memory_size, 1);
-        WeightSpring.WeightSpring1W1S1D(time_steps, displacements, memory_size, 0.1,
+        Eigen::Tensor<float, 1> time_steps(memory_size + 1);
+        Eigen::Tensor<float, 2> displacements(memory_size + 1, 1);
+        WeightSpring.WeightSpring1W1S1D(time_steps, displacements, memory_size + 1, 0.1,
           1, 1, dist(gen), 0);
 
         for (int memory_iter = 0; memory_iter < memory_size; ++memory_iter) {
-          if (memory_iter >= memory_size - 1)	input_data(batch_iter, memory_iter, 0, epochs_iter) = displacements(memory_size - 1 - memory_iter, 0);
-          else input_data(batch_iter, memory_iter, 0, epochs_iter) = TensorT(0);
-          output_data(batch_iter, memory_iter, 0, epochs_iter) = displacements(memory_size - 1 - memory_iter, 0);
+          if (memory_iter < 1)	input_data(batch_iter, memory_size - 1 - memory_iter, 0, epochs_iter) = displacements(memory_iter, 0);
+          else input_data(batch_iter, memory_size - 1 - memory_iter, 0, epochs_iter) = TensorT(0);
+          output_data(batch_iter, memory_size - 1 - memory_iter, 0, epochs_iter) = displacements(memory_iter + 1, 0);
         }
       }
     }
@@ -138,20 +138,30 @@ public:
     std::mt19937 gen{ rd() };
     std::normal_distribution<> dist{ 0.0f, 1.0f };
 
+    const int time_course_multiplier = 2; // How long to make the time course based on the memory size
+    const int n_batches_per_time_course = 4; // The number of chunks each simulation time course is chopped into
+    const int time_steps_size = ((memory_size > n_batches_per_time_course) ? memory_size : n_batches_per_time_course)* time_course_multiplier + 1; // The total number of time_steps per simulation time course
+    Eigen::Tensor<float, 1> time_steps_displacements(time_steps_size);
+    Eigen::Tensor<float, 2> displacements_all(time_steps_size, 1);
+
     // Generate the input and output data for training
     for (int batch_iter = 0; batch_iter < batch_size; ++batch_iter) {
 
-      // Simulate a 1 weight and 1 spring 1D harmonic system
-      // where the weight has been displaced by a random amount
-      Eigen::Tensor<float, 1> time_steps(memory_size);
-      Eigen::Tensor<float, 2> displacements(memory_size, 1);
-      WeightSpring.WeightSpring1W1S1D(time_steps, displacements, memory_size, 0.1,
-        1, 1, dist(gen), 0);
+      // Simulate a 1 weight and 1 spring 1D harmonic system where the weight has been displaced by a random amount
+      const int remainder = batch_iter % n_batches_per_time_course;
+      const int increment = (time_course_multiplier * memory_size - memory_size) / (n_batches_per_time_course - 1);
+      if (remainder == 0) {
+        WeightSpring.WeightSpring1W1S1D(time_steps_displacements, displacements_all, time_steps_size, 0.1,
+          1, 1, dist(gen), 0);
+      }
+      Eigen::array<Eigen::Index, 2> offset = { increment * remainder, 0 };
+      Eigen::array<Eigen::Index, 2> span = { memory_size + 1, 1 };
+      Eigen::Tensor<float, 2> displacements = displacements_all.slice(offset, span);
 
       for (int memory_iter = 0; memory_iter < memory_size; ++memory_iter) {
-        if (memory_iter >= memory_size - 1)	input_data(batch_iter, memory_iter, 0) = displacements(memory_size - 1 - memory_iter, 0);
-        else input_data(batch_iter, memory_iter, 0) = TensorT(0);
-        output_data(batch_iter, memory_iter, 0) = displacements(memory_size - 1 - memory_iter, 0);
+        if (memory_iter < 1)	input_data(batch_iter, memory_size - 1 - memory_iter, 0) = displacements(memory_iter, 0);
+        else input_data(batch_iter, memory_size - 1 - memory_iter, 0) = TensorT(0);
+        output_data(batch_iter, memory_size - 1 - memory_iter, 0) = displacements(memory_iter + 1, 0); // The next time point
       }
     }
     time_steps.setConstant(1.0f);
@@ -176,15 +186,15 @@ public:
 
         // Simulate a 1 weight and 1 spring 1D harmonic system
         // where the weight has been displaced by a random amount
-        Eigen::Tensor<float, 1> time_steps(memory_size);
-        Eigen::Tensor<float, 2> displacements(memory_size, 1);
-        WeightSpring.WeightSpring1W1S1DwDamping(time_steps, displacements, memory_size, 0.1,
+        Eigen::Tensor<float, 1> time_steps(memory_size + 1);
+        Eigen::Tensor<float, 2> displacements(memory_size + 1, 1);
+        WeightSpring.WeightSpring1W1S1DwDamping(time_steps, displacements, memory_size + 1, 0.1,
           1, 1, 0.5, dist(gen), 0);
 
         for (int memory_iter = 0; memory_iter < memory_size; ++memory_iter) {
           if (memory_iter < 1)	input_data(batch_iter, memory_size - 1 - memory_iter, 0, epochs_iter) = displacements(memory_iter, 0);
           else input_data(batch_iter, memory_size - 1 - memory_iter, 0, epochs_iter) = TensorT(0);
-          output_data(batch_iter, memory_size - 1 - memory_iter, 0, epochs_iter) = displacements(memory_iter, 0);
+          output_data(batch_iter, memory_size - 1 - memory_iter, 0, epochs_iter) = displacements(memory_iter + 1, 0);
         }
       }
     }
@@ -203,20 +213,30 @@ public:
     std::mt19937 gen{ rd() };
     std::normal_distribution<> dist{ 0.0f, 1.0f };
 
+    const int time_course_multiplier = 2; // How long to make the time course based on the memory size
+    const int n_batches_per_time_course = 4; // The number of chunks each simulation time course is chopped into
+    const int time_steps_size = ((memory_size > n_batches_per_time_course) ? memory_size : n_batches_per_time_course)* time_course_multiplier + 1; // The total number of time_steps per simulation time course
+    Eigen::Tensor<float, 1> time_steps_displacements(time_steps_size);
+    Eigen::Tensor<float, 2> displacements_all(time_steps_size, 1);
+
     // Generate the input and output data for training
     for (int batch_iter = 0; batch_iter < batch_size; ++batch_iter) {
 
-      // Simulate a 1 weight and 1 spring 1D harmonic system
-      // where the weight has been displaced by a random amount
-      Eigen::Tensor<float, 1> time_steps(memory_size);
-      Eigen::Tensor<float, 2> displacements(memory_size, 1);
-      WeightSpring.WeightSpring1W1S1DwDamping(time_steps, displacements, memory_size, 0.1,
-        1, 1, 0.5, dist(gen), 0);
+      // Simulate a 1 weight and 1 spring 1D harmonic system where the weight has been displaced by a random amount
+      const int remainder = batch_iter % n_batches_per_time_course;
+      const int increment = (time_steps_size - 1 - memory_size) / (n_batches_per_time_course - 1);
+      if (remainder == 0) {
+        WeightSpring.WeightSpring1W1S1DwDamping(time_steps_displacements, displacements_all, time_steps_size, 0.1,
+          1, 1, 0.5, dist(gen), 0);
+      }
+      Eigen::array<Eigen::Index, 2> offset = { increment * remainder, 0 };
+      Eigen::array<Eigen::Index, 2> span = { memory_size + 1, 1 };
+      Eigen::Tensor<float, 2> displacements = displacements_all.slice(offset, span);
 
       for (int memory_iter = 0; memory_iter < memory_size; ++memory_iter) {
         if (memory_iter < 1)	input_data(batch_iter, memory_size - 1 - memory_iter, 0) = displacements(memory_iter, 0);
         else input_data(batch_iter, memory_size - 1 - memory_iter, 0) = TensorT(0);
-        output_data(batch_iter, memory_size - 1 - memory_iter, 0) = displacements(memory_iter, 0);
+        output_data(batch_iter, memory_size - 1 - memory_iter, 0) = displacements(memory_iter + 1, 0); // The next time point
       }
     }
     time_steps.setConstant(1.0f);
@@ -277,8 +297,8 @@ public:
     ModelBuilder<TensorT> model_builder;
 
     // Define the node activation
-    auto activation = std::make_shared<SigmoidOp<TensorT>>(SigmoidOp<TensorT>());
-    auto activation_grad = std::make_shared<SigmoidGradOp<TensorT>>(SigmoidGradOp<TensorT>());
+    auto activation = std::make_shared<LeakyReLUOp<TensorT>>(LeakyReLUOp<TensorT>());
+    auto activation_grad = std::make_shared<LeakyReLUGradOp<TensorT>>(LeakyReLUGradOp<TensorT>());
     auto activation_masses = std::make_shared<LinearOp<TensorT>>(LinearOp<TensorT>());
     auto activation_masses_grad = std::make_shared<LinearGradOp<TensorT>>(LinearGradOp<TensorT>());
 
@@ -286,6 +306,9 @@ public:
     auto integration_op = std::make_shared<SumOp<TensorT>>(SumOp<TensorT>());
     auto integration_error_op = std::make_shared<SumErrorOp<TensorT>>(SumErrorOp<TensorT>());
     auto integration_weight_grad_op = std::make_shared<SumWeightGradOp<TensorT>>(SumWeightGradOp<TensorT>());
+    auto integration_op_t1 = std::make_shared<ProdOp<TensorT>>(ProdOp<TensorT>());
+    auto integration_error_op_t1 = std::make_shared<ProdErrorOp<TensorT>>(ProdErrorOp<TensorT>());
+    auto integration_weight_grad_op_t1 = std::make_shared<ProdWeightGradOp<TensorT>>(ProdWeightGradOp<TensorT>());
 
     // Define the solver and weight init
     auto weight_init = std::make_shared<ConstWeightInitOp<TensorT>>(ConstWeightInitOp<TensorT>(1.0));
@@ -295,36 +318,52 @@ public:
     std::vector<std::string> node_names_input = model_builder.addInputNodes(model, "Input", "Input", n_masses, specify_layers);
 
     // Connect the input nodes to the masses
-    std::vector<std::string> node_names_masses = model_builder.addSinglyConnected(model, "Mass", "Mass", node_names_input, n_masses,
+    std::vector<std::string> node_names_masses_t0 = model_builder.addSinglyConnected(model, "Mass(t)", "Mass(t)", node_names_input, n_masses,
       activation_masses, activation_masses_grad,
       integration_op, integration_error_op, integration_weight_grad_op,
       std::make_shared<ConstWeightInitOp<TensorT>>(ConstWeightInitOp<TensorT>(1)),
       std::make_shared<DummySolverOp<TensorT>>(DummySolverOp<TensorT>()), 0.0f, 0.0f, add_biases, specify_layers);
-
-    // Manually define the mass nodes
-    for (const std::string& node_name : node_names_masses)
+    for (const std::string& node_name : node_names_masses_t0)
       model.getNodesMap().at(node_name)->setType(NodeType::unmodifiable);
 
-    // Connect the masses to themselves
-    model_builder.addSinglyConnected(model, "Mass", node_names_masses, node_names_masses,
+    //// Make the mass(t+1) nodes
+    //std::vector<std::string> node_names_masses_t1 = model_builder.addHiddenNodes(model, "Mass(t+1)", "Mass(t+1)", n_masses,
+    //  activation_masses, activation_masses_grad,
+    //  integration_op, integration_error_op, integration_weight_grad_op,
+    //  solver_op, 0.0f, 0.0f, add_biases, specify_layers);
+    // Connect the mass(t) nodes to the mass(t+1) nodes
+    std::vector<std::string> node_names_masses_t1 = model_builder.addSinglyConnected(model, "Mass(t+1)", "Mass(t+1)", node_names_masses_t0, n_masses,
+      activation_masses, activation_masses_grad,
+      integration_op_t1, integration_error_op_t1, integration_weight_grad_op_t1,
+      std::make_shared<ConstWeightInitOp<TensorT>>(ConstWeightInitOp<TensorT>(1)),
+      std::make_shared<DummySolverOp<TensorT>>(DummySolverOp<TensorT>()), 0.0f, 0.0f, add_biases, specify_layers);
+    for (const std::string& node_name : node_names_masses_t1)
+      model.getNodesMap().at(node_name)->setType(NodeType::unmodifiable);
+
+    // Connect the mass(t+1) nodes to the mass(t) nodes
+    model_builder.addSinglyConnected(model, "Mass", node_names_masses_t1, node_names_masses_t0,
       std::make_shared<ConstWeightInitOp<TensorT>>(ConstWeightInitOp<TensorT>(1)),
       std::make_shared<DummySolverOp<TensorT>>(DummySolverOp<TensorT>()), 0.0f, specify_layers);
+    for (int i = 0; i < n_masses; ++i)
+      model.addCyclicPairs(std::make_pair(node_names_masses_t1.at(i), node_names_masses_t0.at(i)));
 
     // Connect the mass to the output nodes
-    std::vector<std::string> node_names_output = model_builder.addSinglyConnected(model, "Output", "Output", node_names_masses, n_masses,
+    std::vector<std::string> node_names_output = model_builder.addSinglyConnected(model, "Output", "Output", node_names_masses_t1, n_masses,
       std::make_shared<LinearOp<TensorT>>(LinearOp<TensorT>()),
       std::make_shared<LinearGradOp<TensorT>>(LinearGradOp<TensorT>()),
       integration_op, integration_error_op, integration_weight_grad_op,
       std::make_shared<ConstWeightInitOp<TensorT>>(ConstWeightInitOp<TensorT>(1)),
       std::make_shared<DummySolverOp<TensorT>>(DummySolverOp<TensorT>()), 0.0f, 0.0f, add_biases, specify_layers);
-
-    // Manually define the output nodes
     for (const std::string& node_name : node_names_output)
       model.getNodesMap().at(node_name)->setType(NodeType::output);
 
+    // Make the gravity and wall nodes
+    std::vector<std::string> node_names_wall = model_builder.addInputNodes(model, "Wall", "Input", 1, specify_layers);
+    model.getNodesMap().at(node_names_wall.front())->setType(NodeType::bias);
+
     // Make the deep learning layers between each of the masses (In the forward direction)
     for (int mass_iter = 1; mass_iter < n_masses; ++mass_iter) {
-      std::vector<std::string> node_names = std::vector<std::string>({ node_names_masses.at(mass_iter - 1) });
+      std::vector<std::string> node_names = std::vector<std::string>({ node_names_masses_t0.at(mass_iter - 1) });
       if (n_fc_1 > 0) {
         node_names = model_builder.addFullyConnected(model, "FC1Forward", "FC1Forward", node_names, n_fc_1,
           activation, activation_grad, integration_op, integration_error_op, integration_weight_grad_op,
@@ -337,14 +376,14 @@ public:
           std::make_shared<RandWeightInitOp<TensorT>>(RandWeightInitOp<TensorT>(node_names.size() + n_fc_2, 2)), //weight_init,
           solver_op, 0.0f, 0.0f, add_biases, specify_layers);
       }
-      model_builder.addFullyConnected(model, "FC0Forward", node_names, std::vector<std::string>({ node_names_masses.at(mass_iter) }),
+      model_builder.addFullyConnected(model, "FC0Forward", node_names, std::vector<std::string>({ node_names_masses_t1.at(mass_iter) }),
         std::make_shared<RandWeightInitOp<TensorT>>(RandWeightInitOp<TensorT>(node_names.size() + 1, 2)), //weight_init,
         solver_op, 0.0f, specify_layers);
     }
 
-    // Make the deep learning layers between each of the masses (In the Reverse direction)
+    // Make the deep learning layers between each of the masses (In the reverse direction)
     for (int mass_iter = n_masses - 2; mass_iter >= 0; --mass_iter) {
-      std::vector<std::string> node_names = std::vector<std::string>({ node_names_masses.at(mass_iter + 1) });
+      std::vector<std::string> node_names = std::vector<std::string>({ node_names_masses_t0.at(mass_iter + 1) });
       if (n_fc_1 > 0) {
         node_names = model_builder.addFullyConnected(model, "FC1Reverse", "FC1Reverse", node_names, n_fc_1,
           activation, activation_grad, integration_op, integration_error_op, integration_weight_grad_op,
@@ -357,14 +396,14 @@ public:
           std::make_shared<RandWeightInitOp<TensorT>>(RandWeightInitOp<TensorT>(node_names.size() + n_fc_2, 2)), //weight_init,
           solver_op, 0.0f, 0.0f, add_biases, specify_layers);
       }
-      model_builder.addFullyConnected(model, "FC0Reverse", node_names, std::vector<std::string>({ node_names_masses.at(mass_iter) }),
+      model_builder.addFullyConnected(model, "FC0Reverse", node_names, std::vector<std::string>({ node_names_masses_t1.at(mass_iter) }),
         std::make_shared<RandWeightInitOp<TensorT>>(RandWeightInitOp<TensorT>(node_names.size() + 1, 2)), //weight_init,
         solver_op, 0.0f, specify_layers);
     }
 
-    // Make the deep learning layers between each of the masses (Special case of n_masses = 1)
-    if (n_masses == 1) {
-      std::vector<std::string> node_names = std::vector<std::string>({ node_names_masses.at(0) });
+    // Make the deep learning layers between the wall and the first mass
+    {
+      std::vector<std::string> node_names = std::vector<std::string>({ node_names_wall.at(0) });
       if (n_fc_1 > 0) {
         node_names = model_builder.addFullyConnected(model, "FC1Forward", "FC1Forward", node_names, n_fc_1,
           activation, activation_grad, integration_op, integration_error_op, integration_weight_grad_op,
@@ -377,10 +416,11 @@ public:
           std::make_shared<RandWeightInitOp<TensorT>>(RandWeightInitOp<TensorT>(node_names.size() + n_fc_2, 2)), //weight_init,
           solver_op, 0.0f, 0.0f, add_biases, specify_layers);
       }
-      model_builder.addFullyConnected(model, "FC0Forward", node_names, std::vector<std::string>({ node_names_masses.at(0) }),
+      model_builder.addFullyConnected(model, "FC0Forward", node_names, std::vector<std::string>({ node_names_masses_t1.at(0) }),
         std::make_shared<RandWeightInitOp<TensorT>>(RandWeightInitOp<TensorT>(node_names.size() + 1, 2)), //weight_init,
         solver_op, 0.0f, specify_layers);
     }
+
     model.setInputAndOutputNodes();
   }
   void adaptiveTrainerScheduler(
@@ -568,7 +608,7 @@ public:
 };
 
 void main_HarmonicOscillator1D(const std::string& data_dir, const bool& make_model, const bool& train_model, const bool& evolve_model, const std::string& simulation_type,
-  const int& batch_size, const int& memory_size, const int& n_epochs_training) {
+  const int& batch_size, const int& memory_size, const int& n_epochs_training, const int& n_tbtt_steps, const int& device_id) {
   // define the population trainer parameters
   PopulationTrainerExt<float> population_trainer;
   population_trainer.setNGenerations(1);
@@ -607,7 +647,7 @@ void main_HarmonicOscillator1D(const std::string& data_dir, const bool& make_mod
   // define the model trainers and resources for the trainers
   std::vector<ModelInterpreterDefaultDevice<float>> model_interpreters;
   for (size_t i = 0; i < n_threads; ++i) {
-    ModelResources model_resources = { ModelDevice(0, 1) };
+    ModelResources model_resources = { ModelDevice(device_id, 0) };
     ModelInterpreterDefaultDevice<float> model_interpreter(model_resources);
     model_interpreters.push_back(model_interpreter);
   }
@@ -617,13 +657,13 @@ void main_HarmonicOscillator1D(const std::string& data_dir, const bool& make_mod
   model_trainer.setNEpochsTraining(n_epochs_training);
   model_trainer.setNEpochsValidation(25);
   model_trainer.setNEpochsEvaluation(n_epochs_training);
-  model_trainer.setNTBPTTSteps(model_trainer.getMemorySize() - 3);
-  model_trainer.setNTETTSteps(model_trainer.getMemorySize() - 3);
+  model_trainer.setNTBPTTSteps(n_tbtt_steps);
+  model_trainer.setNTETTSteps(n_tbtt_steps);
   model_trainer.setVerbosityLevel(1);
   model_trainer.setLogging(true, false, true);
-  model_trainer.setFindCycles(false); // IG default
+  model_trainer.setFindCycles(false); // Specified in the model
   model_trainer.setFastInterpreter(true); // IG default
-  model_trainer.setPreserveOoO(false);
+  model_trainer.setPreserveOoO(true);
 
   std::vector<LossFunctionHelper<float>> loss_function_helpers;
   LossFunctionHelper<float> loss_function_helper2;
@@ -686,6 +726,7 @@ void main_HarmonicOscillator1D(const std::string& data_dir, const bool& make_mod
 
   if (train_model) {
     // Train the model
+    model.setName(model.getName() + "_train");
     std::pair<std::vector<float>, std::vector<float>> model_errors = model_trainer.trainModel(model, data_simulator,
       input_nodes, model_logger, model_interpreters.front());
   }
@@ -705,7 +746,8 @@ void main_HarmonicOscillator1D(const std::string& data_dir, const bool& make_mod
     //population_trainer.evaluateModels(
     //  population, model_trainer, model_interpreters, model_replicator, data_simulator, model_logger, input_nodes);
     // Evaluate the model
-    model_trainer.evaluateModel(model, data_simulator, input_nodes, model_logger, model_interpreters.front());
+    model.setName(model.getName() + "_evaluation");
+    Eigen::Tensor<float, 4> model_output = model_trainer.evaluateModel(model, data_simulator, input_nodes, model_logger, model_interpreters.front());
   }
 }
 
@@ -728,6 +770,8 @@ int main(int argc, char** argv)
   bool make_model = true, train_model = true, evolve_model = false;
   std::string simulation_type = "WeightSpring1W1S1DwDamping";
   int batch_size = 32, memory_size = 64, n_epochs_training = 100000;
+  int n_tbtt_steps = memory_size;
+  int device_id = 0;
   if (argc >= 2) {
     data_dir = argv[1];
   }
@@ -767,6 +811,23 @@ int main(int argc, char** argv)
       std::cout << e.what() << std::endl;
     }
   }
+  if (argc >= 10) {
+    try {
+      n_tbtt_steps = std::stoi(argv[9]);
+    }
+    catch (std::exception & e) {
+      std::cout << e.what() << std::endl;
+    }
+  }
+  if (argc >= 11) {
+    try {
+      device_id = std::stoi(argv[10]);
+      device_id = (device_id >= 0 && device_id < 4) ? device_id : 0; // TODO: assumes only 4 devices are available
+    }
+    catch (std::exception & e) {
+      std::cout << e.what() << std::endl;
+    }
+  }
 
   // Cout the parsed input
   std::cout << "data_dir: " << data_dir << std::endl;
@@ -777,7 +838,9 @@ int main(int argc, char** argv)
   std::cout << "batch_size: " << batch_size << std::endl;
   std::cout << "memory_size: " << memory_size << std::endl;
   std::cout << "n_epochs_training: " << n_epochs_training << std::endl;
+  std::cout << "n_tbtt_steps: " << n_tbtt_steps << std::endl;
+  std::cout << "device_id: " << device_id << std::endl;
 
-  main_HarmonicOscillator1D(data_dir, make_model, train_model, evolve_model, simulation_type, batch_size, memory_size, n_epochs_training);
+  main_HarmonicOscillator1D(data_dir, make_model, train_model, evolve_model, simulation_type, batch_size, memory_size, n_epochs_training, n_tbtt_steps, device_id);
   return 0;
 }

@@ -1373,7 +1373,6 @@ private:
 
       // extract out the model output
       model_interpreter.getModelResults(model, true, false, false, false);
-      std::vector<Eigen::Tensor<TensorT, 2>> output;
       int node_iter = 0;
       for (const std::string& output_node : output_nodes) {
         for (int batch_iter = 0; batch_iter < this->getBatchSize(); ++batch_iter) {
