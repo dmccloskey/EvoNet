@@ -97,7 +97,7 @@ public:
 	void simulateTrainingData(Eigen::Tensor<TensorT, 4>& input_data, Eigen::Tensor<TensorT, 4>& output_data, Eigen::Tensor<TensorT, 3>& time_steps)	override {	simulateData(input_data, output_data, time_steps); }
 	void simulateValidationData(Eigen::Tensor<TensorT, 4>& input_data, Eigen::Tensor<TensorT, 4>& output_data, Eigen::Tensor<TensorT, 3>& time_steps)	override {	simulateData(input_data, output_data, time_steps); }
 	void simulateEvaluationData(Eigen::Tensor<TensorT, 4>& input_data, Eigen::Tensor<TensorT, 3>& time_steps)override {};
-  void simulateData(Eigen::Tensor<TensorT, 3>& input_data, Eigen::Tensor<TensorT, 3>& output_data, Eigen::Tensor<TensorT, 2>& time_steps)
+  void simulateData(Eigen::Tensor<TensorT, 3>& input_data, Eigen::Tensor<TensorT, 3>& output_data, Eigen::Tensor<TensorT, 3>& metric_data, Eigen::Tensor<TensorT, 2>& time_steps)
   {
     // infer data dimensions based on the input tensors
     const int batch_size = input_data.dimension(0);
@@ -136,8 +136,8 @@ public:
 
     time_steps.setConstant(1.0f);
   }
-  void simulateTrainingData(Eigen::Tensor<TensorT, 3>& input_data, Eigen::Tensor<TensorT, 3>& output_data, Eigen::Tensor<TensorT, 2>& time_steps)override { simulateData(input_data, output_data, time_steps); }
-  void simulateValidationData(Eigen::Tensor<TensorT, 3>& input_data, Eigen::Tensor<TensorT, 3>& output_data, Eigen::Tensor<TensorT, 2>& time_steps)override { simulateData(input_data, output_data, time_steps); }
+  void simulateTrainingData(Eigen::Tensor<TensorT, 3>& input_data, Eigen::Tensor<TensorT, 3>& output_data, Eigen::Tensor<TensorT, 3>& metric_data, Eigen::Tensor<TensorT, 2>& time_steps)override { simulateData(input_data, output_data, metric_data, time_steps); }
+  void simulateValidationData(Eigen::Tensor<TensorT, 3>& input_data, Eigen::Tensor<TensorT, 3>& output_data, Eigen::Tensor<TensorT, 3>& metric_data, Eigen::Tensor<TensorT, 2>& time_steps)override { simulateData(input_data, output_data, metric_data, time_steps); }
 };
 
 // Extended classes
@@ -430,10 +430,10 @@ public:
 	}
 };
 
-void main_AddProbRec(const std::string& mode) {
+void main_AddProbRec(const std::string& data_dir, const int& n_generations, const int& n_mask, const int& sequence_length, const int& batch_size, const int& n_epochs_training, const int& n_epochs_validation, const int& n_epochs_evaluation, const bool& make_model, const std::string& model_type, const bool& evolve_population, const bool& train_model, const bool& evaluate_model) {
   // define the population trainer parameters
   PopulationTrainerExt<float> population_trainer;
-  population_trainer.setNGenerations(50); // population training
+  population_trainer.setNGenerations(n_generations); // population training
   //population_trainer.setNGenerations(1); // single model training
   population_trainer.setLogging(true);
   population_trainer.setResetModelCopyWeights(true);
@@ -451,8 +451,8 @@ void main_AddProbRec(const std::string& mode) {
 
   // define the data simulator
   DataSimulatorExt<float> data_simulator;
-  data_simulator.n_mask_ = 2;
-  data_simulator.sequence_length_ = 25;
+  data_simulator.n_mask_ = n_mask;
+  data_simulator.sequence_length_ = sequence_length;
 
   // define the model trainers and resources for the trainers
   std::vector<ModelInterpreterDefaultDevice<float>> model_interpreters;
@@ -462,11 +462,11 @@ void main_AddProbRec(const std::string& mode) {
     model_interpreters.push_back(model_interpreter);
   }
   ModelTrainerExt<float> model_trainer;
-  model_trainer.setBatchSize(32);
+  model_trainer.setBatchSize(batch_size);
   model_trainer.setMemorySize(data_simulator.sequence_length_);
-  model_trainer.setNEpochsTraining(100); // population training
-  //model_trainer.setNEpochsTraining(5000); // single model training
-  model_trainer.setNEpochsValidation(25);
+  model_trainer.setNEpochsTraining(n_epochs_training);
+  model_trainer.setNEpochsValidation(n_epochs_validation);
+  model_trainer.setNEpochsValidation(n_epochs_evaluation);
   model_trainer.setNTETTSteps(data_simulator.sequence_length_);
   model_trainer.setNTBPTTSteps(data_simulator.sequence_length_);
   model_trainer.setVerbosityLevel(1);
@@ -474,9 +474,14 @@ void main_AddProbRec(const std::string& mode) {
   model_trainer.setLogging(true, false);
   model_trainer.setPreserveOoO(true);
   model_trainer.setFastInterpreter(false);
-  model_trainer.setLossFunctions({ std::make_shared<MSELossOp<float>>(MSELossOp<float>()) });
-  model_trainer.setLossFunctionGrads({ std::make_shared<MSELossGradOp<float>>(MSELossGradOp<float>()) });
-  model_trainer.setLossOutputNodes({ output_nodes });
+
+  std::vector<LossFunctionHelper<float>> loss_function_helpers;
+  LossFunctionHelper<float> loss_function_helper2;
+  loss_function_helper2.output_nodes_ = output_nodes;
+  loss_function_helper2.loss_functions_ = { std::make_shared<MSELossOp<float>>(MSELossOp<float>(1e-24, 1.0)) };
+  loss_function_helper2.loss_function_grads_ = { std::make_shared<MSELossGradOp<float>>(MSELossGradOp<float>(1e-24, 1.0)) };
+  loss_function_helpers.push_back(loss_function_helper2);
+  model_trainer.setLossFunctionHelpers(loss_function_helpers);
 
   // define the model logger
   ModelLogger<float> model_logger(true, true, false, false, false, false, false);
@@ -499,53 +504,79 @@ void main_AddProbRec(const std::string& mode) {
     //std::make_tuple(std::make_shared<CountOp<float>>(CountOp<float>()), std::make_shared<CountErrorOp<float>>(CountErrorOp<float>()), std::make_shared<CountWeightGradOp<float>>(CountWeightGradOp<float>()))
     });
 
-  if (mode == "evolve_population") {
-    // define the initial population [BUG FREE]
-    std::cout << "Initializing the population..." << std::endl;
-    std::vector<Model<float>> population;
-
-    // make the model name
+  // define the initial population
+  Model<float> model;
+  if (make_model) {
+    std::cout << "Making the model..." << std::endl;
     Model<float> model;
-    model_trainer.makeModelMinimal(model);
-    //model_trainer.makeModelSolution(model, false);
-    //model_trainer.makeModelLSTM(model, input_nodes.size(), 1, 1, false);
-    char model_name_char[512];
-    sprintf(model_name_char, "%s_%d", model.getName().data(), 0);
-    std::string model_name(model_name_char);
-    model.setName(model_name);
+    if (model_type == "Minimal") model_trainer.makeModelMinimal(model);
+    else if (model_type == "Solution") model_trainer.makeModelSolution(model, true);
+    else if (model_type == "LSTM") model_trainer.makeModelLSTM(model, input_nodes.size(), 1, 1, false);
+    model.setName(model.getName() + "_0");
     model.setId(0);
-    population.push_back(model);
+  }
+  else {
+    std::cout << "Reading in the model..." << std::endl;
+    const std::string model_filename = data_dir + "AddProbRec_model.binary";
+    const std::string interpreter_filename = data_dir + "AddProbRec_interpreter.binary";
+    ModelFile<float> model_file;
+    model_file.loadModelBinary(model_filename, model);
+    model.setId(1);
+    ModelInterpreterFileDefaultDevice<float> model_interpreter_file;
+    model_interpreter_file.loadModelInterpreterBinary(interpreter_filename, model_interpreters[0]); // FIX ME!
+  }
+  model.setName(data_dir + model.getName()); //So that all output will be written to a specific directory
 
+  if (train_model) {
+    // Train the model
+    model.setName(model.getName() + "_train");
+    std::pair<std::vector<float>, std::vector<float>> model_errors = model_trainer.trainModel(model, data_simulator,
+      input_nodes, model_logger, model_interpreters.front());
+  }
+  else if (evolve_population) {
     // Evolve the population
+    std::vector<Model<float>> population = { model };
     std::vector<std::vector<std::tuple<int, std::string, float>>> models_validation_errors_per_generation = population_trainer.evolveModels(
       population, model_trainer, model_interpreters, model_replicator, data_simulator, model_logger, population_logger, input_nodes);
 
     PopulationTrainerFile<float> population_trainer_file;
     population_trainer_file.storeModels(population, "AddProb");
-    population_trainer_file.storeModelValidations("AddProbValidationErrors.csv", models_validation_errors_per_generation);
+    population_trainer_file.storeModelValidations("AddProbErrors.csv", models_validation_errors_per_generation);
   }
-  else if (mode == "train_single_model") {
-    // Read in the model from .csv
-    const std::string data_dir = "C:/Users/domccl/Desktop/EvoNetExp/AddProb_Rec_CPU/FromMinimalModel/CPU13_BestModel/";
-    std::string filename_nodes = "MemoryCell_0@replicateModel#9_12_2019-05-28-09-32-36_14_nodes.csv";
-    std::string filename_links = "MemoryCell_0@replicateModel#9_12_2019-05-28-09-32-36_14_links.csv";
-    std::string filename_weights = "MemoryCell_0@replicateModel#9_12_2019-05-28-09-32-36_14_weights.csv";
-    Model<float> model;
-    model.setId(1);
-    model.setName("MemoryCell_0@replicateModel#9_12_2019-05-28-09-32-36_14");
-    ModelFile<float> data;
-    data.loadModelCsv(data_dir + filename_nodes, data_dir + filename_links, data_dir + filename_weights, model);
-
-    // Train the model
-    std::pair<std::vector<float>, std::vector<float>> model_errors = model_trainer.trainModel(model, data_simulator,
-      input_nodes, model_logger, model_interpreters.front());
+  else if (evaluate_model) {
+    //// Evaluate the population
+    //std::vector<Model<float>> population = { model };
+    //population_trainer.evaluateModels(
+    //  population, model_trainer, model_interpreters, model_replicator, data_simulator, model_logger, input_nodes);
+    // Evaluate the model
+    model.setName(model.getName() + "_evaluation");
+    Eigen::Tensor<float, 4> model_output = model_trainer.evaluateModel(model, data_simulator, input_nodes, model_logger, model_interpreters.front());
   }
 }
 
 // Main
 int main(int argc, char** argv)
 {
-  main_AddProbRec("evolve_population");
-  //main_AddProbRec("train_single_model");
+  // Set the default command line arguments
+  std::string data_dir = "";
+  int n_generations = 50;
+  int n_mask = 2;
+  int sequence_length = 25;
+  int batch_size = 32;
+  int n_epochs_training = 100;
+  int n_epochs_validation = 25;
+  int n_epochs_evaluation = 1;
+  bool make_model = true;
+  std::string model_type = "Solution";
+  bool evolve_population = true;
+  bool train_model = false;
+  bool evaluate_model = false;
+
+  // Parse the commandline arguments
+
+  // Print the parsed variables to the screen
+
+  // Run the main application
+  main_AddProbRec(data_dir, n_generations, n_mask, sequence_length, batch_size, n_epochs_training, n_epochs_validation, n_epochs_evaluation, make_model, model_type, evolve_population, train_model, evaluate_model);
 	return 0;
 }

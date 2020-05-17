@@ -306,9 +306,6 @@ public:
     auto integration_op = std::make_shared<SumOp<TensorT>>(SumOp<TensorT>());
     auto integration_error_op = std::make_shared<SumErrorOp<TensorT>>(SumErrorOp<TensorT>());
     auto integration_weight_grad_op = std::make_shared<SumWeightGradOp<TensorT>>(SumWeightGradOp<TensorT>());
-    auto integration_op_t1 = std::make_shared<ProdOp<TensorT>>(ProdOp<TensorT>());
-    auto integration_error_op_t1 = std::make_shared<ProdErrorOp<TensorT>>(ProdErrorOp<TensorT>());
-    auto integration_weight_grad_op_t1 = std::make_shared<ProdWeightGradOp<TensorT>>(ProdWeightGradOp<TensorT>());
 
     // Define the solver and weight init
     auto weight_init = std::make_shared<ConstWeightInitOp<TensorT>>(ConstWeightInitOp<TensorT>(1.0));
@@ -326,17 +323,17 @@ public:
     for (const std::string& node_name : node_names_masses_t0)
       model.getNodesMap().at(node_name)->setType(NodeType::unmodifiable);
 
-    //// Make the mass(t+1) nodes
-    //std::vector<std::string> node_names_masses_t1 = model_builder.addHiddenNodes(model, "Mass(t+1)", "Mass(t+1)", n_masses,
+    // Make the mass(t+1) nodes
+    std::vector<std::string> node_names_masses_t1 = model_builder.addHiddenNodes(model, "Mass(t+1)", "Mass(t+1)", n_masses,
+      activation_masses, activation_masses_grad,
+      integration_op, integration_error_op, integration_weight_grad_op,
+      solver_op, 0.0f, 0.0f, add_biases, specify_layers);
+    //// Connect the mass(t) nodes to the mass(t+1) nodes
+    //std::vector<std::string> node_names_masses_t1 = model_builder.addSinglyConnected(model, "Mass(t+1)", "Mass(t+1)", node_names_masses_t0, n_masses,
     //  activation_masses, activation_masses_grad,
     //  integration_op, integration_error_op, integration_weight_grad_op,
-    //  solver_op, 0.0f, 0.0f, add_biases, specify_layers);
-    // Connect the mass(t) nodes to the mass(t+1) nodes
-    std::vector<std::string> node_names_masses_t1 = model_builder.addSinglyConnected(model, "Mass(t+1)", "Mass(t+1)", node_names_masses_t0, n_masses,
-      activation_masses, activation_masses_grad,
-      integration_op_t1, integration_error_op_t1, integration_weight_grad_op_t1,
-      std::make_shared<ConstWeightInitOp<TensorT>>(ConstWeightInitOp<TensorT>(1)),
-      std::make_shared<DummySolverOp<TensorT>>(DummySolverOp<TensorT>()), 0.0f, 0.0f, add_biases, specify_layers);
+    //  std::make_shared<ConstWeightInitOp<TensorT>>(ConstWeightInitOp<TensorT>(1)),
+    //  std::make_shared<DummySolverOp<TensorT>>(DummySolverOp<TensorT>()), 0.0f, 0.0f, add_biases, specify_layers);
     for (const std::string& node_name : node_names_masses_t1)
       model.getNodesMap().at(node_name)->setType(NodeType::unmodifiable);
 
@@ -361,9 +358,24 @@ public:
     std::vector<std::string> node_names_wall = model_builder.addInputNodes(model, "Wall", "Input", 1, specify_layers);
     model.getNodesMap().at(node_names_wall.front())->setType(NodeType::bias);
 
-    // Make the deep learning layers between each of the masses (In the forward direction)
-    for (int mass_iter = 1; mass_iter < n_masses; ++mass_iter) {
-      std::vector<std::string> node_names = std::vector<std::string>({ node_names_masses_t0.at(mass_iter - 1) });
+    // Make the deep learning layers between each of the masses
+    for (int mass_iter = 0; mass_iter < n_masses; ++mass_iter) {
+      std::vector<std::string> node_names;
+      // determine the input nodes
+      if (mass_iter == 0 && mass_iter == n_masses - 1) {
+        node_names = { node_names_wall.front(), node_names_masses_t0.at(mass_iter) };
+      }
+      else if (mass_iter == 0) {
+        node_names = { node_names_wall.front(), node_names_masses_t0.at(mass_iter), node_names_masses_t0.at(mass_iter + 1) };
+      }
+      else if (mass_iter == n_masses - 1) {
+        node_names = { node_names_masses_t0.at(mass_iter - 1), node_names_masses_t0.at(mass_iter) };
+      }
+      else {
+        node_names = { node_names_masses_t0.at(mass_iter - 1), node_names_masses_t0.at(mass_iter), node_names_masses_t0.at(mass_iter + 1) };
+      }
+
+      // make the FC layers between input nodes
       if (n_fc_1 > 0) {
         node_names = model_builder.addFullyConnected(model, "FC1Forward", "FC1Forward", node_names, n_fc_1,
           activation, activation_grad, integration_op, integration_error_op, integration_weight_grad_op,
@@ -377,46 +389,6 @@ public:
           solver_op, 0.0f, 0.0f, add_biases, specify_layers);
       }
       model_builder.addFullyConnected(model, "FC0Forward", node_names, std::vector<std::string>({ node_names_masses_t1.at(mass_iter) }),
-        std::make_shared<RandWeightInitOp<TensorT>>(RandWeightInitOp<TensorT>(node_names.size() + 1, 2)), //weight_init,
-        solver_op, 0.0f, specify_layers);
-    }
-
-    // Make the deep learning layers between each of the masses (In the reverse direction)
-    for (int mass_iter = n_masses - 2; mass_iter >= 0; --mass_iter) {
-      std::vector<std::string> node_names = std::vector<std::string>({ node_names_masses_t0.at(mass_iter + 1) });
-      if (n_fc_1 > 0) {
-        node_names = model_builder.addFullyConnected(model, "FC1Reverse", "FC1Reverse", node_names, n_fc_1,
-          activation, activation_grad, integration_op, integration_error_op, integration_weight_grad_op,
-          std::make_shared<RandWeightInitOp<TensorT>>(RandWeightInitOp<TensorT>(node_names.size() + n_fc_1, 2)), //weight_init,
-          solver_op, 0.0f, 0.0f, add_biases, specify_layers);
-      }
-      if (n_fc_2 > 0) {
-        node_names = model_builder.addFullyConnected(model, "FC2Reverse", "FC2Reverse", node_names, n_fc_2,
-          activation, activation_grad, integration_op, integration_error_op, integration_weight_grad_op,
-          std::make_shared<RandWeightInitOp<TensorT>>(RandWeightInitOp<TensorT>(node_names.size() + n_fc_2, 2)), //weight_init,
-          solver_op, 0.0f, 0.0f, add_biases, specify_layers);
-      }
-      model_builder.addFullyConnected(model, "FC0Reverse", node_names, std::vector<std::string>({ node_names_masses_t1.at(mass_iter) }),
-        std::make_shared<RandWeightInitOp<TensorT>>(RandWeightInitOp<TensorT>(node_names.size() + 1, 2)), //weight_init,
-        solver_op, 0.0f, specify_layers);
-    }
-
-    // Make the deep learning layers between the wall and the first mass
-    {
-      std::vector<std::string> node_names = std::vector<std::string>({ node_names_wall.at(0) });
-      if (n_fc_1 > 0) {
-        node_names = model_builder.addFullyConnected(model, "FC1Forward", "FC1Forward", node_names, n_fc_1,
-          activation, activation_grad, integration_op, integration_error_op, integration_weight_grad_op,
-          std::make_shared<RandWeightInitOp<TensorT>>(RandWeightInitOp<TensorT>(node_names.size() + n_fc_1, 2)), //weight_init,
-          solver_op, 0.0f, 0.0f, add_biases, specify_layers);
-      }
-      if (n_fc_2 > 0) {
-        node_names = model_builder.addFullyConnected(model, "FC2Forward", "FC2Forward", node_names, n_fc_2,
-          activation, activation_grad, integration_op, integration_error_op, integration_weight_grad_op,
-          std::make_shared<RandWeightInitOp<TensorT>>(RandWeightInitOp<TensorT>(node_names.size() + n_fc_2, 2)), //weight_init,
-          solver_op, 0.0f, 0.0f, add_biases, specify_layers);
-      }
-      model_builder.addFullyConnected(model, "FC0Forward", node_names, std::vector<std::string>({ node_names_masses_t1.at(0) }),
         std::make_shared<RandWeightInitOp<TensorT>>(RandWeightInitOp<TensorT>(node_names.size() + 1, 2)), //weight_init,
         solver_op, 0.0f, specify_layers);
     }
@@ -446,11 +418,13 @@ public:
     model_logger.setLogTrainValMetricEpoch(true);
     model_logger.setLogExpectedEpoch(false);
     model_logger.setLogNodeInputsEpoch(false);
+    model_logger.setLogNodeOutputsEpoch(false);
 
     // initialize all logs
     if (n_epochs == 0) {
       model_logger.setLogExpectedEpoch(true);
       model_logger.setLogNodeInputsEpoch(true);
+      model_logger.setLogNodeOutputsEpoch(true);
       model_logger.initLogs(model);
     }
 
@@ -458,6 +432,7 @@ public:
     if (n_epochs % 1000 == 0) { // FIXME
       model_logger.setLogExpectedEpoch(true);
       model_logger.setLogNodeInputsEpoch(true);
+      model_logger.setLogNodeOutputsEpoch(true);
       model_interpreter.getModelResults(model, true, false, false, true);
     }
 
@@ -484,11 +459,13 @@ public:
     model_logger.setLogTrainValMetricEpoch(true);
     model_logger.setLogExpectedEpoch(false);
     model_logger.setLogNodeInputsEpoch(false);
+    model_logger.setLogNodeOutputsEpoch(false);
 
     // initialize all logs
     if (n_epochs == 0) {
       model_logger.setLogExpectedEpoch(true);
       model_logger.setLogNodeInputsEpoch(true);
+      model_logger.setLogNodeOutputsEpoch(true);
       model_logger.initLogs(model);
     }
 
@@ -496,6 +473,7 @@ public:
     if (n_epochs % 1000 == 0) { // FIXME
       model_logger.setLogExpectedEpoch(true);
       model_logger.setLogNodeInputsEpoch(true);
+      model_logger.setLogNodeOutputsEpoch(true);
       model_interpreter.getModelResults(model, true, false, false, true);
     }
 
