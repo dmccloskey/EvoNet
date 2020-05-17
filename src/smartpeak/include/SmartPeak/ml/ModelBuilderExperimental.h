@@ -769,7 +769,7 @@ public:
     const bool& add_biases, const bool& specify_layers, const bool& is_reverse)
   {
     // make the input nodes (reactants + products) and output nodes (products)
-    std::vector<std::string> node_names_all, node_names_reactants, node_names_products;
+    std::vector<std::string> node_names_all, node_names_reactants, node_names_reactants_t1, node_names_products, node_names_products_t0;
     for (const std::string& met_id : reaction.reactants_ids) {
       const std::string met_name = met_id + "(t)";
       node_names_reactants.push_back(met_name);

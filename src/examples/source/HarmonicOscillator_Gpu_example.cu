@@ -297,8 +297,8 @@ public:
     ModelBuilder<TensorT> model_builder;
 
     // Define the node activation
-    auto activation = std::make_shared<SigmoidOp<TensorT>>(SigmoidOp<TensorT>());
-    auto activation_grad = std::make_shared<SigmoidGradOp<TensorT>>(SigmoidGradOp<TensorT>());
+    auto activation = std::make_shared<LeakyReLUOp<TensorT>>(LeakyReLUOp<TensorT>());
+    auto activation_grad = std::make_shared<LeakyReLUGradOp<TensorT>>(LeakyReLUGradOp<TensorT>());
     auto activation_masses = std::make_shared<LinearOp<TensorT>>(LinearOp<TensorT>());
     auto activation_masses_grad = std::make_shared<LinearGradOp<TensorT>>(LinearGradOp<TensorT>());
 
@@ -306,6 +306,9 @@ public:
     auto integration_op = std::make_shared<SumOp<TensorT>>(SumOp<TensorT>());
     auto integration_error_op = std::make_shared<SumErrorOp<TensorT>>(SumErrorOp<TensorT>());
     auto integration_weight_grad_op = std::make_shared<SumWeightGradOp<TensorT>>(SumWeightGradOp<TensorT>());
+    auto integration_op_t1 = std::make_shared<ProdOp<TensorT>>(ProdOp<TensorT>());
+    auto integration_error_op_t1 = std::make_shared<ProdErrorOp<TensorT>>(ProdErrorOp<TensorT>());
+    auto integration_weight_grad_op_t1 = std::make_shared<ProdWeightGradOp<TensorT>>(ProdWeightGradOp<TensorT>());
 
     // Define the solver and weight init
     auto weight_init = std::make_shared<ConstWeightInitOp<TensorT>>(ConstWeightInitOp<TensorT>(1.0));
@@ -315,33 +318,32 @@ public:
     std::vector<std::string> node_names_input = model_builder.addInputNodes(model, "Input", "Input", n_masses, specify_layers);
 
     // Connect the input nodes to the masses
-    std::vector<std::string> node_names_masses_t0 = model_builder.addSinglyConnected(model, "Mass(t-1)", "Mass(t-1)", node_names_input, n_masses,
+    std::vector<std::string> node_names_masses_t0 = model_builder.addSinglyConnected(model, "Mass(t)", "Mass(t)", node_names_input, n_masses,
       activation_masses, activation_masses_grad,
       integration_op, integration_error_op, integration_weight_grad_op,
       std::make_shared<ConstWeightInitOp<TensorT>>(ConstWeightInitOp<TensorT>(1)),
       std::make_shared<DummySolverOp<TensorT>>(DummySolverOp<TensorT>()), 0.0f, 0.0f, add_biases, specify_layers);
-
-    // Manually define the mass nodes
     for (const std::string& node_name : node_names_masses_t0)
       model.getNodesMap().at(node_name)->setType(NodeType::unmodifiable);
 
-    // Connect the mass(t-1) to the mass(t) nodes
-    std::vector<std::string> node_names_masses_t1 = model_builder.addSinglyConnected(model, "Mass(t)", "Mass(t)", node_names_input, n_masses,
+    //// Make the mass(t+1) nodes
+    //std::vector<std::string> node_names_masses_t1 = model_builder.addHiddenNodes(model, "Mass(t+1)", "Mass(t+1)", n_masses,
+    //  activation_masses, activation_masses_grad,
+    //  integration_op, integration_error_op, integration_weight_grad_op,
+    //  solver_op, 0.0f, 0.0f, add_biases, specify_layers);
+    // Connect the mass(t) nodes to the mass(t+1) nodes
+    std::vector<std::string> node_names_masses_t1 = model_builder.addSinglyConnected(model, "Mass(t+1)", "Mass(t+1)", node_names_masses_t0, n_masses,
       activation_masses, activation_masses_grad,
-      integration_op, integration_error_op, integration_weight_grad_op,
+      integration_op_t1, integration_error_op_t1, integration_weight_grad_op_t1,
       std::make_shared<ConstWeightInitOp<TensorT>>(ConstWeightInitOp<TensorT>(1)),
       std::make_shared<DummySolverOp<TensorT>>(DummySolverOp<TensorT>()), 0.0f, 0.0f, add_biases, specify_layers);
-
-    // Manually define the mass nodes
     for (const std::string& node_name : node_names_masses_t1)
       model.getNodesMap().at(node_name)->setType(NodeType::unmodifiable);
 
-    // Connect the mass(t) nodes to the mass(t-1) nodes
+    // Connect the mass(t+1) nodes to the mass(t) nodes
     model_builder.addSinglyConnected(model, "Mass", node_names_masses_t1, node_names_masses_t0,
       std::make_shared<ConstWeightInitOp<TensorT>>(ConstWeightInitOp<TensorT>(1)),
       std::make_shared<DummySolverOp<TensorT>>(DummySolverOp<TensorT>()), 0.0f, specify_layers);
-
-    // Specify the cyclic pairs
     for (int i = 0; i < n_masses; ++i)
       model.addCyclicPairs(std::make_pair(node_names_masses_t1.at(i), node_names_masses_t0.at(i)));
 
@@ -352,10 +354,12 @@ public:
       integration_op, integration_error_op, integration_weight_grad_op,
       std::make_shared<ConstWeightInitOp<TensorT>>(ConstWeightInitOp<TensorT>(1)),
       std::make_shared<DummySolverOp<TensorT>>(DummySolverOp<TensorT>()), 0.0f, 0.0f, add_biases, specify_layers);
-
-    // Manually define the output nodes
     for (const std::string& node_name : node_names_output)
       model.getNodesMap().at(node_name)->setType(NodeType::output);
+
+    // Make the gravity and wall nodes
+    std::vector<std::string> node_names_wall = model_builder.addInputNodes(model, "Wall", "Input", 1, specify_layers);
+    model.getNodesMap().at(node_names_wall.front())->setType(NodeType::bias);
 
     // Make the deep learning layers between each of the masses (In the forward direction)
     for (int mass_iter = 1; mass_iter < n_masses; ++mass_iter) {
@@ -397,9 +401,9 @@ public:
         solver_op, 0.0f, specify_layers);
     }
 
-    // Make the deep learning layers between each of the masses (Special case of n_masses = 1)
-    if (n_masses == 1) {
-      std::vector<std::string> node_names = std::vector<std::string>({ node_names_masses_t0.at(0) });
+    // Make the deep learning layers between the wall and the first mass
+    {
+      std::vector<std::string> node_names = std::vector<std::string>({ node_names_wall.at(0) });
       if (n_fc_1 > 0) {
         node_names = model_builder.addFullyConnected(model, "FC1Forward", "FC1Forward", node_names, n_fc_1,
           activation, activation_grad, integration_op, integration_error_op, integration_weight_grad_op,
