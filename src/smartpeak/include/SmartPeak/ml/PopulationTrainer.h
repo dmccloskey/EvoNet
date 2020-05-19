@@ -228,6 +228,14 @@ public:
 			const Eigen::Tensor<TensorT, 3>& time_steps,
 			const std::vector<std::string>& input_nodes);
 
+    static bool evalModels_(
+      std::vector<Model<TensorT>>& models,
+      ModelTrainer<TensorT, InterpreterT>& model_trainer, InterpreterT& model_interpreters,
+      ModelLogger<TensorT>& model_logger,
+      const Eigen::Tensor<TensorT, 4>& input,
+      const Eigen::Tensor<TensorT, 3>& time_steps,
+      const std::vector<std::string>& input_nodes);
+
 		static bool evalModel_(
 			Model<TensorT>& model,
 			ModelTrainer<TensorT, InterpreterT>& model_trainer, InterpreterT& model_interpreter,
@@ -788,7 +796,7 @@ private:
 	template<typename TensorT, typename InterpreterT>
 	void PopulationTrainer<TensorT, InterpreterT>::trainModels(
 		std::vector<Model<TensorT>>& models,
-		ModelTrainer<TensorT, InterpreterT>& model_trainer,  std::vector<InterpreterT>& model_interpreters,
+		ModelTrainer<TensorT, InterpreterT>& model_trainer, std::vector<InterpreterT>& model_interpreters,
 		ModelLogger<TensorT>& model_logger,
 		const Eigen::Tensor<TensorT, 4>& input,
 		const Eigen::Tensor<TensorT, 4>& output,
@@ -865,10 +873,12 @@ private:
       catch (std::exception & e) {
         printf("Exception: %s", e.what());
       }
+
+      // Clear the interpreter cache before moving to the next model
+      // TODO: add test case for this
+      model_interpreter.clear_cache();
     }
 
-    // Clear the interpreter cache before moving to the next model
-    model_interpreter.clear_cache();
     return status;
   }
 
@@ -910,21 +920,18 @@ private:
 		const Eigen::Tensor<TensorT, 3>& time_steps,
 		const std::vector<std::string>& input_nodes)
 	{
-		// std::vector<std::string> broken_model_names;
+		// launch the workers asynchronously
+    eval_models_iter_ = 0;
 		std::vector<std::future<bool>> task_results;
-		int thread_cnt = 0;
-
-		// train the models
-		for (int i = 0; i < models.size(); ++i)
-		{
+    for (size_t i = 0; i < model_interpreters.size(); ++i) {
 			std::packaged_task<bool // encapsulate in a packaged_task
-			(Model<TensorT>&,
+			(std::vector<Model<TensorT>>&,
 				ModelTrainer<TensorT, InterpreterT>&, InterpreterT&,
 				ModelLogger<TensorT>&,
 				const Eigen::Tensor<TensorT, 4>&,
 				const Eigen::Tensor<TensorT, 3>&,
 				const std::vector<std::string>&
-				)> task(PopulationTrainer<TensorT, InterpreterT>::evalModel_); 
+				)> task(PopulationTrainer<TensorT, InterpreterT>::evalModels_); 
 			
 			// create a copy of the model trainer and logger
 			ModelLogger<TensorT> model_logger_copy = model_logger;
@@ -932,37 +939,65 @@ private:
 			// launch the thread
 			task_results.push_back(task.get_future());
       std::thread task_thread(std::move(task),
-        std::ref(models[i]), std::ref(model_trainer), std::ref(model_interpreters[thread_cnt]), std::ref(model_logger_copy),
+        std::ref(models), std::ref(model_trainer), std::ref(model_interpreters.at(i)), std::ref(model_logger_copy),
 				std::ref(input), std::ref(time_steps),
 				std::ref(input_nodes));
 			task_thread.detach();
-
-			// retreive the results
-			if (thread_cnt == model_interpreters.size() - 1 || i == models.size() - 1)
-			{
-				for (auto& task_result : task_results)
-				{
-					if (task_result.valid())
-					{
-						try
-						{
-							bool status = task_result.get();
-						}
-						catch (std::exception& e)
-						{
-							printf("Exception: %s", e.what());
-						}
-					}
-				}
-				task_results.clear();
-				thread_cnt = 0;
-			}
-			else
-			{
-				++thread_cnt;
-			}
 		}
+
+    // Retrieve the results as they come
+    for (auto& task_result : task_results) {
+      try {
+        const bool result = task_result.get();
+      }
+      catch (std::exception & e) {
+        printf("Exception: %s", e.what());
+      }
+    }
 	}
+
+  template<typename TensorT, typename InterpreterT>
+  inline bool PopulationTrainer<TensorT, InterpreterT>::evalModels_(std::vector<Model<TensorT>>& models, ModelTrainer<TensorT, InterpreterT>& model_trainer, InterpreterT& model_interpreter, ModelLogger<TensorT>& model_logger, const Eigen::Tensor<TensorT, 4>& input, const Eigen::Tensor<TensorT, 3>& time_steps, const std::vector<std::string>& input_nodes)
+  {
+    bool result = false;
+    while (true) {
+      // get the next available thread
+      const size_t eval_models_iter = eval_models_iter_.fetch_add(1);
+      if (eval_models_iter >= models.size()) {
+        break;
+      }
+
+      // create the task and the future
+      std::packaged_task<bool(Model<TensorT>&,
+        ModelTrainer<TensorT, InterpreterT>&, InterpreterT&,
+        ModelLogger<TensorT>&,
+        const Eigen::Tensor<TensorT, 4>&,
+        const Eigen::Tensor<TensorT, 3>&,
+        const std::vector<std::string>&
+        )> task(PopulationTrainer<TensorT, InterpreterT>::evalModel_);
+      std::future<bool> task_result = task.get_future();
+
+      // launch the thread
+      std::thread task_thread(std::move(task),
+        std::ref(models.at(eval_models_iter)), std::ref(model_trainer), std::ref(model_interpreter), std::ref(model_logger),
+        std::ref(input), std::ref(time_steps),
+        std::ref(input_nodes));
+      task_thread.detach();
+
+      // retreive the results
+      try {
+        result = task_result.get();
+      }
+      catch (std::exception & e) {
+        printf("Exception: %s", e.what());
+      }
+
+      // Clear the interpreter cache before moving to the next model
+      // TODO: add test case for this
+      model_interpreter.clear_cache();
+    }
+    return result;
+  }
 
 	template<typename TensorT, typename InterpreterT>
 	bool PopulationTrainer<TensorT, InterpreterT>::evalModel_(
