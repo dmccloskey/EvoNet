@@ -397,9 +397,13 @@ BOOST_AUTO_TEST_CASE(replicateModels)
 		std::make_pair(0, 0));
 	population_trainer.replicateModels(population3, model_replicator);
 
-	// check for the expected size
-	BOOST_CHECK_EQUAL(population3.size(), 2);
-
+	// check for the expected size and # of new modified models (i.e., 0)
+	BOOST_CHECK_EQUAL(population3.size(), 6);
+  for (int i = 0; i < population3.size(); ++i) {
+    if (i < 2) BOOST_CHECK_EQUAL(population3.at(i).links_.size(), 4);
+    else BOOST_CHECK_EQUAL(population3.at(i).links_.size(), 0);
+  }
+  
   // // check for the expected tags
   // int cnt = 0;
   // for (const Model& model: population)
@@ -431,7 +435,7 @@ BOOST_AUTO_TEST_CASE(trainModels)
   PopulationTrainerExt<float> population_trainer;
 
 	std::vector<ModelInterpreterDefaultDevice<float>> model_interpreters;
-	for (size_t i = 0; i < 1; ++i) {
+	for (size_t i = 0; i < 2; ++i) {
 		ModelResources model_resources = { ModelDevice(0, 1) };
 		model_interpreters.push_back(ModelInterpreterDefaultDevice<float>(model_resources));
 	}
@@ -566,7 +570,7 @@ BOOST_AUTO_TEST_CASE(evalModels)
 	PopulationTrainerExt<float> population_trainer;
 
 	std::vector<ModelInterpreterDefaultDevice<float>> model_interpreters;
-	for (size_t i = 0; i < 1; ++i) {
+	for (size_t i = 0; i < 2; ++i) {
 		ModelResources model_resources = { ModelDevice(0, 1) };
 		model_interpreters.push_back(ModelInterpreterDefaultDevice<float>(model_resources));
 	}
@@ -706,7 +710,7 @@ BOOST_AUTO_TEST_CASE(exampleUsage)
 
 	// define the model trainers and resources for the trainers
 	std::vector<ModelInterpreterDefaultDevice<float>> model_interpreters;
-	for (size_t i = 0; i < 1; ++i) {
+	for (size_t i = 0; i < 2; ++i) {
 		ModelResources model_resources = { ModelDevice(0, 1) };
 		model_interpreters.push_back(ModelInterpreterDefaultDevice<float>(model_resources));
 	}

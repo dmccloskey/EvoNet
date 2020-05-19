@@ -33,6 +33,7 @@ namespace SmartPeak
   std::atomic_size_t train_models_iter_{ 0 };
   std::atomic_size_t validate_models_iter_{ 0 };
   std::atomic_size_t replicate_models_iter_{ 0 };
+  std::atomic_size_t models_id_iter_{ 0 };
   std::atomic_size_t eval_models_iter_{ 0 };
 
   /**
@@ -161,14 +162,15 @@ public:
       const std::string& unique_str = "",
       const int& n_threads = 1);
 
-    static std::pair<bool, Model<TensorT>> replicateModels_(
+    static bool replicateModels_(
       std::vector<Model<TensorT>>& models,
       ModelReplicator<TensorT>& model_replicator,
-      const std::string& unique_str, const int& cnt,
+      const std::string& unique_str,
+      const int& models_to_replicate, const int& n_replicates_per_model,
       const bool& remove_isolated_nodes, const int& prune_model_num, const bool& check_complete_input_to_output, const bool& reset_model_copy_weights);
 
     static std::pair<bool, Model<TensorT>> replicateModel_(
-      Model<TensorT>& model,
+      const Model<TensorT>& model,
       ModelReplicator<TensorT>& model_replicator,
       const std::string& unique_str, const int& cnt,
       const bool& remove_isolated_nodes, const int& prune_model_num, const bool& check_complete_input_to_output, const bool& reset_model_copy_weights);
@@ -233,9 +235,6 @@ public:
 			const Eigen::Tensor<TensorT, 4>& input,
 			const Eigen::Tensor<TensorT, 3>& time_steps,
 			const std::vector<std::string>& input_nodes);
-
-		int getNextID(); ///< iterate and return the next id in the sequence
-		void setID(const int& id);  ///< unique_id setter
  
 		/**
 		@brief Train the population
@@ -303,8 +302,6 @@ public:
     int getNEpochsTraining() const; ///< n_epochs setter
 
 private:
-    int unique_id_ = 0;
-
 		// population dynamics
 		int n_top_ = 0; ///< The number models to select
 		int n_random_ = 0; ///< The number of random models to select from the pool of top models
@@ -652,69 +649,91 @@ private:
 		const std::string& unique_str,
 		const int& n_threads)
 	{
-		// replicate and modify
-		std::vector<Model<TensorT>> models_copy = models;
-		int cnt = 0;
-		std::vector<std::future<std::pair<bool, Model<TensorT>>>> task_results;
-		int thread_cnt = 0;
-		for (Model<TensorT>& model : models_copy)
-		{
-			for (int i = 0; i < getNReplicatesPerModel(); ++i)
-			{
-				std::packaged_task<std::pair<bool, Model<TensorT>>// encapsulate in a packaged_task
-					(Model<TensorT>&, ModelReplicator<TensorT>&,
-						const std::string&, const int&, const bool&, const int&, const bool&, const bool&
-						)> task(PopulationTrainer<TensorT, InterpreterT>::replicateModel_);
+    // resize the models to the expected size
+    const int models_to_replicate = models.size();
+    models.resize(models.size() + models.size() * n_replicates_per_model_, Model<TensorT>());
 
-				// launch the thread
-				task_results.push_back(task.get_future());
-				std::thread task_thread(std::move(task),
-					std::ref(model), std::ref(model_replicator),
-					std::ref(unique_str), std::ref(cnt),
-          std::ref(remove_isolated_nodes_), std::ref(prune_model_num_), std::ref(check_complete_input_to_output_), std::ref(reset_model_copy_weights_));
-				task_thread.detach();
+		// launch the workers asynchronously
+    replicate_models_iter_ = 0;
+		std::vector<std::future<bool>> task_results;
+		for (int i=0;i<n_threads;++i) {
+      // encapsulate in a packaged_task
+      std::packaged_task<bool(std::vector<Model<TensorT>>&, ModelReplicator<TensorT>&, const std::string&,
+        const int&, const int&, const bool&, const int&, const bool&, const bool&
+        )> task(PopulationTrainer<TensorT, InterpreterT>::replicateModels_);
 
-				// retreive the results
-				if (thread_cnt == n_threads - 1 || cnt == models_copy.size()*getNReplicatesPerModel() - 1)
-				{
-					for (auto& task_result : task_results)
-					{
-						if (task_result.valid())
-						{
-							try
-							{
-								std::pair<bool, Model<TensorT>> model_task_result = task_result.get();
-								if (model_task_result.first) {
-									model_task_result.second.setId(getNextID());
-									models.push_back(model_task_result.second);
-								}
-								else
-									std::cout << "All models were broken." << std::endl;
-							}
-							catch (std::exception& e)
-							{
-								printf("Exception: %s", e.what());
-							}
-						}
-					}
-					task_results.clear();
-					thread_cnt = 0;
-				}
-				else
-				{
-					++thread_cnt;
-				}
+      // launch the thread
+      task_results.push_back(task.get_future());
+      std::thread task_thread(std::move(task),
+        std::ref(models), std::ref(model_replicator),
+        std::ref(unique_str), std::ref(models_to_replicate), std::ref(n_replicates_per_model_),
+        std::ref(remove_isolated_nodes_), std::ref(prune_model_num_), std::ref(check_complete_input_to_output_), std::ref(reset_model_copy_weights_));
+      task_thread.detach();
+    }
 
-				cnt += 1;
-			}
-		}
+    // Retrieve the results as they come
+    for (auto& task_result : task_results) {
+      try {
+        const bool result = task_result.get();
+      }
+      catch (std::exception & e) {
+        printf("Exception: %s", e.what());
+      }
+    }
 
 		// removeDuplicateModels(models);  // safer to use, but does hurt performance
 	}
 
+  template<typename TensorT, typename InterpreterT>
+  inline bool PopulationTrainer<TensorT, InterpreterT>::replicateModels_(std::vector<Model<TensorT>>& models, ModelReplicator<TensorT>& model_replicator, const std::string& unique_str, const int& models_to_replicate, const int& n_replicates_per_model, const bool& remove_isolated_nodes, const int& prune_model_num, const bool& check_complete_input_to_output, const bool& reset_model_copy_weights)
+  {
+    bool status = false;
+    while(true) {
+      const size_t replicate_models_iter = replicate_models_iter_.fetch_add(1);
+      const size_t models_id_iter = models_id_iter_.fetch_add(1);
+      if (replicate_models_iter >= n_replicates_per_model * models_to_replicate) {
+        break;
+      }
+
+      // determine the model to replicate and modify
+      const int model_index = replicate_models_iter / n_replicates_per_model;
+
+      // make the task
+      std::packaged_task<std::pair<bool, Model<TensorT>>// encapsulate in a packaged_task
+        (const Model<TensorT>&, ModelReplicator<TensorT>&,
+          const std::string&, const int&, const bool&, const int&, const bool&, const bool&
+          )> task(PopulationTrainer<TensorT, InterpreterT>::replicateModel_);
+
+      // launch the thread
+      std::future<std::pair<bool, Model<TensorT>>> task_result = task.get_future();
+      std::thread task_thread(std::move(task),
+        std::ref(models.at(model_index)), std::ref(model_replicator),
+        std::ref(unique_str), std::ref(replicate_models_iter),
+        std::ref(remove_isolated_nodes), std::ref(prune_model_num), std::ref(check_complete_input_to_output), std::ref(reset_model_copy_weights));
+      task_thread.detach();
+
+      // retrieve the results
+      try {
+        std::pair<bool, Model<TensorT>> model_task_result = task_result.get();
+        if (model_task_result.first) {
+          model_task_result.second.setId(models_id_iter);
+          models.at(models_to_replicate + replicate_models_iter) = model_task_result.second;
+        }
+        else {
+          std::cout << "All models were broken." << std::endl;
+        }
+      }
+      catch (std::exception & e) {
+        printf("Exception: %s", e.what());
+      }
+    }
+
+    return status;
+  }
+
 	template<typename TensorT, typename InterpreterT>
 	std::pair<bool, Model<TensorT>> PopulationTrainer<TensorT, InterpreterT>::replicateModel_(
-		Model<TensorT>& model,
+		const Model<TensorT>& model,
 		ModelReplicator<TensorT>& model_replicator,
 		const std::string& unique_str, const int& cnt,
     const bool& remove_isolated_nodes, const int& prune_model_num, const bool& check_complete_input_to_output, const bool& reset_model_copy_weights)
@@ -755,7 +774,7 @@ private:
       if (complete_model) {
         // reset the weights
         if (reset_model_copy_weights) {
-          for (auto& weight_map : model.getWeightsMap()) {
+          for (auto& weight_map : model_copy.getWeightsMap()) {
             weight_map.second->setInitWeight(true);
           }
         }
@@ -972,18 +991,6 @@ private:
 	}
 
 	template<typename TensorT, typename InterpreterT>
-	int PopulationTrainer<TensorT, InterpreterT>::getNextID()
-	{
-		return ++unique_id_;
-	}
-
-	template<typename TensorT, typename InterpreterT>
-	void PopulationTrainer<TensorT, InterpreterT>::setID(const int & id)
-	{
-		unique_id_ = id;
-	}
-
-	template<typename TensorT, typename InterpreterT>
 	std::vector<std::vector<std::tuple<int, std::string, TensorT>>> PopulationTrainer<TensorT, InterpreterT>::evolveModels(
 		std::vector<Model<TensorT>>& models,
 		ModelTrainer<TensorT, InterpreterT>& model_trainer,  std::vector<InterpreterT>& model_interpreters,
@@ -1005,7 +1012,7 @@ private:
 		data_simulator.simulateValidationData(input_data_validation, output_data_validation, time_steps_validation);
 
 		// Population initial conditions
-		setID(models.size());
+    models_id_iter_ = models.size();
 
 		// Initialize the logger
 		if (this->getLogTraining())
@@ -1014,9 +1021,7 @@ private:
 		// Evolve the population
 		for (int iter = 0; iter < getNGenerations(); ++iter)
 		{
-			char iter_char[128];
-			sprintf(iter_char, "Iteration #: %d\n", iter);
-			std::cout << iter_char;
+      std::cout << "Iteration #: " + std::to_string(iter) << std::endl;
 
 			// update the population dynamics
 			adaptivePopulationScheduler(iter, models, models_validation_errors_per_generation);
@@ -1087,9 +1092,6 @@ private:
 		Eigen::Tensor<TensorT, 4> input_data_evaluation(model_trainer.getBatchSize(), model_trainer.getMemorySize(), (int)input_nodes.size(), model_trainer.getNEpochsEvaluation());
 		Eigen::Tensor<TensorT, 3> time_steps_evaluation(model_trainer.getBatchSize(), model_trainer.getMemorySize(), model_trainer.getNEpochsEvaluation());
 		data_simulator.simulateEvaluationData(input_data_evaluation, time_steps_evaluation);
-
-		// Population initial conditions
-		setID(models.size());
 
 		// Evaluate the population
 		std::cout << "Evaluating the model..." << std::endl;
