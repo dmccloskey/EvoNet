@@ -158,8 +158,14 @@ public:
     void replicateModels(
       std::vector<Model<TensorT>>& models,
       ModelReplicator<TensorT>& model_replicator,
-      std::string unique_str = "",
-      int n_threads = 1);
+      const std::string& unique_str = "",
+      const int& n_threads = 1);
+
+    static std::pair<bool, Model<TensorT>> replicateModels_(
+      std::vector<Model<TensorT>>& models,
+      ModelReplicator<TensorT>& model_replicator,
+      const std::string& unique_str, const int& cnt,
+      const bool& remove_isolated_nodes, const int& prune_model_num, const bool& check_complete_input_to_output, const bool& reset_model_copy_weights);
 
     static std::pair<bool, Model<TensorT>> replicateModel_(
       Model<TensorT>& model,
@@ -643,8 +649,8 @@ private:
 	void PopulationTrainer<TensorT, InterpreterT>::replicateModels(
 		std::vector<Model<TensorT>>& models,
 		ModelReplicator<TensorT>& model_replicator,
-		std::string unique_str,
-		int n_threads)
+		const std::string& unique_str,
+		const int& n_threads)
 	{
 		// replicate and modify
 		std::vector<Model<TensorT>> models_copy = models;
