@@ -437,17 +437,6 @@ private:
 				models.push_back(model.second);
 			}
 		}
-
-		// models.erase(std::unique(models.begin(), models.end(), 
-		//   [=](const Model<TensorT>& a, const Model<TensorT>& b)
-		//     {
-		//       printf("Modela %s Model*b %s are equal? ", a.getName().data(), b.getName().data());
-		//       bool areequal = a.getName() == b.getName();
-		//       std::cout<<areequal<<std::endl;
-		//       return a.getName() == b.getName();
-		//     }),
-		//   models.end()
-		// );
 	}
 
 	template<typename TensorT, typename InterpreterT>
@@ -462,49 +451,34 @@ private:
 	{
 		// score the models
 		std::vector<std::tuple<int, std::string, TensorT>> models_validation_errors;
+    models_validation_errors.resize(models.size());
 
-    // Make the list of workers
-    std::vector<std::packaged_task<bool
-    (std::vector<Model<TensorT>>&,
-      ModelTrainer<TensorT, InterpreterT>&, InterpreterT&,
-      ModelLogger<TensorT>&,
-      const Eigen::Tensor<TensorT, 4>&,
-      const Eigen::Tensor<TensorT, 4>&,
-      const Eigen::Tensor<TensorT, 3>&,
-      const std::vector<std::string>&,
-      std::vector<std::tuple<int, std::string, TensorT>>&
-      )>> tasks;
-    for (size_t i = 0; i < model_interpreters.size(); ++i) {
-      std::packaged_task<bool
-      (std::vector<Model<TensorT>>&,
-        ModelTrainer<TensorT, InterpreterT>&, InterpreterT&,
-        ModelLogger<TensorT>&,
-        const Eigen::Tensor<TensorT, 4>&,
-        const Eigen::Tensor<TensorT, 4>&,
-        const Eigen::Tensor<TensorT, 3>&,
-        const std::vector<std::string>&,
-        std::vector<std::tuple<int, std::string, TensorT>>&
-        )> task(PopulationTrainer<TensorT, InterpreterT>::validateModels_);
-      tasks.push_back(std::move(task));
-    }
-
-    // Launch the tasks asyncronously
+    // launch the workers asynchronously
     validate_models_iter_ = 0;
-    for (int i = 0; i < model_interpreters.size(); ++i) {
+    std::vector<std::future<bool>> task_results;
+    for (size_t i = 0; i < model_interpreters.size(); ++i) {
+      // make the packaged task and save the future
+      std::packaged_task<bool(std::vector<Model<TensorT>>&,
+        ModelTrainer<TensorT, InterpreterT>&, InterpreterT&, ModelLogger<TensorT>&,
+        const Eigen::Tensor<TensorT, 4>&, const Eigen::Tensor<TensorT, 4>&, const Eigen::Tensor<TensorT, 3>&,
+        const std::vector<std::string>&, std::vector<std::tuple<int, std::string, TensorT>>&
+        )> task(PopulationTrainer<TensorT, InterpreterT>::validateModels_);
+      task_results.push_back(task.get_future());
 
       // create a copy of the model logger
       ModelLogger<TensorT> model_logger_copy = model_logger;
 
       // launch the interpreter
-      std::future<bool> task_result = tasks.at(i).get_future();
-      std::thread task_thread(std::move(tasks.at(i)),
+      std::thread task_thread(std::move(task),
         std::ref(models), std::ref(model_trainer), std::ref(model_interpreters[i]), std::ref(model_logger_copy),
         std::ref(input), std::ref(output), std::ref(time_steps),
         std::ref(input_nodes),
         std::ref(models_validation_errors));
       task_thread.detach();
+    }
 
-      // retreive the results
+    // Retrieve the results as they come
+    for (auto& task_result: task_results) {
       try {
         const bool result = task_result.get();
       }
@@ -796,47 +770,30 @@ private:
 		const Eigen::Tensor<TensorT, 3>& time_steps,
 		const std::vector<std::string>& input_nodes)
 	{
-		// std::vector<std::string> broken_model_names;
-
-    // Make the list of workers
-    std::vector<std::packaged_task<bool
-      (std::vector<Model<TensorT>>&,
-        ModelTrainer<TensorT, InterpreterT>&, InterpreterT&,
-        ModelLogger<TensorT>&,
-        const Eigen::Tensor<TensorT, 4>&,
-        const Eigen::Tensor<TensorT, 4>&,
-        const Eigen::Tensor<TensorT, 3>&,
-        const std::vector<std::string>&
-        )>> tasks;
-    for (size_t i = 0; i < model_interpreters.size(); ++i) {
-      std::packaged_task<bool
-        (std::vector<Model<TensorT>>&,
-          ModelTrainer<TensorT, InterpreterT>&, InterpreterT&,
-          ModelLogger<TensorT>&,
-          const Eigen::Tensor<TensorT, 4>&,
-          const Eigen::Tensor<TensorT, 4>&,
-          const Eigen::Tensor<TensorT, 3>&,
-          const std::vector<std::string>&
-          )> task(PopulationTrainer<TensorT, InterpreterT>::trainModels_);
-      tasks.push_back(std::move(task));
-    }
-    
-    // Launch the tasks asyncronously
+    // Launch the workers asynchronously
     train_models_iter_ = 0;
-    for (int i = 0; i < model_interpreters.size(); ++i) {
+    std::vector<std::future<bool>> task_results;
+    for (size_t i = 0; i < model_interpreters.size(); ++i) {
+      // make the packaged task and save the future
+      std::packaged_task<bool(std::vector<Model<TensorT>>&, ModelTrainer<TensorT, InterpreterT>&, InterpreterT&,
+          ModelLogger<TensorT>&, const Eigen::Tensor<TensorT, 4>&, const Eigen::Tensor<TensorT, 4>&,
+          const Eigen::Tensor<TensorT, 3>&, const std::vector<std::string>&
+          )> task(PopulationTrainer<TensorT, InterpreterT>::trainModels_);
+      task_results.push_back(task.get_future());
 
       // create a copy of the model logger
       ModelLogger<TensorT> model_logger_copy = model_logger;
 
       // launch the interpreter
-      std::future<bool> task_result = tasks.at(i).get_future();
-      std::thread task_thread(std::move(tasks.at(i)),
+      std::thread task_thread(std::move(task),
         std::ref(models), std::ref(model_trainer), std::ref(model_interpreters[i]), std::ref(model_logger_copy),
         std::ref(input), std::ref(output), std::ref(time_steps),
         std::ref(input_nodes));
       task_thread.detach();
-
-      // retreive the results
+    }
+    
+    // retrieve the results as they come in
+    for (auto& task_result: task_results) {
       try {
         const bool result = task_result.get();
       }
@@ -844,20 +801,6 @@ private:
         printf("Exception: %s", e.what());
       }
     }
-
-		// // purge broken models
-		// if (broken_model_names.size() > 0)
-		// {
-		//   models.erase(
-		//     std::remove_if(models.begin(), models.end(),
-		//       [=](const Model<TensorT>& model)
-		//       {
-		//         return std::count(broken_model_names.begin(), broken_model_names.end(), model.getName()) != 0;
-		//       }
-		//     ),
-		//     models.end()
-		//   );
-		// }
 	}
 
   template<typename TensorT, typename InterpreterT>
