@@ -578,7 +578,7 @@ private:
 		const Eigen::Tensor<TensorT, 3>& time_steps,
 		const std::vector<std::string>& input_nodes)
 	{
-		std::lock_guard<std::mutex> lock(validateModel_mutex);
+		//std::lock_guard<std::mutex> lock(validateModel_mutex);
 		// score the model
 		try
 		{
@@ -746,7 +746,7 @@ private:
 		const std::string& unique_str, const int& cnt,
     const bool& remove_isolated_nodes, const int& prune_model_num, const bool& check_complete_input_to_output, const bool& reset_model_copy_weights)
 	{
-		std::lock_guard<std::mutex> lock(replicateModel_mutex);
+		//std::lock_guard<std::mutex> lock(replicateModel_mutex);
 
 		// rename the model
 		std::regex re("@");
@@ -892,7 +892,7 @@ private:
 		const Eigen::Tensor<TensorT, 3>& time_steps,
 		const std::vector<std::string>& input_nodes)
 	{
-		std::lock_guard<std::mutex> lock(trainModel_mutex);
+		//std::lock_guard<std::mutex> lock(trainModel_mutex);
 
 		try
 		{
@@ -1008,7 +1008,7 @@ private:
 		const Eigen::Tensor<TensorT, 3>& time_steps,
 		const std::vector<std::string>& input_nodes)
 	{
-		std::lock_guard<std::mutex> lock(evalModel_mutex);
+		//std::lock_guard<std::mutex> lock(evalModel_mutex);
 
 		try
 		{

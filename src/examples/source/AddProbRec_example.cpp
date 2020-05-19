@@ -430,7 +430,7 @@ public:
 	}
 };
 
-void main_AddProbRec(const std::string& data_dir, const int& n_generations, const int& n_mask, const int& sequence_length, const int& batch_size, const int& n_epochs_training, const int& n_epochs_validation, const int& n_epochs_evaluation, const bool& make_model, const std::string& model_type, const bool& evolve_population, const bool& train_model, const bool& evaluate_model) {
+void main_AddProbRec(const std::string& data_dir, const int& n_interpreters, const int& n_generations, const int& n_mask, const int& sequence_length, const int& batch_size, const int& n_epochs_training, const int& n_epochs_validation, const int& n_epochs_evaluation, const bool& make_model, const std::string& model_type, const bool& evolve_population, const bool& train_model, const bool& evaluate_model) {
   // define the population trainer parameters
   PopulationTrainerExt<float> population_trainer;
   population_trainer.setNGenerations(n_generations); // population training
@@ -442,7 +442,7 @@ void main_AddProbRec(const std::string& data_dir, const int& n_generations, cons
 
   // define the multithreading parameters
   const int n_hard_threads = std::thread::hardware_concurrency();
-  const int n_threads = n_hard_threads; // the number of threads
+  const int n_threads = (n_interpreters > n_hard_threads)? n_hard_threads: n_interpreters; // the number of threads
 
   // define the input/output nodes
   std::vector<std::string> input_nodes = { "Input_000000000000", "Input_000000000001" };
@@ -557,6 +557,7 @@ int main(int argc, char** argv)
 {
   // Set the default command line arguments
   std::string data_dir = "";
+  int n_interpreters = 16;
   int n_generations = 50;
   int n_mask = 2;
   int sequence_length = 25;
@@ -575,6 +576,6 @@ int main(int argc, char** argv)
   // Print the parsed variables to the screen
 
   // Run the main application
-  main_AddProbRec(data_dir, n_generations, n_mask, sequence_length, batch_size, n_epochs_training, n_epochs_validation, n_epochs_evaluation, make_model, model_type, evolve_population, train_model, evaluate_model);
+  main_AddProbRec(data_dir, n_interpreters, n_generations, n_mask, sequence_length, batch_size, n_epochs_training, n_epochs_validation, n_epochs_evaluation, make_model, model_type, evolve_population, train_model, evaluate_model);
 	return 0;
 }
