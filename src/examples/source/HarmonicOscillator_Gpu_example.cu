@@ -105,16 +105,26 @@ public:
     std::mt19937 gen{ rd() };
     std::normal_distribution<> dist{ 0.0f, 1.0f };
 
+    const int time_course_multiplier = 2; // How long to make the time course based on the memory size
+    const int n_batches_per_time_course = 4; // The number of chunks each simulation time course is chopped into
+    const int time_steps_size = ((memory_size > n_batches_per_time_course) ? memory_size : n_batches_per_time_course)* time_course_multiplier + 1; // The total number of time_steps per simulation time course
+    Eigen::Tensor<float, 1> time_steps_displacements(time_steps_size);
+    Eigen::Tensor<float, 2> displacements_all(time_steps_size, 1);
+
     // Generate the input and output data for training
     for (int batch_iter = 0; batch_iter < batch_size; ++batch_iter) {
       for (int epochs_iter = 0; epochs_iter < n_epochs; ++epochs_iter) {
 
-        // Simulate a 1 weight and 1 spring 1D harmonic system
-        // where the weight has been displaced by a random amount
-        Eigen::Tensor<float, 1> time_steps(memory_size + 1);
-        Eigen::Tensor<float, 2> displacements(memory_size + 1, 1);
-        WeightSpring.WeightSpring1W1S1D(time_steps, displacements, memory_size + 1, 0.1,
-          1, 1, dist(gen), 0);
+        // Simulate a 1 weight and 1 spring 1D harmonic system where the weight has been displaced by a random amount
+        const int remainder = batch_iter % n_batches_per_time_course;
+        const int increment = (time_course_multiplier * memory_size - memory_size) / (n_batches_per_time_course - 1);
+        if (remainder == 0) {
+          WeightSpring.WeightSpring1W1S1D(time_steps_displacements, displacements_all, time_steps_size, 0.1,
+            1, 1, dist(gen), 0);
+        }
+        Eigen::array<Eigen::Index, 2> offset = { increment * remainder, 0 };
+        Eigen::array<Eigen::Index, 2> span = { memory_size + 1, 1 };
+        Eigen::Tensor<float, 2> displacements = displacements_all.slice(offset, span);
 
         for (int memory_iter = 0; memory_iter < memory_size; ++memory_iter) {
           if (memory_iter < 1)	input_data(batch_iter, memory_size - 1 - memory_iter, 0, epochs_iter) = displacements(memory_iter, 0);
@@ -162,6 +172,7 @@ public:
         if (memory_iter < 1)	input_data(batch_iter, memory_size - 1 - memory_iter, 0) = displacements(memory_iter, 0);
         else input_data(batch_iter, memory_size - 1 - memory_iter, 0) = TensorT(0);
         output_data(batch_iter, memory_size - 1 - memory_iter, 0) = displacements(memory_iter + 1, 0); // The next time point
+        metric_output_data(batch_iter, memory_size - 1 - memory_iter, 0) = displacements(memory_iter + 1, 0); // The next time point
       }
     }
     time_steps.setConstant(1.0f);
@@ -585,19 +596,20 @@ public:
   }
 };
 
-void main_HarmonicOscillator1D(const std::string& data_dir, const bool& make_model, const bool& train_model, const bool& evolve_model, const std::string& simulation_type,
+void main_HarmonicOscillator1D(const std::string& data_dir, const int& n_interpreters, const int& n_generations, const bool& make_model, const bool& train_model, const bool& evolve_model, const std::string& simulation_type,
   const int& batch_size, const int& memory_size, const int& n_epochs_training, const int& n_tbtt_steps, const int& device_id) {
   // define the population trainer parameters
   PopulationTrainerExt<float> population_trainer;
-  population_trainer.setNGenerations(1);
+  population_trainer.setNGenerations(n_generations); // population training
   population_trainer.setLogging(true);
+  population_trainer.setResetModelCopyWeights(true);
 
   // define the population logger
   PopulationLogger<float> population_logger(true, true);
 
   // define the multithreading parameters
   const int n_hard_threads = std::thread::hardware_concurrency();
-  const int n_threads = n_hard_threads; // the number of threads
+  const int n_threads = (n_interpreters > n_hard_threads) ? n_hard_threads : n_interpreters; // the number of threads
 
   // Make the input nodes
   const int n_masses = 1;
@@ -699,6 +711,13 @@ void main_HarmonicOscillator1D(const std::string& data_dir, const bool& make_mod
     model.setId(1);
     ModelInterpreterFileGpu<float> model_interpreter_file;
     model_interpreter_file.loadModelInterpreterBinary(interpreter_filename, model_interpreters[0]); // FIX ME!
+
+    // update the model solver and learning rate
+    for (auto& weight : model.getWeightsMap()) {
+      if (weight.second->getSolverOp()->getName() != "DummySolverOp") {
+        weight.second->setSolverOp(std::make_shared<AdamOp<float>>(AdamOp<float>(1e-5, 0.9, 0.999, 1e-8, 10)));
+      }
+    }
   }
   model.setName(data_dir + model_name); //So that all output will be written to a specific directory
 
@@ -745,6 +764,9 @@ int main(int argc, char** argv)
 {
   // Parse the user commands
   std::string data_dir = "";
+  std::string parameters_file = "";
+  int n_interpreters = 16;
+  int n_generations = 50;
   bool make_model = true, train_model = true, evolve_model = false;
   std::string simulation_type = "WeightSpring1W1S1DwDamping";
   int batch_size = 32, memory_size = 64, n_epochs_training = 100000;
@@ -819,6 +841,6 @@ int main(int argc, char** argv)
   std::cout << "n_tbtt_steps: " << n_tbtt_steps << std::endl;
   std::cout << "device_id: " << device_id << std::endl;
 
-  main_HarmonicOscillator1D(data_dir, make_model, train_model, evolve_model, simulation_type, batch_size, memory_size, n_epochs_training, n_tbtt_steps, device_id);
+  main_HarmonicOscillator1D(data_dir, n_interpreters, n_generations, make_model, train_model, evolve_model, simulation_type, batch_size, memory_size, n_epochs_training, n_tbtt_steps, device_id);
   return 0;
 }

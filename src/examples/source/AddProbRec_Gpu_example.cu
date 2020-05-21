@@ -565,10 +565,8 @@ void main_AddProbRec(const std::string& data_dir, const int& n_interpreters, con
   std::vector<MetricFunctionHelper<float>> metric_function_helpers;
   MetricFunctionHelper<float> metric_function_helper1;
   metric_function_helper1.output_nodes_ = output_nodes;
-  metric_function_helper1.metric_functions_ = { std::make_shared<PearsonROp<float>>(PearsonROp<float>("Mean")), std::make_shared<PearsonROp<float>>(PearsonROp<float>("Var")),
-    std::make_shared<EuclideanDistOp<float>>(EuclideanDistOp<float>("Mean")), std::make_shared<EuclideanDistOp<float>>(EuclideanDistOp<float>("Var")) };
-  metric_function_helper1.metric_names_ = { "PearsonR-Mean", "PearsonR-Var",
-    "EuclideanDist-Mean", "EuclideanDist-Var" };
+  metric_function_helper1.metric_functions_ = { std::make_shared<EuclideanDistOp<float>>(EuclideanDistOp<float>("Mean")), std::make_shared<EuclideanDistOp<float>>(EuclideanDistOp<float>("Var")) };
+  metric_function_helper1.metric_names_ = { "EuclideanDist-Mean", "EuclideanDist-Var" };
   metric_function_helpers.push_back(metric_function_helper1);
   model_trainer.setMetricFunctionHelpers(metric_function_helpers);
 
