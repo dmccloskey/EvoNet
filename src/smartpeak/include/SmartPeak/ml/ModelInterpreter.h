@@ -643,9 +643,8 @@ namespace SmartPeak
 	inline void ModelInterpreter<TensorT, DeviceT>::mapValuesToLayers(Model<TensorT>& model, const Eigen::Tensor<TensorT, 3>& values, const std::vector<std::string>& node_names, const std::string & value_type)
 	{
 		if (layer_tensors_.size() <= 0) {
-			char error_char[512];
-			sprintf(error_char, "Tensor layers have not been created.  Cannot map values to layers.");
-			std::string error(error_char);
+      clear_cache(); // clean up before exiting
+      std::string error_char = "Tensor layers have not been created.  Cannot map values to layers.";
 			throw std::runtime_error(error_char);
 		}
 
@@ -653,21 +652,21 @@ namespace SmartPeak
 		Eigen::Tensor<TensorT, 3> values_buffered = values.pad(Eigen::array<std::pair<int, int>, 3>({std::make_pair(0,0),std::make_pair(0,1),std::make_pair(0,0)}));
 
 		// check dimension mismatches
-		if (node_names.size() != values_buffered.dimension(2))
-		{
-			printf("The number of input features %d and the number of nodes %d do not match.\n", (int)values_buffered.dimension(2), node_names.size());
-			return;
+		if (node_names.size() != values_buffered.dimension(2)) {
+      clear_cache(); // clean up before exiting
+      const std::string error = "The number of input features " + std::to_string(values_buffered.dimension(2)) + " and the number of nodes " + std::to_string(node_names.size()) + " do not match.";
+      throw std::runtime_error(error);
 		}
 		// assumes the tensors have been cached
-		else if (layer_tensors_[0]->getBatchSize() != values_buffered.dimension(0))
-		{
-			printf("The number of input samples %d and the batch size %d does not match.\n", (int)values_buffered.dimension(0), (int)layer_tensors_[0]->getBatchSize());
-			return;
+		else if (layer_tensors_[0]->getBatchSize() != values_buffered.dimension(0))	{
+      clear_cache(); // clean up before exiting
+      const std::string error = "The number of input samples " + std::to_string(values_buffered.dimension(0)) + " and the batch size " + std::to_string(layer_tensors_[0]->getBatchSize()) + " do not match.";
+      throw std::runtime_error(error);
 		}
-		else if (layer_tensors_[0]->getMemorySize() != values_buffered.dimension(1))
-		{
-			printf("The number of input time steps %d and the memory size %d does not match.\n", (int)values_buffered.dimension(1), (int)layer_tensors_[0]->getMemorySize());
-			return;
+		else if (layer_tensors_[0]->getMemorySize() != values_buffered.dimension(1)){
+      clear_cache(); // clean up before exiting
+      const std::string error = "The number of input time steps " + std::to_string(values_buffered.dimension(1)) + " and the memory size " + std::to_string(layer_tensors_[0]->getMemorySize()) + " do not match.";
+      throw std::runtime_error(error);
 		}
 
 		for (int i = 0; i < node_names.size(); ++i){
@@ -698,9 +697,9 @@ namespace SmartPeak
 	inline void ModelInterpreter<TensorT, DeviceT>::initBiases(Model<TensorT>& model)
 	{
 		if (layer_tensors_.size() <= 0) {
-			char error_char[512];
-			sprintf(error_char, "Tensor layers have not been created.  Cannot initiate biases.");
-			std::string error(error_char);
+      clear_cache(); // clean up before exiting
+			std::string error_char = "Tensor layers have not been created.  Cannot initiate biases.";
+      std::cout << error_char << std::endl;
 			throw std::runtime_error(error_char);
 		}
 		Eigen::Tensor<TensorT, 2> one((int)layer_tensors_[0]->getBatchSize(), (int)layer_tensors_[0]->getMemorySize());	one.setConstant((TensorT)1);
@@ -712,9 +711,8 @@ namespace SmartPeak
 				}
 				else {
 					clear_cache(); // clean up before exiting
-					char error_char[512];
-					sprintf(error_char, "Node %s has not been assigned a tensor index!", node_map.second->getName().data());
-					std::string error(error_char);
+					std::string error_char = "Node " + node_map.second->getName() + " has not been assigned a tensor index!";
+          std::cout << error_char << std::endl;
 					throw std::runtime_error(error_char);
 					// Error is cause by an added recursive link that "blocks" forward propogation
 				}
@@ -1640,10 +1638,9 @@ namespace SmartPeak
 							// add the first shared weight index
 							int weight_pos_0 = std::get<0>(argument.weight->getTensorIndex()[0]);
 							if (weight_pos_0 != weight_pos) {
-								char error_char[512];
-								sprintf(error_char, "The weight is shared across multiple tensors.  This is currently not supported.");
-								std::string error(error_char);
-								throw std::runtime_error(error_char);
+                clear_cache(); // clean up before exiting
+								const std::string error = "The weight is shared across multiple tensors.  This is currently not supported.";
+								throw std::runtime_error(error);
 								// if this fails, then the weight is shared with another layer.
 								// the current weight sharing implementation cannot handle such cases.
 							}
@@ -1665,21 +1662,18 @@ namespace SmartPeak
 			}
 
       if (sink_layer_pos_check.size() != 1) {
-        char error_char[512];
-        sprintf(error_char, "Attempting to join sink nodes that are on different layers.");
-        std::string error(error_char);
+        clear_cache(); // clean up before exiting
+        std::string error_char = "Attempting to join sink nodes that are on different layers.";
         throw std::runtime_error(error_char);
       }
       if (source_layer_pos_check.size() != 1) {
-        char error_char[512];
-        sprintf(error_char, "Attempting to join source nodes that are on different layers.");
-        std::string error(error_char);
+        clear_cache(); // clean up before exiting
+        std::string error_char = "Attempting to join source nodes that are on different layers.";
         throw std::runtime_error(error_char);
       }
       if (updated_source_layer_pos && make_sink_tensor) {
-        char error_char[512];
-        sprintf(error_char, "Attempting to join sink nodes that are on different layers.");
-        std::string error(error_char);
+        clear_cache(); // clean up before exiting
+        std::string error_char = "Attempting to join sink nodes that are on different layers.";
         throw std::runtime_error(error_char);
       }
 
@@ -1697,17 +1691,15 @@ namespace SmartPeak
       
       // Check that the source layer size is not less than the # of source nodes
       if (source_layer_sizes.back() < source_nodes.size() - 1) { // changed from != and add -1
-        char error_char[512];
-        sprintf(error_char, "Attempting to join multiple source nodes into a single layer that were previously split into seperate layers.");
-        std::string error(error_char);
+        clear_cache(); // clean up before exiting
+        std::string error_char = "Attempting to join multiple source nodes into a single layer that were previously split into seperate layers.";
         throw std::runtime_error(error_char);
       }
 
       // Check that the sink layer size is not less than the # of sink nodes
       if (sink_layer_sizes.back() < sink_nodes.size() - 1) { // changed from != and added -1
-        char error_char[512];
-        sprintf(error_char, "Attempting to join multiple sink nodes into a single layer that were previously split into seperate layers.");
-        std::string error(error_char);
+        clear_cache(); // clean up before exiting
+        std::string error_char = "Attempting to join multiple sink nodes into a single layer that were previously split into seperate layers.";
         throw std::runtime_error(error_char);
       }
 
@@ -2039,11 +2031,13 @@ namespace SmartPeak
 		// extract out the layer id
 		const int layer_id = model.nodes_.at(node_names[0])->getTensorIndex().first;
 		if (layer_id < 0) {
+      clear_cache(); // clean up before exiting
 			std::string error = "The output layer does not exist.";
 			throw std::runtime_error(error);
 		}
 		if (getLayerTensor(layer_id)->getLayerSize() != node_names.size()) {
 			std::string error = "The number of output nodes " + std::to_string(getLayerTensor(layer_id)->getLayerSize()) + " does not match the output layer tensor size " + std::to_string(node_names.size());
+      clear_cache(); // clean up before exiting
 			throw std::runtime_error(error);
 		}
 
@@ -2082,15 +2076,13 @@ namespace SmartPeak
     // extract out the layer id
     const int layer_id = model.nodes_.at(node_names[0])->getTensorIndex().first;
     if (layer_id < 0) {
-      char error_char[512];
-      sprintf(error_char, "The output layer does not exist.");
-      std::string error(error_char);
+      clear_cache(); // clean up before exiting
+      std::string error_char = "The output layer does not exist.";
       throw std::runtime_error(error_char);
     }
     if (getLayerTensor(layer_id)->getLayerSize() != node_names.size()) {
-      char error_char[512];
-      sprintf(error_char, "The number of output nodes does not match the output layer tensor size.");
-      std::string error(error_char);
+      clear_cache(); // clean up before exiting
+      std::string error_char = "The number of output nodes does not match the output layer tensor size.";
       throw std::runtime_error(error_char);
     }
 

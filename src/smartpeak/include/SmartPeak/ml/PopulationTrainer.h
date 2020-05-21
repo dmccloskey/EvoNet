@@ -564,6 +564,10 @@ private:
       catch (std::exception & e) {
         printf("Exception: %s", e.what());
       }
+
+      // Clear the interpreter cache before moving to the next model
+      // TODO: add test case for this
+      model_interpreter.clear_cache();
     }
     return result;
   }

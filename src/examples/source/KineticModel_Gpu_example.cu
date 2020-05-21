@@ -7,8 +7,7 @@
 #include <SmartPeak/ml/Model.h>
 #include <SmartPeak/io/PopulationTrainerFile.h>
 #include <SmartPeak/io/ModelInterpreterFileGpu.h>
-
-#include "Metabolomics_example.h"
+#include <SmartPeak/core/Preprocessing.h>
 
 #include <unsupported/Eigen/CXX11/Tensor>
 
@@ -19,7 +18,7 @@ class DataSimulatorExt : public DataSimulator<TensorT>
 {
 public:
   void simulateData(Eigen::Tensor<TensorT, 4>& input_data, Eigen::Tensor<TensorT, 4>& output_data, Eigen::Tensor<TensorT, 3>& time_steps)
-  {
+  { //TODO: update based on `simluateData` below!!!
     // infer data dimensions based on the input tensors
     const int batch_size = input_data.dimension(0);
     const int memory_size = input_data.dimension(1);
@@ -132,7 +131,7 @@ public:
     // Node steady-state concentrations (N=20, mM ~ mmol*gDW-1)
     std::vector<std::string> endo_met_nodes = { "13dpg","2pg","3pg","adp","amp","atp","dhap","f6p","fdp","g3p","g6p","glc__D","h","h2o","lac__L","nad","nadh","pep","pi","pyr" };
     std::vector<TensorT> met_data_stst_vec = { 0.00024,0.0113,0.0773,0.29,0.0867,1.6,0.16,0.0198,0.0146,0.00728,0.0486,1,1.00e-03,1,1.36,0.0589,0.0301,0.017,2.5,0.0603 };
-    Eigen::TensorMap<Eigen::Tensor<TensorT, 3>> met_data_stst(met_data_stst_vec.data(), (int)met_data_stst_vec.size(), 1, 1);
+    Eigen::TensorMap<Eigen::Tensor<TensorT, 2>> met_data_stst(met_data_stst_vec.data(), (int)met_data_stst_vec.size(), 1);
 
     // Node external steady-state concentrations (N=3, mmol*gDW-1) over 256 min
     // calculated using a starting concentration of 5, 0, 0 mmol*gDW-1 for glc__D, lac__L, and pyr, respectively 
@@ -146,23 +145,19 @@ public:
       1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,
       1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1
     };
-    Eigen::TensorMap<Eigen::Tensor<TensorT, 3>> exomet_data_stst(exomet_data_stst_vec.data(), (int)exomet_data_stst_vec.size() / exo_met_nodes.size(), exo_met_nodes.size(), 1);
+    Eigen::TensorMap<Eigen::Tensor<TensorT, 2>> exomet_data_stst(exomet_data_stst_vec.data(), (int)exomet_data_stst_vec.size() / exo_met_nodes.size(), exo_met_nodes.size());
 
     assert(n_input_nodes == endo_met_nodes.size() + exo_met_nodes.size());
     assert(n_output_nodes == endo_met_nodes.size() + exo_met_nodes.size());
-    assert(memory_size + 1 < 256);
+    assert(memory_size + 1 < (int)exomet_data_stst_vec.size() / exo_met_nodes.size());
 
-    // Add random noise to the endo metabolomics data
-    Eigen::Tensor<TensorT, 3> met_data_stst_trunc = met_data_stst.broadcast(Eigen::array<Eigen::Index, 3>({ 1, memory_size + 1, batch_size }));
-    auto met_nodes_rand_2d = GaussianSampler<TensorT>((int)met_data_stst_vec.size(), batch_size * (memory_size + 1));
-    auto met_nodes_rand_3d = met_nodes_rand_2d.reshape(Eigen::array<Eigen::Index, 3>({ (int)met_data_stst_vec.size(), memory_size + 1, batch_size }));
-    Eigen::Tensor<TensorT, 3> met_nodes_rand = (met_data_stst_trunc + met_nodes_rand_3d * met_data_stst_trunc * met_nodes_rand_3d.constant(TensorT(0.1))).clip(TensorT(0), TensorT(1e3));
+    // Project the stst met data to 0 and 1
+    LinearScale<TensorT, 2> linearScaleEndoMet(met_data_stst, 0, 1);
+    Eigen::Tensor<TensorT, 2> met_data_stst_proj = linearScaleEndoMet(met_data_stst);
 
-    // Add random noise to the exo metabolomics data
-    Eigen::Tensor<TensorT, 3> exomet_data_stst_trunc = exomet_data_stst.shuffle(Eigen::array<Eigen::Index, 3>({ 1, 0, 2 })).slice(Eigen::array<Eigen::Index, 3>({ 0, (int)exomet_data_stst_vec.size() / (int)exo_met_nodes.size() - memory_size - 1, 0 }), Eigen::array<Eigen::Index, 3>({ (int)exo_met_nodes.size(), memory_size + 1, 1 })).broadcast(Eigen::array<Eigen::Index, 3>({ 1, 1, batch_size }));
-    auto exo_met_nodes_rand_2d = GaussianSampler<TensorT>(exo_met_nodes.size(), batch_size * (memory_size + 1));
-    auto exo_met_nodes_rand_3d = exo_met_nodes_rand_2d.reshape(Eigen::array<Eigen::Index, 3>({ (int)exo_met_nodes.size(), memory_size + 1, batch_size }));
-    Eigen::Tensor<TensorT, 3> exo_met_nodes_rand = (exomet_data_stst_trunc + exo_met_nodes_rand_3d * exomet_data_stst_trunc * exo_met_nodes_rand_3d.constant(TensorT(0.1))).clip(TensorT(0), TensorT(1e3));
+    // Project the stst exomet data to 0 and 1
+    LinearScale<TensorT, 2> linearScaleExoMet(exomet_data_stst, 0, 1);
+    Eigen::Tensor<TensorT, 2> exomet_data_stst_proj = linearScaleExoMet(exomet_data_stst);
 
     // Make glucose pulse and amp sweep data
     const int n_data = batch_size;
@@ -171,13 +166,31 @@ public:
     Eigen::Tensor<TensorT, 2> amp_rand = GaussianSampler<TensorT>(1, n_data);
     amp_rand = (amp_rand + amp_rand.constant(1)) * amp_rand.constant(5);
 
+    const int time_course_multiplier = 2; // How long to make the time course based on the memory size
+    const int n_batches_per_time_course = 32; // The number of chunks each simulation time course is chopped into
+
     // Generate the input and output data for training
     for (int batch_iter = 0; batch_iter < batch_size; ++batch_iter) {
+
+      // Add random noise to the endo metabolomics data
+      auto met_data_stst_trunc = met_data_stst_proj.broadcast(Eigen::array<Eigen::Index, 2>({ 1, memory_size + 1 }));
+      auto met_nodes_rand_2d = GaussianSampler<TensorT>((int)met_data_stst_vec.size(), memory_size + 1);
+      Eigen::Tensor<TensorT, 2> met_nodes_rand = (met_data_stst_trunc + met_nodes_rand_2d * met_data_stst_trunc * met_nodes_rand_2d.constant(TensorT(0.1))).clip(TensorT(0), TensorT(1));
+
+      // Segment the entire exomet time-course based on the batch and memory size
+      const int remainder = batch_iter % n_batches_per_time_course;
+      const int increment = ((int)exomet_data_stst_vec.size() / exo_met_nodes.size() - memory_size) / (n_batches_per_time_course - 1);
+
+      // Add random noise to the exo metabolomics data
+      auto exomet_data_stst_trunc = exomet_data_stst_proj.shuffle(Eigen::array<Eigen::Index, 2>({ 1, 0 })).slice(Eigen::array<Eigen::Index, 2>({ 0, (int)exomet_data_stst_vec.size() / (int)exo_met_nodes.size() - (memory_size + 1) - increment * remainder }), Eigen::array<Eigen::Index, 2>({ (int)exo_met_nodes.size(), memory_size + 1 }));
+      auto exo_met_nodes_rand_2d = GaussianSampler<TensorT>(exo_met_nodes.size(), memory_size + 1);
+      Eigen::Tensor<TensorT, 2> exo_met_nodes_rand = (exomet_data_stst_trunc + exo_met_nodes_rand_2d * exomet_data_stst_trunc * exo_met_nodes_rand_2d.constant(TensorT(0.1))).clip(TensorT(0), TensorT(1));
+
       for (int memory_iter = 0; memory_iter < memory_size; ++memory_iter) {
         for (int nodes_iter = 0; nodes_iter < n_input_nodes; ++nodes_iter) {
           if (simulation_type_ == "glucose_pulse") {
             if (nodes_iter != 11 && memory_iter == memory_size - 1)
-              input_data(batch_iter, memory_iter, nodes_iter) = met_nodes_rand(nodes_iter, memory_iter, batch_iter);
+              input_data(batch_iter, memory_iter, nodes_iter) = met_nodes_rand(nodes_iter, memory_iter);
             else if (nodes_iter == 11 && memory_iter == memory_size - 1)
               input_data(batch_iter, memory_iter, nodes_iter) = glu__D_rand(0, batch_iter);
             else
@@ -185,7 +198,7 @@ public:
           }
           else if (simulation_type_ == "amp_sweep") {
             if (nodes_iter != 4 && memory_iter == memory_size - 1)
-              input_data(batch_iter, memory_iter, nodes_iter) = met_nodes_rand(nodes_iter, memory_iter, batch_iter);
+              input_data(batch_iter, memory_iter, nodes_iter) = met_nodes_rand(nodes_iter, memory_iter);
             else if (nodes_iter == 4 && memory_iter == memory_size - 1)
               input_data(batch_iter, memory_iter, nodes_iter) = amp_rand(0, batch_iter);
             else
@@ -193,9 +206,9 @@ public:
           }
           else if (simulation_type_ == "steady_state") {
             if (nodes_iter >= 0 && nodes_iter < endo_met_nodes.size() && memory_iter == memory_size - 1)
-              input_data(batch_iter, memory_iter, nodes_iter) = met_nodes_rand(nodes_iter, memory_iter, batch_iter);
+              input_data(batch_iter, memory_iter, nodes_iter) = met_nodes_rand(nodes_iter, memory_iter);
             else if (nodes_iter >= endo_met_nodes.size() && nodes_iter < exo_met_nodes.size() + endo_met_nodes.size() && memory_iter == memory_size - 1)
-              input_data(batch_iter, memory_iter, nodes_iter) = exo_met_nodes_rand(nodes_iter - endo_met_nodes.size(), memory_iter, batch_iter);
+              input_data(batch_iter, memory_iter, nodes_iter) = exo_met_nodes_rand(nodes_iter - endo_met_nodes.size(), memory_iter);
             else
               input_data(batch_iter, memory_iter, nodes_iter) = 0;
           }
@@ -203,21 +216,21 @@ public:
         for (int nodes_iter = 0; nodes_iter < n_output_nodes; ++nodes_iter) {
           if (simulation_type_ == "glucose_pulse") {
             if (memory_iter == 0)
-              output_data(batch_iter, memory_iter, nodes_iter) = met_nodes_rand(nodes_iter, memory_iter + 1, batch_iter);
+              output_data(batch_iter, memory_iter, nodes_iter) = met_nodes_rand(nodes_iter, memory_iter + 1);
             else
               output_data(batch_iter, memory_iter, nodes_iter) = 0; // NOTE: TETT of 1
           }
           else if (simulation_type_ == "amp_sweep") {
             if (memory_iter == 0)
-              output_data(batch_iter, memory_iter, nodes_iter) = met_nodes_rand(nodes_iter, memory_iter + 1, batch_iter);
+              output_data(batch_iter, memory_iter, nodes_iter) = met_nodes_rand(nodes_iter, memory_iter + 1);
             else
               output_data(batch_iter, memory_iter, nodes_iter) = 0; // NOTE: TETT of 1
           }
           else if (simulation_type_ == "steady_state") {
             if (nodes_iter >= 0 && nodes_iter < endo_met_nodes.size())
-              output_data(batch_iter, memory_iter, nodes_iter) = met_data_stst_trunc(nodes_iter, memory_iter + 1, batch_iter);
+              output_data(batch_iter, memory_iter, nodes_iter) = met_nodes_rand(nodes_iter, memory_iter + 1);
             else if (nodes_iter >= endo_met_nodes.size() && nodes_iter < exo_met_nodes.size() + endo_met_nodes.size())
-              output_data(batch_iter, memory_iter, nodes_iter) = exomet_data_stst_trunc(nodes_iter - endo_met_nodes.size(), memory_iter + 1, batch_iter);
+              output_data(batch_iter, memory_iter, nodes_iter) = exo_met_nodes_rand(nodes_iter - endo_met_nodes.size(), memory_iter + 1);
           }
         }
       }

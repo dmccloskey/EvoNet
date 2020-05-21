@@ -734,15 +734,15 @@ public:
 
     // add self metabolite links to the model
     if (add_met_self_links) {
-      //this->addSinglyConnected(model, module_name, node_names_met_t0_vec, node_names_met_t1_vec,
-      //  std::make_shared<ConstWeightInitOp<TensorT>>(ConstWeightInitOp<TensorT>(1)),
-      //  std::make_shared<DummySolverOp<TensorT>>(DummySolverOp<TensorT>()), 0.0f, specify_layers);
-      this->addSinglyConnected(model, module_name, node_names_met_t1_vec, node_names_met_t0_vec,
+      this->addSinglyConnected(model, module_name, node_names_met_t0_vec, node_names_met_t1_vec,
         std::make_shared<ConstWeightInitOp<TensorT>>(ConstWeightInitOp<TensorT>(1)),
         std::make_shared<DummySolverOp<TensorT>>(DummySolverOp<TensorT>()), 0.0f, specify_layers);
-      for (int i = 0; i < node_names_met.size(); ++i)
-        model.addCyclicPairs(std::make_pair(node_names_met_t1_vec.at(i), node_names_met_t0_vec.at(i)));
     }
+    this->addSinglyConnected(model, module_name, node_names_met_t1_vec, node_names_met_t0_vec,
+      std::make_shared<ConstWeightInitOp<TensorT>>(ConstWeightInitOp<TensorT>(1)),
+      std::make_shared<DummySolverOp<TensorT>>(DummySolverOp<TensorT>()), 0.0f, specify_layers);
+    for (int i = 0; i < node_names_met.size(); ++i)
+      model.addCyclicPairs(std::make_pair(node_names_met_t1_vec.at(i), node_names_met_t0_vec.at(i)));
 
     // add all reaction MLPs to the model
     for (const auto& biochemicalReaction : biochemicalReactions) {
