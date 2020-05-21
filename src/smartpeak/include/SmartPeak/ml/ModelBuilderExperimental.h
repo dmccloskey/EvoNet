@@ -836,7 +836,7 @@ public:
     if (is_reverse) node_name_reactant_out += "_reverse";
     node_name_reactant_out += "_ReactantsOut";
     this->addSinglyConnected(model, node_name_reactant_out, node_names_FCOut_reactants, node_names_reactants_t1,
-      std::make_shared<ConstWeightInitOp<TensorT>>(ConstWeightInitOp<TensorT>(-1)), // simulate inverse ReLU; TOOD: should correspond to stoichiometry
+      std::make_shared<ConstWeightInitOp<TensorT>>(ConstWeightInitOp<TensorT>(1)), // The amount that goes back into the node; TOOD: should correspond to stoichiometry
       std::make_shared<DummySolverOp<TensorT>>(DummySolverOp<TensorT>()), 0.0f, specify_layers);
 
     // connect the final SC layer to the output nodes (products)

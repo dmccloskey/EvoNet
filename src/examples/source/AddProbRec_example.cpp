@@ -349,6 +349,43 @@ public:
     const Eigen::Tensor<TensorT, 3>& expected_values, const std::vector<std::string>& output_nodes, const std::vector<std::string>& input_nodes, const TensorT& model_error) override
 	{ // Left blank intentionally to prevent writing of files during validation
 	}
+  void evaluationModelLogger(const int& n_epochs, Model<TensorT>& model, ModelInterpreterDefaultDevice<TensorT>& model_interpreter, ModelLogger<TensorT>& model_logger,
+    const Eigen::Tensor<TensorT, 3>& expected_values, const std::vector<std::string>& output_nodes, const std::vector<std::string>& input_nodes, const Eigen::Tensor<TensorT, 1>& model_metrics) override
+  {
+    // Set the defaults
+    model_logger.setLogTimeEpoch(true);
+    model_logger.setLogTrainValMetricEpoch(true);
+    model_logger.setLogExpectedEpoch(false);
+    model_logger.setLogNodeInputsEpoch(false);
+    model_logger.setLogNodeOutputsEpoch(false);
+
+    // initialize all logs
+    if (n_epochs == 0) {
+      model_logger.setLogExpectedEpoch(true);
+      model_logger.setLogNodeInputsEpoch(true);
+      model_logger.setLogNodeOutputsEpoch(true);
+      model_logger.initLogs(model);
+    }
+
+    // Per n epoch logging
+    if (n_epochs % 1000 == 0) { // FIXME
+      model_logger.setLogExpectedEpoch(true);
+      model_logger.setLogNodeInputsEpoch(true);
+      model_logger.setLogNodeOutputsEpoch(true);
+      model_interpreter.getModelResults(model, true, false, false, true);
+    }
+
+    // Create the metric headers and data arrays
+    std::vector<std::string> log_headers;
+    std::vector<TensorT> log_values;
+    int metric_iter = 0;
+    for (const std::string& metric_name : this->getMetricNamesLinearized()) {
+      log_headers.push_back(metric_name);
+      log_values.push_back(model_metrics(metric_iter));
+      ++metric_iter;
+    }
+    model_logger.writeLogs(model, n_epochs, log_headers, {}, log_values, {}, output_nodes, expected_values, {}, output_nodes, {}, input_nodes, {});
+  }
   void adaptiveTrainerScheduler(
     const int& n_generations,
     const int& n_epochs,
@@ -430,7 +467,7 @@ public:
 	}
 };
 
-void main_AddProbRec(const std::string& data_dir, const int& n_interpreters, const int& n_generations, const int& n_mask, const int& sequence_length, const int& batch_size, const int& n_epochs_training, const int& n_epochs_validation, const int& n_epochs_evaluation, const bool& make_model, const std::string& model_type, const bool& evolve_population, const bool& train_model, const bool& evaluate_model) {
+void main_AddProbRec(const std::string& data_dir, const int& n_interpreters, const int& n_generations, const int& n_mask, const int& sequence_length, const int& batch_size, const int& n_epochs_training, const int& n_epochs_validation, const int& n_epochs_evaluation, const bool& make_model, const std::string& model_type, const bool& evolve_population, const bool& train_model, const bool& evaluate_model, const std::string& model_name) {
   // define the population trainer parameters
   PopulationTrainerExt<float> population_trainer;
   population_trainer.setNGenerations(n_generations); // population training
@@ -470,7 +507,7 @@ void main_AddProbRec(const std::string& data_dir, const int& n_interpreters, con
   model_trainer.setNTBPTTSteps(data_simulator.sequence_length_);
   model_trainer.setVerbosityLevel(1);
   model_trainer.setFindCycles(true);
-  model_trainer.setLogging(true, false);
+  model_trainer.setLogging(true, false, true);
   model_trainer.setPreserveOoO(true);
   model_trainer.setFastInterpreter(false);
 
@@ -515,13 +552,12 @@ void main_AddProbRec(const std::string& data_dir, const int& n_interpreters, con
   }
   else {
     std::cout << "Reading in the model..." << std::endl;
-    const std::string model_filename = data_dir + "AddProbRec_model.binary";
-    const std::string interpreter_filename = data_dir + "AddProbRec_interpreter.binary";
     ModelFile<float> model_file;
-    model_file.loadModelBinary(model_filename, model);
+    model_file.loadModelCsv(data_dir + model_name + "_nodes.csv", data_dir + model_name + "_weights.csv", data_dir + model_name + "_links.csv", model, true, true, true);
+    //model_file.loadModelBinary(data_dir + model_name + "_model.binary", model);
     model.setId(1);
     ModelInterpreterFileDefaultDevice<float> model_interpreter_file;
-    model_interpreter_file.loadModelInterpreterBinary(interpreter_filename, model_interpreters[0]); // FIX ME!
+    model_interpreter_file.loadModelInterpreterBinary(data_dir + model_name + "_interpreter.binary", model_interpreters.front()); // FIX ME!
   }
   model.setName(data_dir + model.getName()); //So that all output will be written to a specific directory
 
@@ -556,8 +592,8 @@ void main_AddProbRec(const std::string& data_dir, const int& n_interpreters, con
 int main(int argc, char** argv)
 {
   // Set the default command line arguments
-  std::string data_dir = "";
-  int n_interpreters = 16;
+  std::string data_dir = "C:/Users/dmccloskey/Documents/GitHub/EvoNetData/MNIST_examples/AddProbRec/Cpu2-0a/";
+  int n_interpreters = 1;//16;
   int n_generations = 50;
   int n_mask = 2;
   int sequence_length = 25;
@@ -565,17 +601,18 @@ int main(int argc, char** argv)
   int n_epochs_training = 100;
   int n_epochs_validation = 25;
   int n_epochs_evaluation = 1;
-  bool make_model = true;
+  bool make_model = false;
   std::string model_type = "Solution";
-  bool evolve_population = true;
+  bool evolve_population = false;
   bool train_model = false;
-  bool evaluate_model = false;
+  bool evaluate_model = true;
+  std::string model_name = "MemoryCell_0@replicateModel#46_22_2020-05-19-03-19-25_49";
 
   // Parse the commandline arguments
 
   // Print the parsed variables to the screen
 
   // Run the main application
-  main_AddProbRec(data_dir, n_interpreters, n_generations, n_mask, sequence_length, batch_size, n_epochs_training, n_epochs_validation, n_epochs_evaluation, make_model, model_type, evolve_population, train_model, evaluate_model);
+  main_AddProbRec(data_dir, n_interpreters, n_generations, n_mask, sequence_length, batch_size, n_epochs_training, n_epochs_validation, n_epochs_evaluation, make_model, model_type, evolve_population, train_model, evaluate_model, model_name);
 	return 0;
 }
