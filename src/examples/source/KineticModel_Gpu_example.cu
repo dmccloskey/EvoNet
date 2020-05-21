@@ -392,6 +392,43 @@ public:
     }
     model_logger.writeLogs(model, n_epochs, log_train_headers, log_test_headers, log_train_values, log_test_values, output_nodes, expected_values, {}, output_nodes, {}, input_nodes, {});
   }
+  void evaluationModelLogger(const int& n_epochs, Model<TensorT>& model, ModelInterpreterGpu<TensorT>& model_interpreter, ModelLogger<TensorT>& model_logger,
+    const Eigen::Tensor<TensorT, 3>& expected_values, const std::vector<std::string>& output_nodes, const std::vector<std::string>& input_nodes, const Eigen::Tensor<TensorT, 1>& model_metrics) override
+  {
+    // Set the defaults
+    model_logger.setLogTimeEpoch(true);
+    model_logger.setLogTrainValMetricEpoch(true);
+    model_logger.setLogExpectedEpoch(false);
+    model_logger.setLogNodeInputsEpoch(false);
+    model_logger.setLogNodeOutputsEpoch(false);
+
+    // initialize all logs
+    if (n_epochs == 0) {
+      model_logger.setLogExpectedEpoch(true);
+      model_logger.setLogNodeInputsEpoch(true);
+      model_logger.setLogNodeOutputsEpoch(true);
+      model_logger.initLogs(model);
+    }
+
+    // Per n epoch logging
+    if (n_epochs % 1 == 0) { // FIXME
+      model_logger.setLogExpectedEpoch(true);
+      model_logger.setLogNodeInputsEpoch(true);
+      model_logger.setLogNodeOutputsEpoch(true);
+      model_interpreter.getModelResults(model, true, false, false, true);
+    }
+
+    // Create the metric headers and data arrays
+    std::vector<std::string> log_headers;
+    std::vector<TensorT> log_values;
+    int metric_iter = 0;
+    for (const std::string& metric_name : this->getMetricNamesLinearized()) {
+      log_headers.push_back(metric_name);
+      log_values.push_back(model_metrics(metric_iter));
+      ++metric_iter;
+    }
+    model_logger.writeLogs(model, n_epochs, log_headers, {}, log_values, {}, output_nodes, expected_values, {}, output_nodes, {}, input_nodes, {});
+  }
 };
 
 template<typename TensorT>

@@ -131,6 +131,7 @@ public:
 
         // assign the output
         output_data(batch_iter, memory_iter, 0) = cumulative(memory_size - memory_iter - 1);
+        metric_data(batch_iter, memory_iter, 0) = cumulative(memory_size - memory_iter - 1);
       }
     }
 
@@ -138,6 +139,7 @@ public:
   }
   void simulateTrainingData(Eigen::Tensor<TensorT, 3>& input_data, Eigen::Tensor<TensorT, 3>& output_data, Eigen::Tensor<TensorT, 3>& metric_data, Eigen::Tensor<TensorT, 2>& time_steps)override { simulateData(input_data, output_data, metric_data, time_steps); }
   void simulateValidationData(Eigen::Tensor<TensorT, 3>& input_data, Eigen::Tensor<TensorT, 3>& output_data, Eigen::Tensor<TensorT, 3>& metric_data, Eigen::Tensor<TensorT, 2>& time_steps)override { simulateData(input_data, output_data, metric_data, time_steps); }
+  void simulateEvaluationData(Eigen::Tensor<TensorT, 3>& input_data, Eigen::Tensor<TensorT, 3>& metric_data, Eigen::Tensor<TensorT, 2>& time_steps)override { simulateData(input_data, metric_data, Eigen::Tensor<TensorT, 3>(), time_steps); }
 };
 
 // Extended classes
@@ -349,6 +351,47 @@ public:
     const Eigen::Tensor<TensorT, 3>& expected_values, const std::vector<std::string>& output_nodes, const std::vector<std::string>& input_nodes, const TensorT& model_error) override
 	{ // Left blank intentionally to prevent writing of files during validation
 	}
+  void trainingModelLogger(const int& n_epochs, Model<TensorT>& model, ModelInterpreterDefaultDevice<TensorT>& model_interpreter, ModelLogger<TensorT>& model_logger,
+    const Eigen::Tensor<TensorT, 3>& expected_values, const std::vector<std::string>& output_nodes, const std::vector<std::string>& input_nodes, const TensorT& model_error_train, const TensorT& model_error_test,
+    const Eigen::Tensor<TensorT, 1>& model_metrics_train, const Eigen::Tensor<TensorT, 1>& model_metrics_test) override {
+    // Set the defaults
+    model_logger.setLogTimeEpoch(true);
+    model_logger.setLogTrainValMetricEpoch(true);
+    model_logger.setLogExpectedEpoch(false);
+    model_logger.setLogNodeInputsEpoch(false);
+    model_logger.setLogNodeOutputsEpoch(false);
+
+    // initialize all logs
+    if (n_epochs == 0) {
+      model_logger.setLogExpectedEpoch(true);
+      model_logger.setLogNodeInputsEpoch(true);
+      model_logger.setLogNodeOutputsEpoch(true);
+      model_logger.initLogs(model);
+    }
+
+    // Per n epoch logging
+    if (n_epochs % 1000 == 0) { // FIXME
+      model_logger.setLogExpectedEpoch(true);
+      model_logger.setLogNodeInputsEpoch(true);
+      model_logger.setLogNodeOutputsEpoch(true);
+      model_interpreter.getModelResults(model, true, false, false, true);
+    }
+
+    // Create the metric headers and data arrays
+    std::vector<std::string> log_train_headers = { "Train_Error" };
+    std::vector<std::string> log_test_headers = { "Test_Error" };
+    std::vector<TensorT> log_train_values = { model_error_train };
+    std::vector<TensorT> log_test_values = { model_error_test };
+    int metric_iter = 0;
+    for (const std::string& metric_name : this->getMetricNamesLinearized()) {
+      log_train_headers.push_back(metric_name);
+      log_test_headers.push_back(metric_name);
+      log_train_values.push_back(model_metrics_train(metric_iter));
+      log_test_values.push_back(model_metrics_test(metric_iter));
+      ++metric_iter;
+    }
+    model_logger.writeLogs(model, n_epochs, log_train_headers, log_test_headers, log_train_values, log_test_values, output_nodes, expected_values, {}, output_nodes, {}, input_nodes, {});
+  }
   void evaluationModelLogger(const int& n_epochs, Model<TensorT>& model, ModelInterpreterDefaultDevice<TensorT>& model_interpreter, ModelLogger<TensorT>& model_logger,
     const Eigen::Tensor<TensorT, 3>& expected_values, const std::vector<std::string>& output_nodes, const std::vector<std::string>& input_nodes, const Eigen::Tensor<TensorT, 1>& model_metrics) override
   {
@@ -368,7 +411,7 @@ public:
     }
 
     // Per n epoch logging
-    if (n_epochs % 1000 == 0) { // FIXME
+    if (n_epochs % 1 == 0) { // FIXME
       model_logger.setLogExpectedEpoch(true);
       model_logger.setLogNodeInputsEpoch(true);
       model_logger.setLogNodeOutputsEpoch(true);
@@ -502,7 +545,7 @@ void main_AddProbRec(const std::string& data_dir, const int& n_interpreters, con
   model_trainer.setMemorySize(data_simulator.sequence_length_);
   model_trainer.setNEpochsTraining(n_epochs_training);
   model_trainer.setNEpochsValidation(n_epochs_validation);
-  model_trainer.setNEpochsValidation(n_epochs_evaluation);
+  model_trainer.setNEpochsEvaluation(n_epochs_evaluation);
   model_trainer.setNTETTSteps(data_simulator.sequence_length_);
   model_trainer.setNTBPTTSteps(data_simulator.sequence_length_);
   model_trainer.setVerbosityLevel(1);
@@ -518,6 +561,16 @@ void main_AddProbRec(const std::string& data_dir, const int& n_interpreters, con
   loss_function_helper2.loss_function_grads_ = { std::make_shared<MSELossGradOp<float>>(MSELossGradOp<float>(1e-24, 1.0)) };
   loss_function_helpers.push_back(loss_function_helper2);
   model_trainer.setLossFunctionHelpers(loss_function_helpers);
+
+  std::vector<MetricFunctionHelper<float>> metric_function_helpers;
+  MetricFunctionHelper<float> metric_function_helper1;
+  metric_function_helper1.output_nodes_ = output_nodes;
+  metric_function_helper1.metric_functions_ = { std::make_shared<PearsonROp<float>>(PearsonROp<float>("Mean")), std::make_shared<PearsonROp<float>>(PearsonROp<float>("Var")),
+    std::make_shared<EuclideanDistOp<float>>(EuclideanDistOp<float>("Mean")), std::make_shared<EuclideanDistOp<float>>(EuclideanDistOp<float>("Var")) };
+  metric_function_helper1.metric_names_ = { "PearsonR-Mean", "PearsonR-Var",
+    "EuclideanDist-Mean", "EuclideanDist-Var" };
+  metric_function_helpers.push_back(metric_function_helper1);
+  model_trainer.setMetricFunctionHelpers(metric_function_helpers);
 
   // define the model logger
   ModelLogger<float> model_logger(true, true, false, false, false, false, false);
@@ -553,11 +606,12 @@ void main_AddProbRec(const std::string& data_dir, const int& n_interpreters, con
   else {
     std::cout << "Reading in the model..." << std::endl;
     ModelFile<float> model_file;
-    model_file.loadModelCsv(data_dir + model_name + "_nodes.csv", data_dir + model_name + "_weights.csv", data_dir + model_name + "_links.csv", model, true, true, true);
+    model_file.loadModelCsv(data_dir + model_name + "_nodes.csv", data_dir + model_name + "_links.csv", data_dir + model_name + "_weights.csv", model, true, true, true);
     //model_file.loadModelBinary(data_dir + model_name + "_model.binary", model);
     model.setId(1);
-    ModelInterpreterFileDefaultDevice<float> model_interpreter_file;
-    model_interpreter_file.loadModelInterpreterBinary(data_dir + model_name + "_interpreter.binary", model_interpreters.front()); // FIX ME!
+    model.setName(model_name);
+    //ModelInterpreterFileDefaultDevice<float> model_interpreter_file;
+    //model_interpreter_file.loadModelInterpreterBinary(data_dir + model_name + "_interpreter.binary", model_interpreters.front()); // FIX ME!
   }
   model.setName(data_dir + model.getName()); //So that all output will be written to a specific directory
 
@@ -593,19 +647,19 @@ int main(int argc, char** argv)
 {
   // Set the default command line arguments
   std::string data_dir = "C:/Users/dmccloskey/Documents/GitHub/EvoNetData/MNIST_examples/AddProbRec/Cpu2-0a/";
-  int n_interpreters = 1;//16;
+  int n_interpreters = 16;
   int n_generations = 50;
   int n_mask = 2;
   int sequence_length = 25;
   int batch_size = 32;
-  int n_epochs_training = 100;
+  int n_epochs_training = 100000;
   int n_epochs_validation = 25;
-  int n_epochs_evaluation = 1;
+  int n_epochs_evaluation = 10;
   bool make_model = false;
   std::string model_type = "Solution";
   bool evolve_population = false;
-  bool train_model = false;
-  bool evaluate_model = true;
+  bool train_model = true;
+  bool evaluate_model = false;
   std::string model_name = "MemoryCell_0@replicateModel#46_22_2020-05-19-03-19-25_49";
 
   // Parse the commandline arguments
