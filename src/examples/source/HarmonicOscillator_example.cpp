@@ -7,7 +7,7 @@
 #include <SmartPeak/ml/Model.h>
 #include <SmartPeak/io/PopulationTrainerFile.h>
 #include <SmartPeak/io/ModelInterpreterFileDefaultDevice.h>
-#include <SmartPeak/io/Parameter.h>
+#include <SmartPeak/io/Parameters.h>
 #include <SmartPeak/simulator/HarmonicOscillatorSimulator.h>
 
 #include <unsupported/Eigen/CXX11/Tensor>
@@ -759,8 +759,8 @@ int main(int argc, char** argv)
 {
   // Parse the user commands
   int id_int = -1;
-  std::string parameters_file = "C:/Users/dmccloskey/Documents/GitHub/EvoNetData/MNIST_examples/HarmonicOscillator/Parameters.csv";
-  parseCommandLineArguments(argc, argv, id_int, parameters_file);
+  std::string parameters_filename = "C:/Users/dmccloskey/Documents/GitHub/EvoNetData/MNIST_examples/HarmonicOscillator/Parameters.csv";
+  parseCommandLineArguments(argc, argv, id_int, parameters_filename);
 
   // Set the parameter names and defaults
   ID id("id", -1);
@@ -784,7 +784,8 @@ int main(int argc, char** argv)
     simulation_type, batch_size, memory_size, n_epochs_training, n_epochs_validation, n_epochs_evaluation, n_tbtt_steps, device_id, model_name);
 
   // Read in the parameters
-  std::apply([&id, &parameters_file](auto&& ...args) { loadParametersFromCsv(id, parameters_file, args ...); }, parameters);
+  LoadParametersFromCsv loadParametersFromCsv(id_int, parameters_filename);
+  parameters = std::apply([&loadParametersFromCsv](auto&& ...args) { return loadParametersFromCsv(args...); }, parameters);
 
   // Run the application
   std::apply([](auto&& ...args) { main_HarmonicOscillator1D(args ...); }, parameters);

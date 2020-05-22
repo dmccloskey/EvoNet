@@ -12,7 +12,7 @@ set(sources_list_h
 	ModelInterpreterFileDefaultDevice.h
 	ModelInterpreterFileGpu.h
 	NodeFile.h
-	Parameter.h
+	Parameters.h
 	PopulationTrainerFile.h
 	WeightFile.h
 )

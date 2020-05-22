@@ -159,7 +159,7 @@ public:
     auto met_data_stst_trunc = met_data_stst_proj.broadcast(Eigen::array<Eigen::Index, 3>({ 1, memory_size + 1, batch_size }));
     auto met_nodes_rand_2d = GaussianSampler<TensorT>((int)met_data_stst_vec.size(), batch_size * (memory_size + 1));
     auto met_nodes_rand_3d = met_nodes_rand_2d.reshape(Eigen::array<Eigen::Index, 3>({ (int)met_data_stst_vec.size(), memory_size + 1, batch_size }));
-    Eigen::Tensor<TensorT, 3> met_nodes_rand = (met_data_stst_trunc + met_nodes_rand_3d * met_data_stst_trunc * met_nodes_rand_3d.constant(TensorT(0.1))).clip(TensorT(0), TensorT(1));
+    Eigen::Tensor<TensorT, 3> met_nodes_rand = (met_data_stst_trunc + met_nodes_rand_3d * met_data_stst_trunc * met_nodes_rand_3d.constant(TensorT(0.01))).clip(TensorT(0), TensorT(1));
 
     // Project the stst exomet data to 0 and 1
     LinearScale<TensorT, 3> linearScaleExoMet(exomet_data_stst, 0, 1);
@@ -171,7 +171,7 @@ public:
     auto exomet_data_stst_trunc = exomet_data_stst_proj.shuffle(Eigen::array<Eigen::Index, 3>({ 1, 0, 2 })).broadcast(Eigen::array<Eigen::Index, 3>({ 1, 1, batch_size }));
     auto exo_met_nodes_rand_2d = GaussianSampler<TensorT>(exo_met_nodes.size(), batch_size * (int)exomet_data_stst_vec.size() / exo_met_nodes.size());
     auto exo_met_nodes_rand_3d = exo_met_nodes_rand_2d.reshape(Eigen::array<Eigen::Index, 3>({ (int)exo_met_nodes.size(), (int)exomet_data_stst_vec.size() / (int)exo_met_nodes.size(), batch_size }));
-    Eigen::Tensor<TensorT, 3> exo_met_nodes_rand = (exomet_data_stst_trunc + exo_met_nodes_rand_3d * exomet_data_stst_trunc * exo_met_nodes_rand_3d.constant(TensorT(0.1))).clip(TensorT(0), TensorT(1));
+    Eigen::Tensor<TensorT, 3> exo_met_nodes_rand = (exomet_data_stst_trunc + exo_met_nodes_rand_3d * exomet_data_stst_trunc * exo_met_nodes_rand_3d.constant(TensorT(0.01))).clip(TensorT(0), TensorT(1));
 
     // Make glucose pulse and amp sweep data
     const int n_data = batch_size;

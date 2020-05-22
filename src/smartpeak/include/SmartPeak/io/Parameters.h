@@ -47,7 +47,7 @@ namespace SmartPeak
   struct ModelName : Parameter<std::string> { using Parameter::Parameter; };
 
   /// Helper method to statically deduce the size of a tuple
-  template<typename Tuple>
+  template<class Tuple>
   constexpr size_t sizeOfParameters(const Tuple& t) {
     return std::tuple_size<Tuple>::value;
   }
@@ -63,7 +63,7 @@ namespace SmartPeak
   void parseCommandLineArguments(int argc, char** argv, int& id, std::string& parameters_file) {
     if (argc >= 2) {
       try {
-        id_int = std::stoi(argv[1]);
+        id = std::stoi(argv[1]);
       }
       catch (std::exception & e) {
         std::cout << e.what() << std::endl;
@@ -75,31 +75,38 @@ namespace SmartPeak
   }
 
   /*
-  @brief Load the parameters from file
-
-  @param[in] argc
-  @param[in] argv
-  @param[in,out] id
-  @param[in,out] parameters_file
+  @brief Struct to load parameters from csv
   */
-  template<class ...ParameterTypes>
-  void loadParametersFromCsv(const int& id, const std::string& parameters_file, ParameterTypes&... args) {
-    auto parameters = std::make_tuple(args...);
+  struct LoadParametersFromCsv {
+    LoadParametersFromCsv(const int& id, const std::string& parameters_filename) :id_(id), parameters_filename_(parameters_filename) {}
+    int id_;
+    std::string parameters_filename_;
+    /*
+    @brief Load the parameters from file
 
-    // Read in the parameters
-    io::CSVReader<sizeOfParameters(parameters)> parameters_in(parameters_file);
-    std::apply([&parameters_in](auto&& ...args) { parameters_in.read_header(io::ignore_extra_column, args.name_ ...); }, parameters);
-    while (std::apply([&parameters_in](auto&& ...args) { return parameters_in.read_row(args.s_ ...); }, parameters))
-    {
-      if (std::to_string(id_int) == id.s_) {
-        std::apply([](auto&& ...args) {((args.set()), ...); }, parameters);
-        break;
+    @param[in] argc
+    @param[in] argv
+    @param[in,out] id
+    @param[in,out] parameters_file
+    */
+    template<class ...ParameterTypes>
+    std::tuple<ParameterTypes...> operator()(ParameterTypes&... args) {
+      auto parameters = std::make_tuple(args...);
+      // Read in the parameters
+      io::CSVReader<sizeOfParameters(parameters)> parameters_in(parameters_filename_);
+      std::apply([&parameters_in](auto&& ...args) { parameters_in.read_header(io::ignore_extra_column, args.name_ ...); }, parameters);
+      while (std::apply([&parameters_in](auto&& ...args) { return parameters_in.read_row(args.s_ ...); }, parameters))
+      {
+        if (std::to_string(id_) == std::get<ID>(parameters).s_) {
+          std::apply([](auto&& ...args) {((args.set()), ...); }, parameters);
+          break;
+        }
       }
+      // Print the read in parameters to the screen
+      std::apply([](auto&&... args) {((std::cout << args << std::endl), ...); }, parameters);
+      return parameters;
     }
-
-    // Print the read in parameters to the screen
-    std::apply([](auto&&... args) {((std::cout << args << std::endl), ...); }, parameters);
-  }
+  };
 }
 
 #endif //SMARTPEAK_PARAMETERS_H

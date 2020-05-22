@@ -1,0 +1,2 @@
+id,data_dir,n_generations,n_interpreters,make_model,train_model,evolve_model,evaluate_model,simulation_type,batch_size,memory_size,n_epochs_training,n_epochs_validation,n_epochs_evaluation,n_tbtt_steps,device_id,model_name
+-1,C:/Users/dmccloskey/Documents/GitHub/EvoNetData/MNIST_examples/HarmonicOscillator/GpuTest/,50,16,1,1,0,0,WeightSpring1W1S1D,32,64,100000,25,10,64,0,
