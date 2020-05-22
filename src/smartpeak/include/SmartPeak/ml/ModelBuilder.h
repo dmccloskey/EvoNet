@@ -874,7 +874,7 @@ public:
   template<typename TensorT>
   std::vector<std::string> ModelBuilder<TensorT>::addBiases(Model<TensorT>& model, const std::string& module_name, const std::vector<std::string>& sink_node_names,
     const std::shared_ptr<WeightInitOp<TensorT>>& weight_init, const std::shared_ptr<SolverOp<TensorT>>& solver,
-    TensorT drop_connection_prob = 0.0f, bool specify_layer = false)
+    TensorT drop_connection_prob, bool specify_layer)
   {
     std::vector<std::string> biases_names;
 

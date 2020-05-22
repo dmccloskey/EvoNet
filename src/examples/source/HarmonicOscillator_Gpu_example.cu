@@ -753,7 +753,7 @@ struct Parameter {
   Parameter(const std::string& name, const T& value) : name_(name), value_(value) {};
   void set() { if (!s_.empty()) { std::stringstream ss; ss << s_; ss >> value_; } }
   T get() { return value_; }
-  friend std::ostream& operator<<(std::ostream& os, const Parameter& parameter) { os << data.parameter_; return os; }
+  friend std::ostream& operator<<(std::ostream& os, const Parameter& parameter) { os << parameter.name_ << ": " << parameter.value_; return os; }
 };
 
 struct ID : Parameter<int> { using Parameter::Parameter; };
@@ -835,10 +835,13 @@ int main(int argc, char** argv)
     simulation_type.s_, batch_size.s_, memory_size.s_, n_epochs_training.s_, n_epochs_validation.s_, n_epochs_evaluation.s_, n_tbtt_steps.s_, device_id.s_, model_name.s_))
   {
     if (id_str == id.s_) {
-      std::apply([](auto&& ...x) {x.set() ...; }, parameters);
+      std::apply([](auto&& ...x) {((x.set()), ...); }, parameters);
       break;
     }
   }
+
+  // Print the read in parameters to the screen
+  std::apply([](auto&&... args) {((std::cout << args << std::endl), ...); }, parameters);
 
   std::apply(main_HarmonicOscillator1D, parameters);
   return 0;
