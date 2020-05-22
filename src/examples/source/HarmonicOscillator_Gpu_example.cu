@@ -9,6 +9,8 @@
 #include <SmartPeak/io/ModelInterpreterFileGpu.h>
 #include <SmartPeak/simulator/HarmonicOscillatorSimulator.h>
 
+#include <tuple>
+
 #include <unsupported/Eigen/CXX11/Tensor>
 
 using namespace SmartPeak;
@@ -596,8 +598,10 @@ public:
   }
 };
 
-void main_HarmonicOscillator1D(const std::string& data_dir, const int& n_interpreters, const int& n_generations, const bool& make_model, const bool& train_model, const bool& evolve_model, const std::string& simulation_type,
-  const int& batch_size, const int& memory_size, const int& n_epochs_training, const int& n_tbtt_steps, const int& device_id) {
+template<class ...ParameterTypes>
+void main_HarmonicOscillator1D(const ParameterTypes& ...args) {
+  auto parameters = std::make_tuple<args...>;
+
   // define the population trainer parameters
   PopulationTrainerExt<float> population_trainer;
   population_trainer.setNGenerations(n_generations); // population training
@@ -711,13 +715,6 @@ void main_HarmonicOscillator1D(const std::string& data_dir, const int& n_interpr
     model.setId(1);
     ModelInterpreterFileGpu<float> model_interpreter_file;
     model_interpreter_file.loadModelInterpreterBinary(interpreter_filename, model_interpreters[0]); // FIX ME!
-
-    // update the model solver and learning rate
-    for (auto& weight : model.getWeightsMap()) {
-      if (weight.second->getSolverOp()->getName() != "DummySolverOp") {
-        weight.second->setSolverOp(std::make_shared<AdamOp<float>>(AdamOp<float>(1e-5, 0.9, 0.999, 1e-8, 10)));
-      }
-    }
   }
   model.setName(data_dir + model_name); //So that all output will be written to a specific directory
 
@@ -748,6 +745,35 @@ void main_HarmonicOscillator1D(const std::string& data_dir, const int& n_interpr
   }
 }
 
+template<typename T>
+struct Parameter {
+  std::string name_;
+  std::string s_;
+  T value_;
+  Parameter(const std::string& name, const T& value) : name_(name), value_(value) {};
+  void set() { if (!s_.empty()) { std::stringstream ss; ss << s_; ss >> value_; } }
+  T get() { return value_; }
+  friend std::ostream& operator<<(std::ostream& os, const Parameter& parameter) { os << data.parameter_; return os; }
+};
+
+struct ID : Parameter<int> { using Parameter::Parameter; };
+struct DataDir : Parameter<std::string> { using Parameter::Parameter; };
+struct NInterpreters : Parameter<int> { using Parameter::Parameter; };
+struct NGenerations : Parameter<int> { using Parameter::Parameter; };
+struct MakeModel : Parameter<bool> { using Parameter::Parameter; };
+struct TrainModel : Parameter<bool> { using Parameter::Parameter; };
+struct EvolveModel : Parameter<bool> { using Parameter::Parameter; };
+struct EvaluateModel : Parameter<bool> { using Parameter::Parameter; };
+struct SimulationType : Parameter<std::string> { using Parameter::Parameter; };
+struct BatchSize : Parameter<int> { using Parameter::Parameter; };
+struct MemorySize : Parameter<int> { using Parameter::Parameter; };
+struct NEpochsTraining : Parameter<int> { using Parameter::Parameter; };
+struct NEpochsValidation : Parameter<int> { using Parameter::Parameter; };
+struct NEpochsEvaluation : Parameter<int> { using Parameter::Parameter; };
+struct NTBTTSteps : Parameter<int> { using Parameter::Parameter; };
+struct DeviceId : Parameter<int> { using Parameter::Parameter; };
+struct ModelName : Parameter<std::string> { using Parameter::Parameter; };
+
 /*
 @brief Run the training/evolution/evaluation from the command line
 
@@ -763,84 +789,57 @@ Example:
 int main(int argc, char** argv)
 {
   // Parse the user commands
-  std::string data_dir = "";
+  ID id("id", 0);
   std::string parameters_file = "";
-  int n_interpreters = 16;
-  int n_generations = 50;
-  bool make_model = true, train_model = true, evolve_model = false;
-  std::string simulation_type = "WeightSpring1W1S1DwDamping";
-  int batch_size = 32, memory_size = 64, n_epochs_training = 100000;
-  int n_tbtt_steps = memory_size;
-  int device_id = 0;
   if (argc >= 2) {
-    data_dir = argv[1];
+    id.s_ = std::string(argv[1]);
+    //try {
+    //  id = std::stoi(argv[1]);
+    //}
+    //catch (std::exception & e) {
+    //  std::cout << e.what() << std::endl;
+    //}
   }
   if (argc >= 3) {
-    make_model = (argv[2] == std::string("true")) ? true : false;
+    parameters_file = std::string(argv[2]);
   }
-  if (argc >= 4) {
-    train_model = (argv[3] == std::string("true")) ? true : false;
-  }
-  if (argc >= 5) {
-    evolve_model = (argv[4] == std::string("true")) ? true : false;
-  }
-  if (argc >= 6) {
-    simulation_type = argv[5];
-  }
-  if (argc >= 7) {
-    try {
-      batch_size = std::stoi(argv[6]);
-    }
-    catch (std::exception & e) {
-      std::cout << e.what() << std::endl;
-    }
-  }
-  if (argc >= 8) {
-    try {
-      memory_size = std::stoi(argv[7]);
-    }
-    catch (std::exception & e) {
-      std::cout << e.what() << std::endl;
-    }
-  }
-  if (argc >= 9) {
-    try {
-      n_epochs_training = std::stoi(argv[8]);
-    }
-    catch (std::exception & e) {
-      std::cout << e.what() << std::endl;
-    }
-  }
-  if (argc >= 10) {
-    try {
-      n_tbtt_steps = std::stoi(argv[9]);
-    }
-    catch (std::exception & e) {
-      std::cout << e.what() << std::endl;
-    }
-  }
-  if (argc >= 11) {
-    try {
-      device_id = std::stoi(argv[10]);
-      device_id = (device_id >= 0 && device_id < 4) ? device_id : 0; // TODO: assumes only 4 devices are available
-    }
-    catch (std::exception & e) {
-      std::cout << e.what() << std::endl;
+
+  // Set the parameter names and defaults
+  DataDir data_dir("data_dir", std::string(""));
+  NInterpreters n_interpreters("n_interpreters", 16);
+  NGenerations n_generations("n_generations", 50);
+  MakeModel make_model("make_model", true);
+  TrainModel train_model("train_model", true);
+  EvolveModel evolve_model("evolve_model", false);
+  EvaluateModel evaluate_model("evaluate_model", false);
+  SimulationType simulation_type("simulation_type", "WeightSpring1W1S1DwDamping");
+  BatchSize batch_size("batch_size", 32); 
+  MemorySize memory_size("memory_size", 64);
+  NEpochsTraining n_epochs_training("n_epochs_training", 100000);
+  NEpochsValidation n_epochs_validation("n_epochs_validation", 25);
+  NEpochsEvaluation n_epochs_evaluation("n_epochs_evaluation", 10);
+  NTBTTSteps n_tbtt_steps("n_tbtt_steps", 64);
+  DeviceId device_id("device_id", 0);
+  ModelName model_name("model_name", "");
+  auto parameters = std::make_tuple(id, data_dir, n_interpreters, n_generations, make_model, train_model, evolve_model, evaluate_model,
+    simulation_type, batch_size, memory_size, n_epochs_training, n_epochs_validation, n_epochs_evaluation, n_tbtt_steps, device_id, model_name);
+
+  // Read in the parameters
+  //auto parameter_names = std::apply([](auto&& ...x) {std::make_tuple(x.name_ ...); }, parameters);
+  io::CSVReader<sizeof(parameters)> parameters_in(parameters_file);
+  parameters_in.read_header(io::ignore_extra_column, id.name_, data_dir.name_, n_interpreters.name_, n_generations.name_, make_model.name_, train_model.name_, evolve_model.name_, evaluate_model.name_,
+    simulation_type.name_, batch_size.name_, memory_size.name_, n_epochs_training.name_, n_epochs_validation.name_, n_epochs_evaluation.name_, n_tbtt_steps.name_, device_id.name_, model_name.name_);
+
+  std::string id_str;
+  while (parameters_in.read_row(id_str, data_dir.s_, n_interpreters.s_, n_generations.s_, make_model.s_, train_model.s_, evolve_model.s_, evaluate_model.s_,
+    simulation_type.s_, batch_size.s_, memory_size.s_, n_epochs_training.s_, n_epochs_validation.s_, n_epochs_evaluation.s_, n_tbtt_steps.s_, device_id.s_, model_name.s_))
+  {
+    if (id_str == id.s_) {
+      std::apply([](auto&& ...x) {x.set() ...; }, parameters);
+      break;
     }
   }
 
-  // Cout the parsed input
-  std::cout << "data_dir: " << data_dir << std::endl;
-  std::cout << "make_model: " << make_model << std::endl;
-  std::cout << "train_model: " << train_model << std::endl;
-  std::cout << "evolve_model: " << evolve_model << std::endl;
-  std::cout << "simulation_type: " << simulation_type << std::endl;
-  std::cout << "batch_size: " << batch_size << std::endl;
-  std::cout << "memory_size: " << memory_size << std::endl;
-  std::cout << "n_epochs_training: " << n_epochs_training << std::endl;
-  std::cout << "n_tbtt_steps: " << n_tbtt_steps << std::endl;
-  std::cout << "device_id: " << device_id << std::endl;
-
-  main_HarmonicOscillator1D(data_dir, n_interpreters, n_generations, make_model, train_model, evolve_model, simulation_type, batch_size, memory_size, n_epochs_training, n_tbtt_steps, device_id);
+  std::apply(main_HarmonicOscillator1D, parameters);
   return 0;
 }

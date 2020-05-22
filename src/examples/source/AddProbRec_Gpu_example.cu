@@ -610,6 +610,13 @@ void main_AddProbRec(const std::string& data_dir, const int& n_interpreters, con
     model.setName(model_name);
     //ModelInterpreterFileGpu<float> model_interpreter_file;
     //model_interpreter_file.loadModelInterpreterBinary(data_dir + model_name + "_interpreter.binary", model_interpreters.front()); // FIX ME!
+
+    // update the model solver and learning rate
+    for (auto& weight : model.getWeightsMap()) {
+      if (weight.second->getSolverOp()->getName() != "DummySolverOp") {
+        weight.second->setSolverOp(std::make_shared<AdamOp<float>>(AdamOp<float>(1e-5, 0.9, 0.999, 1e-8, 10)));
+      }
+    }
   }
   model.setName(data_dir + model.getName()); //So that all output will be written to a specific directory
 
