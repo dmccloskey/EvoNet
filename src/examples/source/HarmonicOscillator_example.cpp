@@ -7,9 +7,8 @@
 #include <SmartPeak/ml/Model.h>
 #include <SmartPeak/io/PopulationTrainerFile.h>
 #include <SmartPeak/io/ModelInterpreterFileDefaultDevice.h>
+#include <SmartPeak/io/Parameter.h>
 #include <SmartPeak/simulator/HarmonicOscillatorSimulator.h>
-
-#include <tuple>
 
 #include <unsupported/Eigen/CXX11/Tensor>
 
@@ -744,40 +743,6 @@ void main_HarmonicOscillator1D(const ParameterTypes& ...args) {
   }
 }
 
-template<typename T>
-struct Parameter {
-  std::string name_;
-  std::string s_;
-  T value_;
-  Parameter(const std::string& name, const T& value) : name_(name), value_(value) { std::stringstream ss; ss << value ; ss >> s_; };
-  void set() { if (!s_.empty()) { std::stringstream ss; ss << s_; ss >> value_; } }
-  T get() { return value_; }
-  friend std::ostream& operator<<(std::ostream& os, const Parameter& parameter) { os << parameter.name_ << ": " << parameter.value_; return os; }
-};
-
-template<typename Tuple>
-constexpr size_t sizeOfParameters(const Tuple& t) {
-  return std::tuple_size<Tuple>::value;
-}
-
-struct ID : Parameter<int> { using Parameter::Parameter; };
-struct DataDir : Parameter<std::string> { using Parameter::Parameter; };
-struct NInterpreters : Parameter<int> { using Parameter::Parameter; };
-struct NGenerations : Parameter<int> { using Parameter::Parameter; };
-struct MakeModel : Parameter<bool> { using Parameter::Parameter; };
-struct TrainModel : Parameter<bool> { using Parameter::Parameter; };
-struct EvolveModel : Parameter<bool> { using Parameter::Parameter; };
-struct EvaluateModel : Parameter<bool> { using Parameter::Parameter; };
-struct SimulationType : Parameter<std::string> { using Parameter::Parameter; };
-struct BatchSize : Parameter<int> { using Parameter::Parameter; };
-struct MemorySize : Parameter<int> { using Parameter::Parameter; };
-struct NEpochsTraining : Parameter<int> { using Parameter::Parameter; };
-struct NEpochsValidation : Parameter<int> { using Parameter::Parameter; };
-struct NEpochsEvaluation : Parameter<int> { using Parameter::Parameter; };
-struct NTBTTSteps : Parameter<int> { using Parameter::Parameter; };
-struct DeviceId : Parameter<int> { using Parameter::Parameter; };
-struct ModelName : Parameter<std::string> { using Parameter::Parameter; };
-
 /*
 @brief Run the training/evolution/evaluation from the command line
 
@@ -795,18 +760,7 @@ int main(int argc, char** argv)
   // Parse the user commands
   int id_int = -1;
   std::string parameters_file = "C:/Users/dmccloskey/Documents/GitHub/EvoNetData/MNIST_examples/HarmonicOscillator/Parameters.csv";
-  if (argc >= 2) {
-    //id_str = std::string(argv[1]);
-    try {
-      id_int = std::stoi(argv[1]);
-    }
-    catch (std::exception & e) {
-      std::cout << e.what() << std::endl;
-    }
-  }
-  if (argc >= 3) {
-    parameters_file = std::string(argv[2]);
-  }
+  parseCommandLineArguments(argc, argv, id_int, parameters_file);
 
   // Set the parameter names and defaults
   ID id("id", -1);
@@ -830,19 +784,7 @@ int main(int argc, char** argv)
     simulation_type, batch_size, memory_size, n_epochs_training, n_epochs_validation, n_epochs_evaluation, n_tbtt_steps, device_id, model_name);
 
   // Read in the parameters
-  io::CSVReader<sizeOfParameters(parameters)> parameters_in(parameters_file);
-  std::apply([&parameters_in](auto&& ...args) { parameters_in.read_header(io::ignore_extra_column, args.name_ ...); }, parameters);
-
-  while (std::apply([&parameters_in](auto&& ...args) { return parameters_in.read_row(args.s_ ...); }, parameters))
-  {
-    if (std::to_string(id_int) == id.s_) {
-      std::apply([](auto&& ...args) {((args.set()), ...); }, parameters);
-      break;
-    }
-  }
-
-  // Print the read in parameters to the screen
-  std::apply([](auto&&... args) {((std::cout << args << std::endl), ...); }, parameters);
+  std::apply([&id, &parameters_file](auto&& ...args) { loadParametersFromCsv(id, parameters_file, args ...); }, parameters);
 
   // Run the application
   std::apply([](auto&& ...args) { main_HarmonicOscillator1D(args ...); }, parameters);
