@@ -1,15 +1,14 @@
 /**TODO:  Add copyright*/
 
-#include <SmartPeak/ml/PopulationTrainerGpu.h>
+#include <SmartPeak/ml/PopulationTrainerExperimentalGpu.h>
 #include <SmartPeak/ml/ModelTrainerGpu.h>
-#include <SmartPeak/ml/ModelReplicator.h>
+#include <SmartPeak/ml/ModelReplicatorExperimental.h>
 #include <SmartPeak/ml/ModelBuilder.h>
 #include <SmartPeak/ml/Model.h>
 #include <SmartPeak/io/PopulationTrainerFile.h>
 #include <SmartPeak/io/ModelInterpreterFileGpu.h>
+#include <SmartPeak/io/Parameters.h>
 #include <SmartPeak/simulator/HarmonicOscillatorSimulator.h>
-
-#include <tuple>
 
 #include <unsupported/Eigen/CXX11/Tensor>
 
@@ -228,7 +227,7 @@ public:
 
     const int time_course_multiplier = 2; // How long to make the time course based on the memory size
     const int n_batches_per_time_course = 4; // The number of chunks each simulation time course is chopped into
-    const int time_steps_size = ((memory_size > n_batches_per_time_course)? memory_size: n_batches_per_time_course) * time_course_multiplier + 1; // The total number of time_steps per simulation time course
+    const int time_steps_size = ((memory_size > n_batches_per_time_course) ? memory_size : n_batches_per_time_course)* time_course_multiplier + 1; // The total number of time_steps per simulation time course
     Eigen::Tensor<float, 1> time_steps_displacements(time_steps_size);
     Eigen::Tensor<float, 2> displacements_all(time_steps_size, 1);
 
@@ -376,7 +375,7 @@ public:
       std::vector<std::string> node_names;
       // determine the input nodes
       if (mass_iter == 0 && mass_iter == n_masses - 1) {
-      node_names = { node_names_wall.front(), node_names_masses_t0.at(mass_iter) };
+        node_names = { node_names_wall.front(), node_names_masses_t0.at(mass_iter) };
       }
       else if (mass_iter == 0) {
         node_names = { node_names_wall.front(), node_names_masses_t0.at(mass_iter), node_names_masses_t0.at(mass_iter + 1) };
@@ -387,7 +386,7 @@ public:
       else {
         node_names = { node_names_masses_t0.at(mass_iter - 1), node_names_masses_t0.at(mass_iter), node_names_masses_t0.at(mass_iter + 1) };
       }
-      
+
       // make the FC layers between input nodes
       if (n_fc_1 > 0) {
         node_names = model_builder.addFullyConnected(model, "FC1Forward", "FC1Forward", node_names, n_fc_1,
@@ -422,6 +421,14 @@ public:
       ModelInterpreterFileGpu<TensorT> interpreter_data;
       interpreter_data.storeModelInterpreterBinary(model.getName() + "_" + std::to_string(n_epochs) + "_interpreter.binary", model_interpreter);
     }
+  }
+  void trainingModelLogger(const int& n_epochs, Model<TensorT>& model, ModelInterpreterGpu<TensorT>& model_interpreter, ModelLogger<TensorT>& model_logger,
+    const Eigen::Tensor<TensorT, 3>& expected_values, const std::vector<std::string>& output_nodes, const std::vector<std::string>& input_nodes, const TensorT& model_error) override
+  { // Left blank intentionally to prevent writing of files during training
+  }
+  void validationModelLogger(const int& n_epochs, Model<TensorT>& model, ModelInterpreterGpu<TensorT>& model_interpreter, ModelLogger<TensorT>& model_logger,
+    const Eigen::Tensor<TensorT, 3>& expected_values, const std::vector<std::string>& output_nodes, const std::vector<std::string>& input_nodes, const TensorT& model_error) override
+  { // Left blank intentionally to prevent writing of files during validation
   }
   void trainingModelLogger(const int& n_epochs, Model<TensorT>& model, ModelInterpreterGpu<TensorT>& model_interpreter, ModelLogger<TensorT>& model_logger,
     const Eigen::Tensor<TensorT, 3>& expected_values, const std::vector<std::string>& output_nodes, const std::vector<std::string>& input_nodes, const TensorT& model_error_train, const TensorT& model_error_test,
@@ -504,88 +511,45 @@ public:
 };
 
 template<typename TensorT>
-class ModelReplicatorExt : public ModelReplicator<TensorT>
+class ModelReplicatorExt : public ModelReplicatorExperimental<TensorT>
 {
 public:
+  /*
+  @brief Implementation of the `adaptiveReplicatorScheduler`
+  */
   void adaptiveReplicatorScheduler(
     const int& n_generations,
     std::vector<Model<TensorT>>& models,
-    std::vector<std::vector<std::tuple<int, std::string, TensorT>>>& models_errors_per_generations)
+    std::vector<std::vector<std::tuple<int, std::string, TensorT>>>& models_errors_per_generations)override
   {
-    if (n_generations > 0)
-    {
-      this->setRandomModifications(
-        std::make_pair(0, 0),
-        std::make_pair(0, 0),
-        std::make_pair(0, 0),
-        std::make_pair(0, 0),
-        std::make_pair(0, 0),
-        std::make_pair(0, 0),
-        std::make_pair(0, 0),
-        std::make_pair(0, 0),
-        std::make_pair(0, 2), // node activation changes
-        std::make_pair(0, 0), // node integration changes
-        std::make_pair(0, 0),
-        std::make_pair(0, 0),
-        std::make_pair(0, 0));
-    }
-    else
-    {
-      this->setRandomModifications(
-        std::make_pair(0, 0),
-        std::make_pair(0, 0),
-        std::make_pair(0, 0),
-        std::make_pair(0, 0),
-        std::make_pair(0, 0),
-        std::make_pair(0, 0),
-        std::make_pair(0, 0),
-        std::make_pair(0, 0),
-        std::make_pair(0, 2), // node activation changes
-        std::make_pair(0, 0), // node integration changes
-        std::make_pair(0, 0),
-        std::make_pair(0, 0),
-        std::make_pair(0, 0));
-    }
+    // Adjust the models modifications rates
+    //this->setModificationRateByPrevError(n_generations, models, models_errors_per_generations);
+    this->setModificationRateFixed(n_generations, models, models_errors_per_generations);
   }
 };
 
 template<typename TensorT>
-class PopulationTrainerExt : public PopulationTrainerGpu<TensorT>
+class PopulationTrainerExt : public PopulationTrainerExperimentalGpu<TensorT>
 {
 public:
+  /*
+  @brief Implementation of the `adaptivePopulationScheduler`
+  */
   void adaptivePopulationScheduler(
     const int& n_generations,
     std::vector<Model<TensorT>>& models,
-    std::vector<std::vector<std::tuple<int, std::string, TensorT>>>& models_errors_per_generations)
+    std::vector<std::vector<std::tuple<int, std::string, TensorT>>>& models_errors_per_generations)override
   {
-    //// Population size of 16
-    //if (n_generations == 0)	{
-    //	this->setNTop(3);
-    //	this->setNRandom(3);
-    //	this->setNReplicatesPerModel(15);
-    //}
-    //else {
-    //	this->setNTop(3);
-    //	this->setNRandom(3);
-    //	this->setNReplicatesPerModel(3);
-    //}
-    // Population size of 30
-    if (n_generations == 0) {
-      this->setNTop(5);
-      this->setNRandom(5);
-      this->setNReplicatesPerModel(29);
-    }
-    else {
-      this->setNTop(5);
-      this->setNRandom(5);
-      this->setNReplicatesPerModel(5);
-    }
+    // Adjust the population size
+    //this->setPopulationSizeFixed(n_generations, models, models_errors_per_generations);
+    // [TODO: single model training requires the line below to be commented]
+    this->setPopulationSizeDoubling(n_generations, models, models_errors_per_generations);
   }
   void trainingPopulationLogger(
     const int& n_generations,
     std::vector<Model<TensorT>>& models,
     PopulationLogger<TensorT>& population_logger,
-    const std::vector<std::tuple<int, std::string, TensorT>>& models_validation_errors_per_generation) {
+    const std::vector<std::tuple<int, std::string, TensorT>>& models_validation_errors_per_generation)override {
     // Export the selected models
     for (auto& model : models) {
       ModelFile<TensorT> data;
@@ -600,11 +564,11 @@ public:
 
 template<class ...ParameterTypes>
 void main_HarmonicOscillator1D(const ParameterTypes& ...args) {
-  auto parameters = std::make_tuple<args...>;
+  auto parameters = std::make_tuple(args...);
 
   // define the population trainer parameters
   PopulationTrainerExt<float> population_trainer;
-  population_trainer.setNGenerations(n_generations); // population training
+  population_trainer.setNGenerations(std::get<EvoNetParameters::NGenerations>(parameters).get()); // population training
   population_trainer.setLogging(true);
   population_trainer.setResetModelCopyWeights(true);
 
@@ -613,7 +577,7 @@ void main_HarmonicOscillator1D(const ParameterTypes& ...args) {
 
   // define the multithreading parameters
   const int n_hard_threads = std::thread::hardware_concurrency();
-  const int n_threads = (n_interpreters > n_hard_threads) ? n_hard_threads : n_interpreters; // the number of threads
+  const int n_threads = (std::get<EvoNetParameters::NInterpreters>(parameters).get() > n_hard_threads) ? n_hard_threads : std::get<EvoNetParameters::NInterpreters>(parameters).get(); // the number of threads
 
   // Make the input nodes
   const int n_masses = 1;
@@ -636,27 +600,27 @@ void main_HarmonicOscillator1D(const ParameterTypes& ...args) {
 
   // define the data simulator
   DataSimulatorExt<float> data_simulator;
-  data_simulator.simulation_name_ = simulation_type;
+  data_simulator.simulation_name_ = std::get<EvoNetParameters::SimulationType>(parameters).get();
 
   // define the model trainers and resources for the trainers
   std::vector<ModelInterpreterGpu<float>> model_interpreters;
   for (size_t i = 0; i < n_threads; ++i) {
-    ModelResources model_resources = { ModelDevice(device_id, 0) };
+    ModelResources model_resources = { ModelDevice(std::get<EvoNetParameters::DeviceId>(parameters).get(), 0) };
     ModelInterpreterGpu<float> model_interpreter(model_resources);
     model_interpreters.push_back(model_interpreter);
   }
   ModelTrainerExt<float> model_trainer;
-  model_trainer.setBatchSize(batch_size);
-  model_trainer.setMemorySize(memory_size);
-  model_trainer.setNEpochsTraining(n_epochs_training);
-  model_trainer.setNEpochsValidation(25);
-  model_trainer.setNEpochsEvaluation(n_epochs_training);
-  model_trainer.setNTBPTTSteps(n_tbtt_steps);
-  model_trainer.setNTETTSteps(n_tbtt_steps);
+  model_trainer.setBatchSize(std::get<EvoNetParameters::BatchSize>(parameters).get());
+  model_trainer.setMemorySize(std::get<EvoNetParameters::MemorySize>(parameters).get());
+  model_trainer.setNEpochsTraining(std::get<EvoNetParameters::NEpochsTraining>(parameters).get());
+  model_trainer.setNEpochsValidation(std::get<EvoNetParameters::NEpochsValidation>(parameters).get());
+  model_trainer.setNEpochsEvaluation(std::get<EvoNetParameters::NEpochsValidation>(parameters).get());
+  model_trainer.setNTBPTTSteps(std::get<EvoNetParameters::NTBTTSteps>(parameters).get());
+  model_trainer.setNTETTSteps(std::get<EvoNetParameters::NTBTTSteps>(parameters).get());
   model_trainer.setVerbosityLevel(1);
   model_trainer.setLogging(true, false, true);
-  model_trainer.setFindCycles(false); // Specified in the model
-  model_trainer.setFastInterpreter(true); // IG default
+  model_trainer.setFindCycles(std::get<EvoNetParameters::FindCycles>(parameters).get()); // Specified in the model
+  model_trainer.setFastInterpreter(std::get<EvoNetParameters::FastInterpreter>(parameters).get()); // IG default
   model_trainer.setPreserveOoO(true);
 
   std::vector<LossFunctionHelper<float>> loss_function_helpers;
@@ -700,41 +664,40 @@ void main_HarmonicOscillator1D(const ParameterTypes& ...args) {
 
   // define the initial population
   Model<float> model;
-  std::string model_name = "HarmonicOscillator";
-  if (make_model) {
+  if (std::get<EvoNetParameters::MakeModel>(parameters).get()) {
     std::cout << "Making the model..." << std::endl;
-    ModelTrainerExt<float>().makeHarmonicOscillator1D(model, 1, 32, 0, false, true);
+    if (std::get<EvoNetParameters::TrainModel>(parameters).get()) ModelTrainerExt<float>().makeHarmonicOscillator1D(model, 1, 32, 0, false, true);
+    else if (std::get<EvoNetParameters::EvolveModel>(parameters).get()) ModelTrainerExt<float>().makeHarmonicOscillator1D(model, 1, 8, 0, false, false);
   }
   else {
     // read in the trained model
     std::cout << "Reading in the model..." << std::endl;
-    const std::string model_filename = data_dir + "HarmonicOscillator_model.binary";
-    const std::string interpreter_filename = data_dir + "HarmonicOscillator_interpreter.binary";
     ModelFile<float> model_file;
-    model_file.loadModelBinary(model_filename, model);
+    model_file.loadModelBinary(std::get<EvoNetParameters::DataDir>(parameters).get() + std::get<EvoNetParameters::ModelName>(parameters).get() + "_model.binary", model);
     model.setId(1);
     ModelInterpreterFileGpu<float> model_interpreter_file;
-    model_interpreter_file.loadModelInterpreterBinary(interpreter_filename, model_interpreters[0]); // FIX ME!
+    model_interpreter_file.loadModelInterpreterBinary(std::get<EvoNetParameters::DataDir>(parameters).get() + std::get<EvoNetParameters::ModelName>(parameters).get() + "_interpreter.binary", model_interpreters[0]); // FIX ME!
   }
-  model.setName(data_dir + model_name); //So that all output will be written to a specific directory
+  model.setName(std::get<EvoNetParameters::DataDir>(parameters).get() + std::get<EvoNetParameters::ModelName>(parameters).get()); //So that all output will be written to a specific directory
 
-  if (train_model) {
+  if (std::get<EvoNetParameters::TrainModel>(parameters).get()) {
     // Train the model
     model.setName(model.getName() + "_train");
     std::pair<std::vector<float>, std::vector<float>> model_errors = model_trainer.trainModel(model, data_simulator,
       input_nodes, model_logger, model_interpreters.front());
   }
-  else if (evolve_model) {
+  else if (std::get<EvoNetParameters::EvolveModel>(parameters).get()) {
     // Evolve the population
     std::vector<Model<float>> population = { model };
     std::vector<std::vector<std::tuple<int, std::string, float>>> models_validation_errors_per_generation = population_trainer.evolveModels(
-      population, model_trainer, model_interpreters, model_replicator, data_simulator, model_logger, population_logger, input_nodes);
+      population, std::get<EvoNetParameters::DataDir>(parameters).get() + std::get<EvoNetParameters::PopulationName>(parameters).get(), //So that all output will be written to a specific directory
+      model_trainer, model_interpreters, model_replicator, data_simulator, model_logger, population_logger, input_nodes);
 
     PopulationTrainerFile<float> population_trainer_file;
     population_trainer_file.storeModels(population, "HarmonicOscillator");
     population_trainer_file.storeModelValidations("HarmonicOscillatorErrors.csv", models_validation_errors_per_generation);
   }
-  else {
+  else if (std::get<EvoNetParameters::EvaluateModel>(parameters).get()) {
     //// Evaluate the population
     //std::vector<Model<float>> population = { model };
     //population_trainer.evaluateModels(
@@ -745,104 +708,51 @@ void main_HarmonicOscillator1D(const ParameterTypes& ...args) {
   }
 }
 
-template<typename T>
-struct Parameter {
-  std::string name_;
-  std::string s_;
-  T value_;
-  Parameter(const std::string& name, const T& value) : name_(name), value_(value) {};
-  void set() { if (!s_.empty()) { std::stringstream ss; ss << s_; ss >> value_; } }
-  T get() { return value_; }
-  friend std::ostream& operator<<(std::ostream& os, const Parameter& parameter) { os << parameter.name_ << ": " << parameter.value_; return os; }
-};
-
-struct ID : Parameter<int> { using Parameter::Parameter; };
-struct DataDir : Parameter<std::string> { using Parameter::Parameter; };
-struct NInterpreters : Parameter<int> { using Parameter::Parameter; };
-struct NGenerations : Parameter<int> { using Parameter::Parameter; };
-struct MakeModel : Parameter<bool> { using Parameter::Parameter; };
-struct TrainModel : Parameter<bool> { using Parameter::Parameter; };
-struct EvolveModel : Parameter<bool> { using Parameter::Parameter; };
-struct EvaluateModel : Parameter<bool> { using Parameter::Parameter; };
-struct SimulationType : Parameter<std::string> { using Parameter::Parameter; };
-struct BatchSize : Parameter<int> { using Parameter::Parameter; };
-struct MemorySize : Parameter<int> { using Parameter::Parameter; };
-struct NEpochsTraining : Parameter<int> { using Parameter::Parameter; };
-struct NEpochsValidation : Parameter<int> { using Parameter::Parameter; };
-struct NEpochsEvaluation : Parameter<int> { using Parameter::Parameter; };
-struct NTBTTSteps : Parameter<int> { using Parameter::Parameter; };
-struct DeviceId : Parameter<int> { using Parameter::Parameter; };
-struct ModelName : Parameter<std::string> { using Parameter::Parameter; };
-
 /*
 @brief Run the training/evolution/evaluation from the command line
 
 Example:
-./HarmonicOscillator_Gpu_example "C:/Users/dmccloskey/Documents/GitHub/EvoNetData/MNIST_examples/HarmonicOscillator/Gpu1-0a" true true false "WeightSpring1W1S1DwDamping" 32 64 100000
+./HarmonicOscillator_Gpu_example 0 "C:/Users/dmccloskey/Documents/GitHub/EvoNetData/MNIST_examples/HarmonicOscillator/Parameters.csv"
 
-@param data_dir The data director
-@param make_model Whether to make the model or read in a trained model/interpreter called 'HarmonicOscillator_model'/'HarmonicOscillator_interpreter'
-@param train_model Whether to train the model
-@param evolve_model Whether to evolve the model
-@param simulation_type The type of simulation to run
+@param id ID of the parameters
+@param parameters_filename the name and path of the parameters_file
 */
 int main(int argc, char** argv)
 {
   // Parse the user commands
-  ID id("id", 0);
-  std::string parameters_file = "";
-  if (argc >= 2) {
-    id.s_ = std::string(argv[1]);
-    //try {
-    //  id = std::stoi(argv[1]);
-    //}
-    //catch (std::exception & e) {
-    //  std::cout << e.what() << std::endl;
-    //}
-  }
-  if (argc >= 3) {
-    parameters_file = std::string(argv[2]);
-  }
+  int id_int = -1;
+  std::string parameters_filename = "";
+  parseCommandLineArguments(argc, argv, id_int, parameters_filename);
 
   // Set the parameter names and defaults
-  DataDir data_dir("data_dir", std::string(""));
-  NInterpreters n_interpreters("n_interpreters", 16);
-  NGenerations n_generations("n_generations", 50);
-  MakeModel make_model("make_model", true);
-  TrainModel train_model("train_model", true);
-  EvolveModel evolve_model("evolve_model", false);
-  EvaluateModel evaluate_model("evaluate_model", false);
-  SimulationType simulation_type("simulation_type", "WeightSpring1W1S1DwDamping");
-  BatchSize batch_size("batch_size", 32); 
-  MemorySize memory_size("memory_size", 64);
-  NEpochsTraining n_epochs_training("n_epochs_training", 100000);
-  NEpochsValidation n_epochs_validation("n_epochs_validation", 25);
-  NEpochsEvaluation n_epochs_evaluation("n_epochs_evaluation", 10);
-  NTBTTSteps n_tbtt_steps("n_tbtt_steps", 64);
-  DeviceId device_id("device_id", 0);
-  ModelName model_name("model_name", "");
-  auto parameters = std::make_tuple(id, data_dir, n_interpreters, n_generations, make_model, train_model, evolve_model, evaluate_model,
-    simulation_type, batch_size, memory_size, n_epochs_training, n_epochs_validation, n_epochs_evaluation, n_tbtt_steps, device_id, model_name);
+  EvoNetParameters::ID id("id", -1);
+  EvoNetParameters::DataDir data_dir("data_dir", std::string(""));
+  EvoNetParameters::PopulationName population_name("population_name", "");
+  EvoNetParameters::NInterpreters n_interpreters("n_interpreters", 16);
+  EvoNetParameters::NGenerations n_generations("n_generations", 50);
+  EvoNetParameters::MakeModel make_model("make_model", true);
+  EvoNetParameters::TrainModel train_model("train_model", true);
+  EvoNetParameters::EvolveModel evolve_model("evolve_model", false);
+  EvoNetParameters::EvaluateModel evaluate_model("evaluate_model", false);
+  EvoNetParameters::SimulationType simulation_type("simulation_type", "WeightSpring1W1S1DwDamping");
+  EvoNetParameters::BatchSize batch_size("batch_size", 32);
+  EvoNetParameters::MemorySize memory_size("memory_size", 64);
+  EvoNetParameters::NEpochsTraining n_epochs_training("n_epochs_training", 100000);
+  EvoNetParameters::NEpochsValidation n_epochs_validation("n_epochs_validation", 25);
+  EvoNetParameters::NEpochsEvaluation n_epochs_evaluation("n_epochs_evaluation", 10);
+  EvoNetParameters::NTBTTSteps n_tbtt_steps("n_tbtt_steps", 64);
+  EvoNetParameters::FindCycles find_cycles("find_cycles", false);
+  EvoNetParameters::FastInterpreter fast_interpreter("fast_interpreter", false);
+  EvoNetParameters::DeviceId device_id("device_id", 0);
+  EvoNetParameters::ModelName model_name("model_name", "");
+  auto parameters = std::make_tuple(id, data_dir, population_name, n_interpreters, n_generations, make_model, train_model, evolve_model, evaluate_model,
+    simulation_type, batch_size, memory_size, n_epochs_training, n_epochs_validation, n_epochs_evaluation, n_tbtt_steps, find_cycles, fast_interpreter, device_id, model_name);
 
   // Read in the parameters
-  //auto parameter_names = std::apply([](auto&& ...x) {std::make_tuple(x.name_ ...); }, parameters);
-  io::CSVReader<sizeof(parameters)> parameters_in(parameters_file);
-  parameters_in.read_header(io::ignore_extra_column, id.name_, data_dir.name_, n_interpreters.name_, n_generations.name_, make_model.name_, train_model.name_, evolve_model.name_, evaluate_model.name_,
-    simulation_type.name_, batch_size.name_, memory_size.name_, n_epochs_training.name_, n_epochs_validation.name_, n_epochs_evaluation.name_, n_tbtt_steps.name_, device_id.name_, model_name.name_);
+  LoadParametersFromCsv loadParametersFromCsv(id_int, parameters_filename);
+  parameters = SmartPeak::apply([&loadParametersFromCsv](auto&& ...args) { return loadParametersFromCsv(args...); }, parameters);
 
-  std::string id_str;
-  while (parameters_in.read_row(id_str, data_dir.s_, n_interpreters.s_, n_generations.s_, make_model.s_, train_model.s_, evolve_model.s_, evaluate_model.s_,
-    simulation_type.s_, batch_size.s_, memory_size.s_, n_epochs_training.s_, n_epochs_validation.s_, n_epochs_evaluation.s_, n_tbtt_steps.s_, device_id.s_, model_name.s_))
-  {
-    if (id_str == id.s_) {
-      std::apply([](auto&& ...x) {((x.set()), ...); }, parameters);
-      break;
-    }
-  }
-
-  // Print the read in parameters to the screen
-  std::apply([](auto&&... args) {((std::cout << args << std::endl), ...); }, parameters);
-
-  std::apply(main_HarmonicOscillator1D, parameters);
+  // Run the application
+  SmartPeak::apply([](auto&& ...args) { main_HarmonicOscillator1D(args ...); }, parameters);
   return 0;
 }

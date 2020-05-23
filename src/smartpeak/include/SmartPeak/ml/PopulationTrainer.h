@@ -247,13 +247,18 @@ public:
 		/**
 		@brief Train the population
 
-		@param[in, out] models The vector of models to copy
+		@param[in, out] models The vector of models to evolve
+    @param[in] population_name The name of the population (used for logging)
 		@param[in] model_trainer The trainer to use
+		@param[in] model_interpreters The interpreters to use for model building and training (each interpreter is given its own thread)
 		@param[in] model_replicator The replicator to use
 		@param[in] data_simulator The data simulate/generator to use
+		@param[in] population_logger The population logger to use
+		@param[in] input_nodes Vector of model input nodes
 		*/
 		std::vector<std::vector<std::tuple<int, std::string, TensorT>>> evolveModels(
 			std::vector<Model<TensorT>>& models,
+      const std::string& population_name,
 			ModelTrainer<TensorT, InterpreterT>& model_trainer,  std::vector<InterpreterT>& model_interpreters,
 			ModelReplicator<TensorT>& model_replicator,
 			DataSimulator<TensorT>& data_simulator,
@@ -264,13 +269,17 @@ public:
 		/**
 		@brief Evaluate the population
 
-		@param[in, out] models The vector of models to copy
-		@param[in] model_trainer The trainer to use
+		@param[in, out] models The vector of models to evaluate
+    @param[in] population_name The name of the population (used for logging)
+		@param[in] model_interpreters The interpreters to use for model building and training (each interpreter is given its own thread)
 		@param[in] model_replicator The replicator to use
 		@param[in] data_simulator The data simulate/generator to use
+		@param[in] population_logger The population logger to use
+		@param[in] input_nodes Vector of model input nodes
 		*/
 		void evaluateModels(
 			std::vector<Model<TensorT>>& models,
+      const std::string& population_name,
 			ModelTrainer<TensorT, InterpreterT>& model_trainer,  std::vector<InterpreterT>& model_interpreters,
 			ModelReplicator<TensorT>& model_replicator,
 			DataSimulator<TensorT>& data_simulator,
@@ -1032,6 +1041,7 @@ private:
 	template<typename TensorT, typename InterpreterT>
 	std::vector<std::vector<std::tuple<int, std::string, TensorT>>> PopulationTrainer<TensorT, InterpreterT>::evolveModels(
 		std::vector<Model<TensorT>>& models,
+    const std::string& population_name,
 		ModelTrainer<TensorT, InterpreterT>& model_trainer,  std::vector<InterpreterT>& model_interpreters,
 		ModelReplicator<TensorT>& model_replicator,
 		DataSimulator<TensorT> &data_simulator,
@@ -1055,7 +1065,7 @@ private:
 
 		// Initialize the logger
 		if (this->getLogTraining())
-			population_logger.initLogs("Population");
+			population_logger.initLogs(population_name);
 
 		// Evolve the population
 		for (int iter = 0; iter < getNGenerations(); ++iter)
@@ -1120,6 +1130,7 @@ private:
 	template<typename TensorT, typename InterpreterT>
 	void PopulationTrainer<TensorT, InterpreterT>::evaluateModels(
 		std::vector<Model<TensorT>>& models,
+    const std::string& population_name,
 		ModelTrainer<TensorT, InterpreterT>& model_trainer,  std::vector<InterpreterT>& model_interpreters,
 		ModelReplicator<TensorT>& model_replicator,
 		DataSimulator<TensorT>& data_simulator,

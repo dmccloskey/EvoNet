@@ -1776,8 +1776,14 @@ namespace SmartPeak
     int i = 0;
     for (auto& tensor_ops_step : tensor_ops_steps) {
       if (tensor_ops_step.size() != 0) {
-        allocateForwardPropogationLayerTensors(FP_operations, tensor_ops_step, source_layer_sizes_all.at(i), sink_layer_sizes_all.at(i), weight_indices_all.at(i), shared_weight_indices_all.at(i), weight_values_all.at(i), make_source_tensors_all.at(i), make_sink_tensors_all.at(i), make_weight_tensors_all.at(i),
-          batch_size, memory_size, train);
+        if (source_layer_sizes_all.at(i).size() == tensor_ops_step.size() && sink_layer_sizes_all.at(i).size() == tensor_ops_step.size() && weight_indices_all.at(i).size() == tensor_ops_step.size() && shared_weight_indices_all.at(i).size() == tensor_ops_step.size() && weight_values_all.at(i).size() == tensor_ops_step.size() && make_source_tensors_all.at(i).size() == tensor_ops_step.size() && make_sink_tensors_all.at(i).size() == tensor_ops_step.size() && make_weight_tensors_all.at(i).size() == tensor_ops_step.size()) {
+          allocateForwardPropogationLayerTensors(FP_operations, tensor_ops_step, source_layer_sizes_all.at(i), sink_layer_sizes_all.at(i), weight_indices_all.at(i), shared_weight_indices_all.at(i), weight_values_all.at(i), make_source_tensors_all.at(i), make_sink_tensors_all.at(i), make_weight_tensors_all.at(i),
+            batch_size, memory_size, train);
+        }
+        else {
+          clear_cache();
+          throw std::runtime_error("The vector of layer sizes does not match the number of tensor operation steps!");
+        }
       }
       ++i;
     }

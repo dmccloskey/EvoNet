@@ -165,7 +165,7 @@ public:
     LinearScale<TensorT, 3> linearScaleExoMet(exomet_data_stst, 0, 1);
     Eigen::Tensor<TensorT, 3> exomet_data_stst_proj = linearScaleExoMet(exomet_data_stst);
 
-    const int n_batches_per_time_course = 32; // The number of chunks each simulation time course is chopped into
+    const int n_batches_per_time_course = (32 < batch_size)? 32: batch_size; // The number of chunks each simulation time course is chopped into
 
     // Add random noise to the exo metabolomics data
     auto exomet_data_stst_trunc = exomet_data_stst_proj.shuffle(Eigen::array<Eigen::Index, 3>({ 1, 0, 2 })).broadcast(Eigen::array<Eigen::Index, 3>({ 1, 1, batch_size }));
@@ -181,13 +181,16 @@ public:
     amp_rand = (amp_rand + amp_rand.constant(1)) * amp_rand.constant(5);
 
     // Generate the input and output data for training
+    int increment_multiple = 0;
     for (int batch_iter = 0; batch_iter < batch_size; ++batch_iter) {
 
       // Segment the entire exomet time-course based on the batch and memory size
+      if (increment_multiple >= n_batches_per_time_course - 1) increment_multiple = 0;
       const int increment = ((int)exomet_data_stst_vec.size() / exo_met_nodes.size() - memory_size) / (n_batches_per_time_course - 1);
-      Eigen::array<Eigen::Index, 2> offset = { 0, increment };
+      Eigen::array<Eigen::Index, 2> offset = { 0, increment* increment_multiple };
       Eigen::array<Eigen::Index, 2> span = { (int)exo_met_nodes.size(), memory_size + 1 };
       Eigen::Tensor<TensorT, 2> exo_met_nodes_rand_seg = exo_met_nodes_rand.chip(batch_iter, 2).slice(offset, span);
+      ++increment_multiple;
 
       for (int memory_iter = 0; memory_iter < memory_size; ++memory_iter) {
         for (int nodes_iter = 0; nodes_iter < n_input_nodes; ++nodes_iter) {

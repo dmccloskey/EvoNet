@@ -652,18 +652,18 @@ int main(int argc, char** argv)
 {
   // Set the default command line arguments
   std::string data_dir = "";
-  int n_interpreters = 16;
-  int n_generations = 50;
+  int n_interpreters = 24;
+  int n_generations = 500;
   int n_mask = 2;
   int sequence_length = 25;
   int batch_size = 32;
   int n_epochs_training = 100000;
   int n_epochs_validation = 25;
   int n_epochs_evaluation = 10;
-  bool make_model = false;
+  bool make_model = true;
   std::string model_type = "Solution";
-  bool evolve_population = false;
-  bool train_model = true;
+  bool evolve_population = true;
+  bool train_model = false;
   bool evaluate_model = false;
   std::string model_name = "";
 

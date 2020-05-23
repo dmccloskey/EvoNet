@@ -764,7 +764,7 @@ BOOST_AUTO_TEST_CASE(exampleUsage)
 
 	// Evolve the population
 	std::vector<std::vector<std::tuple<int, std::string, float>>> models_validation_errors_per_generation = population_trainer.evolveModels(
-		population, model_trainer, model_interpreters,model_replicator, data_simulator, model_logger, population_logger, input_nodes);
+		population, "Test_population", model_trainer, model_interpreters,model_replicator, data_simulator, model_logger, population_logger, input_nodes);
 
 	PopulationTrainerFile<float> population_trainer_file;
 	population_trainer_file.storeModels(population, "populationTrainer");
