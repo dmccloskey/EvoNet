@@ -13,10 +13,10 @@ BOOST_AUTO_TEST_SUITE(Parameters)
 BOOST_AUTO_TEST_CASE(sizeOfParametersTest)
 {
   // Make the test tuple
-  EvoNetParameters::ID id("id", -1);
-  EvoNetParameters::DataDir data_dir("data_dir", std::string(""));
-  EvoNetParameters::BatchSize batch_size("batch_size", 32);
-  EvoNetParameters::MemorySize memory_size("memory_size", 64);
+  EvoNetParameters::General::ID id("id", -1);
+  EvoNetParameters::General::DataDir data_dir("data_dir", std::string(""));
+  EvoNetParameters::ModelTrainer::BatchSize batch_size("batch_size", 32);
+  EvoNetParameters::ModelTrainer::MemorySize memory_size("memory_size", 64);
   auto parameters = std::make_tuple(id, data_dir, batch_size, memory_size);
 
   // Test the size
@@ -27,10 +27,10 @@ BOOST_AUTO_TEST_CASE(sizeOfParametersTest)
 BOOST_AUTO_TEST_CASE(loadParametersFromCsvTest)
 {
   // Make the test tuple
-  EvoNetParameters::ID id("id", -1);
-  EvoNetParameters::DataDir data_dir("data_dir", std::string(""));
-  EvoNetParameters::BatchSize batch_size("batch_size", 0);
-  EvoNetParameters::MemorySize memory_size("memory_size", 0);
+  EvoNetParameters::General::ID id("id", -1);
+  EvoNetParameters::General::DataDir data_dir("data_dir", std::string(""));
+  EvoNetParameters::ModelTrainer::BatchSize batch_size("batch_size", 0);
+  EvoNetParameters::ModelTrainer::MemorySize memory_size("memory_size", 0);
   auto parameters = std::make_tuple(id, data_dir, batch_size, memory_size);
 
   // Test reading in the parameters file
@@ -38,8 +38,8 @@ BOOST_AUTO_TEST_CASE(loadParametersFromCsvTest)
   const std::string parameters_filename = SMARTPEAK_GET_TEST_DATA_PATH("Parameters.csv");
   LoadParametersFromCsv loadParametersFromCsv(id_int, parameters_filename);
   parameters = std::apply([&loadParametersFromCsv](auto&& ...args) { return loadParametersFromCsv(args...); }, parameters);
-  BOOST_CHECK_EQUAL(std::get<EvoNetParameters::BatchSize>(parameters).get(), 32);
-  BOOST_CHECK_EQUAL(std::get<EvoNetParameters::MemorySize>(parameters).get(), 64);
+  BOOST_CHECK_EQUAL(std::get<EvoNetParameters::ModelTrainer::BatchSize>(parameters).get(), 32);
+  BOOST_CHECK_EQUAL(std::get<EvoNetParameters::ModelTrainer::MemorySize>(parameters).get(), 64);
 }
 
 BOOST_AUTO_TEST_SUITE_END()
