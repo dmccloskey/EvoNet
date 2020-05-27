@@ -788,7 +788,7 @@ private:
 	{
 		// pick a random node from the model
 		// that is not an input or bias    
-		std::vector<NodeType> node_exclusion_list = { NodeType::bias, NodeType::input, NodeType::output };
+		std::vector<NodeType> node_exclusion_list = { NodeType::bias, NodeType::input, NodeType::output, NodeType::unmodifiable };
 		std::vector<NodeType> node_inclusion_list = { NodeType::hidden };
 		std::string random_node_name = selectRandomNode(model, node_exclusion_list, node_inclusion_list);
 		if (random_node_name.empty() || random_node_name == "")
@@ -1186,8 +1186,8 @@ private:
 	{
 		// pick a random node from the model
 		// that is not an input or bias    
-		std::vector<NodeType> node_exclusion_list = { NodeType::bias, NodeType::input };
-		std::vector<NodeType> node_inclusion_list = { NodeType::hidden, NodeType::output };
+		std::vector<NodeType> node_exclusion_list = { NodeType::bias, NodeType::input, NodeType::output, NodeType::unmodifiable };
+		std::vector<NodeType> node_inclusion_list = { NodeType::hidden };
 		std::string random_node_name = selectRandomNode(model, node_exclusion_list, node_inclusion_list);
 		if (random_node_name.empty() || random_node_name == "")
 		{
@@ -1385,7 +1385,7 @@ private:
 	{
 		// pick a random node from the model
 		// that is not an input or bias or output
-		std::vector<NodeType> node_exclusion_list = { NodeType::bias, NodeType::input, NodeType::output };
+		std::vector<NodeType> node_exclusion_list = { NodeType::bias, NodeType::input, NodeType::output, NodeType::unmodifiable };
 		std::vector<NodeType> node_inclusion_list = { NodeType::hidden };
 		std::string random_node_name = selectRandomNode(model, node_exclusion_list, node_inclusion_list);
 		if (random_node_name.empty() || random_node_name == "")
@@ -1407,7 +1407,7 @@ private:
 	{
 		// pick a random node from the model
 		// that is not an input or bias or output
-		std::vector<NodeType> node_exclusion_list = { NodeType::bias, NodeType::input, NodeType::output };
+		std::vector<NodeType> node_exclusion_list = { NodeType::bias, NodeType::input, NodeType::output, NodeType::unmodifiable };
 		std::vector<NodeType> node_inclusion_list = { NodeType::hidden };
 		std::string random_node_name = selectRandomNode(model, node_exclusion_list, node_inclusion_list);
 		if (random_node_name.empty() || random_node_name == "")

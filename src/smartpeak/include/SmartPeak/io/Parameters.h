@@ -51,8 +51,11 @@ namespace SmartPeak
       struct TrainModel : Parameter<bool> { using Parameter::Parameter; };
       struct EvolveModel : Parameter<bool> { using Parameter::Parameter; };
       struct EvaluateModel : Parameter<bool> { using Parameter::Parameter; };
+      struct LoadModelCsv : Parameter<bool> { using Parameter::Parameter; };
+      struct LoadModelBinary : Parameter<bool> { using Parameter::Parameter; };
       struct SimulationType : Parameter<std::string> { using Parameter::Parameter; };
       struct ModelName : Parameter<std::string> { using Parameter::Parameter; };
+      struct BiochemicalRxnsFilename : Parameter<std::string> { using Parameter::Parameter; };
       struct DeviceId : Parameter<int> { using Parameter::Parameter; };
     }
 

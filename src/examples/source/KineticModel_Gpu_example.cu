@@ -8,6 +8,7 @@
 #include <SmartPeak/io/PopulationTrainerFile.h>
 #include <SmartPeak/io/ModelInterpreterFileGpu.h>
 #include <SmartPeak/core/Preprocessing.h>
+#include <SmartPeak/io/Parameters.h>
 
 #include <unsupported/Eigen/CXX11/Tensor>
 
@@ -214,7 +215,7 @@ public:
             if (nodes_iter >= 0 && nodes_iter < endo_met_nodes.size() && memory_iter == memory_size - 1)
               input_data(batch_iter, memory_iter, nodes_iter) = met_nodes_rand(nodes_iter, memory_iter, batch_iter);
             else if (nodes_iter >= endo_met_nodes.size() && nodes_iter < exo_met_nodes.size() + endo_met_nodes.size() && memory_iter == memory_size - 1)
-              input_data(batch_iter, memory_iter, nodes_iter) = exo_met_nodes_rand_seg(nodes_iter - endo_met_nodes.size(), memory_iter);
+              input_data(batch_iter, memory_iter, nodes_iter) = exo_met_nodes_rand_seg(nodes_iter - endo_met_nodes.size(), 0);// exo_met_nodes_rand_seg(nodes_iter - endo_met_nodes.size(), memory_iter);
             else
               input_data(batch_iter, memory_iter, nodes_iter) = 0;
           }
@@ -236,7 +237,7 @@ public:
             if (nodes_iter >= 0 && nodes_iter < endo_met_nodes.size())
               output_data(batch_iter, memory_iter, nodes_iter) = met_nodes_rand(nodes_iter, memory_iter + 1, batch_iter);
             else if (nodes_iter >= endo_met_nodes.size() && nodes_iter < exo_met_nodes.size() + endo_met_nodes.size())
-              output_data(batch_iter, memory_iter, nodes_iter) = exo_met_nodes_rand_seg(nodes_iter - endo_met_nodes.size(), memory_iter + 1);
+              output_data(batch_iter, memory_iter, nodes_iter) = exo_met_nodes_rand_seg(nodes_iter - endo_met_nodes.size(), 0);// exo_met_nodes_rand_seg(nodes_iter - endo_met_nodes.size(), memory_iter + 1);
           }
         }
       }
@@ -284,7 +285,7 @@ public:
     // Convert the interaction graph to a network model
     ModelBuilderExperimental<TensorT> model_builder;
     model_builder.addBiochemicalReactionsMLP(model, biochemical_reaction_model.biochemicalReactions_, "RBC",
-      { 32, 32 },
+      { 128, 128, 128 },
       std::make_shared<ReLUOp<TensorT>>(ReLUOp<TensorT>()), std::make_shared<ReLUGradOp<TensorT>>(ReLUGradOp<TensorT>()),
       //std::make_shared<SigmoidOp<TensorT>>(SigmoidOp<TensorT>()), std::make_shared<SigmoidGradOp<TensorT>>(SigmoidGradOp<TensorT>()),
       std::make_shared<SumOp<TensorT>>(SumOp<TensorT>()), std::make_shared<SumErrorOp<TensorT>>(SumErrorOp<TensorT>()), std::make_shared<SumWeightGradOp<TensorT>>(SumWeightGradOp<TensorT>()),
@@ -514,19 +515,23 @@ public:
   }
 };
 
-void main_KineticModel(const std::string& data_dir, const bool& make_model, const bool& train_model, const bool& evolve_model, const std::string& simulation_type,
-  const int& batch_size, const int& memory_size, const int& n_epochs_training, const std::string& biochem_rxns_filename, const int& device_id) {
+template<class ...ParameterTypes>
+void main_KineticModel(const ParameterTypes& ...args) {
+  auto parameters = std::make_tuple(args...);
+
   // define the population trainer parameters
   PopulationTrainerExt<float> population_trainer;
-  population_trainer.setNGenerations(1);
+  population_trainer.setNGenerations(std::get<EvoNetParameters::PopulationTrainer::NGenerations>(parameters).get());
   population_trainer.setLogging(false);
+  population_trainer.setResetModelCopyWeights(true);
 
   // define the population logger
   PopulationLogger<float> population_logger(true, true);
 
   // define the multithreading parameters
   const int n_hard_threads = std::thread::hardware_concurrency();
-  const int n_threads = n_hard_threads; // the number of threads
+  const int n_threads = (std::get<EvoNetParameters::PopulationTrainer::NInterpreters>(parameters).get() > n_hard_threads) ? n_hard_threads : std::get<EvoNetParameters::PopulationTrainer::NInterpreters>(parameters).get(); // the number of threads
+
 
   // Make the input nodes
   const int n_met_nodes = 26; // exo + endo mets
@@ -549,27 +554,27 @@ void main_KineticModel(const std::string& data_dir, const bool& make_model, cons
 
   // define the data simulator
   DataSimulatorExt<float> data_simulator;
-  data_simulator.simulation_type_ = simulation_type;
+  data_simulator.simulation_type_ = std::get<EvoNetParameters::Main::SimulationType>(parameters).get();
 
   // define the model trainers and resources for the trainers
   std::vector<ModelInterpreterGpu<float>> model_interpreters;
   for (size_t i = 0; i < n_threads; ++i) {
-    ModelResources model_resources = { ModelDevice(device_id, 0) };
+    ModelResources model_resources = { ModelDevice(std::get<EvoNetParameters::Main::DeviceId>(parameters).get(), 0) };
     ModelInterpreterGpu<float> model_interpreter(model_resources);
     model_interpreters.push_back(model_interpreter);
   }
   ModelTrainerExt<float> model_trainer;
-  model_trainer.setBatchSize(batch_size);
-  model_trainer.setMemorySize(memory_size);
-  model_trainer.setNEpochsTraining(n_epochs_training);
-  model_trainer.setNEpochsValidation(25);
-  model_trainer.setNEpochsEvaluation(n_epochs_training);
-  model_trainer.setNTETTSteps(memory_size);
-  model_trainer.setNTBPTTSteps(memory_size);
+  model_trainer.setBatchSize(std::get<EvoNetParameters::ModelTrainer::BatchSize>(parameters).get());
+  model_trainer.setMemorySize(std::get<EvoNetParameters::ModelTrainer::MemorySize>(parameters).get());
+  model_trainer.setNEpochsTraining(std::get<EvoNetParameters::ModelTrainer::NEpochsTraining>(parameters).get());
+  model_trainer.setNEpochsValidation(std::get<EvoNetParameters::ModelTrainer::NEpochsValidation>(parameters).get());
+  model_trainer.setNEpochsEvaluation(std::get<EvoNetParameters::ModelTrainer::NEpochsEvaluation>(parameters).get());
+  model_trainer.setNTBPTTSteps(std::get<EvoNetParameters::ModelTrainer::NTBTTSteps>(parameters).get());
+  model_trainer.setNTETTSteps(std::get<EvoNetParameters::ModelTrainer::NTBTTSteps>(parameters).get());
   model_trainer.setVerbosityLevel(1);
   model_trainer.setLogging(true, false, true);
-  model_trainer.setFindCycles(false); // Set in the model
-  model_trainer.setFastInterpreter(true);
+  model_trainer.setFindCycles(std::get<EvoNetParameters::ModelTrainer::FindCycles>(parameters).get()); // Specified in the model
+  model_trainer.setFastInterpreter(std::get<EvoNetParameters::ModelTrainer::FastInterpreter>(parameters).get()); // IG default
   model_trainer.setPreserveOoO(true);
 
   std::vector<LossFunctionHelper<float>> loss_function_helpers;
@@ -599,49 +604,46 @@ void main_KineticModel(const std::string& data_dir, const bool& make_model, cons
 
   // define the initial population
   Model<float> model;
-  std::string model_name = "RBCGlycolysis";
-  if (make_model) {
+  if (std::get<EvoNetParameters::Main::MakeModel>(parameters).get()) {
     std::cout << "Making the model..." << std::endl;
-    const std::string model_filename = data_dir + "";
-    ModelTrainerExt<float>().makeRBCGlycolysis(model, biochem_rxns_filename);
+    ModelTrainerExt<float>().makeRBCGlycolysis(model, std::get<EvoNetParameters::Main::BiochemicalRxnsFilename>(parameters).get());
   }
   else {
     // read in the trained model
     std::cout << "Reading in the model..." << std::endl;
-    const std::string model_filename = data_dir + "RBCGlycolysis_model.binary";
-    const std::string interpreter_filename = data_dir + "RBCGlycolysis_interpreter.binary";
     ModelFile<float> model_file;
-    model_file.loadModelBinary(model_filename, model);
+    model_file.loadModelBinary(std::get<EvoNetParameters::General::DataDir>(parameters).get() + std::get<EvoNetParameters::Main::ModelName>(parameters).get() + "_model.binary", model);
     model.setId(1);
     ModelInterpreterFileGpu<float> model_interpreter_file;
-    model_interpreter_file.loadModelInterpreterBinary(interpreter_filename, model_interpreters[0]); // FIX ME!
+    model_interpreter_file.loadModelInterpreterBinary(std::get<EvoNetParameters::General::DataDir>(parameters).get() + std::get<EvoNetParameters::Main::ModelName>(parameters).get() + "_interpreter.binary", model_interpreters[0]); // FIX ME!
   }
-  model.setName(data_dir + model_name); //So that all output will be written to a specific directory
+  model.setName(std::get<EvoNetParameters::General::DataDir>(parameters).get() + std::get<EvoNetParameters::Main::ModelName>(parameters).get()); //So that all output will be written to a specific directory
 
-  if (train_model) {
+  if (std::get<EvoNetParameters::Main::TrainModel>(parameters).get()) {
     // Train the model
     model.setName(model.getName() + "_train");
     std::pair<std::vector<float>, std::vector<float>> model_errors = model_trainer.trainModel(model, data_simulator,
       input_nodes, model_logger, model_interpreters.front());
   }
-  else if (evolve_model) {
+  else if (std::get<EvoNetParameters::Main::EvolveModel>(parameters).get()) {
     // Evolve the population
     std::vector<Model<float>> population = { model };
     std::vector<std::vector<std::tuple<int, std::string, float>>> models_validation_errors_per_generation = population_trainer.evolveModels(
-      population, model_trainer, model_interpreters, model_replicator, data_simulator, model_logger, population_logger, input_nodes);
+      population, std::get<EvoNetParameters::General::DataDir>(parameters).get() + std::get<EvoNetParameters::PopulationTrainer::PopulationName>(parameters).get(), //So that all output will be written to a specific directory
+      model_trainer, model_interpreters, model_replicator, data_simulator, model_logger, population_logger, input_nodes);
 
     PopulationTrainerFile<float> population_trainer_file;
     population_trainer_file.storeModels(population, "RBCGlycolysis");
     population_trainer_file.storeModelValidations("RBCGlycolysisErrors.csv", models_validation_errors_per_generation);
   }
-  else {
+  else if (std::get<EvoNetParameters::Main::EvaluateModel>(parameters).get()) {
     //// Evaluate the population
     //std::vector<Model<float>> population = { model };
     //population_trainer.evaluateModels(
     //  population, model_trainer, model_interpreters, model_replicator, data_simulator, model_logger, input_nodes);
     // Evaluate the model
     model.setName(model.getName() + "_evaluation");
-    model_trainer.evaluateModel(model, data_simulator, input_nodes, model_logger, model_interpreters.front());
+    Eigen::Tensor<float, 4> model_output = model_trainer.evaluateModel(model, data_simulator, input_nodes, model_logger, model_interpreters.front());
   }
 }
 
@@ -649,7 +651,7 @@ void main_KineticModel(const std::string& data_dir, const bool& make_model, cons
 @brief Run the training/evolution/evaluation from the command line
 
 Example:
-./KineticModel_Gpu_example "C:/Users/dmccloskey/Documents/GitHub/EvoNetData/MNIST_examples/KineticModel/Gpu1-0a" "C:/Users/dmccloskey/Documents/GitHub/mnist/RBCGlycolysis.csv" true true false "steady_state" 32 64 100000
+./KineticModel_Gpu_example 0 "C:/Users/dmccloskey/Documents/GitHub/EvoNetData/MNIST_examples/KineticModel/Gpu1-0a"
 
 Simulation types:
 "steady_state" Constant glucose from T = 0 to N, SS metabolite levels at T = 0 (maintenance of SS metabolite levels)
@@ -657,86 +659,44 @@ Simulation types:
 "amp_sweep" AMP rise/fall at T = 0, SS metabolite levels at T = 0 (maintenance of SS metbolite levels)
 "TODO?" Glucose pulse at T = 0, SS metabolite levels at T = 0 (maintenance of SS pyr levels)
 "TODO?" AMP rise/fall at T = 0, SS metabolite levels at T = 0 (maintenance of SS ATP levels)
-
-@param data_dir The data director
-@param make_model Whether to make the model or read in a trained model/interpreter called 'RBCGlycolysis_model'/'RBCGlycolysis_interpreter'
-@param train_model Whether to train the model
-@param evolve_model Whether to evolve the model
-@param simulation_type The type of simulation to run
 */
 int main(int argc, char** argv)
 {
   // Parse the user commands
-  std::string data_dir = "";
-  std::string biochem_rxns_filename = data_dir + "iJO1366.csv";
-  bool make_model = true, train_model = true, evolve_model = false;
-  std::string simulation_type = "steady_state";
-  int batch_size = 32, memory_size = 64, n_epochs_training = 100000;
-  int device_id = 0;
-  if (argc >= 2) {
-    data_dir = argv[1];
-  }
-  if (argc >= 3) {
-    make_model = (argv[2] == std::string("true")) ? true : false;
-  }
-  if (argc >= 4) {
-    train_model = (argv[3] == std::string("true")) ? true : false;
-  }
-  if (argc >= 5) {
-    evolve_model = (argv[4] == std::string("true")) ? true : false;
-  }
-  if (argc >= 6) {
-    simulation_type = argv[5];
-  }
-  if (argc >= 7) {
-    try {
-      batch_size = std::stoi(argv[6]);
-    }
-    catch (std::exception & e) {
-      std::cout << e.what() << std::endl;
-    }
-  }
-  if (argc >= 8) {
-    try {
-      memory_size = std::stoi(argv[7]);
-    }
-    catch (std::exception & e) {
-      std::cout << e.what() << std::endl;
-    }
-  }
-  if (argc >= 9) {
-    try {
-      n_epochs_training = std::stoi(argv[8]);
-    }
-    catch (std::exception & e) {
-      std::cout << e.what() << std::endl;
-    }
-  }
-  if (argc >= 10) {
-    biochem_rxns_filename = argv[9];
-  }
-  if (argc >= 11) {
-    try {
-      device_id = std::stoi(argv[10]);
-      device_id = (device_id >= 0 && device_id < 4) ? device_id : 0; // TODO: assumes only 4 devices are available
-    }
-    catch (std::exception & e) {
-      std::cout << e.what() << std::endl;
-    }
-  }
+  int id_int = -1;
+  std::string parameters_filename = "";
+  parseCommandLineArguments(argc, argv, id_int, parameters_filename);
 
-  // Cout the parsed input
-  std::cout << "data_dir: " << data_dir << std::endl;
-  std::cout << "make_model: " << make_model << std::endl;
-  std::cout << "train_model: " << train_model << std::endl;
-  std::cout << "evolve_model: " << evolve_model << std::endl;
-  std::cout << "simulation_type: " << simulation_type << std::endl;
-  std::cout << "batch_size: " << batch_size << std::endl;
-  std::cout << "memory_size: " << memory_size << std::endl;
-  std::cout << "n_epochs_training: " << n_epochs_training << std::endl;
-  std::cout << "biochem_rxns_filename: " << biochem_rxns_filename << std::endl;
-  std::cout << "device_id: " << device_id << std::endl;
+  // Set the parameter names and defaults
+  EvoNetParameters::General::ID id("id", -1);
+  EvoNetParameters::General::DataDir data_dir("data_dir", std::string(""));
+  EvoNetParameters::PopulationTrainer::PopulationName population_name("population_name", "");
+  EvoNetParameters::PopulationTrainer::NInterpreters n_interpreters("n_interpreters", 1);
+  EvoNetParameters::PopulationTrainer::NGenerations n_generations("n_generations", 1);
+  EvoNetParameters::Main::BiochemicalRxnsFilename biochemical_rxns_filename("biochemical_rxns_filename", "iJO1366.csv");
+  EvoNetParameters::Main::MakeModel make_model("make_model", true);
+  EvoNetParameters::Main::TrainModel train_model("train_model", true);
+  EvoNetParameters::Main::EvolveModel evolve_model("evolve_model", false);
+  EvoNetParameters::Main::EvaluateModel evaluate_model("evaluate_model", false);
+  EvoNetParameters::Main::SimulationType simulation_type("simulation_type", "steady_state");
+  EvoNetParameters::ModelTrainer::BatchSize batch_size("batch_size", 32);
+  EvoNetParameters::ModelTrainer::MemorySize memory_size("memory_size", 64);
+  EvoNetParameters::ModelTrainer::NEpochsTraining n_epochs_training("n_epochs_training", 100000);
+  EvoNetParameters::ModelTrainer::NEpochsValidation n_epochs_validation("n_epochs_validation", 25);
+  EvoNetParameters::ModelTrainer::NEpochsEvaluation n_epochs_evaluation("n_epochs_evaluation", 10);
+  EvoNetParameters::ModelTrainer::NTBTTSteps n_tbtt_steps("n_tbtt_steps", 64);
+  EvoNetParameters::ModelTrainer::FindCycles find_cycles("find_cycles", false);
+  EvoNetParameters::ModelTrainer::FastInterpreter fast_interpreter("fast_interpreter", true);
+  EvoNetParameters::Main::DeviceId device_id("device_id", 0);
+  EvoNetParameters::Main::ModelName model_name("model_name", "");
+  auto parameters = std::make_tuple(id, data_dir, population_name, n_interpreters, n_generations, biochemical_rxns_filename, make_model, train_model, evolve_model, evaluate_model,
+    simulation_type, batch_size, memory_size, n_epochs_training, n_epochs_validation, n_epochs_evaluation, n_tbtt_steps, find_cycles, fast_interpreter, device_id, model_name);
 
-  main_KineticModel(data_dir, make_model, train_model, evolve_model, simulation_type, batch_size, memory_size, n_epochs_training, biochem_rxns_filename, device_id);
+  // Read in the parameters
+  LoadParametersFromCsv loadParametersFromCsv(id_int, parameters_filename);
+  parameters = SmartPeak::apply([&loadParametersFromCsv](auto&& ...args) { return loadParametersFromCsv(args...); }, parameters);
+
+  // Run the application
+  SmartPeak::apply([](auto&& ...args) { main_KineticModel(args ...); }, parameters);
   return 0;
 }

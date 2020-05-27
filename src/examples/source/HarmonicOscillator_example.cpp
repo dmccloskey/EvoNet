@@ -281,7 +281,7 @@ public:
   void simulateEvaluationData(Eigen::Tensor<TensorT, 4>& input_data, Eigen::Tensor<TensorT, 3>& time_steps) {};
   void simulateEvaluationData(Eigen::Tensor<TensorT, 3>& input_data, Eigen::Tensor<TensorT, 3>& metric_output_data, Eigen::Tensor<TensorT, 2>& time_steps) {
     // HACK: using output_data as metric_output_data
-    if (simulation_name_ == "WeightSpring1W1S1D")	simulateDataWeightSpring1W1S1D(input_data, metric_output_data, Eigen::Tensor<TensorT, 3>(), time_steps);
+    if (simulation_name_ == "WeightSpring1W1S1D")	simulateDataWeightSpring1W1S1D(input_data, metric_output_data, metric_output_data, time_steps);
     else if (simulation_name_ == "WeightSpring1W1S1DwDamping")	simulateDataWeightSpring1W1S1DwDamping(input_data, metric_output_data, Eigen::Tensor<TensorT, 3>(), time_steps);
     else if (simulation_name_ == "WeightSpring3W2S1D")	simulateDataWeightSpring3W2S1D(input_data, metric_output_data, Eigen::Tensor<TensorT, 3>(), time_steps);
   };
@@ -474,6 +474,12 @@ public:
   void evaluationModelLogger(const int& n_epochs, Model<TensorT>& model, ModelInterpreterDefaultDevice<TensorT>& model_interpreter, ModelLogger<TensorT>& model_logger,
     const Eigen::Tensor<TensorT, 3>& expected_values, const std::vector<std::string>& output_nodes, const std::vector<std::string>& input_nodes, const Eigen::Tensor<TensorT, 1>& model_metrics) override
   {
+    ///FIXME
+    model.getNodesMap().at("Mass(t)_000000000000")->setType(NodeType::input);
+    model.setInputAndOutputNodes();
+    auto input_nodes_1 = input_nodes;
+    input_nodes_1.push_back("Mass(t)_000000000000");
+
     // Set the defaults
     model_logger.setLogTimeEpoch(true);
     model_logger.setLogTrainValMetricEpoch(true);
@@ -506,7 +512,7 @@ public:
       log_values.push_back(model_metrics(metric_iter));
       ++metric_iter;
     }
-    model_logger.writeLogs(model, n_epochs, log_headers, {}, log_values, {}, output_nodes, expected_values, {}, output_nodes, {}, input_nodes, {});
+    model_logger.writeLogs(model, n_epochs, log_headers, {}, log_values, {}, output_nodes, expected_values, {}, output_nodes, {}, input_nodes_1, {});
   }
 };
 
@@ -568,7 +574,7 @@ void main_HarmonicOscillator1D(const ParameterTypes& ...args) {
 
   // define the population trainer parameters
   PopulationTrainerExt<float> population_trainer;
-  population_trainer.setNGenerations(std::get<EvoNetParameters::NGenerations>(parameters).get()); // population training
+  population_trainer.setNGenerations(std::get<EvoNetParameters::PopulationTrainer::NGenerations>(parameters).get()); // population training
   population_trainer.setLogging(true);
   population_trainer.setResetModelCopyWeights(true);
 
@@ -577,7 +583,7 @@ void main_HarmonicOscillator1D(const ParameterTypes& ...args) {
 
   // define the multithreading parameters
   const int n_hard_threads = std::thread::hardware_concurrency();
-  const int n_threads = (std::get<EvoNetParameters::NInterpreters>(parameters).get() > n_hard_threads) ? n_hard_threads : std::get<EvoNetParameters::NInterpreters>(parameters).get(); // the number of threads
+  const int n_threads = (std::get<EvoNetParameters::PopulationTrainer::NInterpreters>(parameters).get() > n_hard_threads) ? n_hard_threads : std::get<EvoNetParameters::PopulationTrainer::NInterpreters>(parameters).get(); // the number of threads
 
   // Make the input nodes
   const int n_masses = 1;
@@ -600,27 +606,27 @@ void main_HarmonicOscillator1D(const ParameterTypes& ...args) {
 
   // define the data simulator
   DataSimulatorExt<float> data_simulator;
-  data_simulator.simulation_name_ = std::get<EvoNetParameters::SimulationType>(parameters).get();
+  data_simulator.simulation_name_ = std::get<EvoNetParameters::Main::SimulationType>(parameters).get();
 
   // define the model trainers and resources for the trainers
   std::vector<ModelInterpreterDefaultDevice<float>> model_interpreters;
   for (size_t i = 0; i < n_threads; ++i) {
-    ModelResources model_resources = { ModelDevice(std::get<EvoNetParameters::DeviceId>(parameters).get(), 0) };
+    ModelResources model_resources = { ModelDevice(std::get<EvoNetParameters::Main::DeviceId>(parameters).get(), 0) };
     ModelInterpreterDefaultDevice<float> model_interpreter(model_resources);
     model_interpreters.push_back(model_interpreter);
   }
   ModelTrainerExt<float> model_trainer;
-  model_trainer.setBatchSize(std::get<EvoNetParameters::BatchSize>(parameters).get());
-  model_trainer.setMemorySize(std::get<EvoNetParameters::MemorySize>(parameters).get());
-  model_trainer.setNEpochsTraining(std::get<EvoNetParameters::NEpochsTraining>(parameters).get());
-  model_trainer.setNEpochsValidation(std::get<EvoNetParameters::NEpochsValidation>(parameters).get());
-  model_trainer.setNEpochsEvaluation(std::get<EvoNetParameters::NEpochsValidation>(parameters).get());
-  model_trainer.setNTBPTTSteps(std::get<EvoNetParameters::NTBTTSteps>(parameters).get());
-  model_trainer.setNTETTSteps(std::get<EvoNetParameters::NTBTTSteps>(parameters).get());
+  model_trainer.setBatchSize(std::get<EvoNetParameters::ModelTrainer::BatchSize>(parameters).get());
+  model_trainer.setMemorySize(std::get<EvoNetParameters::ModelTrainer::MemorySize>(parameters).get());
+  model_trainer.setNEpochsTraining(std::get<EvoNetParameters::ModelTrainer::NEpochsTraining>(parameters).get());
+  model_trainer.setNEpochsValidation(std::get<EvoNetParameters::ModelTrainer::NEpochsValidation>(parameters).get());
+  model_trainer.setNEpochsEvaluation(std::get<EvoNetParameters::ModelTrainer::NEpochsEvaluation>(parameters).get());
+  model_trainer.setNTBPTTSteps(std::get<EvoNetParameters::ModelTrainer::NTBTTSteps>(parameters).get());
+  model_trainer.setNTETTSteps(std::get<EvoNetParameters::ModelTrainer::NTBTTSteps>(parameters).get());
   model_trainer.setVerbosityLevel(1);
   model_trainer.setLogging(true, false, true);
-  model_trainer.setFindCycles(std::get<EvoNetParameters::FindCycles>(parameters).get()); // Specified in the model
-  model_trainer.setFastInterpreter(std::get<EvoNetParameters::FastInterpreter>(parameters).get()); // IG default
+  model_trainer.setFindCycles(std::get<EvoNetParameters::ModelTrainer::FindCycles>(parameters).get()); // Specified in the model
+  model_trainer.setFastInterpreter(std::get<EvoNetParameters::ModelTrainer::FastInterpreter>(parameters).get()); // IG default
   model_trainer.setPreserveOoO(true);
 
   std::vector<LossFunctionHelper<float>> loss_function_helpers;
@@ -664,40 +670,44 @@ void main_HarmonicOscillator1D(const ParameterTypes& ...args) {
 
   // define the initial population
   Model<float> model;
-  if (std::get<EvoNetParameters::MakeModel>(parameters).get()) {
+  if (std::get<EvoNetParameters::Main::MakeModel>(parameters).get()) {
     std::cout << "Making the model..." << std::endl;
-    if (std::get<EvoNetParameters::TrainModel>(parameters).get()) ModelTrainerExt<float>().makeHarmonicOscillator1D(model, 1, 32, 0, false, true);
-    else if (std::get<EvoNetParameters::EvolveModel>(parameters).get()) ModelTrainerExt<float>().makeHarmonicOscillator1D(model, 1, 8, 0, false, false);
+    if (std::get<EvoNetParameters::Main::TrainModel>(parameters).get()) ModelTrainerExt<float>().makeHarmonicOscillator1D(model, 1, 32, 0, false, true);
+    else if (std::get<EvoNetParameters::Main::EvolveModel>(parameters).get()) ModelTrainerExt<float>().makeHarmonicOscillator1D(model, 1, 8, 0, false, false);
   }
   else {
     // read in the trained model
     std::cout << "Reading in the model..." << std::endl;
     ModelFile<float> model_file;
-    model_file.loadModelBinary(std::get<EvoNetParameters::DataDir>(parameters).get() + std::get<EvoNetParameters::ModelName>(parameters).get() + "_model.binary", model);
-    model.setId(1);
-    ModelInterpreterFileDefaultDevice<float> model_interpreter_file;
-    model_interpreter_file.loadModelInterpreterBinary(std::get<EvoNetParameters::DataDir>(parameters).get() + std::get<EvoNetParameters::ModelName>(parameters).get() + "_interpreter.binary", model_interpreters[0]); // FIX ME!
-  }
-  model.setName(std::get<EvoNetParameters::DataDir>(parameters).get() + std::get<EvoNetParameters::ModelName>(parameters).get()); //So that all output will be written to a specific directory
+    //model_file.loadModelBinary(std::get<EvoNetParameters::General::DataDir>(parameters).get() + std::get<EvoNetParameters::Main::ModelName>(parameters).get() + "_model.binary", model);
+    model_file.loadModelCsv(std::get<EvoNetParameters::General::DataDir>(parameters).get() + std::get<EvoNetParameters::Main::ModelName>(parameters).get() + "_nodes.csv", std::get<EvoNetParameters::General::DataDir>(parameters).get() + std::get<EvoNetParameters::Main::ModelName>(parameters).get() + "_links.csv", std::get<EvoNetParameters::General::DataDir>(parameters).get() + std::get<EvoNetParameters::Main::ModelName>(parameters).get() + "_weights.csv", model, true, true, true);
+    model.addCyclicPairs(std::make_pair("Output_000000000000", "Mass(t)_000000000000"));
+    //model.addCyclicPairs(std::make_pair("Mass(t+1)_000000000000", "Mass(t)_000000000000"));
 
-  if (std::get<EvoNetParameters::TrainModel>(parameters).get()) {
+    model.setId(1);
+    //ModelInterpreterFileDefaultDevice<float> model_interpreter_file;
+    //model_interpreter_file.loadModelInterpreterBinary(std::get<EvoNetParameters::General::DataDir>(parameters).get() + std::get<EvoNetParameters::Main::ModelName>(parameters).get() + "_interpreter.binary", model_interpreters[0]); // FIX ME!
+  }
+  model.setName(std::get<EvoNetParameters::General::DataDir>(parameters).get() + std::get<EvoNetParameters::Main::ModelName>(parameters).get()); //So that all output will be written to a specific directory
+
+  if (std::get<EvoNetParameters::Main::TrainModel>(parameters).get()) {
     // Train the model
     model.setName(model.getName() + "_train");
     std::pair<std::vector<float>, std::vector<float>> model_errors = model_trainer.trainModel(model, data_simulator,
       input_nodes, model_logger, model_interpreters.front());
   }
-  else if (std::get<EvoNetParameters::EvolveModel>(parameters).get()) {
+  else if (std::get<EvoNetParameters::Main::EvolveModel>(parameters).get()) {
     // Evolve the population
     std::vector<Model<float>> population = { model };
     std::vector<std::vector<std::tuple<int, std::string, float>>> models_validation_errors_per_generation = population_trainer.evolveModels(
-      population, std::get<EvoNetParameters::DataDir>(parameters).get() + std::get<EvoNetParameters::PopulationName>(parameters).get(), //So that all output will be written to a specific directory
+      population, std::get<EvoNetParameters::General::DataDir>(parameters).get() + std::get<EvoNetParameters::PopulationTrainer::PopulationName>(parameters).get(), //So that all output will be written to a specific directory
       model_trainer, model_interpreters, model_replicator, data_simulator, model_logger, population_logger, input_nodes);
 
     PopulationTrainerFile<float> population_trainer_file;
     population_trainer_file.storeModels(population, "HarmonicOscillator");
     population_trainer_file.storeModelValidations("HarmonicOscillatorErrors.csv", models_validation_errors_per_generation);
   }
-  else if (std::get<EvoNetParameters::EvaluateModel>(parameters).get()) {
+  else if (std::get<EvoNetParameters::Main::EvaluateModel>(parameters).get()) {
     //// Evaluate the population
     //std::vector<Model<float>> population = { model };
     //population_trainer.evaluateModels(
@@ -725,34 +735,34 @@ int main(int argc, char** argv)
   parseCommandLineArguments(argc, argv, id_int, parameters_filename);
 
   // Set the parameter names and defaults
-  EvoNetParameters::ID id("id", -1);
-  EvoNetParameters::DataDir data_dir("data_dir", std::string(""));
-  EvoNetParameters::PopulationName population_name("population_name", "");
-  EvoNetParameters::NInterpreters n_interpreters("n_interpreters", 16);
-  EvoNetParameters::NGenerations n_generations("n_generations", 50);
-  EvoNetParameters::MakeModel make_model("make_model", true);
-  EvoNetParameters::TrainModel train_model("train_model", true);
-  EvoNetParameters::EvolveModel evolve_model("evolve_model", false);
-  EvoNetParameters::EvaluateModel evaluate_model("evaluate_model", false);
-  EvoNetParameters::SimulationType simulation_type("simulation_type", "WeightSpring1W1S1DwDamping");
-  EvoNetParameters::BatchSize batch_size("batch_size", 32);
-  EvoNetParameters::MemorySize memory_size("memory_size", 64);
-  EvoNetParameters::NEpochsTraining n_epochs_training("n_epochs_training", 100000);
-  EvoNetParameters::NEpochsValidation n_epochs_validation("n_epochs_validation", 25);
-  EvoNetParameters::NEpochsEvaluation n_epochs_evaluation("n_epochs_evaluation", 10);
-  EvoNetParameters::NTBTTSteps n_tbtt_steps("n_tbtt_steps", 64);
-  EvoNetParameters::FindCycles find_cycles("find_cycles", false);
-  EvoNetParameters::FastInterpreter fast_interpreter("fast_interpreter", false);
-  EvoNetParameters::DeviceId device_id("device_id", 0);
-  EvoNetParameters::ModelName model_name("model_name", "");
+  EvoNetParameters::General::ID id("id", -1);
+  EvoNetParameters::General::DataDir data_dir("data_dir", std::string(""));
+  EvoNetParameters::PopulationTrainer::PopulationName population_name("population_name", "");
+  EvoNetParameters::PopulationTrainer::NInterpreters n_interpreters("n_interpreters", 16);
+  EvoNetParameters::PopulationTrainer::NGenerations n_generations("n_generations", 50);
+  EvoNetParameters::Main::MakeModel make_model("make_model", true);
+  EvoNetParameters::Main::TrainModel train_model("train_model", true);
+  EvoNetParameters::Main::EvolveModel evolve_model("evolve_model", false);
+  EvoNetParameters::Main::EvaluateModel evaluate_model("evaluate_model", false);
+  EvoNetParameters::Main::SimulationType simulation_type("simulation_type", "WeightSpring1W1S1DwDamping");
+  EvoNetParameters::ModelTrainer::BatchSize batch_size("batch_size", 32);
+  EvoNetParameters::ModelTrainer::MemorySize memory_size("memory_size", 64);
+  EvoNetParameters::ModelTrainer::NEpochsTraining n_epochs_training("n_epochs_training", 100000);
+  EvoNetParameters::ModelTrainer::NEpochsValidation n_epochs_validation("n_epochs_validation", 25);
+  EvoNetParameters::ModelTrainer::NEpochsEvaluation n_epochs_evaluation("n_epochs_evaluation", 10);
+  EvoNetParameters::ModelTrainer::NTBTTSteps n_tbtt_steps("n_tbtt_steps", 64);
+  EvoNetParameters::ModelTrainer::FindCycles find_cycles("find_cycles", false);
+  EvoNetParameters::ModelTrainer::FastInterpreter fast_interpreter("fast_interpreter", false);
+  EvoNetParameters::Main::DeviceId device_id("device_id", 0);
+  EvoNetParameters::Main::ModelName model_name("model_name", "");
   auto parameters = std::make_tuple(id, data_dir, population_name, n_interpreters, n_generations, make_model, train_model, evolve_model, evaluate_model,
     simulation_type, batch_size, memory_size, n_epochs_training, n_epochs_validation, n_epochs_evaluation, n_tbtt_steps, find_cycles, fast_interpreter, device_id, model_name);
 
   // Read in the parameters
   LoadParametersFromCsv loadParametersFromCsv(id_int, parameters_filename);
-  parameters = std::apply([&loadParametersFromCsv](auto&& ...args) { return loadParametersFromCsv(args...); }, parameters);
+  parameters = SmartPeak::apply([&loadParametersFromCsv](auto&& ...args) { return loadParametersFromCsv(args...); }, parameters);
 
   // Run the application
-  std::apply([](auto&& ...args) { main_HarmonicOscillator1D(args ...); }, parameters);
+  SmartPeak::apply([](auto&& ...args) { main_HarmonicOscillator1D(args ...); }, parameters);
   return 0;
 }
