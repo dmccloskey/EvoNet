@@ -152,6 +152,7 @@ public:
           modified)
 
       [TESTS: add thread tests]
+      [TESTS: add tests for remove_isolated_nodes, prune_model_num, check_complete_input_to_output, reset_model_copy_weights, and reset_model_template_weights parameters]
 
       @param[in, out] models The vector (i.e., population) of models to modify
       @param[in] model_replicator The replicator to use
@@ -715,6 +716,12 @@ private:
         printf("Exception: %s", e.what());
       }
     }
+
+    // reset the template model weights
+    if (reset_model_template_weights_)
+      for (int i=0;i<models_to_replicate;++i)
+        for (auto& weight_map : models.at(i).getWeightsMap())
+          weight_map.second->setInitWeight(true);
 
 		// removeDuplicateModels(models);  // safer to use, but does hurt performance
 	}
