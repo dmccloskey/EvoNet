@@ -56,6 +56,7 @@ public:
     void setCheckCompleteModelInputToOutput(const bool& check_complete_input_to_output);
     void setSelectModels(const bool& select_models);
     void setResetModelCopyWeights(const bool& reset_model_copy_weights);
+    void setResetModelTemplateWeights(const bool& reset_model_template_weights);
 
 		int getNTop() const; ///< batch_size setter
 		int getNRandom() const; ///< memory_size setter
@@ -67,6 +68,7 @@ public:
     bool getCheckCompleteModelInputToOutput() const;
     bool getSelectModels() const;
     bool getResetModelCopyWeights() const;
+    bool getResetModelTemplateWeights() const;
 
     /**
       @brief Remove models with non-unique names from the population of models
@@ -334,6 +336,7 @@ private:
     int prune_model_num_ = 10;
     bool check_complete_input_to_output_ = true;
     bool reset_model_copy_weights_ = false;
+    bool reset_model_template_weights_ = false;
   };
 	template<typename TensorT, typename InterpreterT>
 	void PopulationTrainer<TensorT, InterpreterT>::setNTop(const int & n_top)
@@ -384,6 +387,11 @@ private:
   inline void PopulationTrainer<TensorT, InterpreterT>::setResetModelCopyWeights(const bool & reset_model_copy_weights)
   {
     reset_model_copy_weights_ = reset_model_copy_weights;
+  }
+  template<typename TensorT, typename InterpreterT>
+  inline void PopulationTrainer<TensorT, InterpreterT>::setResetModelTemplateWeights(const bool& reset_model_template_weights)
+  {
+    reset_model_template_weights_ = reset_model_template_weights;
   }
 	template<typename TensorT, typename InterpreterT>
 	int PopulationTrainer<TensorT, InterpreterT>::getNTop() const
@@ -440,6 +448,12 @@ private:
   inline bool PopulationTrainer<TensorT, InterpreterT>::getResetModelCopyWeights() const
   {
     return reset_model_copy_weights_;
+  }
+
+  template<typename TensorT, typename InterpreterT>
+  inline bool PopulationTrainer<TensorT, InterpreterT>::getResetModelTemplateWeights() const
+  {
+    return reset_model_template_weights_;
   }
 
 	template<typename TensorT, typename InterpreterT>
