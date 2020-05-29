@@ -314,7 +314,8 @@ BOOST_AUTO_TEST_CASE(replicateModels)
 	ModelBuilder<float> model_builder;
 
   // create an initial population
-  std::vector<Model<float>> population1, population2, population3;
+  std::vector<Model<float>> population1, population2, population3,
+    population4, population5, population6, population7, population8, population9;
 	for (int i = 0; i < 2; ++i)
 	{
 		Model<float> model;
@@ -336,10 +337,17 @@ BOOST_AUTO_TEST_CASE(replicateModels)
 		//model.initError(4, 4);
 		model.findCycles();
 
-		Model<float> model1(model), model2(model), model3(model); // copy the models
+		Model<float> model1(model), model2(model), model3(model), // copy the models
+      model4(model), model5(model), model6(model), model7(model), model8(model), model9(model);
 		population1.push_back(model1); // push the copies to the different test populations
 		population2.push_back(model2);
 		population3.push_back(model3);
+    population4.push_back(model4);
+    population5.push_back(model5);
+    population6.push_back(model6);
+    population7.push_back(model7);
+    population8.push_back(model8);
+    population9.push_back(model9);
 	}
 
 	// control (no modifications)
@@ -357,10 +365,8 @@ BOOST_AUTO_TEST_CASE(replicateModels)
 		std::make_pair(0, 0),
 		std::make_pair(0, 0),
 		std::make_pair(0, 0));
-  population_trainer.replicateModels(population1, model_replicator);
-
-	// check for the expected size
-	BOOST_CHECK_EQUAL(population1.size(), 6);
+  population_trainer.replicateModels(population1, model_replicator);	
+	BOOST_CHECK_EQUAL(population1.size(), 6); // check for the expected size
 
 	// control (additions only)
 	model_replicator.setRandomModifications(
@@ -378,9 +384,7 @@ BOOST_AUTO_TEST_CASE(replicateModels)
 		std::make_pair(0, 0),
 		std::make_pair(0, 0));
 	population_trainer.replicateModels(population2, model_replicator);
-
-  // check for the expected size
-  BOOST_CHECK_EQUAL(population2.size(), 6);
+  BOOST_CHECK_EQUAL(population2.size(), 6); // check for the expected size
 
 	// break the new replicates (deletions only)
 	model_replicator.setRandomModifications(
@@ -397,10 +401,8 @@ BOOST_AUTO_TEST_CASE(replicateModels)
 		std::make_pair(0, 0),
 		std::make_pair(0, 0),
 		std::make_pair(0, 0));
-	population_trainer.replicateModels(population3, model_replicator);
-
-	// check for the expected size and # of new modified models (i.e., 0)
-	BOOST_CHECK_EQUAL(population3.size(), 6);
+	population_trainer.replicateModels(population3, model_replicator);	
+	BOOST_CHECK_EQUAL(population3.size(), 6); // check for the expected size and # of new modified models (i.e., 0)
   for (int i = 0; i < population3.size(); ++i) {
     if (i < 2) BOOST_CHECK_EQUAL(population3.at(i).links_.size(), 4);
     else BOOST_CHECK_EQUAL(population3.at(i).links_.size(), 0);
