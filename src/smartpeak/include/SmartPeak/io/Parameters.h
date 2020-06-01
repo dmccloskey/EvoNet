@@ -53,14 +53,13 @@ namespace SmartPeak
       struct EvaluateModel : Parameter<bool> { using Parameter::Parameter; };
       struct LoadModelCsv : Parameter<bool> { using Parameter::Parameter; };
       struct LoadModelBinary : Parameter<bool> { using Parameter::Parameter; };
-      struct SimulationType : Parameter<std::string> { using Parameter::Parameter; };
       struct ModelName : Parameter<std::string> { using Parameter::Parameter; };
-      struct BiochemicalRxnsFilename : Parameter<std::string> { using Parameter::Parameter; };
       struct DeviceId : Parameter<int> { using Parameter::Parameter; };
     }
 
     namespace PopulationTrainer {
       struct PopulationName : Parameter<std::string> { using Parameter::Parameter; };
+      struct PopulationSize : Parameter<int> { using Parameter::Parameter; };
       struct NInterpreters : Parameter<int> { using Parameter::Parameter; };
       struct NTop : Parameter<int> { using Parameter::Parameter; };
       struct NRandom : Parameter<int> { using Parameter::Parameter; };
@@ -71,9 +70,10 @@ namespace SmartPeak
       struct CheckCompleteModelInputToOutput : Parameter<bool> { using Parameter::Parameter; };
       //struct SelectModels : Parameter<bool> { using Parameter::Parameter; };
       struct ResetModelCopyWeights : Parameter<bool> { using Parameter::Parameter; };
+      struct ResetModelTemplateWeights : Parameter<bool> { using Parameter::Parameter; };
       struct NGenerations : Parameter<int> { using Parameter::Parameter; };
-      struct PopulationSizeFixed : Parameter<bool> { using Parameter::Parameter; };
-      struct PopulationSizeDoubling : Parameter<bool> { using Parameter::Parameter; };
+      struct SetPopulationSizeFixed : Parameter<bool> { using Parameter::Parameter; };
+      struct SetPopulationSizeDoubling : Parameter<bool> { using Parameter::Parameter; };
     }
 
     namespace ModelReplicator {
@@ -103,8 +103,8 @@ namespace SmartPeak
       struct NModuleAdditionsUB : Parameter<int> { using Parameter::Parameter; };
       struct NModuleCopiesUB : Parameter<int> { using Parameter::Parameter; };
       struct NModuleDeletionsUB : Parameter<int> { using Parameter::Parameter; };
-      struct ModificationRateFixed : Parameter<bool> { using Parameter::Parameter; };
-      struct ModificationRateByPrevError : Parameter<bool> { using Parameter::Parameter; };
+      struct SetModificationRateFixed : Parameter<bool> { using Parameter::Parameter; };
+      struct SetModificationRateByPrevError : Parameter<bool> { using Parameter::Parameter; };
     }
 
     namespace ModelTrainer {
@@ -125,6 +125,14 @@ namespace SmartPeak
       struct InterpretModel : Parameter<bool> { using Parameter::Parameter; };
       struct ResetModel : Parameter<bool> { using Parameter::Parameter; };
       struct ResetInterpreter : Parameter<bool> { using Parameter::Parameter; };
+    }
+
+    namespace Examples {
+      struct NMask : Parameter<int> { using Parameter::Parameter; };
+      struct SequenceLength : Parameter<int> { using Parameter::Parameter; };
+      struct SimulationType : Parameter<std::string> { using Parameter::Parameter; };
+      struct ModelType : Parameter<std::string> { using Parameter::Parameter; };
+      struct BiochemicalRxnsFilename : Parameter<std::string> { using Parameter::Parameter; };
     }
   }
 

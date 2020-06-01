@@ -215,7 +215,7 @@ public:
             if (nodes_iter >= 0 && nodes_iter < endo_met_nodes.size() && memory_iter == memory_size - 1)
               input_data(batch_iter, memory_iter, nodes_iter) = met_nodes_rand(nodes_iter, memory_iter, batch_iter);
             else if (nodes_iter >= endo_met_nodes.size() && nodes_iter < exo_met_nodes.size() + endo_met_nodes.size() && memory_iter == memory_size - 1)
-              input_data(batch_iter, memory_iter, nodes_iter) = exo_met_nodes_rand_seg(nodes_iter - endo_met_nodes.size(), 0);// exo_met_nodes_rand_seg(nodes_iter - endo_met_nodes.size(), memory_iter);
+              input_data(batch_iter, memory_iter, nodes_iter) = exo_met_nodes_rand_seg(nodes_iter - endo_met_nodes.size(), memory_iter);
             else
               input_data(batch_iter, memory_iter, nodes_iter) = 0;
           }
@@ -237,7 +237,7 @@ public:
             if (nodes_iter >= 0 && nodes_iter < endo_met_nodes.size())
               output_data(batch_iter, memory_iter, nodes_iter) = met_nodes_rand(nodes_iter, memory_iter + 1, batch_iter);
             else if (nodes_iter >= endo_met_nodes.size() && nodes_iter < exo_met_nodes.size() + endo_met_nodes.size())
-              output_data(batch_iter, memory_iter, nodes_iter) = exo_met_nodes_rand_seg(nodes_iter - endo_met_nodes.size(), 0);// exo_met_nodes_rand_seg(nodes_iter - endo_met_nodes.size(), memory_iter + 1);
+              output_data(batch_iter, memory_iter, nodes_iter) = exo_met_nodes_rand_seg(nodes_iter - endo_met_nodes.size(), memory_iter + 1);
           }
         }
       }
@@ -532,7 +532,6 @@ void main_KineticModel(const ParameterTypes& ...args) {
   const int n_hard_threads = std::thread::hardware_concurrency();
   const int n_threads = (std::get<EvoNetParameters::PopulationTrainer::NInterpreters>(parameters).get() > n_hard_threads) ? n_hard_threads : std::get<EvoNetParameters::PopulationTrainer::NInterpreters>(parameters).get(); // the number of threads
 
-
   // Make the input nodes
   const int n_met_nodes = 26; // exo + endo mets
   std::vector<std::string> input_nodes;
@@ -571,10 +570,12 @@ void main_KineticModel(const ParameterTypes& ...args) {
   model_trainer.setNEpochsEvaluation(std::get<EvoNetParameters::ModelTrainer::NEpochsEvaluation>(parameters).get());
   model_trainer.setNTBPTTSteps(std::get<EvoNetParameters::ModelTrainer::NTBTTSteps>(parameters).get());
   model_trainer.setNTETTSteps(std::get<EvoNetParameters::ModelTrainer::NTBTTSteps>(parameters).get());
-  model_trainer.setVerbosityLevel(1);
-  model_trainer.setLogging(true, false, true);
-  model_trainer.setFindCycles(std::get<EvoNetParameters::ModelTrainer::FindCycles>(parameters).get()); // Specified in the model
-  model_trainer.setFastInterpreter(std::get<EvoNetParameters::ModelTrainer::FastInterpreter>(parameters).get()); // IG default
+  model_trainer.setVerbosityLevel(std::get<EvoNetParameters::ModelTrainer::Verbosity>(parameters).get());
+  model_trainer.setLogging(std::get<EvoNetParameters::ModelTrainer::LoggingTraining>(parameters).get(), 
+    std::get<EvoNetParameters::ModelTrainer::LoggingValidation>(parameters).get(),
+    std::get<EvoNetParameters::ModelTrainer::LoggingEvaluation>(parameters).get());
+  model_trainer.setFindCycles(std::get<EvoNetParameters::ModelTrainer::FindCycles>(parameters).get());
+  model_trainer.setFastInterpreter(std::get<EvoNetParameters::ModelTrainer::FastInterpreter>(parameters).get());
   model_trainer.setPreserveOoO(true);
 
   std::vector<LossFunctionHelper<float>> loss_function_helpers;
@@ -673,12 +674,13 @@ int main(int argc, char** argv)
   EvoNetParameters::PopulationTrainer::PopulationName population_name("population_name", "");
   EvoNetParameters::PopulationTrainer::NInterpreters n_interpreters("n_interpreters", 1);
   EvoNetParameters::PopulationTrainer::NGenerations n_generations("n_generations", 1);
-  EvoNetParameters::Main::BiochemicalRxnsFilename biochemical_rxns_filename("biochemical_rxns_filename", "iJO1366.csv");
+  EvoNetParameters::Examples::BiochemicalRxnsFilename biochemical_rxns_filename("biochemical_rxns_filename", "iJO1366.csv");
   EvoNetParameters::Main::MakeModel make_model("make_model", true);
   EvoNetParameters::Main::TrainModel train_model("train_model", true);
   EvoNetParameters::Main::EvolveModel evolve_model("evolve_model", false);
   EvoNetParameters::Main::EvaluateModel evaluate_model("evaluate_model", false);
-  EvoNetParameters::Main::SimulationType simulation_type("simulation_type", "steady_state");
+  EvoNetParameters::Examples::BiochemicalRxnsFilename biochemical_rxns_filename("biochemical_rxns_filename", "iJO1366.csv");
+  EvoNetParameters::Examples::SimulationType simulation_type("simulation_type", "steady_state");
   EvoNetParameters::ModelTrainer::BatchSize batch_size("batch_size", 32);
   EvoNetParameters::ModelTrainer::MemorySize memory_size("memory_size", 64);
   EvoNetParameters::ModelTrainer::NEpochsTraining n_epochs_training("n_epochs_training", 100000);

@@ -1,13 +1,13 @@
 /**TODO:  Add copyright*/
 
-#include <SmartPeak/ml/PopulationTrainerExperimentalDefaultDevice.h>
-#include <SmartPeak/ml/ModelTrainerDefaultDevice.h>
+#include <SmartPeak/ml/PopulationTrainerExperimentalGpu.h>
+#include <SmartPeak/ml/ModelTrainerGpu.h>
 #include <SmartPeak/ml/ModelReplicatorExperimental.h>
 #include <SmartPeak/ml/ModelBuilder.h>
 #include <SmartPeak/ml/Model.h>
 #include <SmartPeak/io/PopulationTrainerFile.h>
 #include <SmartPeak/simulator/AddProbSimulator.h>
-#include <SmartPeak/io/ModelInterpreterFileDefaultDevice.h>
+#include <SmartPeak/io/ModelInterpreterFileGpu.h>
 #include <SmartPeak/io/Parameters.h>
 
 #include <unsupported/Eigen/CXX11/Tensor>
@@ -18,53 +18,53 @@ template<typename TensorT>
 class DataSimulatorExt : public AddProbSimulator<TensorT>
 {
 public:
-	void simulateData(Eigen::Tensor<TensorT, 4>& input_data, Eigen::Tensor<TensorT, 4>& output_data, Eigen::Tensor<TensorT, 3>& time_steps)
-	{
-		// infer data dimensions based on the input tensors
-		const int batch_size = input_data.dimension(0);
-		const int memory_size = input_data.dimension(1);
-		const int n_input_nodes = input_data.dimension(2);
-		const int n_output_nodes = output_data.dimension(2);
-		const int n_epochs = input_data.dimension(3);
+  void simulateData(Eigen::Tensor<TensorT, 4>& input_data, Eigen::Tensor<TensorT, 4>& output_data, Eigen::Tensor<TensorT, 3>& time_steps)
+  {
+    // infer data dimensions based on the input tensors
+    const int batch_size = input_data.dimension(0);
+    const int memory_size = input_data.dimension(1);
+    const int n_input_nodes = input_data.dimension(2);
+    const int n_output_nodes = output_data.dimension(2);
+    const int n_epochs = input_data.dimension(3);
 
     // sequence length
     const int sequence_length = n_input_nodes / 2;
     assert(sequence_length == this->sequence_length_);
 
-		//// generate a new sequence 
-		//Eigen::Tensor<TensorT, 1> random_sequence(this->sequence_length_);
-		//Eigen::Tensor<TensorT, 1> mask_sequence(this->sequence_length_);
-		//float result = this->AddProb(random_sequence, mask_sequence, this->n_mask_);
+    //// generate a new sequence 
+    //Eigen::Tensor<TensorT, 1> random_sequence(this->sequence_length_);
+    //Eigen::Tensor<TensorT, 1> mask_sequence(this->sequence_length_);
+    //float result = this->AddProb(random_sequence, mask_sequence, this->n_mask_);
 
-		// Generate the input and output data for training [BUG FREE]
-		for (int batch_iter = 0; batch_iter<batch_size; ++batch_iter) {
-			for (int epochs_iter = 0; epochs_iter<n_epochs; ++epochs_iter) {
+    // Generate the input and output data for training [BUG FREE]
+    for (int batch_iter = 0; batch_iter < batch_size; ++batch_iter) {
+      for (int epochs_iter = 0; epochs_iter < n_epochs; ++epochs_iter) {
 
-				// generate a new sequence 
+        // generate a new sequence 
         Eigen::Tensor<TensorT, 1> random_sequence(this->sequence_length_);
         Eigen::Tensor<TensorT, 1> mask_sequence(this->sequence_length_);
         float result = this->AddProb(random_sequence, mask_sequence, this->n_mask_);
 
-				for (int memory_iter = 0; memory_iter<memory_size; ++memory_iter) {
-          for (int nodes_iter = 0; nodes_iter < n_input_nodes/2; ++nodes_iter) {
+        for (int memory_iter = 0; memory_iter < memory_size; ++memory_iter) {
+          for (int nodes_iter = 0; nodes_iter < n_input_nodes / 2; ++nodes_iter) {
             input_data(batch_iter, memory_iter, nodes_iter, epochs_iter) = random_sequence(nodes_iter); // random sequence
-            input_data(batch_iter, memory_iter, nodes_iter + n_input_nodes/2, epochs_iter) = mask_sequence(nodes_iter); // mask sequence
+            input_data(batch_iter, memory_iter, nodes_iter + n_input_nodes / 2, epochs_iter) = mask_sequence(nodes_iter); // mask sequence
             //std::cout << "Node: " << nodes_iter << ";Rand: " << input_data(batch_iter, memory_iter, nodes_iter, epochs_iter) << ";Mask: " << input_data(batch_iter, memory_iter, nodes_iter + n_input_nodes / 2, epochs_iter) << std::endl;
           }
           for (int nodes_iter = 0; nodes_iter < n_output_nodes; ++nodes_iter) {
             output_data(batch_iter, memory_iter, nodes_iter, epochs_iter) = result;
           }
-				}
-			}
-		}
-		//std::cout << "Input data: " << input_data << std::endl; // [TESTS: convert to a test!]
-		//std::cout << "Output data: " << output_data << std::endl; // [TESTS: convert to a test!]
+        }
+      }
+    }
+    //std::cout << "Input data: " << input_data << std::endl; // [TESTS: convert to a test!]
+    //std::cout << "Output data: " << output_data << std::endl; // [TESTS: convert to a test!]
 
-		time_steps.setConstant(1.0f);
-	}
-	void simulateTrainingData(Eigen::Tensor<TensorT, 4>& input_data, Eigen::Tensor<TensorT, 4>& output_data, Eigen::Tensor<TensorT, 3>& time_steps)override	{		simulateData(input_data, output_data, time_steps);	}
-	void simulateValidationData(Eigen::Tensor<TensorT, 4>& input_data, Eigen::Tensor<TensorT, 4>& output_data, Eigen::Tensor<TensorT, 3>& time_steps)override	{		simulateData(input_data, output_data, time_steps);	}
-	void simulateEvaluationData(Eigen::Tensor<TensorT, 4>& input_data, Eigen::Tensor<TensorT, 3>& time_steps) override {};
+    time_steps.setConstant(1.0f);
+  }
+  void simulateTrainingData(Eigen::Tensor<TensorT, 4>& input_data, Eigen::Tensor<TensorT, 4>& output_data, Eigen::Tensor<TensorT, 3>& time_steps)override { simulateData(input_data, output_data, time_steps); }
+  void simulateValidationData(Eigen::Tensor<TensorT, 4>& input_data, Eigen::Tensor<TensorT, 4>& output_data, Eigen::Tensor<TensorT, 3>& time_steps)override { simulateData(input_data, output_data, time_steps); }
+  void simulateEvaluationData(Eigen::Tensor<TensorT, 4>& input_data, Eigen::Tensor<TensorT, 3>& time_steps) override {};
   void simulateData(Eigen::Tensor<TensorT, 3>& input_data, Eigen::Tensor<TensorT, 3>& output_data, Eigen::Tensor<TensorT, 3>& metric_data, Eigen::Tensor<TensorT, 2>& time_steps)
   {
     // infer data dimensions based on the input tensors
@@ -106,14 +106,14 @@ public:
 
 // Extended classes
 template<typename TensorT>
-class ModelTrainerExt : public ModelTrainerDefaultDevice<TensorT>
+class ModelTrainerExt : public ModelTrainerGpu<TensorT>
 {
 public:
-	/*
-	@brief Minimal network 
-	*/
-	void makeModelMinimal(Model<TensorT>& model, const int& n_inputs, const int& n_outputs, int n_hidden_0 = 1, bool specify_layers = false)
-	{
+  /*
+  @brief Minimal network
+  */
+  void makeModelMinimal(Model<TensorT>& model, const int& n_inputs, const int& n_outputs, int n_hidden_0 = 1, bool specify_layers = false)
+  {
     model.setId(0);
     model.setName("AddProbAtt-Min");
     ModelBuilder<TensorT> model_builder;
@@ -155,12 +155,12 @@ public:
     for (const std::string& node_name : node_names)
       model.getNodesMap().at(node_name)->setType(NodeType::output);
     model.setInputAndOutputNodes();
-	}
-	/*
-	@brief Minimal network required to solve the addition problem
-	*/
-	void makeModelSolution(Model<TensorT>& model, const int& n_inputs, const int& n_outputs, bool init_weight_soln = true, bool specify_layers = false)
-	{
+  }
+  /*
+  @brief Minimal network required to solve the addition problem
+  */
+  void makeModelSolution(Model<TensorT>& model, const int& n_inputs, const int& n_outputs, bool init_weight_soln = true, bool specify_layers = false)
+  {
     model.setId(0);
     model.setName("AddProbAtt-Solution");
     ModelBuilder<TensorT> model_builder;
@@ -213,17 +213,17 @@ public:
     for (const std::string& node_name : node_names)
       model.nodes_.at(node_name)->setType(NodeType::output);
     model.setInputAndOutputNodes();
-	}  
+  }
 
-  void trainingModelLogger(const int& n_epochs, Model<TensorT>& model, ModelInterpreterDefaultDevice<TensorT>& model_interpreter, ModelLogger<TensorT>& model_logger,
+  void trainingModelLogger(const int& n_epochs, Model<TensorT>& model, ModelInterpreterGpu<TensorT>& model_interpreter, ModelLogger<TensorT>& model_logger,
     const Eigen::Tensor<TensorT, 3>& expected_values, const std::vector<std::string>& output_nodes, const std::vector<std::string>& input_nodes, const TensorT& model_error) override
   { // Left blank intentionally to prevent writing of files during training
   }
-  void validationModelLogger(const int& n_epochs, Model<TensorT>& model, ModelInterpreterDefaultDevice<TensorT>& model_interpreter, ModelLogger<TensorT>& model_logger,
+  void validationModelLogger(const int& n_epochs, Model<TensorT>& model, ModelInterpreterGpu<TensorT>& model_interpreter, ModelLogger<TensorT>& model_logger,
     const Eigen::Tensor<TensorT, 3>& expected_values, const std::vector<std::string>& output_nodes, const std::vector<std::string>& input_nodes, const TensorT& model_error) override
   { // Left blank intentionally to prevent writing of files during validation
   }
-  void trainingModelLogger(const int& n_epochs, Model<TensorT>& model, ModelInterpreterDefaultDevice<TensorT>& model_interpreter, ModelLogger<TensorT>& model_logger,
+  void trainingModelLogger(const int& n_epochs, Model<TensorT>& model, ModelInterpreterGpu<TensorT>& model_interpreter, ModelLogger<TensorT>& model_logger,
     const Eigen::Tensor<TensorT, 3>& expected_values, const std::vector<std::string>& output_nodes, const std::vector<std::string>& input_nodes, const TensorT& model_error_train, const TensorT& model_error_test,
     const Eigen::Tensor<TensorT, 1>& model_metrics_train, const Eigen::Tensor<TensorT, 1>& model_metrics_test) override {
     // Set the defaults
@@ -264,7 +264,7 @@ public:
     }
     model_logger.writeLogs(model, n_epochs, log_train_headers, log_test_headers, log_train_values, log_test_values, output_nodes, expected_values, {}, output_nodes, {}, input_nodes, {});
   }
-  void evaluationModelLogger(const int& n_epochs, Model<TensorT>& model, ModelInterpreterDefaultDevice<TensorT>& model_interpreter, ModelLogger<TensorT>& model_logger,
+  void evaluationModelLogger(const int& n_epochs, Model<TensorT>& model, ModelInterpreterGpu<TensorT>& model_interpreter, ModelLogger<TensorT>& model_logger,
     const Eigen::Tensor<TensorT, 3>& expected_values, const std::vector<std::string>& output_nodes, const std::vector<std::string>& input_nodes, const Eigen::Tensor<TensorT, 1>& model_metrics) override
   {
     // Set the defaults
@@ -305,14 +305,14 @@ public:
     const int& n_generations,
     const int& n_epochs,
     Model<TensorT>& model,
-    ModelInterpreterDefaultDevice<TensorT>& model_interpreter,
+    ModelInterpreterGpu<TensorT>& model_interpreter,
     const std::vector<float>& model_errors)override {
     if (n_epochs % 1000 == 0 && n_epochs != 0) {
       // save the model every 1000 epochs
       model_interpreter.getModelResults(model, false, true, false, false);
       ModelFile<TensorT> data;
       data.storeModelBinary(model.getName() + "_" + std::to_string(n_epochs) + "_model.binary", model);
-      ModelInterpreterFileDefaultDevice<TensorT> interpreter_data;
+      ModelInterpreterFileGpu<TensorT> interpreter_data;
       interpreter_data.storeModelInterpreterBinary(model.getName() + "_" + std::to_string(n_epochs) + "_interpreter.binary", model_interpreter);
     }
   }
@@ -339,7 +339,7 @@ public:
 };
 
 template<typename TensorT>
-class PopulationTrainerExt : public PopulationTrainerExperimentalDefaultDevice<TensorT>
+class PopulationTrainerExt : public PopulationTrainerExperimentalGpu<TensorT>
 {
 public:
   bool set_population_size_fixed_ = false;
@@ -401,7 +401,7 @@ void main_KineticModel(const ParameterTypes& ...args) {
   // define the multithreading parameters
   const int n_hard_threads = std::thread::hardware_concurrency();
   const int n_threads = (std::get<EvoNetParameters::PopulationTrainer::NInterpreters>(parameters).get() > n_hard_threads) ? n_hard_threads : std::get<EvoNetParameters::PopulationTrainer::NInterpreters>(parameters).get(); // the number of threads
-  
+
   // define the data simulator
   DataSimulatorExt<float> data_simulator;
   data_simulator.n_mask_ = std::get<EvoNetParameters::Examples::NMask>(parameters).get();
@@ -424,10 +424,10 @@ void main_KineticModel(const ParameterTypes& ...args) {
   std::vector<std::string> output_nodes = { "Output_000000000000" };
 
   // define the model trainers and resources for the trainers
-  std::vector<ModelInterpreterDefaultDevice<float>> model_interpreters;
+  std::vector<ModelInterpreterGpu<float>> model_interpreters;
   for (size_t i = 0; i < n_threads; ++i) {
     ModelResources model_resources = { ModelDevice(0, 1) };
-    ModelInterpreterDefaultDevice<float> model_interpreter(model_resources);
+    ModelInterpreterGpu<float> model_interpreter(model_resources);
     model_interpreters.push_back(model_interpreter);
   }
   ModelTrainerExt<float> model_trainer;
@@ -517,7 +517,7 @@ void main_KineticModel(const ParameterTypes& ...args) {
     ModelFile<float> model_file;
     model_file.loadModelBinary(std::get<EvoNetParameters::General::DataDir>(parameters).get() + std::get<EvoNetParameters::Main::ModelName>(parameters).get() + "_model.binary", model);
     model.setId(1);
-    ModelInterpreterFileDefaultDevice<float> model_interpreter_file;
+    ModelInterpreterFileGpu<float> model_interpreter_file;
     model_interpreter_file.loadModelInterpreterBinary(std::get<EvoNetParameters::General::DataDir>(parameters).get() + std::get<EvoNetParameters::Main::ModelName>(parameters).get() + "_interpreter.binary", model_interpreters[0]); // FIX ME!
   }
   else if (std::get<EvoNetParameters::Main::LoadModelCsv>(parameters).get()) {
@@ -654,5 +654,5 @@ int main(int argc, char** argv)
 
   // Run the application
   SmartPeak::apply([](auto&& ...args) { main_KineticModel(args ...); }, parameters);
-	return 0;
+  return 0;
 }

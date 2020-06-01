@@ -744,7 +744,7 @@ int main(int argc, char** argv)
   EvoNetParameters::Main::TrainModel train_model("train_model", true);
   EvoNetParameters::Main::EvolveModel evolve_model("evolve_model", false);
   EvoNetParameters::Main::EvaluateModel evaluate_model("evaluate_model", false);
-  EvoNetParameters::Main::SimulationType simulation_type("simulation_type", "WeightSpring1W1S1DwDamping");
+  EvoNetParameters::Examples::SimulationType simulation_type("simulation_type", "WeightSpring1W1S1DwDamping");
   EvoNetParameters::ModelTrainer::BatchSize batch_size("batch_size", 32);
   EvoNetParameters::ModelTrainer::MemorySize memory_size("memory_size", 64);
   EvoNetParameters::ModelTrainer::NEpochsTraining n_epochs_training("n_epochs_training", 100000);

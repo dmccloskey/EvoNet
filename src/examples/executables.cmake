@@ -32,6 +32,7 @@ set(cuda_executables_list
   MNIST_DotProdAtten_Gpu_example
   MNIST_LSTM_Gpu_example
   MNIST_VAE_Gpu_example
+  AddProbAtt_Gpu_example
   AddProbRec_Gpu_example
   Metabolomics_BatchCorrection_Gpu
   Metabolomics_Classification_Gpu

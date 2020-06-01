@@ -474,12 +474,6 @@ public:
   void evaluationModelLogger(const int& n_epochs, Model<TensorT>& model, ModelInterpreterDefaultDevice<TensorT>& model_interpreter, ModelLogger<TensorT>& model_logger,
     const Eigen::Tensor<TensorT, 3>& expected_values, const std::vector<std::string>& output_nodes, const std::vector<std::string>& input_nodes, const Eigen::Tensor<TensorT, 1>& model_metrics) override
   {
-    ///FIXME
-    model.getNodesMap().at("Mass(t)_000000000000")->setType(NodeType::input);
-    model.setInputAndOutputNodes();
-    auto input_nodes_1 = input_nodes;
-    input_nodes_1.push_back("Mass(t)_000000000000");
-
     // Set the defaults
     model_logger.setLogTimeEpoch(true);
     model_logger.setLogTrainValMetricEpoch(true);
@@ -737,26 +731,85 @@ int main(int argc, char** argv)
   // Set the parameter names and defaults
   EvoNetParameters::General::ID id("id", -1);
   EvoNetParameters::General::DataDir data_dir("data_dir", std::string(""));
-  EvoNetParameters::PopulationTrainer::PopulationName population_name("population_name", "");
-  EvoNetParameters::PopulationTrainer::NInterpreters n_interpreters("n_interpreters", 16);
-  EvoNetParameters::PopulationTrainer::NGenerations n_generations("n_generations", 50);
+  EvoNetParameters::Main::DeviceId device_id("device_id", 0);
+  EvoNetParameters::Main::ModelName model_name("model_name", "");
   EvoNetParameters::Main::MakeModel make_model("make_model", true);
+  EvoNetParameters::Main::LoadModelCsv load_model_csv("load_model_csv", false);
+  EvoNetParameters::Main::LoadModelBinary load_model_binary("load_model_binary", false);
   EvoNetParameters::Main::TrainModel train_model("train_model", true);
   EvoNetParameters::Main::EvolveModel evolve_model("evolve_model", false);
   EvoNetParameters::Main::EvaluateModel evaluate_model("evaluate_model", false);
-  EvoNetParameters::Main::SimulationType simulation_type("simulation_type", "WeightSpring1W1S1DwDamping");
+  EvoNetParameters::Examples::NMask n_mask("n_mask", 2);
+  EvoNetParameters::Examples::SequenceLength sequence_length("sequence_length", 25);
+  EvoNetParameters::Examples::ModelType model_type("model_type", "Solution");
+  EvoNetParameters::Examples::SimulationType simulation_type("simulation_type", "");
+  EvoNetParameters::Examples::BiochemicalRxnsFilename biochemical_rxns_filename("biochemical_rxns_filename", "iJO1366.csv");
+  EvoNetParameters::PopulationTrainer::PopulationName population_name("population_name", "");
+  EvoNetParameters::PopulationTrainer::NGenerations n_generations("n_generations", 1);
+  EvoNetParameters::PopulationTrainer::NInterpreters n_interpreters("n_interpreters", 1);
+  EvoNetParameters::PopulationTrainer::PruneModelNum prune_model_num("prune_model_num", 10);
+  EvoNetParameters::PopulationTrainer::RemoveIsolatedNodes remove_isolated_nodes("remove_isolated_nodes", true);
+  EvoNetParameters::PopulationTrainer::CheckCompleteModelInputToOutput check_complete_model_input_to_output("check_complete_model_input_to_output", true);
+  EvoNetParameters::PopulationTrainer::PopulationSize population_size("population_size", 128);
+  EvoNetParameters::PopulationTrainer::NTop n_top("n_top", 8);
+  EvoNetParameters::PopulationTrainer::NRandom n_random("n_random", 8);
+  EvoNetParameters::PopulationTrainer::NReplicatesPerModel n_replicates_per_model("n_replicates_per_model", 1);
+  EvoNetParameters::PopulationTrainer::ResetModelCopyWeights reset_model_copy_weights("reset_model_copy_weights", true);
+  EvoNetParameters::PopulationTrainer::ResetModelTemplateWeights reset_model_template_weights("reset_model_template_weights", true);
+  EvoNetParameters::PopulationTrainer::Logging population_logging("population_logging", true);
+  EvoNetParameters::PopulationTrainer::SetPopulationSizeFixed set_population_size_fixed("set_population_size_fixed", false);
+  EvoNetParameters::PopulationTrainer::SetPopulationSizeDoubling set_population_size_doubling("set_population_size_doubling", true);
   EvoNetParameters::ModelTrainer::BatchSize batch_size("batch_size", 32);
   EvoNetParameters::ModelTrainer::MemorySize memory_size("memory_size", 64);
-  EvoNetParameters::ModelTrainer::NEpochsTraining n_epochs_training("n_epochs_training", 100000);
+  EvoNetParameters::ModelTrainer::NEpochsTraining n_epochs_training("n_epochs_training", 1000);
   EvoNetParameters::ModelTrainer::NEpochsValidation n_epochs_validation("n_epochs_validation", 25);
   EvoNetParameters::ModelTrainer::NEpochsEvaluation n_epochs_evaluation("n_epochs_evaluation", 10);
   EvoNetParameters::ModelTrainer::NTBTTSteps n_tbtt_steps("n_tbtt_steps", 64);
-  EvoNetParameters::ModelTrainer::FindCycles find_cycles("find_cycles", false);
-  EvoNetParameters::ModelTrainer::FastInterpreter fast_interpreter("fast_interpreter", false);
-  EvoNetParameters::Main::DeviceId device_id("device_id", 0);
-  EvoNetParameters::Main::ModelName model_name("model_name", "");
-  auto parameters = std::make_tuple(id, data_dir, population_name, n_interpreters, n_generations, make_model, train_model, evolve_model, evaluate_model,
-    simulation_type, batch_size, memory_size, n_epochs_training, n_epochs_validation, n_epochs_evaluation, n_tbtt_steps, find_cycles, fast_interpreter, device_id, model_name);
+  EvoNetParameters::ModelTrainer::NTETTSteps n_tett_steps("n_tett_steps", 64);
+  EvoNetParameters::ModelTrainer::Verbosity verbosity("verbosity", 1);
+  EvoNetParameters::ModelTrainer::LoggingTraining logging_training("logging_training", true);
+  EvoNetParameters::ModelTrainer::LoggingValidation logging_validation("logging_validation", false);
+  EvoNetParameters::ModelTrainer::LoggingEvaluation logging_evaluation("logging_evaluation", true);
+  EvoNetParameters::ModelTrainer::FindCycles find_cycles("find_cycles", true);
+  EvoNetParameters::ModelTrainer::FastInterpreter fast_interpreter("fast_interpreter", true);
+  EvoNetParameters::ModelTrainer::PreserveOoO preserve_ooo("preserve_ooo", true);
+  EvoNetParameters::ModelTrainer::InterpretModel interpret_model("interpret_model", true);
+  EvoNetParameters::ModelTrainer::ResetModel reset_model("reset_model", false);
+  EvoNetParameters::ModelTrainer::ResetInterpreter reset_interpreter("reset_interpreter", true);
+  EvoNetParameters::ModelReplicator::NNodeDownAdditionsLB n_node_down_additions_lb("n_node_down_additions_lb", 0);
+  EvoNetParameters::ModelReplicator::NNodeRightAdditionsLB n_node_right_additions_lb("n_node_right_additions_lb", 0);
+  EvoNetParameters::ModelReplicator::NNodeDownCopiesLB n_node_down_copies_lb("n_node_down_copies_lb", 0);
+  EvoNetParameters::ModelReplicator::NNodeRightCopiesLB n_node_right_copies_lb("n_node_right_copies_lb", 0);
+  EvoNetParameters::ModelReplicator::NLinkAdditionsLB n_link_additons_lb("n_link_additons_lb", 0);
+  EvoNetParameters::ModelReplicator::NLinkCopiesLB n_link_copies_lb("n_link_copies_lb", 0);
+  EvoNetParameters::ModelReplicator::NNodeDeletionsLB n_node_deletions_lb("n_node_deletions_lb", 0);
+  EvoNetParameters::ModelReplicator::NLinkDeletionsLB n_link_deletions_lb("n_link_deletions_lb", 0);
+  EvoNetParameters::ModelReplicator::NNodeActivationChangesLB n_node_activation_changes_lb("n_node_activation_changes_lb", 0);
+  EvoNetParameters::ModelReplicator::NNodeIntegrationChangesLB n_node_integration_changes_lb("n_node_integration_changes_lb", 0);
+  EvoNetParameters::ModelReplicator::NModuleAdditionsLB n_module_additions_lb("n_module_additions_lb", 0);
+  EvoNetParameters::ModelReplicator::NModuleCopiesLB n_module_copies_lb("n_module_copies_lb", 0);
+  EvoNetParameters::ModelReplicator::NModuleDeletionsLB n_module_deletions_lb("n_module_deletions_lb", 0);
+  EvoNetParameters::ModelReplicator::NNodeDownAdditionsUB n_node_down_additions_ub("n_node_down_additions_ub", 0);
+  EvoNetParameters::ModelReplicator::NNodeRightAdditionsUB n_node_right_additions_ub("n_node_right_additions_ub", 0);
+  EvoNetParameters::ModelReplicator::NNodeDownCopiesUB n_node_down_copies_ub("n_node_down_copies_ub", 0);
+  EvoNetParameters::ModelReplicator::NNodeRightCopiesUB n_node_right_copies_ub("n_node_right_copies_ub", 0);
+  EvoNetParameters::ModelReplicator::NLinkAdditionsUB n_link_additons_ub("n_link_additons_ub", 0);
+  EvoNetParameters::ModelReplicator::NLinkCopiesUB n_link_copies_ub("n_link_copies_ub", 0);
+  EvoNetParameters::ModelReplicator::NNodeDeletionsUB n_node_deletions_ub("n_node_deletions_ub", 0);
+  EvoNetParameters::ModelReplicator::NLinkDeletionsUB n_link_deletions_ub("n_link_deletions_ub", 0);
+  EvoNetParameters::ModelReplicator::NNodeActivationChangesUB n_node_activation_changes_ub("n_node_activation_changes_ub", 0);
+  EvoNetParameters::ModelReplicator::NNodeIntegrationChangesUB n_node_integration_changes_ub("n_node_integration_changes_ub", 0);
+  EvoNetParameters::ModelReplicator::NModuleAdditionsUB n_module_additions_ub("n_module_additions_ub", 0);
+  EvoNetParameters::ModelReplicator::NModuleCopiesUB n_module_copies_ub("n_module_copies_ub", 0);
+  EvoNetParameters::ModelReplicator::NModuleDeletionsUB n_module_deletions_ub("n_module_deletions_ub", 0);
+  EvoNetParameters::ModelReplicator::SetModificationRateFixed set_modification_rate_fixed("set_modification_rate_fixed", false);
+  EvoNetParameters::ModelReplicator::SetModificationRateByPrevError set_modification_rate_by_prev_error("set_modification_rate_by_prev_error", false);
+  auto parameters = std::make_tuple(id, data_dir,
+    device_id, model_name, make_model, load_model_csv, load_model_binary, train_model, evolve_model, evaluate_model,
+    n_mask, sequence_length, model_type, simulation_type, biochemical_rxns_filename,
+    population_name, n_generations, n_interpreters, prune_model_num, remove_isolated_nodes, check_complete_model_input_to_output, population_size, n_top, n_random, n_replicates_per_model, reset_model_copy_weights, reset_model_template_weights, population_logging, set_population_size_fixed, set_population_size_doubling,
+    batch_size, memory_size, n_epochs_training, n_epochs_validation, n_epochs_evaluation, n_tbtt_steps, n_tett_steps, verbosity, logging_training, logging_validation, logging_evaluation, find_cycles, fast_interpreter, preserve_ooo, interpret_model, reset_model, reset_interpreter,
+    n_node_down_additions_lb, n_node_right_additions_lb, n_node_down_copies_lb, n_node_right_copies_lb, n_link_additons_lb, n_link_copies_lb, n_node_deletions_lb, n_link_deletions_lb, n_node_activation_changes_lb, n_node_integration_changes_lb, n_module_additions_lb, n_module_copies_lb, n_module_deletions_lb, n_node_down_additions_ub, n_node_right_additions_ub, n_node_down_copies_ub, n_node_right_copies_ub, n_link_additons_ub, n_link_copies_ub, n_node_deletions_ub, n_link_deletions_ub, n_node_activation_changes_ub, n_node_integration_changes_ub, n_module_additions_ub, n_module_copies_ub, n_module_deletions_ub, set_modification_rate_fixed, set_modification_rate_by_prev_error);
 
   // Read in the parameters
   LoadParametersFromCsv loadParametersFromCsv(id_int, parameters_filename);

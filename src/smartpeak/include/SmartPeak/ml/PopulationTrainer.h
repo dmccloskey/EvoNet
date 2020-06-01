@@ -57,6 +57,7 @@ public:
     void setSelectModels(const bool& select_models);
     void setResetModelCopyWeights(const bool& reset_model_copy_weights);
     void setResetModelTemplateWeights(const bool& reset_model_template_weights);
+    void setPopulationSize(const int& population_size) { population_size_ = population_size; }
 
 		int getNTop() const; ///< batch_size setter
 		int getNRandom() const; ///< memory_size setter
@@ -69,6 +70,7 @@ public:
     bool getSelectModels() const;
     bool getResetModelCopyWeights() const;
     bool getResetModelTemplateWeights() const;
+    int getPopulationSize() { return population_size_; }
 
     /**
       @brief Remove models with non-unique names from the population of models
@@ -321,16 +323,14 @@ public:
     void setNEpochsTraining(const int& n_epochs); ///< n_epochs setter
     int getNEpochsTraining() const; ///< n_epochs setter
 
-private:
+protected:
 		// population dynamics
+    int population_size_ = 128; ///< The total number of models in the population
 		int n_top_ = 0; ///< The number models to select
 		int n_random_ = 0; ///< The number of random models to select from the pool of top models
-		int n_replicates_per_model_ = 0; ///< The number of replications per model
 		int n_generations_ = 0; ///< The number of generations to evolve the models
-    int n_epochs_training_ = -1; ///< The number of epochs to train the models
 
 		bool log_training_ = false;
-    bool select_models_ = true; ///< Whether to skip the selection step or not
 
     // model replicator settings
     bool remove_isolated_nodes_ = true;
@@ -338,6 +338,12 @@ private:
     bool check_complete_input_to_output_ = true;
     bool reset_model_copy_weights_ = false;
     bool reset_model_template_weights_ = false;
+
+private:
+    bool select_models_ = true; ///< Whether to skip the selection step or not (set internally based on the replication scheme)
+    int n_epochs_training_ = -1; ///< The number of epochs to train the models (set internally based on the `ModelInterpreter::n_epochs_training_`)
+    int n_replicates_per_model_ = 0; ///< The number of replications per model (calculated internally based on the desired population size)
+
   };
 	template<typename TensorT, typename InterpreterT>
 	void PopulationTrainer<TensorT, InterpreterT>::setNTop(const int & n_top)

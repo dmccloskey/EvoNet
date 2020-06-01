@@ -16,10 +16,10 @@ namespace SmartPeak
   {
 public:
     PopulationTrainerExperimental() = default; ///< Default constructor
-    ~PopulationTrainerExperimental() = default; ///< Default destructor 
+    ~PopulationTrainerExperimental() = default; ///< Default destructor
 
     /*
-    @brief Adjust the population size based on the number of generations
+    @brief `adaptivePopulationScheduler` helper method to adjust the population size based on the number of generations
       error rates of training
 
     @param[in] n_generations The number of generations
@@ -32,7 +32,7 @@ public:
       std::vector<std::vector<std::tuple<int, std::string, TensorT>>>& models_errors_per_generations);
 
     /*
-    @brief Adjust the population size for growth and selection modes
+    @brief `adaptivePopulationScheduler` helper method to adjust the population size for growth and selection modes
     1. growth phase: each model doubles for a period of time (e.g., 1, 2, 4, 8, 16, 32, 64, 128, ...)
     2. selection phase: best models are selected (e.g., from 64 to 8)
 
@@ -51,6 +51,10 @@ public:
     @param[in] models A vector of models representing the population
     */
     void setTrainingStepsByModelSize(std::vector<Model<TensorT>>& models);
+  private: 
+    int n_top__;
+    int n_random__;
+    int prune_model_num__;
   };
   template<typename TensorT, typename InterpreterT>
   inline void PopulationTrainerExperimental<TensorT, InterpreterT>::setPopulationSizeFixed(
@@ -58,24 +62,13 @@ public:
     std::vector<Model<TensorT>>& models,
     std::vector<std::vector<std::tuple<int, std::string, TensorT>>>& models_errors_per_generations) {
     // Adjust the population sizes
-    const size_t population_size = 32;
-    const size_t selection_ratio = 4; ///< options include 2, 4, 8
-    const size_t selection_size = population_size / selection_ratio;
+    const size_t selection_ratio = this->getPopulationSize() / this->getNRandom();
     if (n_generations == 0) {
-      this->setNTop(selection_size);
-      this->setNRandom(selection_size);
-      this->setNReplicatesPerModel(population_size - 1);
+      this->setNReplicatesPerModel(this->getPopulationSize() - 1);
     }
     else {
-      this->setNTop(selection_size);
-      this->setNRandom(selection_size);
       this->setNReplicatesPerModel(selection_ratio - 1);
     }
-
-    // Set additional model replicator settings
-    this->setRemoveIsolatedNodes(true);
-    this->setPruneModelNum(10);
-    this->setCheckCompleteModelInputToOutput(true);
 
     // Adjust the training steps
     this->setTrainingStepsByModelSize(models);
@@ -85,19 +78,21 @@ public:
     const int& n_generations,
     std::vector<Model<TensorT>>& models,
     std::vector<std::vector<std::tuple<int, std::string, TensorT>>>& models_errors_per_generations) {
+    // Save the initial top/random selection sizes
+    if (n_generations == 0) {
+      n_top__ = this->getNTop();
+      n_random__ = this->getNRandom();
+      prune_model_num__ = this->getPruneModelNum();
+    }
     // Adjust the population sizes
-    const size_t max_population_size = 128;
-    //const size_t selection_ratio = 16; ///< options include 2, 4, 8, 16, 32, etc.
-    //const size_t selection_size = models.size() / selection_ratio;
-    const size_t selection_size = 8;
-    if (models.size() >= max_population_size) {
-      this->setNTop(selection_size);
-      this->setNRandom(selection_size);
+    if (models.size() >= this->getPopulationSize()) {
+      this->setNTop(n_top__);
+      this->setNRandom(n_random__);
       this->setNReplicatesPerModel(1); // doubling
       this->setRemoveIsolatedNodes(true);
-      this->setPruneModelNum(10);
+      this->setPruneModelNum(prune_model_num__);
       this->setCheckCompleteModelInputToOutput(true);
-      this->setNEpochsTraining(1001);
+      this->setNEpochsTraining(1001); // NOTE: this will be overwritten (so long as it is greater than 0) by the value of `ModelTrainer::n_epochs_training` during the call to `updateNEpochsTraining`
       this->setSelectModels(true);
     }
     else {
