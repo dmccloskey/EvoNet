@@ -514,6 +514,8 @@ template<typename TensorT>
 class ModelReplicatorExt : public ModelReplicatorExperimental<TensorT>
 {
 public:
+  bool set_modification_rate_by_prev_error_ = false;
+  bool set_modification_rate_fixed_ = false;
   /*
   @brief Implementation of the `adaptiveReplicatorScheduler`
   */
@@ -532,6 +534,8 @@ template<typename TensorT>
 class PopulationTrainerExt : public PopulationTrainerExperimentalGpu<TensorT>
 {
 public:
+  bool set_population_size_fixed_ = false;
+  bool set_population_size_doubling_ = false;
   /*
   @brief Implementation of the `adaptivePopulationScheduler`
   */
@@ -565,12 +569,21 @@ public:
 template<class ...ParameterTypes>
 void main_HarmonicOscillator1D(const ParameterTypes& ...args) {
   auto parameters = std::make_tuple(args...);
-
   // define the population trainer parameters
   PopulationTrainerExt<float> population_trainer;
-  population_trainer.setNGenerations(std::get<EvoNetParameters::PopulationTrainer::NGenerations>(parameters).get()); // population training
-  population_trainer.setLogging(true);
-  population_trainer.setResetModelCopyWeights(true);
+  population_trainer.setNGenerations(std::get<EvoNetParameters::PopulationTrainer::NGenerations>(parameters).get());
+  population_trainer.setPopulationSize(std::get<EvoNetParameters::PopulationTrainer::PopulationSize>(parameters).get());
+  population_trainer.setNReplicatesPerModel(std::get<EvoNetParameters::PopulationTrainer::NReplicatesPerModel>(parameters).get());
+  population_trainer.setNTop(std::get<EvoNetParameters::PopulationTrainer::NTop>(parameters).get());
+  population_trainer.setNRandom(std::get<EvoNetParameters::PopulationTrainer::NRandom>(parameters).get());
+  population_trainer.setLogging(std::get<EvoNetParameters::PopulationTrainer::Logging>(parameters).get());
+  population_trainer.setRemoveIsolatedNodes(std::get<EvoNetParameters::PopulationTrainer::RemoveIsolatedNodes>(parameters).get());
+  population_trainer.setPruneModelNum(std::get<EvoNetParameters::PopulationTrainer::PruneModelNum>(parameters).get());
+  population_trainer.setCheckCompleteModelInputToOutput(std::get<EvoNetParameters::PopulationTrainer::CheckCompleteModelInputToOutput>(parameters).get());
+  population_trainer.setResetModelCopyWeights(std::get<EvoNetParameters::PopulationTrainer::ResetModelCopyWeights>(parameters).get());
+  population_trainer.setResetModelTemplateWeights(std::get<EvoNetParameters::PopulationTrainer::ResetModelTemplateWeights>(parameters).get());
+  population_trainer.set_population_size_fixed_ = std::get<EvoNetParameters::PopulationTrainer::SetPopulationSizeFixed>(parameters).get();
+  population_trainer.set_population_size_doubling_ = std::get<EvoNetParameters::PopulationTrainer::SetPopulationSizeDoubling>(parameters).get();
 
   // define the population logger
   PopulationLogger<float> population_logger(true, true);
@@ -600,12 +613,12 @@ void main_HarmonicOscillator1D(const ParameterTypes& ...args) {
 
   // define the data simulator
   DataSimulatorExt<float> data_simulator;
-  data_simulator.simulation_name_ = std::get<EvoNetParameters::Main::SimulationType>(parameters).get();
+  data_simulator.simulation_name_ = std::get<EvoNetParameters::Examples::SimulationType>(parameters).get();
 
   // define the model trainers and resources for the trainers
   std::vector<ModelInterpreterGpu<float>> model_interpreters;
   for (size_t i = 0; i < n_threads; ++i) {
-    ModelResources model_resources = { ModelDevice(std::get<EvoNetParameters::Main::DeviceId>(parameters).get(), 0) };
+    ModelResources model_resources = { ModelDevice(0, 1) };
     ModelInterpreterGpu<float> model_interpreter(model_resources);
     model_interpreters.push_back(model_interpreter);
   }
@@ -616,12 +629,17 @@ void main_HarmonicOscillator1D(const ParameterTypes& ...args) {
   model_trainer.setNEpochsValidation(std::get<EvoNetParameters::ModelTrainer::NEpochsValidation>(parameters).get());
   model_trainer.setNEpochsEvaluation(std::get<EvoNetParameters::ModelTrainer::NEpochsEvaluation>(parameters).get());
   model_trainer.setNTBPTTSteps(std::get<EvoNetParameters::ModelTrainer::NTBTTSteps>(parameters).get());
-  model_trainer.setNTETTSteps(std::get<EvoNetParameters::ModelTrainer::NTBTTSteps>(parameters).get());
-  model_trainer.setVerbosityLevel(1);
-  model_trainer.setLogging(true, false, true);
-  model_trainer.setFindCycles(std::get<EvoNetParameters::ModelTrainer::FindCycles>(parameters).get()); // Specified in the model
-  model_trainer.setFastInterpreter(std::get<EvoNetParameters::ModelTrainer::FastInterpreter>(parameters).get()); // IG default
-  model_trainer.setPreserveOoO(true);
+  model_trainer.setNTETTSteps(std::get<EvoNetParameters::ModelTrainer::NTETTSteps>(parameters).get());
+  model_trainer.setVerbosityLevel(std::get<EvoNetParameters::ModelTrainer::Verbosity>(parameters).get());
+  model_trainer.setLogging(std::get<EvoNetParameters::ModelTrainer::LoggingTraining>(parameters).get(),
+    std::get<EvoNetParameters::ModelTrainer::LoggingValidation>(parameters).get(),
+    std::get<EvoNetParameters::ModelTrainer::LoggingEvaluation>(parameters).get());
+  model_trainer.setFindCycles(std::get<EvoNetParameters::ModelTrainer::FindCycles>(parameters).get()); //true
+  model_trainer.setFastInterpreter(std::get<EvoNetParameters::ModelTrainer::FastInterpreter>(parameters).get()); //false
+  model_trainer.setPreserveOoO(std::get<EvoNetParameters::ModelTrainer::PreserveOoO>(parameters).get());
+  model_trainer.setInterpretModel(std::get<EvoNetParameters::ModelTrainer::InterpretModel>(parameters).get());
+  model_trainer.setResetModel(std::get<EvoNetParameters::ModelTrainer::ResetModel>(parameters).get());
+  model_trainer.setResetInterpreter(std::get<EvoNetParameters::ModelTrainer::ResetInterpreter>(parameters).get());
 
   std::vector<LossFunctionHelper<float>> loss_function_helpers;
   LossFunctionHelper<float> loss_function_helper2;
@@ -634,15 +652,13 @@ void main_HarmonicOscillator1D(const ParameterTypes& ...args) {
   std::vector<MetricFunctionHelper<float>> metric_function_helpers;
   MetricFunctionHelper<float> metric_function_helper1;
   metric_function_helper1.output_nodes_ = output_nodes;
-  metric_function_helper1.metric_functions_ = { std::make_shared<PearsonROp<float>>(PearsonROp<float>("Mean")), std::make_shared<PearsonROp<float>>(PearsonROp<float>("Var")),
-    std::make_shared<EuclideanDistOp<float>>(EuclideanDistOp<float>("Mean")), std::make_shared<EuclideanDistOp<float>>(EuclideanDistOp<float>("Var")) };
-  metric_function_helper1.metric_names_ = { "PearsonR-Mean", "PearsonR-Var",
-    "EuclideanDist-Mean", "EuclideanDist-Var" };
+  metric_function_helper1.metric_functions_ = { std::make_shared<EuclideanDistOp<float>>(EuclideanDistOp<float>("Mean")), std::make_shared<EuclideanDistOp<float>>(EuclideanDistOp<float>("Var")) };
+  metric_function_helper1.metric_names_ = { "EuclideanDist-Mean", "EuclideanDist-Var" };
   metric_function_helpers.push_back(metric_function_helper1);
   model_trainer.setMetricFunctionHelpers(metric_function_helpers);
 
   // define the model logger
-  ModelLogger<float> model_logger(true, true, true, false, false, true, false, true);
+  ModelLogger<float> model_logger(true, true, false, false, false, false, false);
 
   // define the model replicator for growth mode
   ModelReplicatorExt<float> model_replicator;
@@ -650,17 +666,33 @@ void main_HarmonicOscillator1D(const ParameterTypes& ...args) {
     std::make_pair(std::make_shared<LinearOp<float>>(LinearOp<float>()), std::make_shared<LinearGradOp<float>>(LinearGradOp<float>())),
     std::make_pair(std::make_shared<ELUOp<float>>(ELUOp<float>()), std::make_shared<ELUGradOp<float>>(ELUGradOp<float>())),
     std::make_pair(std::make_shared<SigmoidOp<float>>(SigmoidOp<float>()), std::make_shared<SigmoidGradOp<float>>(SigmoidGradOp<float>())),
-    std::make_pair(std::make_shared<TanHOp<float>>(TanHOp<float>()), std::make_shared<TanHGradOp<float>>(TanHGradOp<float>())),
+    std::make_pair(std::make_shared<TanHOp<float>>(TanHOp<float>()), std::make_shared<TanHGradOp<float>>(TanHGradOp<float>()))//,
     //std::make_pair(std::make_shared<ExponentialOp<float>>(ExponentialOp<float>()), std::make_shared<ExponentialGradOp<float>>(ExponentialGradOp<float>())),
     //std::make_pair(std::make_shared<LogOp<float>>(LogOp<float>()), std::make_shared<LogGradOp<float>>(LogGradOp<float>())),
     //std::make_pair(std::shared_ptr<ActivationOp<float>>(new InverseOp<float>()), std::shared_ptr<ActivationOp<float>>(new InverseGradOp<float>()))
     });
-  model_replicator.setNodeIntegrations({ std::make_tuple(std::make_shared<SumOp<float>>(SumOp<float>()), std::make_shared<SumErrorOp<float>>(SumErrorOp<float>()), std::make_shared<SumWeightGradOp<float>>(SumWeightGradOp<float>())),
-    std::make_tuple(std::make_shared<ProdOp<float>>(ProdOp<float>()), std::make_shared<ProdErrorOp<float>>(ProdErrorOp<float>()), std::make_shared<ProdWeightGradOp<float>>(ProdWeightGradOp<float>())),
+  model_replicator.setNodeIntegrations({ std::make_tuple(std::make_shared<ProdOp<float>>(ProdOp<float>()), std::make_shared<ProdErrorOp<float>>(ProdErrorOp<float>()), std::make_shared<ProdWeightGradOp<float>>(ProdWeightGradOp<float>())),
+    std::make_tuple(std::make_shared<SumOp<float>>(SumOp<float>()), std::make_shared<SumErrorOp<float>>(SumErrorOp<float>()), std::make_shared<SumWeightGradOp<float>>(SumWeightGradOp<float>())),
     //std::make_tuple(std::make_shared<MeanOp<float>>(MeanOp<float>()), std::make_shared<MeanErrorOp<float>>(MeanErrorOp<float>()), std::make_shared<MeanWeightGradO<float>>(MeanWeightGradOp<float>())),
     //std::make_tuple(std::make_shared<VarModOp<float>>(VarModOp<float>()), std::make_shared<VarModErrorOp<float>>(VarModErrorOp<float>()), std::make_shared<VarModWeightGradOp<float>>(VarModWeightGradOp<float>())),
     //std::make_tuple(std::make_shared<CountOp<float>>(CountOp<float>()), std::make_shared<CountErrorOp<float>>(CountErrorOp<float>()), std::make_shared<CountWeightGradOp<float>>(CountWeightGradOp<float>()))
     });
+  model_replicator.set_modification_rate_by_prev_error_ = std::get<EvoNetParameters::ModelReplicator::SetModificationRateByPrevError>(parameters).get();
+  model_replicator.set_modification_rate_fixed_ = std::get<EvoNetParameters::ModelReplicator::SetModificationRateFixed>(parameters).get();
+  model_replicator.setRandomModifications(
+    std::make_pair(std::get<EvoNetParameters::ModelReplicator::NNodeDownAdditionsLB>(parameters).get(), std::get<EvoNetParameters::ModelReplicator::NNodeDownAdditionsUB>(parameters).get()),
+    std::make_pair(std::get<EvoNetParameters::ModelReplicator::NNodeRightAdditionsLB>(parameters).get(), std::get<EvoNetParameters::ModelReplicator::NNodeRightAdditionsUB>(parameters).get()),
+    std::make_pair(std::get<EvoNetParameters::ModelReplicator::NNodeDownCopiesLB>(parameters).get(), std::get<EvoNetParameters::ModelReplicator::NNodeDownCopiesUB>(parameters).get()),
+    std::make_pair(std::get<EvoNetParameters::ModelReplicator::NNodeRightCopiesLB>(parameters).get(), std::get<EvoNetParameters::ModelReplicator::NNodeRightCopiesUB>(parameters).get()),
+    std::make_pair(std::get<EvoNetParameters::ModelReplicator::NLinkAdditionsLB>(parameters).get(), std::get<EvoNetParameters::ModelReplicator::NLinkAdditionsUB>(parameters).get()),
+    std::make_pair(std::get<EvoNetParameters::ModelReplicator::NLinkCopiesLB>(parameters).get(), std::get<EvoNetParameters::ModelReplicator::NLinkCopiesUB>(parameters).get()),
+    std::make_pair(std::get<EvoNetParameters::ModelReplicator::NNodeDeletionsLB>(parameters).get(), std::get<EvoNetParameters::ModelReplicator::NNodeDeletionsUB>(parameters).get()),
+    std::make_pair(std::get<EvoNetParameters::ModelReplicator::NLinkDeletionsLB>(parameters).get(), std::get<EvoNetParameters::ModelReplicator::NLinkDeletionsUB>(parameters).get()),
+    std::make_pair(std::get<EvoNetParameters::ModelReplicator::NNodeActivationChangesLB>(parameters).get(), std::get<EvoNetParameters::ModelReplicator::NNodeActivationChangesUB>(parameters).get()),
+    std::make_pair(std::get<EvoNetParameters::ModelReplicator::NNodeIntegrationChangesLB>(parameters).get(), std::get<EvoNetParameters::ModelReplicator::NNodeIntegrationChangesUB>(parameters).get()),
+    std::make_pair(std::get<EvoNetParameters::ModelReplicator::NModuleAdditionsLB>(parameters).get(), std::get<EvoNetParameters::ModelReplicator::NModuleAdditionsUB>(parameters).get()),
+    std::make_pair(std::get<EvoNetParameters::ModelReplicator::NModuleCopiesLB>(parameters).get(), std::get<EvoNetParameters::ModelReplicator::NModuleCopiesUB>(parameters).get()),
+    std::make_pair(std::get<EvoNetParameters::ModelReplicator::NModuleDeletionsLB>(parameters).get(), std::get<EvoNetParameters::ModelReplicator::NModuleDeletionsUB>(parameters).get()));
 
   // define the initial population
   Model<float> model;
@@ -669,7 +701,7 @@ void main_HarmonicOscillator1D(const ParameterTypes& ...args) {
     if (std::get<EvoNetParameters::Main::TrainModel>(parameters).get()) ModelTrainerExt<float>().makeHarmonicOscillator1D(model, 1, 32, 0, false, true);
     else if (std::get<EvoNetParameters::Main::EvolveModel>(parameters).get()) ModelTrainerExt<float>().makeHarmonicOscillator1D(model, 1, 8, 0, false, false);
   }
-  else if (std::get<EvoNetParameters::Main::LoadModelBinary>(parameters).get()){
+  else if (std::get<EvoNetParameters::Main::LoadModelBinary>(parameters).get()) {
     // read in the trained model
     std::cout << "Reading in the model from binary..." << std::endl;
     ModelFile<float> model_file;
@@ -702,8 +734,8 @@ void main_HarmonicOscillator1D(const ParameterTypes& ...args) {
       model_trainer, model_interpreters, model_replicator, data_simulator, model_logger, population_logger, input_nodes);
 
     PopulationTrainerFile<float> population_trainer_file;
-    population_trainer_file.storeModels(population, "HarmonicOscillator");
-    population_trainer_file.storeModelValidations("HarmonicOscillatorErrors.csv", models_validation_errors_per_generation);
+    population_trainer_file.storeModels(population, std::get<EvoNetParameters::General::DataDir>(parameters).get() + std::get<EvoNetParameters::PopulationTrainer::PopulationName>(parameters).get());
+    population_trainer_file.storeModelValidations(std::get<EvoNetParameters::General::DataDir>(parameters).get() + std::get<EvoNetParameters::PopulationTrainer::PopulationName>(parameters).get() + "Errors.csv", models_validation_errors_per_generation);
   }
   else if (std::get<EvoNetParameters::Main::EvaluateModel>(parameters).get()) {
     //// Evaluate the population
@@ -735,28 +767,85 @@ int main(int argc, char** argv)
   // Set the parameter names and defaults
   EvoNetParameters::General::ID id("id", -1);
   EvoNetParameters::General::DataDir data_dir("data_dir", std::string(""));
-  EvoNetParameters::PopulationTrainer::PopulationName population_name("population_name", "");
-  EvoNetParameters::PopulationTrainer::NInterpreters n_interpreters("n_interpreters", 16);
-  EvoNetParameters::PopulationTrainer::NGenerations n_generations("n_generations", 50);
+  EvoNetParameters::Main::DeviceId device_id("device_id", 0);
+  EvoNetParameters::Main::ModelName model_name("model_name", "");
   EvoNetParameters::Main::MakeModel make_model("make_model", true);
   EvoNetParameters::Main::LoadModelCsv load_model_csv("load_model_csv", false);
   EvoNetParameters::Main::LoadModelBinary load_model_binary("load_model_binary", false);
   EvoNetParameters::Main::TrainModel train_model("train_model", true);
   EvoNetParameters::Main::EvolveModel evolve_model("evolve_model", false);
   EvoNetParameters::Main::EvaluateModel evaluate_model("evaluate_model", false);
-  EvoNetParameters::Examples::SimulationType simulation_type("simulation_type", "WeightSpring1W1S1DwDamping");
+  EvoNetParameters::Examples::NMask n_mask("n_mask", 2);
+  EvoNetParameters::Examples::SequenceLength sequence_length("sequence_length", 25);
+  EvoNetParameters::Examples::ModelType model_type("model_type", "Solution");
+  EvoNetParameters::Examples::SimulationType simulation_type("simulation_type", "");
+  EvoNetParameters::Examples::BiochemicalRxnsFilename biochemical_rxns_filename("biochemical_rxns_filename", "iJO1366.csv");
+  EvoNetParameters::PopulationTrainer::PopulationName population_name("population_name", "");
+  EvoNetParameters::PopulationTrainer::NGenerations n_generations("n_generations", 1);
+  EvoNetParameters::PopulationTrainer::NInterpreters n_interpreters("n_interpreters", 1);
+  EvoNetParameters::PopulationTrainer::PruneModelNum prune_model_num("prune_model_num", 10);
+  EvoNetParameters::PopulationTrainer::RemoveIsolatedNodes remove_isolated_nodes("remove_isolated_nodes", true);
+  EvoNetParameters::PopulationTrainer::CheckCompleteModelInputToOutput check_complete_model_input_to_output("check_complete_model_input_to_output", true);
+  EvoNetParameters::PopulationTrainer::PopulationSize population_size("population_size", 128);
+  EvoNetParameters::PopulationTrainer::NTop n_top("n_top", 8);
+  EvoNetParameters::PopulationTrainer::NRandom n_random("n_random", 8);
+  EvoNetParameters::PopulationTrainer::NReplicatesPerModel n_replicates_per_model("n_replicates_per_model", 1);
+  EvoNetParameters::PopulationTrainer::ResetModelCopyWeights reset_model_copy_weights("reset_model_copy_weights", true);
+  EvoNetParameters::PopulationTrainer::ResetModelTemplateWeights reset_model_template_weights("reset_model_template_weights", true);
+  EvoNetParameters::PopulationTrainer::Logging population_logging("population_logging", true);
+  EvoNetParameters::PopulationTrainer::SetPopulationSizeFixed set_population_size_fixed("set_population_size_fixed", false);
+  EvoNetParameters::PopulationTrainer::SetPopulationSizeDoubling set_population_size_doubling("set_population_size_doubling", true);
   EvoNetParameters::ModelTrainer::BatchSize batch_size("batch_size", 32);
   EvoNetParameters::ModelTrainer::MemorySize memory_size("memory_size", 64);
-  EvoNetParameters::ModelTrainer::NEpochsTraining n_epochs_training("n_epochs_training", 100000);
+  EvoNetParameters::ModelTrainer::NEpochsTraining n_epochs_training("n_epochs_training", 1000);
   EvoNetParameters::ModelTrainer::NEpochsValidation n_epochs_validation("n_epochs_validation", 25);
   EvoNetParameters::ModelTrainer::NEpochsEvaluation n_epochs_evaluation("n_epochs_evaluation", 10);
   EvoNetParameters::ModelTrainer::NTBTTSteps n_tbtt_steps("n_tbtt_steps", 64);
-  EvoNetParameters::ModelTrainer::FindCycles find_cycles("find_cycles", false);
-  EvoNetParameters::ModelTrainer::FastInterpreter fast_interpreter("fast_interpreter", false);
-  EvoNetParameters::Main::DeviceId device_id("device_id", 0);
-  EvoNetParameters::Main::ModelName model_name("model_name", "");
-  auto parameters = std::make_tuple(id, data_dir, population_name, n_interpreters, n_generations, make_model, load_model_csv, load_model_binary, train_model, evolve_model, evaluate_model,
-    simulation_type, batch_size, memory_size, n_epochs_training, n_epochs_validation, n_epochs_evaluation, n_tbtt_steps, find_cycles, fast_interpreter, device_id, model_name);
+  EvoNetParameters::ModelTrainer::NTETTSteps n_tett_steps("n_tett_steps", 64);
+  EvoNetParameters::ModelTrainer::Verbosity verbosity("verbosity", 1);
+  EvoNetParameters::ModelTrainer::LoggingTraining logging_training("logging_training", true);
+  EvoNetParameters::ModelTrainer::LoggingValidation logging_validation("logging_validation", false);
+  EvoNetParameters::ModelTrainer::LoggingEvaluation logging_evaluation("logging_evaluation", true);
+  EvoNetParameters::ModelTrainer::FindCycles find_cycles("find_cycles", true);
+  EvoNetParameters::ModelTrainer::FastInterpreter fast_interpreter("fast_interpreter", true);
+  EvoNetParameters::ModelTrainer::PreserveOoO preserve_ooo("preserve_ooo", true);
+  EvoNetParameters::ModelTrainer::InterpretModel interpret_model("interpret_model", true);
+  EvoNetParameters::ModelTrainer::ResetModel reset_model("reset_model", false);
+  EvoNetParameters::ModelTrainer::ResetInterpreter reset_interpreter("reset_interpreter", true);
+  EvoNetParameters::ModelReplicator::NNodeDownAdditionsLB n_node_down_additions_lb("n_node_down_additions_lb", 0);
+  EvoNetParameters::ModelReplicator::NNodeRightAdditionsLB n_node_right_additions_lb("n_node_right_additions_lb", 0);
+  EvoNetParameters::ModelReplicator::NNodeDownCopiesLB n_node_down_copies_lb("n_node_down_copies_lb", 0);
+  EvoNetParameters::ModelReplicator::NNodeRightCopiesLB n_node_right_copies_lb("n_node_right_copies_lb", 0);
+  EvoNetParameters::ModelReplicator::NLinkAdditionsLB n_link_additons_lb("n_link_additons_lb", 0);
+  EvoNetParameters::ModelReplicator::NLinkCopiesLB n_link_copies_lb("n_link_copies_lb", 0);
+  EvoNetParameters::ModelReplicator::NNodeDeletionsLB n_node_deletions_lb("n_node_deletions_lb", 0);
+  EvoNetParameters::ModelReplicator::NLinkDeletionsLB n_link_deletions_lb("n_link_deletions_lb", 0);
+  EvoNetParameters::ModelReplicator::NNodeActivationChangesLB n_node_activation_changes_lb("n_node_activation_changes_lb", 0);
+  EvoNetParameters::ModelReplicator::NNodeIntegrationChangesLB n_node_integration_changes_lb("n_node_integration_changes_lb", 0);
+  EvoNetParameters::ModelReplicator::NModuleAdditionsLB n_module_additions_lb("n_module_additions_lb", 0);
+  EvoNetParameters::ModelReplicator::NModuleCopiesLB n_module_copies_lb("n_module_copies_lb", 0);
+  EvoNetParameters::ModelReplicator::NModuleDeletionsLB n_module_deletions_lb("n_module_deletions_lb", 0);
+  EvoNetParameters::ModelReplicator::NNodeDownAdditionsUB n_node_down_additions_ub("n_node_down_additions_ub", 0);
+  EvoNetParameters::ModelReplicator::NNodeRightAdditionsUB n_node_right_additions_ub("n_node_right_additions_ub", 0);
+  EvoNetParameters::ModelReplicator::NNodeDownCopiesUB n_node_down_copies_ub("n_node_down_copies_ub", 0);
+  EvoNetParameters::ModelReplicator::NNodeRightCopiesUB n_node_right_copies_ub("n_node_right_copies_ub", 0);
+  EvoNetParameters::ModelReplicator::NLinkAdditionsUB n_link_additons_ub("n_link_additons_ub", 0);
+  EvoNetParameters::ModelReplicator::NLinkCopiesUB n_link_copies_ub("n_link_copies_ub", 0);
+  EvoNetParameters::ModelReplicator::NNodeDeletionsUB n_node_deletions_ub("n_node_deletions_ub", 0);
+  EvoNetParameters::ModelReplicator::NLinkDeletionsUB n_link_deletions_ub("n_link_deletions_ub", 0);
+  EvoNetParameters::ModelReplicator::NNodeActivationChangesUB n_node_activation_changes_ub("n_node_activation_changes_ub", 0);
+  EvoNetParameters::ModelReplicator::NNodeIntegrationChangesUB n_node_integration_changes_ub("n_node_integration_changes_ub", 0);
+  EvoNetParameters::ModelReplicator::NModuleAdditionsUB n_module_additions_ub("n_module_additions_ub", 0);
+  EvoNetParameters::ModelReplicator::NModuleCopiesUB n_module_copies_ub("n_module_copies_ub", 0);
+  EvoNetParameters::ModelReplicator::NModuleDeletionsUB n_module_deletions_ub("n_module_deletions_ub", 0);
+  EvoNetParameters::ModelReplicator::SetModificationRateFixed set_modification_rate_fixed("set_modification_rate_fixed", false);
+  EvoNetParameters::ModelReplicator::SetModificationRateByPrevError set_modification_rate_by_prev_error("set_modification_rate_by_prev_error", false);
+  auto parameters = std::make_tuple(id, data_dir,
+    device_id, model_name, make_model, load_model_csv, load_model_binary, train_model, evolve_model, evaluate_model,
+    n_mask, sequence_length, model_type, simulation_type, biochemical_rxns_filename,
+    population_name, n_generations, n_interpreters, prune_model_num, remove_isolated_nodes, check_complete_model_input_to_output, population_size, n_top, n_random, n_replicates_per_model, reset_model_copy_weights, reset_model_template_weights, population_logging, set_population_size_fixed, set_population_size_doubling,
+    batch_size, memory_size, n_epochs_training, n_epochs_validation, n_epochs_evaluation, n_tbtt_steps, n_tett_steps, verbosity, logging_training, logging_validation, logging_evaluation, find_cycles, fast_interpreter, preserve_ooo, interpret_model, reset_model, reset_interpreter,
+    n_node_down_additions_lb, n_node_right_additions_lb, n_node_down_copies_lb, n_node_right_copies_lb, n_link_additons_lb, n_link_copies_lb, n_node_deletions_lb, n_link_deletions_lb, n_node_activation_changes_lb, n_node_integration_changes_lb, n_module_additions_lb, n_module_copies_lb, n_module_deletions_lb, n_node_down_additions_ub, n_node_right_additions_ub, n_node_down_copies_ub, n_node_right_copies_ub, n_link_additons_ub, n_link_copies_ub, n_node_deletions_ub, n_link_deletions_ub, n_node_activation_changes_ub, n_node_integration_changes_ub, n_module_additions_ub, n_module_copies_ub, n_module_deletions_ub, set_modification_rate_fixed, set_modification_rate_by_prev_error);
 
   // Read in the parameters
   LoadParametersFromCsv loadParametersFromCsv(id_int, parameters_filename);
