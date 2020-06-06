@@ -44,6 +44,8 @@ namespace SmartPeak
     namespace General {
       struct ID : Parameter<int> { using Parameter::Parameter; };
       struct DataDir : Parameter<std::string> { using Parameter::Parameter; };
+      struct OutputDir : Parameter<std::string> { using Parameter::Parameter; };
+      struct InputDir : Parameter<std::string> { using Parameter::Parameter; };
     }
 
     namespace Main {
@@ -125,6 +127,15 @@ namespace SmartPeak
       struct InterpretModel : Parameter<bool> { using Parameter::Parameter; };
       struct ResetModel : Parameter<bool> { using Parameter::Parameter; };
       struct ResetInterpreter : Parameter<bool> { using Parameter::Parameter; };
+      /// Model building
+      struct NHidden0 : Parameter<int> { using Parameter::Parameter; };
+      struct NHidden1 : Parameter<int> { using Parameter::Parameter; };
+      struct NHidden2 : Parameter<int> { using Parameter::Parameter; };
+      struct AddGaussian : Parameter<bool> { using Parameter::Parameter; };
+      struct AddMixedGaussian : Parameter<bool> { using Parameter::Parameter; };
+      struct AddCategorical : Parameter<bool> { using Parameter::Parameter; };
+      struct LearningRate : Parameter<float> { using Parameter::Parameter; };
+      struct GradientClipping : Parameter<float> { using Parameter::Parameter; };
     }
 
     namespace Examples {

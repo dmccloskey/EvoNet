@@ -69,7 +69,7 @@ public:
     // Define the solver
     auto solver_op = std::make_shared<AdamOp<TensorT>>(AdamOp<TensorT>(1e-5, 0.9, 0.999, 1e-8, 10));
 
-    // Add the Endocer FC layers
+    // Add the Encoder FC layers
     std::vector<std::string> node_names_mu, node_names_logvar;
     if (n_hidden_0 > 0) {
       node_names = model_builder.addFullyConnected(model, "EN0", "EN0", node_names, n_hidden_0,
@@ -230,7 +230,6 @@ public:
     const int& n_enc_fc_1 = 128, const int& n_dec_fc_1 = 126, const int& filter_size = 4, const int& stride_size = 2, const bool& add_norm = false, const bool& specify_layers = false) {
     model.setId(0);
     model.setName("VAE");
-
     ModelBuilder<TensorT> model_builder;
 
     // Add the inputs

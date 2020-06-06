@@ -525,8 +525,8 @@ public:
     std::vector<std::vector<std::tuple<int, std::string, TensorT>>>& models_errors_per_generations)override
   {
     // Adjust the models modifications rates
-    //this->setModificationRateByPrevError(n_generations, models, models_errors_per_generations);
-    this->setModificationRateFixed(n_generations, models, models_errors_per_generations);
+    if (set_modification_rate_by_prev_error_) this->setModificationRateByPrevError(n_generations, models, models_errors_per_generations);
+    if (set_modification_rate_fixed_) this->setModificationRateFixed(n_generations, models, models_errors_per_generations);
   }
 };
 
@@ -545,9 +545,8 @@ public:
     std::vector<std::vector<std::tuple<int, std::string, TensorT>>>& models_errors_per_generations)override
   {
     // Adjust the population size
-    //this->setPopulationSizeFixed(n_generations, models, models_errors_per_generations);
-    // [TODO: single model training requires the line below to be commented]
-    this->setPopulationSizeDoubling(n_generations, models, models_errors_per_generations);
+    if (set_population_size_fixed_) this->setPopulationSizeFixed(n_generations, models, models_errors_per_generations);
+    else if (set_population_size_doubling_) this->setPopulationSizeDoubling(n_generations, models, models_errors_per_generations);
   }
   void trainingPopulationLogger(
     const int& n_generations,
