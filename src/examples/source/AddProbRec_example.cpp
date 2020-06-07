@@ -477,6 +477,7 @@ class PopulationTrainerExt : public PopulationTrainerExperimentalDefaultDevice<T
 public:
   bool set_population_size_fixed_ = false;
   bool set_population_size_doubling_ = false;
+  bool set_training_steps_by_model_size_ = false;
   /*
   @brief Implementation of the `adaptivePopulationScheduler`
   */
@@ -488,15 +489,15 @@ public:
     // Adjust the population size
     if (set_population_size_fixed_) this->setPopulationSizeFixed(n_generations, models, models_errors_per_generations);
     else if (set_population_size_doubling_) this->setPopulationSizeDoubling(n_generations, models, models_errors_per_generations);
+
+    // Adjust the training steps
+    if (set_training_steps_by_model_size_) this->setTrainingStepsByModelSize(models);
   }
   /*
   @brief Implementation of the `trainingPopulationLogger`
   */
 	void trainingPopulationLogger(
-		const int& n_generations,
-		std::vector<Model<TensorT>>& models,
-		PopulationLogger<TensorT>& population_logger,
-		const std::vector<std::tuple<int, std::string, TensorT>>& models_validation_errors_per_generation) override {
+		const int& n_generations, std::vector<Model<TensorT>>& models, PopulationLogger<TensorT>& population_logger, const std::vector<std::tuple<int, std::string, TensorT>>& models_validation_errors_per_generation) override {
 		// Export the selected models
 		for (auto& model : models) {
 			ModelFile<TensorT> data;
@@ -528,6 +529,7 @@ void main_KineticModel(const ParameterTypes& ...args) {
   population_trainer.setResetModelTemplateWeights(std::get<EvoNetParameters::PopulationTrainer::ResetModelTemplateWeights>(parameters).get());
   population_trainer.set_population_size_fixed_ = std::get<EvoNetParameters::PopulationTrainer::SetPopulationSizeFixed>(parameters).get();
   population_trainer.set_population_size_doubling_ = std::get<EvoNetParameters::PopulationTrainer::SetPopulationSizeDoubling>(parameters).get();
+  population_trainer.set_training_steps_by_model_size_ = std::get<EvoNetParameters::PopulationTrainer::SetTrainingStepsByModelSize>(parameters).get();
 
   // define the population logger
   PopulationLogger<float> population_logger(true, true);
@@ -718,6 +720,7 @@ int main(int argc, char** argv)
   EvoNetParameters::PopulationTrainer::Logging population_logging("population_logging", true);
   EvoNetParameters::PopulationTrainer::SetPopulationSizeFixed set_population_size_fixed("set_population_size_fixed", false);
   EvoNetParameters::PopulationTrainer::SetPopulationSizeDoubling set_population_size_doubling("set_population_size_doubling", true);
+  EvoNetParameters::PopulationTrainer::SetTrainingStepsByModelSize set_training_steps_by_model_size("set_training_steps_by_model_size", false);
   EvoNetParameters::ModelTrainer::BatchSize batch_size("batch_size", 32);
   EvoNetParameters::ModelTrainer::MemorySize memory_size("memory_size", 64);
   EvoNetParameters::ModelTrainer::NEpochsTraining n_epochs_training("n_epochs_training", 1000);
@@ -766,7 +769,7 @@ int main(int argc, char** argv)
   auto parameters = std::make_tuple(id, data_dir, 
     device_id, model_name, make_model, load_model_csv, load_model_binary, train_model, evolve_model, evaluate_model, 
     n_mask, sequence_length, model_type, simulation_type, biochemical_rxns_filename, 
-    population_name, n_generations, n_interpreters, prune_model_num, remove_isolated_nodes, check_complete_model_input_to_output, population_size, n_top, n_random, n_replicates_per_model, reset_model_copy_weights, reset_model_template_weights, population_logging, set_population_size_fixed, set_population_size_doubling,
+    population_name, n_generations, n_interpreters, prune_model_num, remove_isolated_nodes, check_complete_model_input_to_output, population_size, n_top, n_random, n_replicates_per_model, reset_model_copy_weights, reset_model_template_weights, population_logging, set_population_size_fixed, set_population_size_doubling, set_training_steps_by_model_size,
     batch_size, memory_size, n_epochs_training, n_epochs_validation, n_epochs_evaluation, n_tbtt_steps, n_tett_steps, verbosity, logging_training, logging_validation, logging_evaluation, find_cycles, fast_interpreter, preserve_ooo, interpret_model, reset_model, reset_interpreter, 
     n_node_down_additions_lb, n_node_right_additions_lb, n_node_down_copies_lb, n_node_right_copies_lb, n_link_additons_lb, n_link_copies_lb, n_node_deletions_lb, n_link_deletions_lb, n_node_activation_changes_lb, n_node_integration_changes_lb, n_module_additions_lb, n_module_copies_lb, n_module_deletions_lb, n_node_down_additions_ub, n_node_right_additions_ub, n_node_down_copies_ub, n_node_right_copies_ub, n_link_additons_ub, n_link_copies_ub, n_node_deletions_ub, n_link_deletions_ub, n_node_activation_changes_ub, n_node_integration_changes_ub, n_module_additions_ub, n_module_copies_ub, n_module_deletions_ub, set_modification_rate_fixed, set_modification_rate_by_prev_error);
 

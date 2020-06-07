@@ -1610,6 +1610,7 @@ private:
   inline void ModelTrainer<TensorT, InterpreterT>::ApplyModelMetrics_(Model<TensorT>& model, const Eigen::Tensor<TensorT, 3>& output, InterpreterT& model_interpreter)
   {
     int output_node_cnt = 0;
+    int metric_cnt = 0;
     for (auto& helper : this->metric_function_helpers_) {
       // Slice out the output
       Eigen::array<Eigen::Index, 3> offsets = { 0, 0, output_node_cnt };
@@ -1619,9 +1620,10 @@ private:
       // Calculate the metrics
       for (size_t metric_iter = 0; metric_iter < helper.metric_functions_.size(); ++metric_iter) {
         if (this->getNTETTSteps() < 0)
-          model_interpreter.CMTT(model, expected, helper.output_nodes_, helper.metric_functions_.at(metric_iter), this->getMemorySize(), metric_iter);
+          model_interpreter.CMTT(model, expected, helper.output_nodes_, helper.metric_functions_.at(metric_iter), this->getMemorySize(), metric_cnt);
         else
-          model_interpreter.CMTT(model, expected, helper.output_nodes_, helper.metric_functions_.at(metric_iter), this->getNTETTSteps(), metric_iter);
+          model_interpreter.CMTT(model, expected, helper.output_nodes_, helper.metric_functions_.at(metric_iter), this->getNTETTSteps(), metric_cnt);
+        ++metric_cnt;
       }
       output_node_cnt += helper.output_nodes_.size();
     }

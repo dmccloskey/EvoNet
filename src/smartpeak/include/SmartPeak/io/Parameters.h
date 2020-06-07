@@ -76,6 +76,7 @@ namespace SmartPeak
       struct NGenerations : Parameter<int> { using Parameter::Parameter; };
       struct SetPopulationSizeFixed : Parameter<bool> { using Parameter::Parameter; };
       struct SetPopulationSizeDoubling : Parameter<bool> { using Parameter::Parameter; };
+      struct SetTrainingStepsByModelSize : Parameter<bool> { using Parameter::Parameter; };
     }
 
     namespace ModelReplicator {

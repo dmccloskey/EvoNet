@@ -69,9 +69,6 @@ public:
     else {
       this->setNReplicatesPerModel(selection_ratio - 1);
     }
-
-    // Adjust the training steps
-    this->setTrainingStepsByModelSize(models);
   }
   template<typename TensorT, typename InterpreterT>
   inline void PopulationTrainerExperimental<TensorT, InterpreterT>::setPopulationSizeDoubling(
