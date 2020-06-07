@@ -127,13 +127,13 @@ public:
       node_names_input = node_names;
       if (add_gaussian || add_mixed_gaussian) {
         // Add the gaussian nodes
-        node_names_mu = model_builder.addFullyConnected(model, "EN1MuEnc0", "EN1MuEnc0", node_names_input, n_hidden_0,
+        node_names_mu = model_builder.addFullyConnected(model, "EN1MuEnc0", "EN1MuEnc0", node_names_input, n_hidden_1,
           activation_linear, activation_linear_grad, integration_op, integration_error_op, integration_weight_grad_op,
-          std::make_shared<RandWeightInitOp<TensorT>>(RandWeightInitOp<TensorT>((TensorT)(node_names_input.size() + n_hidden_0) / 2, 1)),
+          std::make_shared<RandWeightInitOp<TensorT>>(RandWeightInitOp<TensorT>((TensorT)(node_names_input.size() + n_hidden_1) / 2, 1)),
           solver_op, 0.0f, 0.0f, false, specify_layers);
-        node_names_logvar = model_builder.addFullyConnected(model, "EN1LogVarEnc0", "EN1LogVarEnc0", node_names_input, n_hidden_0,
+        node_names_logvar = model_builder.addFullyConnected(model, "EN1LogVarEnc0", "EN1LogVarEnc0", node_names_input, n_hidden_1,
           activation_linear, activation_linear_grad, integration_op, integration_error_op, integration_weight_grad_op,
-          std::make_shared<RandWeightInitOp<TensorT>>(RandWeightInitOp<TensorT>((TensorT)(node_names_input.size() + n_hidden_0) / 2, 1)),
+          std::make_shared<RandWeightInitOp<TensorT>>(RandWeightInitOp<TensorT>((TensorT)(node_names_input.size() + n_hidden_1) / 2, 1)),
           solver_op, 0.0f, 0.0f, false, specify_layers);
         node_names_encoding = model_builder.addGaussianEncoding(model, "EN1EncodingEnc0", "EN1EncodingEnc0", node_names_mu, node_names_logvar, specify_layers);
         node_names = model_builder.addSinglyConnected(model, "EN1", "EN1", node_names_encoding, node_names_encoding.size(),
@@ -157,9 +157,9 @@ public:
         for (const std::string& node_name : node_names)
         if (add_mixed_gaussian) {
           // Add the mixed gaussian nodes
-          node_names_logvar = model_builder.addFullyConnected(model, "EN1LogVarEnc1", "EN1LogVarEnc1", node_names_input, n_hidden_0,
+          node_names_logvar = model_builder.addFullyConnected(model, "EN1LogVarEnc1", "EN1LogVarEnc1", node_names_input, n_hidden_1,
             activation_linear, activation_linear_grad, integration_op, integration_error_op, integration_weight_grad_op,
-            std::make_shared<RandWeightInitOp<TensorT>>(RandWeightInitOp<TensorT>((TensorT)(node_names.size() + n_hidden_0) / 2, 1)),
+            std::make_shared<RandWeightInitOp<TensorT>>(RandWeightInitOp<TensorT>((TensorT)(node_names.size() + n_hidden_1) / 2, 1)),
             solver_op, 0.0f, 0.0f, false, specify_layers);
           node_names_encoding = model_builder.addGaussianEncoding(model, "EN1EncodingEnc1", "EN1EncodingEnc1", node_names_mu, node_names_logvar, specify_layers);
           model_builder.addSinglyConnected(model, "EN1", node_names_encoding, node_names,
@@ -186,17 +186,17 @@ public:
     }
 
     // Add the 3nd FC layer
-    if (n_hidden_2 > 0) {
+    if (n_outputs > 0) {
       node_names_input = node_names;
       if (add_gaussian || add_mixed_gaussian) {
         // Add the gaussian nodes
-        node_names_mu = model_builder.addFullyConnected(model, "EN2MuEnc0", "EN2MuEnc0", node_names_input, n_hidden_0,
+        node_names_mu = model_builder.addFullyConnected(model, "EN2MuEnc0", "EN2MuEnc0", node_names_input, n_outputs,
           activation_linear, activation_linear_grad, integration_op, integration_error_op, integration_weight_grad_op,
-          std::make_shared<RandWeightInitOp<TensorT>>(RandWeightInitOp<TensorT>((TensorT)(node_names_input.size() + n_hidden_0) / 2, 1)),
+          std::make_shared<RandWeightInitOp<TensorT>>(RandWeightInitOp<TensorT>((TensorT)(node_names_input.size() + n_outputs) / 2, 1)),
           solver_op, 0.0f, 0.0f, false, specify_layers);
-        node_names_logvar = model_builder.addFullyConnected(model, "EN2LogVarEnc0", "EN2LogVarEnc0", node_names_input, n_hidden_0,
+        node_names_logvar = model_builder.addFullyConnected(model, "EN2LogVarEnc0", "EN2LogVarEnc0", node_names_input, n_outputs,
           activation_linear, activation_linear_grad, integration_op, integration_error_op, integration_weight_grad_op,
-          std::make_shared<RandWeightInitOp<TensorT>>(RandWeightInitOp<TensorT>((TensorT)(node_names_input.size() + n_hidden_0) / 2, 1)),
+          std::make_shared<RandWeightInitOp<TensorT>>(RandWeightInitOp<TensorT>((TensorT)(node_names_input.size() + n_outputs) / 2, 1)),
           solver_op, 0.0f, 0.0f, false, specify_layers);
         node_names_encoding = model_builder.addGaussianEncoding(model, "EN2EncodingEnc0", "EN2EncodingEnc0", node_names_mu, node_names_logvar, specify_layers);
         node_names = model_builder.addSinglyConnected(model, "EN2", "EN2", node_names_encoding, node_names_encoding.size(),
@@ -220,9 +220,9 @@ public:
         for (const std::string& node_name : node_names)
         if (add_mixed_gaussian) {
           // Add the mixed gaussian nodes
-          node_names_logvar = model_builder.addFullyConnected(model, "EN2LogVarEnc1", "EN2LogVarEnc1", node_names_input, n_hidden_0,
+          node_names_logvar = model_builder.addFullyConnected(model, "EN2LogVarEnc1", "EN2LogVarEnc1", node_names_input, n_outputs,
             activation_linear, activation_linear_grad, integration_op, integration_error_op, integration_weight_grad_op,
-            std::make_shared<RandWeightInitOp<TensorT>>(RandWeightInitOp<TensorT>((TensorT)(node_names.size() + n_hidden_0) / 2, 1)),
+            std::make_shared<RandWeightInitOp<TensorT>>(RandWeightInitOp<TensorT>((TensorT)(node_names.size() + n_outputs) / 2, 1)),
             solver_op, 0.0f, 0.0f, false, specify_layers);
           node_names_encoding = model_builder.addGaussianEncoding(model, "EN2EncodingEnc1", "EN2EncodingEnc1", node_names_mu, node_names_logvar, specify_layers);
           model_builder.addSinglyConnected(model, "EN2", node_names_encoding, node_names,
@@ -241,9 +241,9 @@ public:
         }
       }
       else {
-        node_names = model_builder.addFullyConnected(model, "EN2", "EN2", node_names_input, n_hidden_2,
+        node_names = model_builder.addFullyConnected(model, "EN2", "EN2", node_names_input, n_outputs,
           activation, activation_grad, integration_op, integration_error_op, integration_weight_grad_op,
-          std::make_shared<RandWeightInitOp<TensorT>>(RandWeightInitOp<TensorT>((TensorT)(node_names_input.size() + n_hidden_2) / 2, 1)),
+          std::make_shared<RandWeightInitOp<TensorT>>(RandWeightInitOp<TensorT>((TensorT)(node_names_input.size() + n_outputs) / 2, 1)),
           solver_op, 0.0f, 0.0f, false, specify_layers);
       }
     }
@@ -344,14 +344,12 @@ public:
     for (int batch_iter = 0; batch_iter < batch_size; ++batch_iter) {
       for (int memory_iter = 0; memory_iter < memory_size; ++memory_iter) {
         for (int nodes_iter = 0; nodes_iter < this->training_data.dimension(1); ++nodes_iter) {
-          if (is_train) {
-            training_data(batch_iter, memory_iter, nodes_iter) = this->training_data(sample_indices[batch_iter], nodes_iter);
-            training_labels(batch_iter, memory_iter, nodes_iter) = (TensorT)this->training_labels(sample_indices[batch_iter], nodes_iter);
-          }
-          else {
-            training_data(batch_iter, memory_iter, nodes_iter) = this->validation_data(sample_indices[batch_iter], nodes_iter);
-            training_labels(batch_iter, memory_iter, nodes_iter) = (TensorT)this->validation_labels(sample_indices[batch_iter], nodes_iter);
-          }
+          if (is_train) training_data(batch_iter, memory_iter, nodes_iter) = this->training_data(sample_indices[batch_iter], nodes_iter);
+          else training_data(batch_iter, memory_iter, nodes_iter) = this->validation_data(sample_indices[batch_iter], nodes_iter);
+        }
+        for (int nodes_iter = 0; nodes_iter < this->training_labels.dimension(1); ++nodes_iter) {
+          if (is_train) training_labels(batch_iter, memory_iter, nodes_iter) = (TensorT)this->training_labels(sample_indices[batch_iter], nodes_iter);
+          else training_labels(batch_iter, memory_iter, nodes_iter) = (TensorT)this->validation_labels(sample_indices[batch_iter], nodes_iter);
         }
       }
     }
@@ -367,18 +365,19 @@ public:
     // Assign the input data
     metric_output_data.setZero();
     metric_output_data.slice(Eigen::array<Eigen::Index, 3>({ 0, 0, 0 }), Eigen::array<Eigen::Index, 3>({ batch_size, memory_size, this->training_labels.dimension(1) })) = training_labels;
-    metric_output_data.slice(Eigen::array<Eigen::Index, 3>({ 0, 0, this->training_labels.dimension(1) }), Eigen::array<Eigen::Index, 3>({ batch_size, memory_size, this->training_labels.dimension(1) })) = training_labels;
 
     assert(memory_size == 1);
     if (add_gaussian_) {
       if (n_hidden_0_ > 0 && n_hidden_1_ > 0 && n_hidden_2_ > 0) {
         assert(n_output_nodes == this->training_labels.dimension(1) + 2 * n_hidden_0_ + 2 * n_hidden_1_ + 2 * n_hidden_2_);
-        assert(n_metric_output_nodes == 2 * this->training_labels.dimension(1) + n_hidden_0_ + n_hidden_1_ + n_hidden_2_);
+        assert(n_metric_output_nodes == this->training_labels.dimension(1) + n_hidden_0_ + n_hidden_1_ + n_hidden_2_);
         assert(n_input_nodes == this->training_data.dimension(1) + n_hidden_0_ + n_hidden_1_ + n_hidden_2_);
 
         // Gaussian sampler input/output data
-        Eigen::Tensor<TensorT, 3> gaussian_samples = GaussianSampler<TensorT>(batch_size * memory_size, n_hidden_0_ + n_hidden_1_ + n_hidden_2_)
+        Eigen::Tensor<TensorT, 3> gaussian_samples;
+        if (is_train) gaussian_samples = GaussianSampler<TensorT>(batch_size * memory_size, n_hidden_0_ + n_hidden_1_ + n_hidden_2_)
           .reshape(Eigen::array<Eigen::Index, 3>({ batch_size, memory_size, n_hidden_0_ + n_hidden_1_ + n_hidden_2_ }));
+        else gaussian_samples.setZero();
 
         // Assign the input data
         input_data.slice(Eigen::array<Eigen::Index, 3>({ 0, 0, this->training_data.dimension(1) }), Eigen::array<Eigen::Index, 3>({ batch_size, memory_size, n_hidden_0_ })) = gaussian_samples.slice(
@@ -390,12 +389,14 @@ public:
       }
       if (n_hidden_0_ > 0 && n_hidden_1_ > 0) {
         assert(n_output_nodes == this->training_labels.dimension(1) + 2 * n_hidden_0_ + 2 * n_hidden_1_);
-        assert(n_metric_output_nodes == 2 * this->training_labels.dimension(1) + n_hidden_0_ + n_hidden_1_);
+        assert(n_metric_output_nodes == this->training_labels.dimension(1) + n_hidden_0_ + n_hidden_1_);
         assert(n_input_nodes == this->training_data.dimension(1) + n_hidden_0_ + n_hidden_1_);
 
         // Gaussian sampler input/output data
-        Eigen::Tensor<TensorT, 3> gaussian_samples = GaussianSampler<TensorT>(batch_size * memory_size, n_hidden_0_ + n_hidden_1_)
+        Eigen::Tensor<TensorT, 3> gaussian_samples;
+        if (is_train) gaussian_samples = GaussianSampler<TensorT>(batch_size * memory_size, n_hidden_0_ + n_hidden_1_)
           .reshape(Eigen::array<Eigen::Index, 3>({ batch_size, memory_size, n_hidden_0_ + n_hidden_1_ }));
+        else gaussian_samples.setZero();
 
         // Assign the input data
         input_data.slice(Eigen::array<Eigen::Index, 3>({ 0, 0, this->training_data.dimension(1) }), Eigen::array<Eigen::Index, 3>({ batch_size, memory_size, n_hidden_0_ })) = gaussian_samples.slice(
@@ -405,12 +406,14 @@ public:
       }
       if (n_hidden_0_ > 0) {
         assert(n_output_nodes == this->training_labels.dimension(1) + 2 * n_hidden_0_);
-        assert(n_metric_output_nodes == 2 * this->training_labels.dimension(1) + n_hidden_0_);
+        assert(n_metric_output_nodes == this->training_labels.dimension(1) + n_hidden_0_);
         assert(n_input_nodes == this->training_data.dimension(1) + n_hidden_0_);
 
         // Gaussian sampler input/output data
-        Eigen::Tensor<TensorT, 3> gaussian_samples = GaussianSampler<TensorT>(batch_size * memory_size, n_hidden_0_)
+        Eigen::Tensor<TensorT, 3> gaussian_samples;
+        if (is_train) gaussian_samples = GaussianSampler<TensorT>(batch_size * memory_size, n_hidden_0_)
           .reshape(Eigen::array<Eigen::Index, 3>({ batch_size, memory_size, n_hidden_0_ }));
+        else gaussian_samples.setZero();
 
         // Assign the input data
         input_data.slice(Eigen::array<Eigen::Index, 3>({ 0, 0, this->training_data.dimension(1) }), Eigen::array<Eigen::Index, 3>({ batch_size, memory_size, n_hidden_0_ })) = gaussian_samples.slice(
@@ -420,12 +423,14 @@ public:
     else if (add_mixed_gaussian_) {
       if (n_hidden_0_ > 0 && n_hidden_1_ > 0 && n_hidden_2_ > 0) {
         assert(n_output_nodes == this->training_labels.dimension(1) + 3 * n_hidden_0_ + 3 * n_hidden_1_ + 3 * n_hidden_2_);
-        assert(n_metric_output_nodes == 2 * this->training_labels.dimension(1) + 2 * n_hidden_0_ + 2 * n_hidden_1_ + 2 * n_hidden_2_);
+        assert(n_metric_output_nodes == this->training_labels.dimension(1) + 2 * n_hidden_0_ + 2 * n_hidden_1_ + 2 * n_hidden_2_);
         assert(n_input_nodes == this->training_data.dimension(1) + 2 * n_hidden_0_ + 2 * n_hidden_1_ + 2 * n_hidden_2_);
 
         // Gaussian sampler input/output data
-        Eigen::Tensor<TensorT, 3> gaussian_samples = GaussianSampler<TensorT>(batch_size * memory_size, 2 * n_hidden_0_ + 2 * n_hidden_1_ + 2 * n_hidden_2_)
+        Eigen::Tensor<TensorT, 3> gaussian_samples;
+        if (is_train) gaussian_samples = GaussianSampler<TensorT>(batch_size * memory_size, 2 * n_hidden_0_ + 2 * n_hidden_1_ + 2 * n_hidden_2_)
           .reshape(Eigen::array<Eigen::Index, 3>({ batch_size, memory_size, 2 * n_hidden_0_ + 2 * n_hidden_1_ + 2 * n_hidden_2_ }));
+        else gaussian_samples.setZero();
 
         // Assign the input data
         input_data.slice(Eigen::array<Eigen::Index, 3>({ 0, 0, this->training_data.dimension(1) }), Eigen::array<Eigen::Index, 3>({ batch_size, memory_size, n_hidden_0_ })) = gaussian_samples.slice(
@@ -443,12 +448,14 @@ public:
       }
       if (n_hidden_0_ > 0 && n_hidden_1_ > 0) {
         assert(n_output_nodes == this->training_labels.dimension(1) + 3 * n_hidden_0_ + 3 * n_hidden_1_);
-        assert(n_metric_output_nodes == 2 * this->training_labels.dimension(1) + 2 * n_hidden_0_ + 2 * n_hidden_1_);
+        assert(n_metric_output_nodes == this->training_labels.dimension(1) + 2 * n_hidden_0_ + 2 * n_hidden_1_);
         assert(n_input_nodes == this->training_data.dimension(1) + 2 * n_hidden_0_ + 2 * n_hidden_1_);
 
         // Gaussian sampler input/output data
-        Eigen::Tensor<TensorT, 3> gaussian_samples = GaussianSampler<TensorT>(batch_size * memory_size, 2 * n_hidden_0_ + 2 * n_hidden_1_)
+        Eigen::Tensor<TensorT, 3> gaussian_samples;
+        if (is_train) gaussian_samples = GaussianSampler<TensorT>(batch_size * memory_size, 2 * n_hidden_0_ + 2 * n_hidden_1_)
           .reshape(Eigen::array<Eigen::Index, 3>({ batch_size, memory_size, 2 * n_hidden_0_ + 2 * n_hidden_1_ }));
+        else gaussian_samples.setZero();
 
         // Assign the input data
         input_data.slice(Eigen::array<Eigen::Index, 3>({ 0, 0, this->training_data.dimension(1) }), Eigen::array<Eigen::Index, 3>({ batch_size, memory_size, n_hidden_0_ })) = gaussian_samples.slice(
@@ -462,12 +469,14 @@ public:
       }
       if (n_hidden_0_ > 0) {
         assert(n_output_nodes == this->training_labels.dimension(1) + 3 * n_hidden_0_);
-        assert(n_metric_output_nodes == 2 * this->training_labels.dimension(1) + 2 * n_hidden_0_);
+        assert(n_metric_output_nodes == this->training_labels.dimension(1) + 2 * n_hidden_0_);
         assert(n_input_nodes == this->training_data.dimension(1) + 2 * n_hidden_0_);
 
         // Gaussian sampler input/output data
-        Eigen::Tensor<TensorT, 3> gaussian_samples = GaussianSampler<TensorT>(batch_size * memory_size, 2 * n_hidden_0_)
+        Eigen::Tensor<TensorT, 3> gaussian_samples;
+        if (is_train) gaussian_samples = GaussianSampler<TensorT>(batch_size * memory_size, 2 * n_hidden_0_)
           .reshape(Eigen::array<Eigen::Index, 3>({ batch_size, memory_size, 2 * n_hidden_0_ }));
+        else gaussian_samples.setZero();
 
         // Assign the input data
         input_data.slice(Eigen::array<Eigen::Index, 3>({ 0, 0, this->training_data.dimension(1) }), Eigen::array<Eigen::Index, 3>({ batch_size, memory_size, n_hidden_0_ })) = gaussian_samples.slice(
@@ -478,7 +487,7 @@ public:
     }
     else {
       assert(n_output_nodes == this->training_labels.dimension(1));
-      assert(n_metric_output_nodes == 2 * this->training_labels.dimension(1));
+      assert(n_metric_output_nodes == this->training_labels.dimension(1));
       assert(n_input_nodes == this->training_data.dimension(1));
     }
   }
