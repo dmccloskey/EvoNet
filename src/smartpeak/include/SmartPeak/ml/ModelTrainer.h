@@ -301,12 +301,7 @@ public:
 		@param[in] model_errors The trace of model errors from training/validation
 
 		*/
-		virtual void adaptiveTrainerScheduler(
-			const int& n_generations,
-			const int& n_epochs,
-			Model<TensorT>& model,
-			InterpreterT& model_interpreter,
-			const std::vector<TensorT>& model_errors);
+		virtual void adaptiveTrainerScheduler(const int& n_generations,const int& n_epochs,Model<TensorT>& model,InterpreterT& model_interpreter,const std::vector<TensorT>& model_errors);
 
 		/**
 		@brief Entry point for users to code their training logger
@@ -319,17 +314,11 @@ public:
 		@param[in, out] model_interpreter The model interpreter
 		@param[in, out] model_logger The model logger
 		@param[in] expected_values The expected values
-
+    @param[in] output_nodes The output node names
+    @param[in] input_nodes The input node names
+    @param[in] model_error The model error
 		*/
-		virtual void trainingModelLogger(
-			const int& n_epochs,
-			Model<TensorT>& model,
-			InterpreterT& model_interpreter,
-			ModelLogger<TensorT>& model_logger,
-			const Eigen::Tensor<TensorT, 3>& expected_values,
-			const std::vector<std::string>& output_nodes, 
-      const std::vector<std::string>& input_nodes,
-			const TensorT& model_error);
+		virtual void trainingModelLogger(const int& n_epochs,Model<TensorT>& model,InterpreterT& model_interpreter,ModelLogger<TensorT>& model_logger,const Eigen::Tensor<TensorT, 3>& expected_values,const std::vector<std::string>& output_nodes, const std::vector<std::string>& input_nodes,const TensorT& model_error);
 
     /**
     @brief Entry point for users to code their training logger
@@ -342,13 +331,14 @@ public:
     @param[in,out] model_interpreter The model interpreter
     @param[in,out] model_logger The model logger
     @param[in] expected_values The expected values
+    @param[in] output_nodes The output node names
+    @param[in] input_nodes The input node names
+    @param[in] model_error_train
+    @param[in] model_error_test
+    @param[in] model_metrics_train
+    @param[in] model_metrics_test
     */
-    virtual void trainingModelLogger(const int& n_epochs,
-      Model<TensorT>& model, InterpreterT& model_interpreter, ModelLogger<TensorT>& model_logger,
-      const Eigen::Tensor<TensorT, 3>& expected_values,  const std::vector<std::string>& output_nodes,
-      const std::vector<std::string>& input_nodes,
-      const TensorT& model_error_train, const TensorT& model_error_test,
-      const Eigen::Tensor<TensorT, 1> & model_metrics_train, const Eigen::Tensor<TensorT, 1> & model_metrics_test);
+    virtual void trainingModelLogger(const int& n_epochs,Model<TensorT>& model, InterpreterT& model_interpreter, ModelLogger<TensorT>& model_logger,const Eigen::Tensor<TensorT, 3>& expected_values,  const std::vector<std::string>& output_nodes,const std::vector<std::string>& input_nodes,const TensorT& model_error_train, const TensorT& model_error_test,const Eigen::Tensor<TensorT, 1> & model_metrics_train, const Eigen::Tensor<TensorT, 1> & model_metrics_test);
 
 		/**
 		@brief Entry point for users to code their validation logger
@@ -361,17 +351,11 @@ public:
 		@param[in, out] model_interpreter The model interpreter
 		@param[in, out] model_logger The model logger
 		@param[in] expected_values The expected values
-
+    @param[in] output_nodes The output node names
+    @param[in] input_nodes The input node names
+    @param[in] model_error The model error
 		*/
-		virtual void validationModelLogger(
-			const int& n_epochs,
-			Model<TensorT>& model,
-			InterpreterT& model_interpreter,
-			ModelLogger<TensorT>& model_logger,
-			const Eigen::Tensor<TensorT, 3>& expected_values,
-			const std::vector<std::string>& output_nodes,
-      const std::vector<std::string>& input_nodes,
-			const TensorT& model_error);
+		virtual void validationModelLogger(const int& n_epochs,Model<TensorT>& model,InterpreterT& model_interpreter,ModelLogger<TensorT>& model_logger,const Eigen::Tensor<TensorT, 3>& expected_values,const std::vector<std::string>& output_nodes,const std::vector<std::string>& input_nodes,const TensorT& model_error);
 
     /**
     @brief Entry point for users to code their validation logger
@@ -384,14 +368,14 @@ public:
     @param[in, out] model_interpreter The model interpreter
     @param[in, out] model_logger The model logger
     @param[in] expected_values The expected values
-
+    @param[in] output_nodes The output node names
+    @param[in] input_nodes The input node names
+    @param[in] model_error_train
+    @param[in] model_error_test
+    @param[in] model_metrics_train
+    @param[in] model_metrics_test
     */
-    virtual void validationModelLogger(const int& n_epochs,
-      Model<TensorT>& model, InterpreterT& model_interpreter, ModelLogger<TensorT>& model_logger,
-      const Eigen::Tensor<TensorT, 3>& expected_values, const std::vector<std::string>& output_nodes,
-      const std::vector<std::string>& input_nodes,
-      const TensorT& model_error_train, const TensorT& model_error_test,
-      const Eigen::Tensor<TensorT, 1> & model_metrics_train, const Eigen::Tensor<TensorT, 1> & model_metrics_test);
+    virtual void validationModelLogger(const int& n_epochs, Model<TensorT>& model, InterpreterT& model_interpreter, ModelLogger<TensorT>& model_logger,const Eigen::Tensor<TensorT, 3>& expected_values, const std::vector<std::string>& output_nodes,const std::vector<std::string>& input_nodes,const TensorT& model_error_train, const TensorT& model_error_test,const Eigen::Tensor<TensorT, 1> & model_metrics_train, const Eigen::Tensor<TensorT, 1> & model_metrics_test);
 
 		/**
 		@brief Entry point for users to code their evaluation logger
@@ -403,15 +387,10 @@ public:
 		@param[in, out] model The model
 		@param[in, out] model_interpreter The model interpreter
 		@param[in, out] model_logger The model logger
-
+    @param[in] output_nodes The output node names
+    @param[in] input_nodes The input node names
 		*/
-		virtual void evaluationModelLogger(
-			const int& n_epochs,
-			Model<TensorT>& model,
-			InterpreterT& model_interpreter,
-			ModelLogger<TensorT>& model_logger,
-			const std::vector<std::string>& output_nodes,
-      const std::vector<std::string>& input_nodes);
+		virtual void evaluationModelLogger(const int& n_epochs,Model<TensorT>& model,InterpreterT& model_interpreter,ModelLogger<TensorT>& model_logger,const std::vector<std::string>& output_nodes,const std::vector<std::string>& input_nodes);
 
     /**
     @brief Entry point for users to code their training logger
@@ -424,17 +403,11 @@ public:
     @param[in, out] model_interpreter The model interpreter
     @param[in, out] model_logger The model logger
     @param[in] expected_values The expected values
-
+    @param[in] output_nodes The output node names
+    @param[in] input_nodes The input node names
+    @param[in] model_metrics The model metrics
     */
-    virtual void evaluationModelLogger(
-      const int& n_epochs,
-      Model<TensorT>& model,
-      InterpreterT& model_interpreter,
-      ModelLogger<TensorT>& model_logger,
-      const Eigen::Tensor<TensorT, 3>& expected_values,
-      const std::vector<std::string>& output_nodes,
-      const std::vector<std::string>& input_nodes,
-      const Eigen::Tensor<TensorT, 1>& model_metrics);
+    virtual void evaluationModelLogger(const int& n_epochs,Model<TensorT>& model, InterpreterT& model_interpreter,ModelLogger<TensorT>& model_logger,const Eigen::Tensor<TensorT, 3>& expected_values,const std::vector<std::string>& output_nodes,const std::vector<std::string>& input_nodes,const Eigen::Tensor<TensorT, 1>& model_metrics);
 
     /*
     @brief Determine the decay factor to reduce the learning rate by if the model_errors has not

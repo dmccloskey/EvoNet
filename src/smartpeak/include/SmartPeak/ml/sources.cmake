@@ -26,6 +26,9 @@ set(sources_list_h
 	ModelReplicatorExperimental.h
 	ModelTrainer.h
 	ModelTrainerDefaultDevice.h
+	ModelTrainerExperimental.h
+	ModelTrainerExperimentalDefaultDevice.h
+	ModelTrainerExperimentalGpu.h
 	ModelTrainerGpu.h
 	Node.h
 	NodeTensorData.h

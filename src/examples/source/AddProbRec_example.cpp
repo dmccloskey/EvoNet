@@ -167,8 +167,8 @@ public:
 		o_bias = Node<TensorT>("o_bias", NodeType::bias, NodeStatus::activated, std::make_shared<LinearOp<TensorT>>(LinearOp<TensorT>()), std::make_shared<LinearGradOp<TensorT>>(LinearGradOp<TensorT>()), std::make_shared<SumOp<TensorT>>(SumOp<TensorT>()), std::make_shared<SumErrorOp<TensorT>>(SumErrorOp<TensorT>()), std::make_shared<SumWeightGradOp<TensorT>>(SumWeightGradOp<TensorT>()));
     output.setLayerName("Output");
 		// weights  
-		std::shared_ptr<WeightInitOp<TensorT>> weight_init = std::make_shared<RandWeightInitOp<TensorT>>(RandWeightInitOp<TensorT>(0.4));
-    std::shared_ptr<SolverOp<TensorT>> solver = std::make_shared<SGDOp<TensorT>>(SGDOp<TensorT>(1e-4, 0.9, 10));
+		std::shared_ptr<WeightInitOp<TensorT>> weight_init = std::make_shared<RandWeightInitOp<TensorT>>(RandWeightInitOp<TensorT>(1.0));
+    std::shared_ptr<SolverOp<TensorT>> solver = std::make_shared<SGDOp<TensorT>>(SGDOp<TensorT>(1e-3, 0.9, 10));
 		Weight_i_rand_to_h = Weight<TensorT>("Weight_i_rand_to_h", weight_init, solver);
 		Weight_i_mask_to_h = Weight<TensorT>("Weight_i_mask_to_h", weight_init, solver);
 		Weight_h_to_o = Weight<TensorT>("Weight_h_to_o", weight_init, solver);
@@ -315,7 +315,7 @@ public:
     auto integration_weight_grad_op = std::make_shared<SumWeightGradOp<TensorT>>(SumWeightGradOp<TensorT>());
 
     // Define the solver
-    auto solver_op = std::make_shared<SGDOp<TensorT>>(SGDOp<TensorT>(1e-4, 0.9, 10));
+    auto solver_op = std::make_shared<SGDOp<TensorT>>(SGDOp<TensorT>(1e-3, 0.9, 10));
 
     // Add the LSTM layer(s)
     std::vector<std::string> node_names = model_builder.addLSTM(model, "LSTM-01", "LSTM-01", node_names_input, n_blocks, n_cells,
@@ -453,90 +453,22 @@ public:
 
 template<typename TensorT>
 class ModelReplicatorExt : public ModelReplicatorExperimental<TensorT>
-{
-public:
-  bool set_modification_rate_by_prev_error_ = false;
-  bool set_modification_rate_fixed_ = false;
-  /*
-  @brief Implementation of the `adaptiveReplicatorScheduler`
-  */
-	void adaptiveReplicatorScheduler(
-		const int& n_generations,
-		std::vector<Model<TensorT>>& models,
-		std::vector<std::vector<std::tuple<int, std::string, TensorT>>>& models_errors_per_generations)override
-	{
-    // Adjust the models modifications rates
-    if (set_modification_rate_by_prev_error_) this->setModificationRateByPrevError(n_generations, models, models_errors_per_generations);
-    if (set_modification_rate_fixed_) this->setModificationRateFixed(n_generations, models, models_errors_per_generations);
-	}
-};
+{};
 
 template<typename TensorT>
 class PopulationTrainerExt : public PopulationTrainerExperimentalDefaultDevice<TensorT>
-{
-public:
-  bool set_population_size_fixed_ = false;
-  bool set_population_size_doubling_ = false;
-  bool set_training_steps_by_model_size_ = false;
-  /*
-  @brief Implementation of the `adaptivePopulationScheduler`
-  */
-	void adaptivePopulationScheduler(
-		const int& n_generations,
-		std::vector<Model<TensorT>>& models,
-		std::vector<std::vector<std::tuple<int, std::string, TensorT>>>& models_errors_per_generations)override
-	{
-    // Adjust the population size
-    if (set_population_size_fixed_) this->setPopulationSizeFixed(n_generations, models, models_errors_per_generations);
-    else if (set_population_size_doubling_) this->setPopulationSizeDoubling(n_generations, models, models_errors_per_generations);
-
-    // Adjust the training steps
-    if (set_training_steps_by_model_size_) this->setTrainingStepsByModelSize(models);
-  }
-  /*
-  @brief Implementation of the `trainingPopulationLogger`
-  */
-	void trainingPopulationLogger(
-		const int& n_generations, std::vector<Model<TensorT>>& models, PopulationLogger<TensorT>& population_logger, const std::vector<std::tuple<int, std::string, TensorT>>& models_validation_errors_per_generation) override {
-		// Export the selected models
-		for (auto& model : models) {
-			ModelFile<TensorT> data;
-			data.storeModelCsv(model.getName() + "_" + std::to_string(n_generations) + "_nodes.csv",
-				model.getName() + "_" + std::to_string(n_generations) + "_links.csv",
-				model.getName() + "_" + std::to_string(n_generations) + "_weights.csv", model);
-		}
-		// Log the population statistics
-		population_logger.writeLogs(n_generations, models_validation_errors_per_generation);
-	}
-};
+{};
 
 template<class ...ParameterTypes>
-void main_KineticModel(const ParameterTypes& ...args) {
+void main_(const ParameterTypes& ...args) {
   auto parameters = std::make_tuple(args...);
 
   // define the population trainer parameters
   PopulationTrainerExt<float> population_trainer;
-  population_trainer.setNGenerations(std::get<EvoNetParameters::PopulationTrainer::NGenerations>(parameters).get());
-  population_trainer.setPopulationSize(std::get<EvoNetParameters::PopulationTrainer::PopulationSize>(parameters).get());
-  population_trainer.setNReplicatesPerModel(std::get<EvoNetParameters::PopulationTrainer::NReplicatesPerModel>(parameters).get());
-  population_trainer.setNTop(std::get<EvoNetParameters::PopulationTrainer::NTop>(parameters).get());
-  population_trainer.setNRandom(std::get<EvoNetParameters::PopulationTrainer::NRandom>(parameters).get());
-  population_trainer.setLogging(std::get<EvoNetParameters::PopulationTrainer::Logging>(parameters).get());
-  population_trainer.setRemoveIsolatedNodes(std::get<EvoNetParameters::PopulationTrainer::RemoveIsolatedNodes>(parameters).get());
-  population_trainer.setPruneModelNum(std::get<EvoNetParameters::PopulationTrainer::PruneModelNum>(parameters).get());
-  population_trainer.setCheckCompleteModelInputToOutput(std::get<EvoNetParameters::PopulationTrainer::CheckCompleteModelInputToOutput>(parameters).get());
-  population_trainer.setResetModelCopyWeights(std::get<EvoNetParameters::PopulationTrainer::ResetModelCopyWeights>(parameters).get());
-  population_trainer.setResetModelTemplateWeights(std::get<EvoNetParameters::PopulationTrainer::ResetModelTemplateWeights>(parameters).get());
-  population_trainer.set_population_size_fixed_ = std::get<EvoNetParameters::PopulationTrainer::SetPopulationSizeFixed>(parameters).get();
-  population_trainer.set_population_size_doubling_ = std::get<EvoNetParameters::PopulationTrainer::SetPopulationSizeDoubling>(parameters).get();
-  population_trainer.set_training_steps_by_model_size_ = std::get<EvoNetParameters::PopulationTrainer::SetTrainingStepsByModelSize>(parameters).get();
+  setPopulationTrainerParameters(population_trainer, args...);
 
   // define the population logger
   PopulationLogger<float> population_logger(true, true);
-
-  // define the multithreading parameters
-  const int n_hard_threads = std::thread::hardware_concurrency();
-  const int n_threads = (std::get<EvoNetParameters::PopulationTrainer::NInterpreters>(parameters).get() > n_hard_threads) ? n_hard_threads : std::get<EvoNetParameters::PopulationTrainer::NInterpreters>(parameters).get(); // the number of threads
   
   // define the input/output nodes
   std::vector<std::string> input_nodes = { "Input_000000000000", "Input_000000000001" };
@@ -547,31 +479,13 @@ void main_KineticModel(const ParameterTypes& ...args) {
   data_simulator.n_mask_ = std::get<EvoNetParameters::Examples::NMask>(parameters).get();
   data_simulator.sequence_length_ = std::get<EvoNetParameters::Examples::SequenceLength>(parameters).get();
 
-  // define the model trainers and resources for the trainers
+  // define the model interpreters
   std::vector<ModelInterpreterDefaultDevice<float>> model_interpreters;
-  for (size_t i = 0; i < n_threads; ++i) {
-    ModelResources model_resources = { ModelDevice(std::get<EvoNetParameters::Main::DeviceId>(parameters).get(), 1) };
-    ModelInterpreterDefaultDevice<float> model_interpreter(model_resources);
-    model_interpreters.push_back(model_interpreter);
-  }
+  setModelInterpreterParameters(model_interpreters, args...);
+
+  // define the model trainer
   ModelTrainerExt<float> model_trainer;
-  model_trainer.setBatchSize(std::get<EvoNetParameters::ModelTrainer::BatchSize>(parameters).get());
-  model_trainer.setMemorySize(std::get<EvoNetParameters::ModelTrainer::MemorySize>(parameters).get());
-  model_trainer.setNEpochsTraining(std::get<EvoNetParameters::ModelTrainer::NEpochsTraining>(parameters).get());
-  model_trainer.setNEpochsValidation(std::get<EvoNetParameters::ModelTrainer::NEpochsValidation>(parameters).get());
-  model_trainer.setNEpochsEvaluation(std::get<EvoNetParameters::ModelTrainer::NEpochsEvaluation>(parameters).get());
-  model_trainer.setNTBPTTSteps(std::get<EvoNetParameters::ModelTrainer::NTBTTSteps>(parameters).get());
-  model_trainer.setNTETTSteps(std::get<EvoNetParameters::ModelTrainer::NTETTSteps>(parameters).get());
-  model_trainer.setVerbosityLevel(std::get<EvoNetParameters::ModelTrainer::Verbosity>(parameters).get());
-  model_trainer.setLogging(std::get<EvoNetParameters::ModelTrainer::LoggingTraining>(parameters).get(),
-    std::get<EvoNetParameters::ModelTrainer::LoggingValidation>(parameters).get(),
-    std::get<EvoNetParameters::ModelTrainer::LoggingEvaluation>(parameters).get());
-  model_trainer.setFindCycles(std::get<EvoNetParameters::ModelTrainer::FindCycles>(parameters).get()); //true
-  model_trainer.setFastInterpreter(std::get<EvoNetParameters::ModelTrainer::FastInterpreter>(parameters).get()); //false
-  model_trainer.setPreserveOoO(std::get<EvoNetParameters::ModelTrainer::PreserveOoO>(parameters).get());
-  model_trainer.setInterpretModel(std::get<EvoNetParameters::ModelTrainer::InterpretModel>(parameters).get());
-  model_trainer.setResetModel(std::get<EvoNetParameters::ModelTrainer::ResetModel>(parameters).get());
-  model_trainer.setResetInterpreter(std::get<EvoNetParameters::ModelTrainer::ResetInterpreter>(parameters).get());
+  setModelTrainerParameters(model_trainer, args...);
 
   std::vector<LossFunctionHelper<float>> loss_function_helpers;
   LossFunctionHelper<float> loss_function_helper2;
@@ -594,37 +508,7 @@ void main_KineticModel(const ParameterTypes& ...args) {
 
   // define the model replicator for growth mode
   ModelReplicatorExt<float> model_replicator;
-  model_replicator.setNodeActivations({ std::make_pair(std::make_shared<ReLUOp<float>>(ReLUOp<float>()), std::make_shared<ReLUGradOp<float>>(ReLUGradOp<float>())),
-    std::make_pair(std::make_shared<LinearOp<float>>(LinearOp<float>()), std::make_shared<LinearGradOp<float>>(LinearGradOp<float>())),
-    std::make_pair(std::make_shared<ELUOp<float>>(ELUOp<float>()), std::make_shared<ELUGradOp<float>>(ELUGradOp<float>())),
-    std::make_pair(std::make_shared<SigmoidOp<float>>(SigmoidOp<float>()), std::make_shared<SigmoidGradOp<float>>(SigmoidGradOp<float>())),
-    std::make_pair(std::make_shared<TanHOp<float>>(TanHOp<float>()), std::make_shared<TanHGradOp<float>>(TanHGradOp<float>()))//,
-    //std::make_pair(std::make_shared<ExponentialOp<float>>(ExponentialOp<float>()), std::make_shared<ExponentialGradOp<float>>(ExponentialGradOp<float>())),
-    //std::make_pair(std::make_shared<LogOp<float>>(LogOp<float>()), std::make_shared<LogGradOp<float>>(LogGradOp<float>())),
-    //std::make_pair(std::shared_ptr<ActivationOp<float>>(new InverseOp<float>()), std::shared_ptr<ActivationOp<float>>(new InverseGradOp<float>()))
-    });
-  model_replicator.setNodeIntegrations({ std::make_tuple(std::make_shared<ProdOp<float>>(ProdOp<float>()), std::make_shared<ProdErrorOp<float>>(ProdErrorOp<float>()), std::make_shared<ProdWeightGradOp<float>>(ProdWeightGradOp<float>())),
-    std::make_tuple(std::make_shared<SumOp<float>>(SumOp<float>()), std::make_shared<SumErrorOp<float>>(SumErrorOp<float>()), std::make_shared<SumWeightGradOp<float>>(SumWeightGradOp<float>())),
-    //std::make_tuple(std::make_shared<MeanOp<float>>(MeanOp<float>()), std::make_shared<MeanErrorOp<float>>(MeanErrorOp<float>()), std::make_shared<MeanWeightGradO<float>>(MeanWeightGradOp<float>())),
-    //std::make_tuple(std::make_shared<VarModOp<float>>(VarModOp<float>()), std::make_shared<VarModErrorOp<float>>(VarModErrorOp<float>()), std::make_shared<VarModWeightGradOp<float>>(VarModWeightGradOp<float>())),
-    //std::make_tuple(std::make_shared<CountOp<float>>(CountOp<float>()), std::make_shared<CountErrorOp<float>>(CountErrorOp<float>()), std::make_shared<CountWeightGradOp<float>>(CountWeightGradOp<float>()))
-    });
-  model_replicator.set_modification_rate_by_prev_error_ = std::get<EvoNetParameters::ModelReplicator::SetModificationRateByPrevError>(parameters).get();
-  model_replicator.set_modification_rate_fixed_ = std::get<EvoNetParameters::ModelReplicator::SetModificationRateFixed>(parameters).get();
-  model_replicator.setRandomModifications(
-    std::make_pair(std::get<EvoNetParameters::ModelReplicator::NNodeDownAdditionsLB>(parameters).get(), std::get<EvoNetParameters::ModelReplicator::NNodeDownAdditionsUB>(parameters).get()),
-    std::make_pair(std::get<EvoNetParameters::ModelReplicator::NNodeRightAdditionsLB>(parameters).get(), std::get<EvoNetParameters::ModelReplicator::NNodeRightAdditionsUB>(parameters).get()),
-    std::make_pair(std::get<EvoNetParameters::ModelReplicator::NNodeDownCopiesLB>(parameters).get(), std::get<EvoNetParameters::ModelReplicator::NNodeDownCopiesUB>(parameters).get()),
-    std::make_pair(std::get<EvoNetParameters::ModelReplicator::NNodeRightCopiesLB>(parameters).get(), std::get<EvoNetParameters::ModelReplicator::NNodeRightCopiesUB>(parameters).get()),
-    std::make_pair(std::get<EvoNetParameters::ModelReplicator::NLinkAdditionsLB>(parameters).get(), std::get<EvoNetParameters::ModelReplicator::NLinkAdditionsUB>(parameters).get()),
-    std::make_pair(std::get<EvoNetParameters::ModelReplicator::NLinkCopiesLB>(parameters).get(), std::get<EvoNetParameters::ModelReplicator::NLinkCopiesUB>(parameters).get()),
-    std::make_pair(std::get<EvoNetParameters::ModelReplicator::NNodeDeletionsLB>(parameters).get(), std::get<EvoNetParameters::ModelReplicator::NNodeDeletionsUB>(parameters).get()),
-    std::make_pair(std::get<EvoNetParameters::ModelReplicator::NLinkDeletionsLB>(parameters).get(), std::get<EvoNetParameters::ModelReplicator::NLinkDeletionsUB>(parameters).get()),
-    std::make_pair(std::get<EvoNetParameters::ModelReplicator::NNodeActivationChangesLB>(parameters).get(), std::get<EvoNetParameters::ModelReplicator::NNodeActivationChangesUB>(parameters).get()),
-    std::make_pair(std::get<EvoNetParameters::ModelReplicator::NNodeIntegrationChangesLB>(parameters).get(), std::get<EvoNetParameters::ModelReplicator::NNodeIntegrationChangesUB>(parameters).get()),
-    std::make_pair(std::get<EvoNetParameters::ModelReplicator::NModuleAdditionsLB>(parameters).get(), std::get<EvoNetParameters::ModelReplicator::NModuleAdditionsUB>(parameters).get()),
-    std::make_pair(std::get<EvoNetParameters::ModelReplicator::NModuleCopiesLB>(parameters).get(), std::get<EvoNetParameters::ModelReplicator::NModuleCopiesUB>(parameters).get()),
-    std::make_pair(std::get<EvoNetParameters::ModelReplicator::NModuleDeletionsLB>(parameters).get(), std::get<EvoNetParameters::ModelReplicator::NModuleDeletionsUB>(parameters).get()));
+  setModelReplicatorParameters(model_replicator, args...);
 
   // define the initial population
   Model<float> model;
@@ -635,50 +519,15 @@ void main_KineticModel(const ParameterTypes& ...args) {
     else if (std::get<EvoNetParameters::Examples::ModelType>(parameters).get() == "LSTM") model_trainer.makeModelLSTM(model, input_nodes.size(), 1, 1, false);
     model.setId(0);
   }
-  else if (std::get<EvoNetParameters::Main::LoadModelBinary>(parameters).get()) {
-    // read in the trained model
-    std::cout << "Reading in the model from binary..." << std::endl;
+  else {
     ModelFile<float> model_file;
-    model_file.loadModelBinary(std::get<EvoNetParameters::General::DataDir>(parameters).get() + std::get<EvoNetParameters::Main::ModelName>(parameters).get() + "_model.binary", model);
-    model.setId(1);
     ModelInterpreterFileDefaultDevice<float> model_interpreter_file;
-    model_interpreter_file.loadModelInterpreterBinary(std::get<EvoNetParameters::General::DataDir>(parameters).get() + std::get<EvoNetParameters::Main::ModelName>(parameters).get() + "_interpreter.binary", model_interpreters[0]); // FIX ME!
-  }
-  else if (std::get<EvoNetParameters::Main::LoadModelCsv>(parameters).get()) {
-    // read in the trained model
-    std::cout << "Reading in the model from csv..." << std::endl;
-    ModelFile<float> model_file;
-    model_file.loadModelCsv(std::get<EvoNetParameters::General::DataDir>(parameters).get() + std::get<EvoNetParameters::Main::ModelName>(parameters).get() + "_nodes.csv", std::get<EvoNetParameters::General::DataDir>(parameters).get() + std::get<EvoNetParameters::Main::ModelName>(parameters).get() + "_links.csv", std::get<EvoNetParameters::General::DataDir>(parameters).get() + std::get<EvoNetParameters::Main::ModelName>(parameters).get() + "_weights.csv", model, true, true, true);
-    model.setId(1);
+    loadModelFromParameters(model, model_interpreters.at(0), model_file, model_interpreter_file, args...);
   }
   model.setName(std::get<EvoNetParameters::General::DataDir>(parameters).get() + std::get<EvoNetParameters::Main::ModelName>(parameters).get()); //So that all output will be written to a specific directory
 
-  if (std::get<EvoNetParameters::Main::TrainModel>(parameters).get()) {
-    // Train the model
-    model.setName(model.getName() + "_train");
-    std::pair<std::vector<float>, std::vector<float>> model_errors = model_trainer.trainModel(model, data_simulator,
-      input_nodes, model_logger, model_interpreters.front());
-  }
-  else if (std::get<EvoNetParameters::Main::EvolveModel>(parameters).get()) {
-    // Evolve the population
-    std::vector<Model<float>> population = { model };
-    std::vector<std::vector<std::tuple<int, std::string, float>>> models_validation_errors_per_generation = population_trainer.evolveModels(
-      population, std::get<EvoNetParameters::General::DataDir>(parameters).get() + std::get<EvoNetParameters::PopulationTrainer::PopulationName>(parameters).get(), //So that all output will be written to a specific directory
-      model_trainer, model_interpreters, model_replicator, data_simulator, model_logger, population_logger, input_nodes);
-
-    PopulationTrainerFile<float> population_trainer_file;
-    population_trainer_file.storeModels(population, std::get<EvoNetParameters::General::DataDir>(parameters).get() + std::get<EvoNetParameters::PopulationTrainer::PopulationName>(parameters).get());
-    population_trainer_file.storeModelValidations(std::get<EvoNetParameters::General::DataDir>(parameters).get() + std::get<EvoNetParameters::PopulationTrainer::PopulationName>(parameters).get() + "Errors.csv", models_validation_errors_per_generation);
-  }
-  else if (std::get<EvoNetParameters::Main::EvaluateModel>(parameters).get()) {
-    //// Evaluate the population
-    //std::vector<Model<float>> population = { model };
-    //population_trainer.evaluateModels(
-    //  population, model_trainer, model_interpreters, model_replicator, data_simulator, model_logger, input_nodes);
-    // Evaluate the model
-    model.setName(model.getName() + "_evaluation");
-    Eigen::Tensor<float, 4> model_output = model_trainer.evaluateModel(model, data_simulator, input_nodes, model_logger, model_interpreters.front());
-  }
+  // Run the training, evaluation, or evolution
+  runTrainEvalEvoFromParameters<float>(model, model_interpreters, model_trainer, population_trainer, model_replicator, data_simulator, model_logger, population_logger, input_nodes, args...);
 }
 
 // Main
@@ -700,6 +549,7 @@ int main(int argc, char** argv)
   EvoNetParameters::Main::TrainModel train_model("train_model", true);
   EvoNetParameters::Main::EvolveModel evolve_model("evolve_model", false);
   EvoNetParameters::Main::EvaluateModel evaluate_model("evaluate_model", false);
+  EvoNetParameters::Main::EvaluateModels evaluate_models("evaluate_models", false);
   EvoNetParameters::Examples::NMask n_mask("n_mask", 2);
   EvoNetParameters::Examples::SequenceLength sequence_length("sequence_length", 25);
   EvoNetParameters::Examples::ModelType model_type("model_type", "Solution");
@@ -767,7 +617,7 @@ int main(int argc, char** argv)
   EvoNetParameters::ModelReplicator::SetModificationRateFixed set_modification_rate_fixed("set_modification_rate_fixed", false);
   EvoNetParameters::ModelReplicator::SetModificationRateByPrevError set_modification_rate_by_prev_error("set_modification_rate_by_prev_error", false);
   auto parameters = std::make_tuple(id, data_dir, 
-    device_id, model_name, make_model, load_model_csv, load_model_binary, train_model, evolve_model, evaluate_model, 
+    device_id, model_name, make_model, load_model_csv, load_model_binary, train_model, evolve_model, evaluate_model, evaluate_models,
     n_mask, sequence_length, model_type, simulation_type, biochemical_rxns_filename, 
     population_name, n_generations, n_interpreters, prune_model_num, remove_isolated_nodes, check_complete_model_input_to_output, population_size, n_top, n_random, n_replicates_per_model, reset_model_copy_weights, reset_model_template_weights, population_logging, set_population_size_fixed, set_population_size_doubling, set_training_steps_by_model_size,
     batch_size, memory_size, n_epochs_training, n_epochs_validation, n_epochs_evaluation, n_tbtt_steps, n_tett_steps, verbosity, logging_training, logging_validation, logging_evaluation, find_cycles, fast_interpreter, preserve_ooo, interpret_model, reset_model, reset_interpreter, 
@@ -778,6 +628,6 @@ int main(int argc, char** argv)
   parameters = SmartPeak::apply([&loadParametersFromCsv](auto&& ...args) { return loadParametersFromCsv(args...); }, parameters);
 
   // Run the application
-  SmartPeak::apply([](auto&& ...args) { main_KineticModel(args ...); }, parameters);
+  SmartPeak::apply([](auto&& ...args) { main_(args ...); }, parameters);
 	return 0;
 }

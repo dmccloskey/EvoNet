@@ -18,6 +18,21 @@ public:
     PopulationTrainerExperimental() = default; ///< Default constructor
     ~PopulationTrainerExperimental() = default; ///< Default destructor
 
+    /// Overrides and members used in all examples
+    bool set_population_size_fixed_ = false;
+    bool set_population_size_doubling_ = false;
+    bool set_training_steps_by_model_size_ = false;
+
+    /*
+    @brief Implementation of the `adaptivePopulationScheduler`
+    */
+    void adaptivePopulationScheduler(const int& n_generations, std::vector<Model<TensorT>>& models, std::vector<std::vector<std::tuple<int, std::string, TensorT>>>& models_errors_per_generations) override;
+    
+    /*
+    @brief Implementation of the `trainingPopulationLogger`
+    */
+    void trainingPopulationLogger(const int& n_generations, std::vector<Model<TensorT>>& models, PopulationLogger<TensorT>& population_logger, const std::vector<std::tuple<int, std::string, TensorT>>& models_validation_errors_per_generation) override;
+    
     /*
     @brief `adaptivePopulationScheduler` helper method to adjust the population size based on the number of generations
       error rates of training
@@ -56,6 +71,29 @@ public:
     int n_random__;
     int prune_model_num__;
   };
+  template<typename TensorT, typename InterpreterT>
+  inline void PopulationTrainerExperimental<TensorT, InterpreterT>::adaptivePopulationScheduler(const int& n_generations, std::vector<Model<TensorT>>& models, std::vector<std::vector<std::tuple<int, std::string, TensorT>>>& models_errors_per_generations)
+  {
+    // Adjust the population size
+    if (set_population_size_fixed_) this->setPopulationSizeFixed(n_generations, models, models_errors_per_generations);
+    else if (set_population_size_doubling_) this->setPopulationSizeDoubling(n_generations, models, models_errors_per_generations);
+
+    // Adjust the training steps
+    if (set_training_steps_by_model_size_) this->setTrainingStepsByModelSize(models);
+  }
+  template<typename TensorT, typename InterpreterT>
+  inline void PopulationTrainerExperimental<TensorT, InterpreterT>::trainingPopulationLogger(const int& n_generations, std::vector<Model<TensorT>>& models, PopulationLogger<TensorT>& population_logger, const std::vector<std::tuple<int, std::string, TensorT>>& models_validation_errors_per_generation)
+  {		
+    // Export the selected models
+    for (auto& model : models) {
+      ModelFile<TensorT> data;
+      data.storeModelCsv(model.getName() + "_" + std::to_string(n_generations) + "_nodes.csv",
+        model.getName() + "_" + std::to_string(n_generations) + "_links.csv",
+        model.getName() + "_" + std::to_string(n_generations) + "_weights.csv", model);
+    }
+    // Log the population statistics
+    population_logger.writeLogs(n_generations, models_validation_errors_per_generation);
+  }
   template<typename TensorT, typename InterpreterT>
   inline void PopulationTrainerExperimental<TensorT, InterpreterT>::setPopulationSizeFixed(
     const int& n_generations,

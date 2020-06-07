@@ -8,7 +8,6 @@
 
 namespace SmartPeak
 {
-
   /**
     @brief Experimental methods for `ModelReplicator`
   */
@@ -19,6 +18,15 @@ public:
     ModelReplicatorExperimental() = default; ///< Default constructor
     ~ModelReplicatorExperimental() = default; ///< Default destructor
 
+    /// Overrides and members used in all examples
+    bool set_modification_rate_by_prev_error_ = false;
+    bool set_modification_rate_fixed_ = false;
+
+    /*
+    @brief Implementation of the `adaptiveReplicatorScheduler`
+    */
+    void adaptiveReplicatorScheduler(const int& n_generations, std::vector<Model<TensorT>>& models, std::vector<std::vector<std::tuple<int, std::string, TensorT>>>& models_errors_per_generations) override;
+    
     /*
     @brief Adjust the model replicator modification rate based on a fixed population size error rates
 
@@ -40,7 +48,14 @@ public:
       std::vector<std::vector<std::tuple<int, std::string, TensorT>>>& models_errors_per_generations);
 
   };
-	template<typename TensorT>
+  template<typename TensorT>
+  inline void ModelReplicatorExperimental<TensorT>::adaptiveReplicatorScheduler(const int& n_generations, std::vector<Model<TensorT>>& models, std::vector<std::vector<std::tuple<int, std::string, TensorT>>>& models_errors_per_generations)
+  {
+    // Adjust the models modifications rates
+    if (set_modification_rate_by_prev_error_) this->setModificationRateByPrevError(n_generations, models, models_errors_per_generations);
+    if (set_modification_rate_fixed_) this->setModificationRateFixed(n_generations, models, models_errors_per_generations);
+  }
+  template<typename TensorT>
 	void ModelReplicatorExperimental<TensorT>::setModificationRateByPrevError(const int& n_generations, std::vector<Model<TensorT>>& models,
     std::vector<std::vector<std::tuple<int, std::string, TensorT>>>& models_errors_per_generations)
 	{
