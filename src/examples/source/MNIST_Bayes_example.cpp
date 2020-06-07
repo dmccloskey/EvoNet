@@ -319,10 +319,10 @@ class DataSimulatorExt : public MNISTSimulator<TensorT>
 public:
   bool add_gaussian_ = false;
   bool add_mixed_gaussian_ = false;
-  std::size_t n_hidden_0_ = 0;
-  std::size_t n_hidden_1_ = 0;
-  std::size_t n_hidden_2_ = 0;
-  void simulateTrainingData(Eigen::Tensor<TensorT, 3>& input_data, Eigen::Tensor<TensorT, 3>& loss_output_data, Eigen::Tensor<TensorT, 3>& metric_output_data, Eigen::Tensor<TensorT, 2>& time_steps)
+  int n_hidden_0_ = 0;
+  int n_hidden_1_ = 0;
+  int n_hidden_2_ = 0;
+  void simulateData(Eigen::Tensor<TensorT, 3>& input_data, Eigen::Tensor<TensorT, 3>& loss_output_data, Eigen::Tensor<TensorT, 3>& metric_output_data, Eigen::Tensor<TensorT, 2>& time_steps, const bool& is_train)
   {
     // infer data dimensions based on the input tensors
     const int batch_size = input_data.dimension(0);
@@ -332,18 +332,44 @@ public:
     const int n_metric_output_nodes = metric_output_data.dimension(2);
 
     // make the start and end sample indices
-    Eigen::Tensor<int, 1> sample_indices = this->getTrainingIndices(batch_size, 1);
+    Eigen::Tensor<int, 1> sample_indices(this->training_data.dimension(1));
+    if (is_train)
+      sample_indices = this->getTrainingIndices(batch_size, 1);
+    else
+      sample_indices = this->getValidationIndices(batch_size, 1);
 
     // pull out the training data and labels
-    Eigen::Tensor<TensorT, 2> training_data(batch_size, this->training_data.dimension(1));
-    Eigen::Tensor<TensorT, 2> training_labels(batch_size, this->training_labels.dimension(1));
+    Eigen::Tensor<TensorT, 3> training_data(batch_size, memory_size, this->training_data.dimension(1));
+    Eigen::Tensor<TensorT, 3> training_labels(batch_size, memory_size, this->training_labels.dimension(1));
     for (int batch_iter = 0; batch_iter < batch_size; ++batch_iter) {
-      for (int nodes_iter = 0; nodes_iter < n_input_nodes; ++nodes_iter) {
-        training_data(batch_iter, nodes_iter) = this->training_data(sample_indices[batch_iter], nodes_iter);
-        training_labels(batch_iter, nodes_iter) = (TensorT)this->training_labels(sample_indices[batch_iter], nodes_iter);
+      for (int memory_iter = 0; memory_iter < memory_size; ++memory_iter) {
+        for (int nodes_iter = 0; nodes_iter < this->training_data.dimension(1); ++nodes_iter) {
+          if (is_train) {
+            training_data(batch_iter, memory_iter, nodes_iter) = this->training_data(sample_indices[batch_iter], nodes_iter);
+            training_labels(batch_iter, memory_iter, nodes_iter) = (TensorT)this->training_labels(sample_indices[batch_iter], nodes_iter);
+          }
+          else {
+            training_data(batch_iter, memory_iter, nodes_iter) = this->validation_data(sample_indices[batch_iter], nodes_iter);
+            training_labels(batch_iter, memory_iter, nodes_iter) = (TensorT)this->validation_labels(sample_indices[batch_iter], nodes_iter);
+          }
+        }
       }
     }
 
+    // Assign the input data
+    input_data.setZero();
+    input_data.slice(Eigen::array<Eigen::Index, 3>({ 0, 0, 0 }), Eigen::array<Eigen::Index, 3>({ batch_size, memory_size, this->training_data.dimension(1) })) = training_data;
+
+    // Assign the input data
+    loss_output_data.setZero();
+    loss_output_data.slice(Eigen::array<Eigen::Index, 3>({ 0, 0, 0 }), Eigen::array<Eigen::Index, 3>({ batch_size, memory_size, this->training_labels.dimension(1) })) = training_labels;
+
+    // Assign the input data
+    metric_output_data.setZero();
+    metric_output_data.slice(Eigen::array<Eigen::Index, 3>({ 0, 0, 0 }), Eigen::array<Eigen::Index, 3>({ batch_size, memory_size, this->training_labels.dimension(1) })) = training_labels;
+    metric_output_data.slice(Eigen::array<Eigen::Index, 3>({ 0, 0, this->training_labels.dimension(1) }), Eigen::array<Eigen::Index, 3>({ batch_size, memory_size, this->training_labels.dimension(1) })) = training_labels;
+
+    assert(memory_size == 1);
     if (add_gaussian_) {
       if (n_hidden_0_ > 0 && n_hidden_1_ > 0 && n_hidden_2_ > 0) {
         assert(n_output_nodes == this->training_labels.dimension(1) + 2 * n_hidden_0_ + 2 * n_hidden_1_ + 2 * n_hidden_2_);
@@ -351,53 +377,103 @@ public:
         assert(n_input_nodes == this->training_data.dimension(1) + n_hidden_0_ + n_hidden_1_ + n_hidden_2_);
 
         // Gaussian sampler input/output data
-        Eigen::Tensor<TensorT, 2> gaussian_samples = GaussianSampler<TensorT>(batch_size, n_hidden_0_ + n_hidden_1_ + n_hidden_2_);
-        Eigen::Tensor<TensorT, 2> zero(batch_size, n_hidden_0_ + n_hidden_1_ + n_hidden_2_);
-        zero.setZero();
-        
+        Eigen::Tensor<TensorT, 3> gaussian_samples = GaussianSampler<TensorT>(batch_size * memory_size, n_hidden_0_ + n_hidden_1_ + n_hidden_2_)
+          .reshape(Eigen::array<Eigen::Index, 3>({ batch_size, memory_size, n_hidden_0_ + n_hidden_1_ + n_hidden_2_ }));
+
         // Assign the input data
-        input_data.slice(Eigen::array<Eigen::Index, 3>({ 0, 0, 0 }), Eigen::array<Eigen::Index, 3>({ batch_size, memory_size, this->training_data.dimension(1) })) = training_data;
         input_data.slice(Eigen::array<Eigen::Index, 3>({ 0, 0, this->training_data.dimension(1) }), Eigen::array<Eigen::Index, 3>({ batch_size, memory_size, n_hidden_0_ })) = gaussian_samples.slice(
-          Eigen::array<Eigen::Index, 2>({ 0, 0 }), Eigen::array<Eigen::Index, 3>({ batch_size, n_hidden_0_ }));
+          Eigen::array<Eigen::Index, 3>({ 0, 0, 0 }), Eigen::array<Eigen::Index, 3>({ batch_size, memory_size, n_hidden_0_ }));
         input_data.slice(Eigen::array<Eigen::Index, 3>({ 0, 0, this->training_data.dimension(1) + n_hidden_0_ }), Eigen::array<Eigen::Index, 3>({ batch_size, memory_size, n_hidden_1_ })) = gaussian_samples.slice(
-          Eigen::array<Eigen::Index, 2>({ 0, n_hidden_0_ }), Eigen::array<Eigen::Index, 3>({ batch_size, n_hidden_1_ }));
+          Eigen::array<Eigen::Index, 3>({ 0, 0, n_hidden_0_ }), Eigen::array<Eigen::Index, 3>({ batch_size, memory_size, n_hidden_1_ }));
         input_data.slice(Eigen::array<Eigen::Index, 3>({ 0, 0, this->training_data.dimension(1) + n_hidden_0_ + n_hidden_1_ }), Eigen::array<Eigen::Index, 3>({ batch_size, memory_size, n_hidden_2_ })) = gaussian_samples.slice(
-          Eigen::array<Eigen::Index, 2>({ 0, n_hidden_1_ }), Eigen::array<Eigen::Index, 3>({ batch_size, n_hidden_2_ }));
-
-        // Assign the input data
-        loss_output_data.slice(Eigen::array<Eigen::Index, 3>({ 0, 0, 0 }), Eigen::array<Eigen::Index, 3>({ batch_size, memory_size, this->training_labels.dimension(1) })) = training_labels;
-
-        // Assign the input data
-        metric_output_data.slice(Eigen::array<Eigen::Index, 3>({ 0, 0, 0 }), Eigen::array<Eigen::Index, 3>({ batch_size, memory_size, this->training_labels.dimension(1) })) = training_labels;
-        metric_output_data.slice(Eigen::array<Eigen::Index, 3>({ 0, 0, this->training_labels.dimension(1) }), Eigen::array<Eigen::Index, 3>({ batch_size, memory_size, this->training_labels.dimension(1) })) = training_labels;
-
+          Eigen::array<Eigen::Index, 3>({ 0, 0, n_hidden_1_ }), Eigen::array<Eigen::Index, 3>({ batch_size, memory_size, n_hidden_2_ }));
       }
       if (n_hidden_0_ > 0 && n_hidden_1_ > 0) {
         assert(n_output_nodes == this->training_labels.dimension(1) + 2 * n_hidden_0_ + 2 * n_hidden_1_);
         assert(n_metric_output_nodes == 2 * this->training_labels.dimension(1) + n_hidden_0_ + n_hidden_1_);
         assert(n_input_nodes == this->training_data.dimension(1) + n_hidden_0_ + n_hidden_1_);
+
+        // Gaussian sampler input/output data
+        Eigen::Tensor<TensorT, 3> gaussian_samples = GaussianSampler<TensorT>(batch_size * memory_size, n_hidden_0_ + n_hidden_1_)
+          .reshape(Eigen::array<Eigen::Index, 3>({ batch_size, memory_size, n_hidden_0_ + n_hidden_1_ }));
+
+        // Assign the input data
+        input_data.slice(Eigen::array<Eigen::Index, 3>({ 0, 0, this->training_data.dimension(1) }), Eigen::array<Eigen::Index, 3>({ batch_size, memory_size, n_hidden_0_ })) = gaussian_samples.slice(
+          Eigen::array<Eigen::Index, 3>({ 0, 0, 0 }), Eigen::array<Eigen::Index, 3>({ batch_size, memory_size, n_hidden_0_ }));
+        input_data.slice(Eigen::array<Eigen::Index, 3>({ 0, 0, this->training_data.dimension(1) + n_hidden_0_ }), Eigen::array<Eigen::Index, 3>({ batch_size, memory_size, n_hidden_1_ })) = gaussian_samples.slice(
+          Eigen::array<Eigen::Index, 3>({ 0, 0, n_hidden_0_ }), Eigen::array<Eigen::Index, 3>({ batch_size, memory_size, n_hidden_1_ }));
       }
       if (n_hidden_0_ > 0) {
         assert(n_output_nodes == this->training_labels.dimension(1) + 2 * n_hidden_0_);
         assert(n_metric_output_nodes == 2 * this->training_labels.dimension(1) + n_hidden_0_);
         assert(n_input_nodes == this->training_data.dimension(1) + n_hidden_0_);
+
+        // Gaussian sampler input/output data
+        Eigen::Tensor<TensorT, 3> gaussian_samples = GaussianSampler<TensorT>(batch_size * memory_size, n_hidden_0_)
+          .reshape(Eigen::array<Eigen::Index, 3>({ batch_size, memory_size, n_hidden_0_ }));
+
+        // Assign the input data
+        input_data.slice(Eigen::array<Eigen::Index, 3>({ 0, 0, this->training_data.dimension(1) }), Eigen::array<Eigen::Index, 3>({ batch_size, memory_size, n_hidden_0_ })) = gaussian_samples.slice(
+          Eigen::array<Eigen::Index, 3>({ 0, 0, 0 }), Eigen::array<Eigen::Index, 3>({ batch_size, memory_size, n_hidden_0_ }));
       }
     }
-    else if (add_mixed_gaussian_){
+    else if (add_mixed_gaussian_) {
       if (n_hidden_0_ > 0 && n_hidden_1_ > 0 && n_hidden_2_ > 0) {
         assert(n_output_nodes == this->training_labels.dimension(1) + 3 * n_hidden_0_ + 3 * n_hidden_1_ + 3 * n_hidden_2_);
         assert(n_metric_output_nodes == 2 * this->training_labels.dimension(1) + 2 * n_hidden_0_ + 2 * n_hidden_1_ + 2 * n_hidden_2_);
         assert(n_input_nodes == this->training_data.dimension(1) + 2 * n_hidden_0_ + 2 * n_hidden_1_ + 2 * n_hidden_2_);
+
+        // Gaussian sampler input/output data
+        Eigen::Tensor<TensorT, 3> gaussian_samples = GaussianSampler<TensorT>(batch_size * memory_size, 2 * n_hidden_0_ + 2 * n_hidden_1_ + 2 * n_hidden_2_)
+          .reshape(Eigen::array<Eigen::Index, 3>({ batch_size, memory_size, 2 * n_hidden_0_ + 2 * n_hidden_1_ + 2 * n_hidden_2_ }));
+
+        // Assign the input data
+        input_data.slice(Eigen::array<Eigen::Index, 3>({ 0, 0, this->training_data.dimension(1) }), Eigen::array<Eigen::Index, 3>({ batch_size, memory_size, n_hidden_0_ })) = gaussian_samples.slice(
+          Eigen::array<Eigen::Index, 3>({ 0, 0, 0 }), Eigen::array<Eigen::Index, 3>({ batch_size, memory_size, n_hidden_0_ }));
+        input_data.slice(Eigen::array<Eigen::Index, 3>({ 0, 0, this->training_data.dimension(1) + n_hidden_0_ }), Eigen::array<Eigen::Index, 3>({ batch_size, memory_size, n_hidden_0_ })) = gaussian_samples.slice(
+          Eigen::array<Eigen::Index, 3>({ 0, 0, n_hidden_0_ }), Eigen::array<Eigen::Index, 3>({ batch_size, memory_size, n_hidden_0_ }));
+        input_data.slice(Eigen::array<Eigen::Index, 3>({ 0, 0, this->training_data.dimension(1) + 2 * n_hidden_0_ }), Eigen::array<Eigen::Index, 3>({ batch_size, memory_size, n_hidden_1_ })) = gaussian_samples.slice(
+          Eigen::array<Eigen::Index, 3>({ 0, 0, 2 * n_hidden_0_ }), Eigen::array<Eigen::Index, 3>({ batch_size, memory_size, n_hidden_1_ }));
+        input_data.slice(Eigen::array<Eigen::Index, 3>({ 0, 0, this->training_data.dimension(1) + 2 * n_hidden_0_ + n_hidden_1_ }), Eigen::array<Eigen::Index, 3>({ batch_size, memory_size, n_hidden_1_ })) = gaussian_samples.slice(
+          Eigen::array<Eigen::Index, 3>({ 0, 0, 2 * n_hidden_0_ + n_hidden_1_ }), Eigen::array<Eigen::Index, 3>({ batch_size, memory_size, n_hidden_1_ }));
+        input_data.slice(Eigen::array<Eigen::Index, 3>({ 0, 0, this->training_data.dimension(1) + 2 * n_hidden_0_ + 2 * n_hidden_1_ }), Eigen::array<Eigen::Index, 3>({ batch_size, memory_size, n_hidden_2_ })) = gaussian_samples.slice(
+          Eigen::array<Eigen::Index, 3>({ 0, 0, 2 * n_hidden_0_ + 2 * n_hidden_1_ }), Eigen::array<Eigen::Index, 3>({ batch_size, memory_size, n_hidden_2_ }));
+        input_data.slice(Eigen::array<Eigen::Index, 3>({ 0, 0, this->training_data.dimension(1) + 2 * n_hidden_0_ + 2 * n_hidden_1_ + n_hidden_2_ }), Eigen::array<Eigen::Index, 3>({ batch_size, memory_size, n_hidden_2_ })) = gaussian_samples.slice(
+          Eigen::array<Eigen::Index, 3>({ 0, 0, 2 * n_hidden_0_ + 2 * n_hidden_1_ + n_hidden_2_ }), Eigen::array<Eigen::Index, 3>({ batch_size, memory_size, n_hidden_2_ }));
       }
       if (n_hidden_0_ > 0 && n_hidden_1_ > 0) {
         assert(n_output_nodes == this->training_labels.dimension(1) + 3 * n_hidden_0_ + 3 * n_hidden_1_);
         assert(n_metric_output_nodes == 2 * this->training_labels.dimension(1) + 2 * n_hidden_0_ + 2 * n_hidden_1_);
         assert(n_input_nodes == this->training_data.dimension(1) + 2 * n_hidden_0_ + 2 * n_hidden_1_);
+
+        // Gaussian sampler input/output data
+        Eigen::Tensor<TensorT, 3> gaussian_samples = GaussianSampler<TensorT>(batch_size * memory_size, 2 * n_hidden_0_ + 2 * n_hidden_1_)
+          .reshape(Eigen::array<Eigen::Index, 3>({ batch_size, memory_size, 2 * n_hidden_0_ + 2 * n_hidden_1_ }));
+
+        // Assign the input data
+        input_data.slice(Eigen::array<Eigen::Index, 3>({ 0, 0, this->training_data.dimension(1) }), Eigen::array<Eigen::Index, 3>({ batch_size, memory_size, n_hidden_0_ })) = gaussian_samples.slice(
+          Eigen::array<Eigen::Index, 3>({ 0, 0, 0 }), Eigen::array<Eigen::Index, 3>({ batch_size, memory_size, n_hidden_0_ }));
+        input_data.slice(Eigen::array<Eigen::Index, 3>({ 0, 0, this->training_data.dimension(1) + n_hidden_0_ }), Eigen::array<Eigen::Index, 3>({ batch_size, memory_size, n_hidden_0_ })) = gaussian_samples.slice(
+          Eigen::array<Eigen::Index, 3>({ 0, 0, n_hidden_0_ }), Eigen::array<Eigen::Index, 3>({ batch_size, memory_size, n_hidden_0_ }));
+        input_data.slice(Eigen::array<Eigen::Index, 3>({ 0, 0, this->training_data.dimension(1) + 2 * n_hidden_0_ }), Eigen::array<Eigen::Index, 3>({ batch_size, memory_size, n_hidden_1_ })) = gaussian_samples.slice(
+          Eigen::array<Eigen::Index, 3>({ 0, 0, 2 * n_hidden_0_ }), Eigen::array<Eigen::Index, 3>({ batch_size, memory_size, n_hidden_1_ }));
+        input_data.slice(Eigen::array<Eigen::Index, 3>({ 0, 0, this->training_data.dimension(1) + 2 * n_hidden_0_ + n_hidden_1_ }), Eigen::array<Eigen::Index, 3>({ batch_size, memory_size, n_hidden_1_ })) = gaussian_samples.slice(
+          Eigen::array<Eigen::Index, 3>({ 0, 0, 2 * n_hidden_0_ + n_hidden_1_ }), Eigen::array<Eigen::Index, 3>({ batch_size, memory_size, n_hidden_1_ }));
       }
       if (n_hidden_0_ > 0) {
         assert(n_output_nodes == this->training_labels.dimension(1) + 3 * n_hidden_0_);
         assert(n_metric_output_nodes == 2 * this->training_labels.dimension(1) + 2 * n_hidden_0_);
         assert(n_input_nodes == this->training_data.dimension(1) + 2 * n_hidden_0_);
+
+        // Gaussian sampler input/output data
+        Eigen::Tensor<TensorT, 3> gaussian_samples = GaussianSampler<TensorT>(batch_size * memory_size, 2 * n_hidden_0_)
+          .reshape(Eigen::array<Eigen::Index, 3>({ batch_size, memory_size, 2 * n_hidden_0_ }));
+
+        // Assign the input data
+        input_data.slice(Eigen::array<Eigen::Index, 3>({ 0, 0, this->training_data.dimension(1) }), Eigen::array<Eigen::Index, 3>({ batch_size, memory_size, n_hidden_0_ })) = gaussian_samples.slice(
+          Eigen::array<Eigen::Index, 3>({ 0, 0, 0 }), Eigen::array<Eigen::Index, 3>({ batch_size, memory_size, n_hidden_0_ }));
+        input_data.slice(Eigen::array<Eigen::Index, 3>({ 0, 0, this->training_data.dimension(1) + n_hidden_0_ }), Eigen::array<Eigen::Index, 3>({ batch_size, memory_size, n_hidden_0_ })) = gaussian_samples.slice(
+          Eigen::array<Eigen::Index, 3>({ 0, 0, n_hidden_0_ }), Eigen::array<Eigen::Index, 3>({ batch_size, memory_size, n_hidden_0_ }));
       }
     }
     else {
@@ -405,52 +481,12 @@ public:
       assert(n_metric_output_nodes == 2 * this->training_labels.dimension(1));
       assert(n_input_nodes == this->training_data.dimension(1));
     }
-    assert(memory_size == 1);
-
-    // Reformat the input data for training
-    for (int batch_iter = 0; batch_iter < batch_size; ++batch_iter) {
-      for (int memory_iter = 0; memory_iter < memory_size; ++memory_iter) {
-        for (int nodes_iter = 0; nodes_iter < n_input_nodes; ++nodes_iter) {
-          input_data(batch_iter, memory_iter, nodes_iter) = this->training_data(sample_indices[batch_iter], nodes_iter);
-        }
-        for (int nodes_iter = 0; nodes_iter < this->training_labels.dimension(1); ++nodes_iter) {
-          loss_output_data(batch_iter, memory_iter, nodes_iter) = (TensorT)this->training_labels(sample_indices[batch_iter], nodes_iter);
-          loss_output_data(batch_iter, memory_iter, nodes_iter + this->training_labels.dimension(1)) = (TensorT)this->training_labels(sample_indices[batch_iter], nodes_iter);
-          metric_output_data(batch_iter, memory_iter, nodes_iter) = (TensorT)this->training_labels(sample_indices[batch_iter], nodes_iter);
-        }
-      }
-    }
   }
-  void simulateValidationData(Eigen::Tensor<TensorT, 3>& input_data, Eigen::Tensor<TensorT, 3>& loss_output_data, Eigen::Tensor<TensorT, 3>& metric_output_data, Eigen::Tensor<TensorT, 2>& time_steps)
-  {
-    // infer data dimensions based on the input tensors
-    const int batch_size = input_data.dimension(0);
-    const int memory_size = input_data.dimension(1);
-    const int n_input_nodes = input_data.dimension(2);
-    const int n_output_nodes = loss_output_data.dimension(2);
-    const int n_metric_output_nodes = metric_output_data.dimension(2);
-
-    assert(n_output_nodes == 2 * this->validation_labels.dimension(1));
-    assert(n_metric_output_nodes == this->validation_labels.dimension(1));
-    assert(n_input_nodes == 784);
-    assert(memory_size == 1);
-
-    // make the start and end sample indices
-    Eigen::Tensor<int, 1> sample_indices = this->getValidationIndices(batch_size, 1);
-
-    // Reformat the input data for validation
-    for (int batch_iter = 0; batch_iter < batch_size; ++batch_iter) {
-      for (int memory_iter = 0; memory_iter < memory_size; ++memory_iter) {
-        for (int nodes_iter = 0; nodes_iter < n_input_nodes; ++nodes_iter) {
-          input_data(batch_iter, memory_iter, nodes_iter) = this->validation_data(sample_indices[batch_iter], nodes_iter);
-        }
-        for (int nodes_iter = 0; nodes_iter < this->validation_labels.dimension(1); ++nodes_iter) {
-          loss_output_data(batch_iter, memory_iter, nodes_iter) = (TensorT)this->validation_labels(sample_indices[batch_iter], nodes_iter);
-          loss_output_data(batch_iter, memory_iter, nodes_iter + this->validation_labels.dimension(1)) = (TensorT)this->validation_labels(sample_indices[batch_iter], nodes_iter);
-          metric_output_data(batch_iter, memory_iter, nodes_iter) = (TensorT)this->validation_labels(sample_indices[batch_iter], nodes_iter);
-        }
-      }
-    }
+  void simulateTrainingData(Eigen::Tensor<TensorT, 3>& input_data, Eigen::Tensor<TensorT, 3>& loss_output_data, Eigen::Tensor<TensorT, 3>& metric_output_data, Eigen::Tensor<TensorT, 2>& time_steps) override {
+    simulateData(input_data, loss_output_data, metric_output_data, time_steps, true);
+  }
+  void simulateValidationData(Eigen::Tensor<TensorT, 3>& input_data, Eigen::Tensor<TensorT, 3>& loss_output_data, Eigen::Tensor<TensorT, 3>& metric_output_data, Eigen::Tensor<TensorT, 2>& time_steps) override {
+    simulateData(input_data, loss_output_data, metric_output_data, time_steps, false);
   }
 };
 
@@ -882,11 +918,8 @@ int main(int argc, char** argv)
   EvoNetParameters::Main::TrainModel train_model("train_model", true);
   EvoNetParameters::Main::EvolveModel evolve_model("evolve_model", false);
   EvoNetParameters::Main::EvaluateModel evaluate_model("evaluate_model", false);
-  EvoNetParameters::Examples::NMask n_mask("n_mask", 2);
-  EvoNetParameters::Examples::SequenceLength sequence_length("sequence_length", 25);
   EvoNetParameters::Examples::ModelType model_type("model_type", "Solution");
   EvoNetParameters::Examples::SimulationType simulation_type("simulation_type", "");
-  EvoNetParameters::Examples::BiochemicalRxnsFilename biochemical_rxns_filename("biochemical_rxns_filename", "iJO1366.csv");
   EvoNetParameters::PopulationTrainer::PopulationName population_name("population_name", "");
   EvoNetParameters::PopulationTrainer::NGenerations n_generations("n_generations", 1);
   EvoNetParameters::PopulationTrainer::NInterpreters n_interpreters("n_interpreters", 1);
@@ -903,7 +936,7 @@ int main(int argc, char** argv)
   EvoNetParameters::PopulationTrainer::SetPopulationSizeFixed set_population_size_fixed("set_population_size_fixed", false);
   EvoNetParameters::PopulationTrainer::SetPopulationSizeDoubling set_population_size_doubling("set_population_size_doubling", true);
   EvoNetParameters::ModelTrainer::BatchSize batch_size("batch_size", 32);
-  EvoNetParameters::ModelTrainer::MemorySize memory_size("memory_size", 64);
+  EvoNetParameters::ModelTrainer::MemorySize memory_size("memory_size", 1);
   EvoNetParameters::ModelTrainer::NEpochsTraining n_epochs_training("n_epochs_training", 1000);
   EvoNetParameters::ModelTrainer::NEpochsValidation n_epochs_validation("n_epochs_validation", 25);
   EvoNetParameters::ModelTrainer::NEpochsEvaluation n_epochs_evaluation("n_epochs_evaluation", 10);
@@ -956,7 +989,7 @@ int main(int argc, char** argv)
   EvoNetParameters::ModelReplicator::SetModificationRateByPrevError set_modification_rate_by_prev_error("set_modification_rate_by_prev_error", false);
   auto parameters = std::make_tuple(id, data_dir, output_dir,
     device_id, model_name, make_model, load_model_csv, load_model_binary, train_model, evolve_model, evaluate_model,
-    n_mask, sequence_length, model_type, simulation_type, biochemical_rxns_filename,
+    model_type, simulation_type,
     population_name, n_generations, n_interpreters, prune_model_num, remove_isolated_nodes, check_complete_model_input_to_output, population_size, n_top, n_random, n_replicates_per_model, reset_model_copy_weights, reset_model_template_weights, population_logging, set_population_size_fixed, set_population_size_doubling,
     batch_size, memory_size, n_epochs_training, n_epochs_validation, n_epochs_evaluation, n_tbtt_steps, n_tett_steps, verbosity, logging_training, logging_validation, logging_evaluation, find_cycles, fast_interpreter, preserve_ooo, interpret_model, reset_model, reset_interpreter,
     n_hidden_0, n_hidden_1, n_hidden_2, add_gaussian, add_mixed_gaussian, learning_rate, gradient_clipping,
