@@ -10,24 +10,8 @@
 
 namespace SmartPeak
 {
-  template<typename TensorT>
-  struct LossFunctionHelper
-  {
-    std::vector<std::string> output_nodes_; ///< output node names
-    std::vector<std::shared_ptr<LossFunctionOp<TensorT>>> loss_functions_; ///< loss functions to apply to the node names
-    std::vector<std::shared_ptr<LossFunctionGradOp<TensorT>>> loss_function_grads_; ///< corresponding loss function grads to apply to the node names
-  };
-
-  template<typename TensorT>
-  struct MetricFunctionHelper
-  {
-    std::vector<std::string> output_nodes_; ///< output node names
-    std::vector<std::shared_ptr<MetricFunctionOp<TensorT>>> metric_functions_; ///< metric functions to apply to the node names
-    std::vector<std::string> metric_names_; ///< corresponding metric function names given for each metric function
-  };
-
   /**
-    @brief Class to train a network model
+    @brief Experimental features of `ModelTrainer`
   */
 	template<typename TensorT, typename InterpreterT>
   class ModelTrainerExperimental: public ModelTrainer<TensorT, InterpreterT>
@@ -37,13 +21,101 @@ public:
     ~ModelTrainerExperimental() = default; ///< Default destructor
 
     /// Overrides used in all examples
-    void adaptiveTrainerScheduler(const int& n_generations, const int& n_epochs, Model<TensorT>& model, InterpreterT& model_interpreter, const std::vector<TensorT>& model_errors);
     void trainingModelLogger(const int& n_epochs, Model<TensorT>& model, InterpreterT& model_interpreter, ModelLogger<TensorT>& model_logger, const Eigen::Tensor<TensorT, 3>& expected_values, const std::vector<std::string>& output_nodes, const std::vector<std::string>& input_nodes, const TensorT& model_error) override;
     void trainingModelLogger(const int& n_epochs, Model<TensorT>& model, InterpreterT& model_interpreter, ModelLogger<TensorT>& model_logger, const Eigen::Tensor<TensorT, 3>& expected_values, const std::vector<std::string>& output_nodes, const std::vector<std::string>& input_nodes, const TensorT& model_error_train, const TensorT& model_error_test, const Eigen::Tensor<TensorT, 1>& model_metrics_train, const Eigen::Tensor<TensorT, 1>& model_metrics_test) override;
     void validationModelLogger(const int& n_epochs, Model<TensorT>& model, InterpreterT& model_interpreter, ModelLogger<TensorT>& model_logger, const Eigen::Tensor<TensorT, 3>& expected_values, const std::vector<std::string>& output_nodes, const std::vector<std::string>& input_nodes, const TensorT& model_error) override;
-    void validationModelLogger(const int& n_epochs, Model<TensorT>& model, InterpreterT& model_interpreter, ModelLogger<TensorT>& model_logger, const Eigen::Tensor<TensorT, 3>& expected_values, const std::vector<std::string>& output_nodes, const std::vector<std::string>& input_nodes, const TensorT& model_error_train, const TensorT& model_error_test, const Eigen::Tensor<TensorT, 1>& model_metrics_train, const Eigen::Tensor<TensorT, 1>& model_metrics_test) override;
     void evaluationModelLogger(const int& n_epochs, Model<TensorT>& model, InterpreterT& model_interpreter, ModelLogger<TensorT>& model_logger, const std::vector<std::string>& output_nodes, const std::vector<std::string>& input_nodes) override;
     void evaluationModelLogger(const int& n_epochs, Model<TensorT>& model, InterpreterT& model_interpreter, ModelLogger<TensorT>& model_logger, const Eigen::Tensor<TensorT, 3>& expected_values, const std::vector<std::string>& output_nodes, const std::vector<std::string>& input_nodes, const Eigen::Tensor<TensorT, 1>& model_metrics) override;
   };	
+  template<typename TensorT, typename InterpreterT>
+  inline void ModelTrainerExperimental<TensorT, InterpreterT>::trainingModelLogger(const int& n_epochs, Model<TensorT>& model, InterpreterT& model_interpreter, ModelLogger<TensorT>& model_logger, const Eigen::Tensor<TensorT, 3>& expected_values, const std::vector<std::string>& output_nodes, const std::vector<std::string>& input_nodes, const TensorT& model_error)
+  { // Left blank intentionally to prevent writing of files during population training
+  }
+  template<typename TensorT, typename InterpreterT>
+  inline void ModelTrainerExperimental<TensorT, InterpreterT>::trainingModelLogger(const int& n_epochs, Model<TensorT>& model, InterpreterT& model_interpreter, ModelLogger<TensorT>& model_logger, const Eigen::Tensor<TensorT, 3>& expected_values, const std::vector<std::string>& output_nodes, const std::vector<std::string>& input_nodes, const TensorT& model_error_train, const TensorT& model_error_test, const Eigen::Tensor<TensorT, 1>& model_metrics_train, const Eigen::Tensor<TensorT, 1>& model_metrics_test)
+  {
+    // Set the defaults
+    model_logger.setLogTimeEpoch(true);
+    model_logger.setLogTrainValMetricEpoch(true);
+    model_logger.setLogExpectedEpoch(false);
+    model_logger.setLogNodeInputsEpoch(false);
+    model_logger.setLogNodeOutputsEpoch(false);
+
+    // initialize all logs
+    if (n_epochs == 0) {
+      model_logger.setLogExpectedEpoch(true);
+      model_logger.setLogNodeInputsEpoch(true);
+      model_logger.setLogNodeOutputsEpoch(true);
+      model_logger.initLogs(model);
+    }
+
+    // Per n epoch logging
+    if (n_epochs % 1000 == 0) {
+      model_logger.setLogExpectedEpoch(true);
+      model_logger.setLogNodeInputsEpoch(true);
+      model_logger.setLogNodeOutputsEpoch(true);
+      model_interpreter.getModelResults(model, true, false, false, true);
+    }
+
+    // Create the metric headers and data arrays
+    std::vector<std::string> log_train_headers = { "Train_Error" };
+    std::vector<std::string> log_test_headers = { "Test_Error" };
+    std::vector<TensorT> log_train_values = { model_error_train };
+    std::vector<TensorT> log_test_values = { model_error_test };
+    int metric_iter = 0;
+    for (const std::string& metric_name : this->getMetricNamesLinearized()) {
+      log_train_headers.push_back(metric_name);
+      log_test_headers.push_back(metric_name);
+      log_train_values.push_back(model_metrics_train(metric_iter));
+      log_test_values.push_back(model_metrics_test(metric_iter));
+      ++metric_iter;
+    }
+    model_logger.writeLogs(model, n_epochs, log_train_headers, log_test_headers, log_train_values, log_test_values, output_nodes, expected_values, {}, output_nodes, {}, input_nodes, {});
+  }
+  template<typename TensorT, typename InterpreterT>
+  inline void ModelTrainerExperimental<TensorT, InterpreterT>::validationModelLogger(const int& n_epochs, Model<TensorT>& model, InterpreterT& model_interpreter, ModelLogger<TensorT>& model_logger, const Eigen::Tensor<TensorT, 3>& expected_values, const std::vector<std::string>& output_nodes, const std::vector<std::string>& input_nodes, const TensorT& model_error)
+  {  // Left blank intentionally to prevent writing of files during population validation
+  }
+  template<typename TensorT, typename InterpreterT>
+  inline void ModelTrainerExperimental<TensorT, InterpreterT>::evaluationModelLogger(const int& n_epochs, Model<TensorT>& model, InterpreterT& model_interpreter, ModelLogger<TensorT>& model_logger, const std::vector<std::string>& output_nodes, const std::vector<std::string>& input_nodes)
+  { // Left blank intentionally to prevent writing of files during population evaluation
+  }
+  template<typename TensorT, typename InterpreterT>
+  inline void ModelTrainerExperimental<TensorT, InterpreterT>::evaluationModelLogger(const int& n_epochs, Model<TensorT>& model, InterpreterT& model_interpreter, ModelLogger<TensorT>& model_logger, const Eigen::Tensor<TensorT, 3>& expected_values, const std::vector<std::string>& output_nodes, const std::vector<std::string>& input_nodes, const Eigen::Tensor<TensorT, 1>& model_metrics)
+  {
+    // Set the defaults
+    model_logger.setLogTimeEpoch(true);
+    model_logger.setLogTrainValMetricEpoch(true);
+    model_logger.setLogExpectedEpoch(false);
+    model_logger.setLogNodeInputsEpoch(false);
+    model_logger.setLogNodeOutputsEpoch(false);
+
+    // initialize all logs
+    if (n_epochs == 0) {
+      model_logger.setLogExpectedEpoch(true);
+      model_logger.setLogNodeInputsEpoch(true);
+      model_logger.setLogNodeOutputsEpoch(true);
+      model_logger.initLogs(model);
+    }
+
+    // Per n epoch logging
+    if (n_epochs % 1 == 0) { // FIXME
+      model_logger.setLogExpectedEpoch(true);
+      model_logger.setLogNodeInputsEpoch(true);
+      model_logger.setLogNodeOutputsEpoch(true);
+      model_interpreter.getModelResults(model, true, false, false, true);
+    }
+
+    // Create the metric headers and data arrays
+    std::vector<std::string> log_headers;
+    std::vector<TensorT> log_values;
+    int metric_iter = 0;
+    for (const std::string& metric_name : this->getMetricNamesLinearized()) {
+      log_headers.push_back(metric_name);
+      log_values.push_back(model_metrics(metric_iter));
+      ++metric_iter;
+    }
+    model_logger.writeLogs(model, n_epochs, log_headers, {}, log_values, {}, output_nodes, expected_values, {}, output_nodes, {}, input_nodes, {});
+  }
 }
 #endif //SMARTPEAK_MODELTRAINEREXPERIMENTAL_H
