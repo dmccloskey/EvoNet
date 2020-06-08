@@ -2381,4 +2381,154 @@ BOOST_AUTO_TEST_CASE(addProjection1WithoutSharedWeights)
   }
 }
 
+BOOST_AUTO_TEST_CASE(addGaussian_)
+{
+  ModelBuilder<float> model_builder;
+  Model<float> model;
+
+  // make the input
+  std::vector<std::string> mu_node_names = model_builder.addInputNodes(model, "Mu", "Input", 4);
+  std::vector<std::string> logvar_node_names = model_builder.addInputNodes(model, "LogVar", "Input", 4);
+  std::vector<std::string> gaussian_node_names = model_builder.addInputNodes(model, "Gaussian", "Input", 4);
+
+  // make the fully connected 
+  std::vector<std::string> node_names = model_builder.addGaussian_(
+    model, "GaussianDiff", "Mod1", mu_node_names, logvar_node_names, gaussian_node_names, false);
+
+  std::vector<std::string> node_names_test = {
+    "GaussianDiff-GaussianBellSigma_000000000000","GaussianDiff-GaussianBellSigma_000000000001","GaussianDiff-GaussianBellSigma_000000000002","GaussianDiff-GaussianBellSigma_000000000003",
+    "GaussianDiff-GaussianBell_000000000000","GaussianDiff-GaussianBell_000000000001","GaussianDiff-GaussianBell_000000000002","GaussianDiff-GaussianBell_000000000003",
+    "GaussianDiff-GaussianScale_000000000000","GaussianDiff-GaussianScale_000000000001","GaussianDiff-GaussianScale_000000000002","GaussianDiff-GaussianScale_000000000003",
+    "GaussianDiff-GaussianSigma2_000000000000","GaussianDiff-GaussianSigma2_000000000001","GaussianDiff-GaussianSigma2_000000000002","GaussianDiff-GaussianSigma2_000000000003",
+    "GaussianDiff-GaussianSigma_000000000000","GaussianDiff-GaussianSigma_000000000001","GaussianDiff-GaussianSigma_000000000002","GaussianDiff-GaussianSigma_000000000003",
+    "GaussianDiff-GaussianXMinMu2_000000000000","GaussianDiff-GaussianXMinMu2_000000000001","GaussianDiff-GaussianXMinMu2_000000000002","GaussianDiff-GaussianXMinMu2_000000000003",
+    "GaussianDiff_000000000000","GaussianDiff_000000000001","GaussianDiff_000000000002","GaussianDiff_000000000003"
+  };
+  std::vector<std::string> link_names_test = {
+    "GaussianDiff-GaussianBellSigma_000000000000_to_GaussianDiff-GaussianBell_000000000000","GaussianDiff-GaussianBellSigma_000000000001_to_GaussianDiff-GaussianBell_000000000001","GaussianDiff-GaussianBellSigma_000000000002_to_GaussianDiff-GaussianBell_000000000002","GaussianDiff-GaussianBellSigma_000000000003_to_GaussianDiff-GaussianBell_000000000003","GaussianDiff-GaussianBell_000000000000_to_GaussianDiff_000000000000","GaussianDiff-GaussianBell_000000000001_to_GaussianDiff_000000000001","GaussianDiff-GaussianBell_000000000002_to_GaussianDiff_000000000002","GaussianDiff-GaussianBell_000000000003_to_GaussianDiff_000000000003","GaussianDiff-GaussianScale_000000000000_to_GaussianDiff_000000000000","GaussianDiff-GaussianScale_000000000001_to_GaussianDiff_000000000001","GaussianDiff-GaussianScale_000000000002_to_GaussianDiff_000000000002","GaussianDiff-GaussianScale_000000000003_to_GaussianDiff_000000000003","GaussianDiff-GaussianSigma2_000000000000_to_GaussianDiff-GaussianBellSigma_000000000000","GaussianDiff-GaussianSigma2_000000000000_to_GaussianDiff-GaussianScale_000000000000","GaussianDiff-GaussianSigma2_000000000001_to_GaussianDiff-GaussianBellSigma_000000000001","GaussianDiff-GaussianSigma2_000000000001_to_GaussianDiff-GaussianScale_000000000001","GaussianDiff-GaussianSigma2_000000000002_to_GaussianDiff-GaussianBellSigma_000000000002","GaussianDiff-GaussianSigma2_000000000002_to_GaussianDiff-GaussianScale_000000000002","GaussianDiff-GaussianSigma2_000000000003_to_GaussianDiff-GaussianBellSigma_000000000003","GaussianDiff-GaussianSigma2_000000000003_to_GaussianDiff-GaussianScale_000000000003","GaussianDiff-GaussianSigma_000000000000_to_GaussianDiff-GaussianSigma2_000000000000","GaussianDiff-GaussianSigma_000000000001_to_GaussianDiff-GaussianSigma2_000000000001","GaussianDiff-GaussianSigma_000000000002_to_GaussianDiff-GaussianSigma2_000000000002","GaussianDiff-GaussianSigma_000000000003_to_GaussianDiff-GaussianSigma2_000000000003","GaussianDiff-GaussianXMinMu2_000000000000_to_GaussianDiff-GaussianBell_000000000000","GaussianDiff-GaussianXMinMu2_000000000001_to_GaussianDiff-GaussianBell_000000000001","GaussianDiff-GaussianXMinMu2_000000000002_to_GaussianDiff-GaussianBell_000000000002","GaussianDiff-GaussianXMinMu2_000000000003_to_GaussianDiff-GaussianBell_000000000003","Gaussian_000000000000_to_GaussianDiff-GaussianXMinMu2_000000000000","Gaussian_000000000001_to_GaussianDiff-GaussianXMinMu2_000000000001","Gaussian_000000000002_to_GaussianDiff-GaussianXMinMu2_000000000002","Gaussian_000000000003_to_GaussianDiff-GaussianXMinMu2_000000000003","LogVar_000000000000_to_GaussianDiff-GaussianSigma_000000000000","LogVar_000000000001_to_GaussianDiff-GaussianSigma_000000000001","LogVar_000000000002_to_GaussianDiff-GaussianSigma_000000000002","LogVar_000000000003_to_GaussianDiff-GaussianSigma_000000000003","Mu_000000000000_to_GaussianDiff-GaussianXMinMu2_000000000000","Mu_000000000001_to_GaussianDiff-GaussianXMinMu2_000000000001","Mu_000000000002_to_GaussianDiff-GaussianXMinMu2_000000000002","Mu_000000000003_to_GaussianDiff-GaussianXMinMu2_000000000003"
+  };  
+  std::vector<std::string> weight_names_test = {
+    "GaussianDiff-GaussianBellSigma_000000000000_to_GaussianDiff-GaussianBell_000000000000","GaussianDiff-GaussianBellSigma_000000000001_to_GaussianDiff-GaussianBell_000000000001","GaussianDiff-GaussianBellSigma_000000000002_to_GaussianDiff-GaussianBell_000000000002","GaussianDiff-GaussianBellSigma_000000000003_to_GaussianDiff-GaussianBell_000000000003",
+    "GaussianDiff-GaussianBell_000000000000_to_GaussianDiff_000000000000","GaussianDiff-GaussianBell_000000000001_to_GaussianDiff_000000000001","GaussianDiff-GaussianBell_000000000002_to_GaussianDiff_000000000002","GaussianDiff-GaussianBell_000000000003_to_GaussianDiff_000000000003",
+    "GaussianDiff-GaussianScale_000000000000_to_GaussianDiff_000000000000","GaussianDiff-GaussianScale_000000000001_to_GaussianDiff_000000000001","GaussianDiff-GaussianScale_000000000002_to_GaussianDiff_000000000002","GaussianDiff-GaussianScale_000000000003_to_GaussianDiff_000000000003",
+    "GaussianDiff-GaussianSigma2_000000000000_to_GaussianDiff-GaussianBellSigma_000000000000","GaussianDiff-GaussianSigma2_000000000000_to_GaussianDiff-GaussianScale_000000000000","GaussianDiff-GaussianSigma2_000000000001_to_GaussianDiff-GaussianBellSigma_000000000001","GaussianDiff-GaussianSigma2_000000000001_to_GaussianDiff-GaussianScale_000000000001","GaussianDiff-GaussianSigma2_000000000002_to_GaussianDiff-GaussianBellSigma_000000000002","GaussianDiff-GaussianSigma2_000000000002_to_GaussianDiff-GaussianScale_000000000002","GaussianDiff-GaussianSigma2_000000000003_to_GaussianDiff-GaussianBellSigma_000000000003","GaussianDiff-GaussianSigma2_000000000003_to_GaussianDiff-GaussianScale_000000000003",
+    "GaussianDiff-GaussianSigma_000000000000_to_GaussianDiff-GaussianSigma2_000000000000","GaussianDiff-GaussianSigma_000000000001_to_GaussianDiff-GaussianSigma2_000000000001","GaussianDiff-GaussianSigma_000000000002_to_GaussianDiff-GaussianSigma2_000000000002","GaussianDiff-GaussianSigma_000000000003_to_GaussianDiff-GaussianSigma2_000000000003",
+    "GaussianDiff-GaussianXMinMu2_000000000000_to_GaussianDiff-GaussianBell_000000000000","GaussianDiff-GaussianXMinMu2_000000000001_to_GaussianDiff-GaussianBell_000000000001","GaussianDiff-GaussianXMinMu2_000000000002_to_GaussianDiff-GaussianBell_000000000002","GaussianDiff-GaussianXMinMu2_000000000003_to_GaussianDiff-GaussianBell_000000000003",
+    "Gaussian_000000000000_to_GaussianDiff-GaussianXMinMu2_000000000000","Gaussian_000000000001_to_GaussianDiff-GaussianXMinMu2_000000000001","Gaussian_000000000002_to_GaussianDiff-GaussianXMinMu2_000000000002","Gaussian_000000000003_to_GaussianDiff-GaussianXMinMu2_000000000003",
+    "LogVar_000000000000_to_GaussianDiff-GaussianSigma_000000000000","LogVar_000000000001_to_GaussianDiff-GaussianSigma_000000000001","LogVar_000000000002_to_GaussianDiff-GaussianSigma_000000000002","LogVar_000000000003_to_GaussianDiff-GaussianSigma_000000000003",
+    "Mu_000000000000_to_GaussianDiff-GaussianXMinMu2_000000000000","Mu_000000000001_to_GaussianDiff-GaussianXMinMu2_000000000001","Mu_000000000002_to_GaussianDiff-GaussianXMinMu2_000000000002","Mu_000000000003_to_GaussianDiff-GaussianXMinMu2_000000000003"
+  };
+  //for (auto& e : model.nodes_)
+  //	std::cout << "Node: " << e.second->getName() << std::endl;
+  //for (auto& e : model.links_)
+  //	std::cout << "Link: " << e.second->getName() << std::endl;
+  //for (auto& e : model.weights_)
+  //	std::cout << "Weight: " << e.second->getName() << std::endl;
+
+  // check the nodes
+  for (const std::string& node_name : node_names_test)
+  {
+    BOOST_CHECK_EQUAL(model.nodes_.at(node_name)->getName(), node_name);
+    BOOST_CHECK_NE(model.nodes_.at(node_name)->getModuleName(), "Mod1");
+    BOOST_CHECK_CLOSE(model.nodes_.at(node_name)->getDropProbability(), 0.0f, 1e-3);
+    if (node_name.find("GaussianDiff-GaussianBellSigma_") != std::string::npos) {
+      BOOST_CHECK_EQUAL(model.nodes_.at(node_name)->getActivation()->getName(), "InverseOp");
+      BOOST_CHECK_EQUAL(model.nodes_.at(node_name)->getActivationGrad()->getName(), "InverseGradOp");
+      BOOST_CHECK_EQUAL(model.nodes_.at(node_name)->getIntegration()->getName(), "SumOp");
+      BOOST_CHECK_EQUAL(model.nodes_.at(node_name)->getIntegrationError()->getName(), "SumErrorOp");
+      BOOST_CHECK_EQUAL(model.nodes_.at(node_name)->getIntegrationWeightGrad()->getName(), "SumWeightGradOp");
+    }
+    else if (node_name.find("GaussianDiff-GaussianBell_") != std::string::npos) {
+      BOOST_CHECK_EQUAL(model.nodes_.at(node_name)->getActivation()->getName(), "ExponentialOp");
+      BOOST_CHECK_EQUAL(model.nodes_.at(node_name)->getActivationGrad()->getName(), "ExponentialGradOp");
+      BOOST_CHECK_EQUAL(model.nodes_.at(node_name)->getIntegration()->getName(), "ProdOp");
+      BOOST_CHECK_EQUAL(model.nodes_.at(node_name)->getIntegrationError()->getName(), "ProdErrorOp");
+      BOOST_CHECK_EQUAL(model.nodes_.at(node_name)->getIntegrationWeightGrad()->getName(), "ProdWeightGradOp");
+    }
+    else if (node_name.find("GaussianDiff-GaussianScale_") != std::string::npos) {
+      BOOST_CHECK_EQUAL(model.nodes_.at(node_name)->getActivation()->getName(), "PowOp");
+      BOOST_CHECK_EQUAL(model.nodes_.at(node_name)->getActivation()->getParameters().at(3), -0.5);
+      BOOST_CHECK_EQUAL(model.nodes_.at(node_name)->getActivationGrad()->getName(), "PowGradOp");
+      BOOST_CHECK_EQUAL(model.nodes_.at(node_name)->getActivationGrad()->getParameters().at(3), -0.5);
+      BOOST_CHECK_EQUAL(model.nodes_.at(node_name)->getIntegration()->getName(), "SumOp");
+      BOOST_CHECK_EQUAL(model.nodes_.at(node_name)->getIntegrationError()->getName(), "SumErrorOp");
+      BOOST_CHECK_EQUAL(model.nodes_.at(node_name)->getIntegrationWeightGrad()->getName(), "SumWeightGradOp");
+    }
+    else if (node_name.find("GaussianDiff-GaussianSigma2_") != std::string::npos) {
+      BOOST_CHECK_EQUAL(model.nodes_.at(node_name)->getActivation()->getName(), "PowOp");
+      BOOST_CHECK_EQUAL(model.nodes_.at(node_name)->getActivation()->getParameters().at(3), 2);
+      BOOST_CHECK_EQUAL(model.nodes_.at(node_name)->getActivationGrad()->getName(), "PowGradOp");
+      BOOST_CHECK_EQUAL(model.nodes_.at(node_name)->getActivationGrad()->getParameters().at(3), 2);
+      BOOST_CHECK_EQUAL(model.nodes_.at(node_name)->getIntegration()->getName(), "SumOp");
+      BOOST_CHECK_EQUAL(model.nodes_.at(node_name)->getIntegrationError()->getName(), "SumErrorOp");
+      BOOST_CHECK_EQUAL(model.nodes_.at(node_name)->getIntegrationWeightGrad()->getName(), "SumWeightGradOp");
+    }
+    else if (node_name.find("GaussianDiff-GaussianSigma_") != std::string::npos) {
+      BOOST_CHECK_EQUAL(model.nodes_.at(node_name)->getActivation()->getName(), "ExponentialOp");
+      BOOST_CHECK_EQUAL(model.nodes_.at(node_name)->getActivationGrad()->getName(), "ExponentialGradOp");
+      BOOST_CHECK_EQUAL(model.nodes_.at(node_name)->getIntegration()->getName(), "SumOp");
+      BOOST_CHECK_EQUAL(model.nodes_.at(node_name)->getIntegrationError()->getName(), "SumErrorOp");
+      BOOST_CHECK_EQUAL(model.nodes_.at(node_name)->getIntegrationWeightGrad()->getName(), "SumWeightGradOp");
+    }
+    else if (node_name.find("GaussianDiff-GaussianXMinMu2_") != std::string::npos) {
+      BOOST_CHECK_EQUAL(model.nodes_.at(node_name)->getActivation()->getName(), "PowOp");
+      BOOST_CHECK_EQUAL(model.nodes_.at(node_name)->getActivation()->getParameters().at(3), 2);
+      BOOST_CHECK_EQUAL(model.nodes_.at(node_name)->getActivationGrad()->getName(), "PowGradOp");
+      BOOST_CHECK_EQUAL(model.nodes_.at(node_name)->getActivationGrad()->getParameters().at(3), 2);
+      BOOST_CHECK_EQUAL(model.nodes_.at(node_name)->getIntegration()->getName(), "SumOp");
+      BOOST_CHECK_EQUAL(model.nodes_.at(node_name)->getIntegrationError()->getName(), "SumErrorOp");
+      BOOST_CHECK_EQUAL(model.nodes_.at(node_name)->getIntegrationWeightGrad()->getName(), "SumWeightGradOp");
+    }
+    else if (node_name.find("GaussianDiff_") != std::string::npos) {
+      BOOST_CHECK_EQUAL(model.nodes_.at(node_name)->getActivation()->getName(), "LinearOp");
+      BOOST_CHECK_EQUAL(model.nodes_.at(node_name)->getActivationGrad()->getName(), "LinearGradOp");
+      BOOST_CHECK_EQUAL(model.nodes_.at(node_name)->getIntegration()->getName(), "SumOp");
+      BOOST_CHECK_EQUAL(model.nodes_.at(node_name)->getIntegrationError()->getName(), "SumErrorOp");
+      BOOST_CHECK_EQUAL(model.nodes_.at(node_name)->getIntegrationWeightGrad()->getName(), "SumWeightGradOp");
+    }
+  }
+
+  // check the links
+  for (const std::string& name : link_names_test)
+  {
+    BOOST_CHECK_EQUAL(model.links_.at(name)->getName(), name);
+    std::vector<std::string> test = SplitString(name, "_to_");
+    BOOST_CHECK_EQUAL(model.links_.at(name)->getSourceNodeName(), ReplaceTokens(test[0], { "(_Mod1)" }, ""));
+    BOOST_CHECK_EQUAL(model.links_.at(name)->getSinkNodeName(), ReplaceTokens(test[1], { "(_Mod1)" }, ""));
+    BOOST_CHECK_NE(model.links_.at(name)->getModuleName(), "Mod1");
+  }
+
+  // check the weights
+  for (const std::string& name : link_names_test)
+  {
+    BOOST_CHECK_EQUAL(model.weights_.at(name)->getName(), name);
+    BOOST_CHECK_EQUAL(model.weights_.at(name)->getWeightInitOp()->getName(), "ConstWeightInitOp");
+    BOOST_CHECK_EQUAL(model.weights_.at(name)->getSolverOp()->getName(), "DummySolverOp");
+    BOOST_CHECK_NE(model.weights_.at(name)->getModuleName(), "Mod1");
+    BOOST_CHECK_EQUAL(model.weights_.at(name)->getDropProbability(), 0.0f);
+    if (name.find("GaussianDiff-GaussianBellSigma_") != std::string::npos && name.find("to_GaussianDiff-GaussianBell_") != std::string::npos)
+      BOOST_CHECK_EQUAL(model.weights_.at(name)->getWeightInitOp()->operator()(), 1);
+    else if (name.find("GaussianDiff-GaussianBell_") != std::string::npos && name.find("to_GaussianDiff_") != std::string::npos)
+      BOOST_CHECK_EQUAL(model.weights_.at(name)->getWeightInitOp()->operator()(), 1);
+    else if (name.find("GaussianDiff-GaussianScale_") != std::string::npos && name.find("to_GaussianDiff_") != std::string::npos)
+      BOOST_CHECK_EQUAL(model.weights_.at(name)->getWeightInitOp()->operator()(), 1);
+    else if (name.find("GaussianDiff-GaussianSigma2_") != std::string::npos && name.find("to_GaussianDiff-GaussianBellSigma_") != std::string::npos)
+      BOOST_CHECK_EQUAL(model.weights_.at(name)->getWeightInitOp()->operator()(), 2);
+    else if (name.find("GaussianDiff-GaussianSigma_") != std::string::npos && name.find("to_GaussianDiff-GaussianSigma2_") != std::string::npos)
+      BOOST_CHECK_EQUAL(model.weights_.at(name)->getWeightInitOp()->operator()(), 1);
+    else if (name.find("GaussianDiff-GaussianXMinMu2_") != std::string::npos && name.find("to_GaussianDiff-GaussianBell_") != std::string::npos)
+      BOOST_CHECK_EQUAL(model.weights_.at(name)->getWeightInitOp()->operator()(), -1);
+    else if (name.find("Gaussian_") != std::string::npos && name.find("to_GaussianDiff-GaussianXMinMu2_") != std::string::npos)
+      BOOST_CHECK_EQUAL(model.weights_.at(name)->getWeightInitOp()->operator()(), 1);
+    else if (name.find("LogVar_") != std::string::npos && name.find("to_GaussianDiff-GaussianSigma_") != std::string::npos)
+      BOOST_CHECK_EQUAL(model.weights_.at(name)->getWeightInitOp()->operator()(), 1);
+    else if (name.find("Mu_") != std::string::npos && name.find("to_GaussianDiff-GaussianXMinMu2_") != std::string::npos)
+      BOOST_CHECK_EQUAL(model.weights_.at(name)->getWeightInitOp()->operator()(), -1);
+    else if (name.find("GaussianDiff-GaussianSigma2_") != std::string::npos && name.find("to_GaussianDiff-GaussianScale_") != std::string::npos)
+      BOOST_CHECK_CLOSE(model.weights_.at(name)->getWeightInitOp()->operator()(), 6.28318548, 1e-3);
+    else
+      std::cout << "Missing weight for " << name << std::endl;
+  }
+}
+
 BOOST_AUTO_TEST_SUITE_END()

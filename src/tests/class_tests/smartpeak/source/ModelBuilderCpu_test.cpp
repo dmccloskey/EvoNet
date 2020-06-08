@@ -27,7 +27,7 @@ void trainModel(Model<TensorT>& model, const std::vector<std::string>& input_nod
 
   // calculate the model error and node output error
   const int layer_id = model.getNodesMap().at(output_node_names.front())->getTensorIndex().first;
-  model_interpreter.executeModelErrorOperations(output_values, layer_id, loss_function.get(), loss_function_grad.get(), 0);
+  model_interpreter.executeModelErrorOperations(output_values, layer_id, loss_function, loss_function_grad, 0);
 
   model_interpreter.executeBackwardPropogationOperations(0); // BP
   model_interpreter.executeWeightErrorOperations(); // Weight error
@@ -1071,6 +1071,54 @@ BOOST_AUTO_TEST_CASE(checkFullyConnectedWithXEntropyWLogits)
   for (int i = 0; i < weight_names.size(); ++i) {
     //std::cout << weight_names.at(i) << " Weight: " << model.getWeightsMap().at(weight_names.at(i))->getWeight() << std::endl;
     BOOST_CHECK_CLOSE(model.getWeightsMap().at(weight_names.at(i))->getWeight(), weight_values_test.at(i), 1e-4);
+  }
+}
+
+BOOST_AUTO_TEST_CASE(addGaussian_1)
+{
+  ModelBuilder<float> model_builder;
+  Model<float> model;
+  const int batch_size = 1;
+  const int memory_size = 1;
+  const int input_size = 2;
+  const int output_size = 2;
+
+  // make the input
+  std::vector<std::string> mu_node_names = model_builder.addInputNodes(model, "Mu", "Input", input_size);
+  std::vector<std::string> logvar_node_names = model_builder.addInputNodes(model, "LogVar", "Input", input_size);
+  std::vector<std::string> gaussian_node_names = model_builder.addInputNodes(model, "Gaussian", "Input", input_size);
+  std::vector<std::string> node_names_input;
+  for (const std::string& node_name : mu_node_names) node_names_input.push_back(node_name);
+  for (const std::string& node_name : logvar_node_names) node_names_input.push_back(node_name);
+  for (const std::string& node_name : gaussian_node_names) node_names_input.push_back(node_name);
+
+  // make the fully connected 
+  std::vector<std::string> node_names_output = model_builder.addGaussian_(
+    model, "GaussianDiff", "Mod1", mu_node_names, logvar_node_names, gaussian_node_names, false);
+
+  // Specify the output node types manually
+  for (const std::string& node_name : node_names_output)
+    model.getNodesMap().at(node_name)->setType(NodeType::output);
+  model.setInputAndOutputNodes();
+
+  // interpret and train the model
+  Eigen::Tensor<float, 3> input_values(batch_size, memory_size, (int)node_names_input.size());
+  input_values.setConstant(1);
+  Eigen::Tensor<float, 2> output_values(batch_size, output_size);
+  output_values.setConstant(0);
+  std::shared_ptr<LossFunctionTensorOp<float, Eigen::DefaultDevice>> loss_function = std::make_shared<MSELossTensorOp<float, Eigen::DefaultDevice>>(MSELossTensorOp<float, Eigen::DefaultDevice>());
+  std::shared_ptr<LossFunctionGradTensorOp<float, Eigen::DefaultDevice>> loss_function_grad = std::make_shared<MSELossGradTensorOp<float, Eigen::DefaultDevice>>(MSELossGradTensorOp<float, Eigen::DefaultDevice>());
+  trainModel(model, node_names_input, node_names_output, input_values, output_values, batch_size, memory_size, loss_function, loss_function_grad);
+
+  // test for the expected model error
+  std::cout << "Model error: " << model.getError()(0, 0)<<std::endl;
+  BOOST_CHECK_CLOSE(model.getError()(0, 0), 0.413713753, 1e-4);
+
+  // test for the expected node outputs
+  std::vector<float> output_values_test = { 0.1467626631737399, 0.1467626631737399 };
+  for (int i = 0; i < node_names_output.size(); ++i) {
+    std::cout << node_names_output.at(i) << " Output: " << model.getNodesMap().at(node_names_output.at(i))->getOutput()(0, 0) << std::endl;
+    BOOST_CHECK_CLOSE(model.getNodesMap().at(node_names_output.at(i))->getOutput()(0, 0), output_values_test.at(i), 1e-4);
   }
 }
 

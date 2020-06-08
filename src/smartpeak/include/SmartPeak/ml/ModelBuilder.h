@@ -326,7 +326,7 @@ public:
 		@returns vector of output node names
 		*/
 		std::vector<std::string> addGaussianEncoding(Model<TensorT>& model, const std::string& name, const std::string& module_name,
-			const std::vector<std::string>& mu_node_names, const std::vector<std::string>& logvar_node_names, bool specify_layer = false);
+			const std::vector<std::string>& mu_node_names, const std::vector<std::string>& logvar_node_names, const bool& specify_layer = false);
 
 		/**
 		@brief Add a VAE Encoding layer for a Gumble/concrete categorical distribution with input node
@@ -562,7 +562,7 @@ public:
 			TensorT drop_out_prob = 0.0f, TensorT drop_connection_prob = 0.0f, bool biases = true, bool split_attention_layers = true);
 
 		/**
-		@brief Add a fully connected layer to a model
+		@brief Add a Scalar layer to the model
 
 		@param[in, out] Model
 		@param[in] source_node_names Node_names to add the fully connected layer to
@@ -579,6 +579,66 @@ public:
 			const std::shared_ptr<ActivationOp<TensorT>>& node_activation,
 			const std::shared_ptr<ActivationOp<TensorT>>& node_activation_grad,
 			bool specify_layer = false);
+
+    /**
+    @brief Add a Gaussian posterior to the model.  The loss is then calculated on the output
+      nodes using `NegativeLogLikelihoodLoss` with an expectation of 1 and scaled by the inverse of the batch size as specified
+      in the original Bayes by Backprop formulation
+
+    Reference:
+    Blundell 2015 Weight uncertainty in neural networks arXiv:1505.05424
+    and the tutorial @ https://gluon.mxnet.io/chapter18_variational-methods-and-uncertainty/bayes-by-backprop.html
+
+    @param[in, out] Model
+    @param[in] mu_node_names Node_names of the mean output layer
+    @param[in] logvar_node_names Node_names of the logvar output layer
+    @param[in] gaussian_node_names Node_names of the guassian output layer
+    @param[in] specify_layer Whether to specify the layer or not
+
+    @returns vector of output node names
+    */
+    std::vector<std::string> addGaussianPosterior(Model<TensorT>& model, const std::string& name, const std::string& module_name,
+      const std::vector<std::string>& mu_node_names, const std::vector<std::string>& logvar_node_names, const std::vector<std::string>& gaussian_node_names,
+      const bool& specify_layer = false);
+
+    /*
+    @brief Add a Gaussian difference layer according to the calculations
+
+    scaling = 1.0 / nd.sqrt(2.0 * np.pi * (sigma ** 2))
+    bell = nd.exp(- (x - mu) ** 2 / (2.0 * sigma ** 2))
+    return scaling * bell
+    */
+    std::vector<std::string> addGaussian_(Model<TensorT>& model, const std::string& name, const std::string& module_name,
+      const std::vector<std::string>& mu_node_names, const std::vector<std::string>& logvar_node_names, const std::vector<std::string>& gaussian_node_names,
+      const bool& specify_layer = false);
+
+    /**
+    @brief Add a mixed Gaussian prior to the model.  The loss is then calculated on the output
+      nodes using `NegativeLogLikelihoodLoss` with an expectation of 1 and scaled by the inverse of the batch size as specified
+      in the original Bayes by Backprop formulation
+
+    Calculations:
+      first_gaussian = pi * gaussian(x, 0., sigma_p1)
+      second_gaussian = (1 - pi) * gaussian(x, 0., sigma_p2)
+      return first_gaussian + second_gaussian
+
+    Reference:
+    Blundell 2015 Weight uncertainty in neural networks arXiv:1505.05424
+    and the tutorial @ https://gluon.mxnet.io/chapter18_variational-methods-and-uncertainty/bayes-by-backprop.html
+
+    @param[in, out] Model
+    @param[in] gaussian_node_names Node_names of the guassian output layer
+    @param[in] logvar_1 Variance 1: -log sigma_1 {0, 1, 2}
+    @param[in] logvar_2 Variance 2: -log sigma_2 {3, 4, 5}
+    @param[in] pi Mixture percent: pi {0.25, 0.5, 0.75}
+    @param[in] specify_layer Whether to specify the layer or not
+
+    @returns vector of output node names
+    */
+    std::vector<std::string> addMixedGaussianPior(Model<TensorT>& model, const std::string& name, const std::string& module_name,
+      const std::vector<std::string>& gaussian_node_names,
+      const TensorT& sigma_1, const TensorT& sigma_2, const TensorT& pi,
+      const bool& specify_layer = false);
 
 		/**
 		@brief Add one model to another
@@ -2295,7 +2355,7 @@ public:
   }
 
 	template<typename TensorT>
-	std::vector<std::string> ModelBuilder<TensorT>::addGaussianEncoding(Model<TensorT> & model, const std::string & name, const std::string & module_name, const std::vector<std::string>& mu_node_names, const std::vector<std::string>& logvar_node_names, bool specify_layer)
+	std::vector<std::string> ModelBuilder<TensorT>::addGaussianEncoding(Model<TensorT> & model, const std::string & name, const std::string & module_name, const std::vector<std::string>& mu_node_names, const std::vector<std::string>& logvar_node_names, const bool& specify_layer)
 	{
 		std::vector<std::string> node_names;
 		std::string unity_weight_name, scalar_weight_name;
@@ -3722,7 +3782,108 @@ public:
 		return node_names;
 	}
 
-	template<typename TensorT>
+  template<typename TensorT>
+  inline std::vector<std::string> ModelBuilder<TensorT>::addGaussianPosterior(Model<TensorT>& model, const std::string& name, const std::string& module_name, const std::vector<std::string>& mu_node_names, const std::vector<std::string>& logvar_node_names, const std::vector<std::string>& gaussian_node_names, const bool& specify_layer)
+  {
+    // Add the gaussian difference
+    std::vector<std::string> gaussian_node_names = addGaussian_(model, name, module_name, mu_node_names, logvar_node_names, gaussian_node_names, specify_layer);
+    return gaussian_node_names;
+  }
+
+  template<typename TensorT>
+  inline std::vector<std::string> ModelBuilder<TensorT>::addGaussian_(Model<TensorT>& model, const std::string& name, const std::string& module_name, const std::vector<std::string>& mu_node_names, const std::vector<std::string>& logvar_node_names, const std::vector<std::string>& gaussian_node_names, const bool& specify_layer)
+  {
+    // logvar to sigma **2
+    std::vector<std::string> sigma_node_names = addSinglyConnected(model, name + "-GaussianSigma", module_name + "-GaussianSigma", logvar_node_names, logvar_node_names.size(), std::make_shared<ExponentialOp<TensorT>>(ExponentialOp<TensorT>()), std::make_shared<ExponentialGradOp<TensorT>>(ExponentialGradOp<TensorT>()), std::make_shared<SumOp<TensorT>>(SumOp<TensorT>()), std::make_shared<SumErrorOp<TensorT>>(SumErrorOp<TensorT>()), std::make_shared<SumWeightGradOp<TensorT>>(SumWeightGradOp<TensorT>()),
+      std::make_shared<ConstWeightInitOp<TensorT>>(ConstWeightInitOp<TensorT>(TensorT(1))), std::make_shared<DummySolverOp<TensorT>>(DummySolverOp<TensorT>()), TensorT(0), TensorT(0), false, specify_layer);
+    std::vector<std::string> sigma2_node_names = addSinglyConnected(model, name + "-GaussianSigma2", module_name + "-GaussianSigma2", sigma_node_names, sigma_node_names.size(), std::make_shared<PowOp<TensorT>>(PowOp<TensorT>(TensorT(2))), std::make_shared<PowGradOp<TensorT>>(PowGradOp<TensorT>(TensorT(2))), std::make_shared<SumOp<TensorT>>(SumOp<TensorT>()), std::make_shared<SumErrorOp<TensorT>>(SumErrorOp<TensorT>()), std::make_shared<SumWeightGradOp<TensorT>>(SumWeightGradOp<TensorT>()),
+      std::make_shared<ConstWeightInitOp<TensorT>>(ConstWeightInitOp<TensorT>(TensorT(1))), std::make_shared<DummySolverOp<TensorT>>(DummySolverOp<TensorT>()), TensorT(0), TensorT(0), false, specify_layer);
+
+    // sigma**2 to scaling = 1.0 / nd.sqrt(2.0 * np.pi * (sigma ** 2))
+    std::vector<std::string> scaling_node_names = addSinglyConnected(model, name + "-GaussianScale", module_name + "-GaussianScale", sigma2_node_names, sigma2_node_names.size(), std::make_shared<PowOp<TensorT>>(PowOp<TensorT>(TensorT(-0.5))), std::make_shared<PowGradOp<TensorT>>(PowGradOp<TensorT>(TensorT(-0.5))), std::make_shared<SumOp<TensorT>>(SumOp<TensorT>()), std::make_shared<SumErrorOp<TensorT>>(SumErrorOp<TensorT>()), std::make_shared<SumWeightGradOp<TensorT>>(SumWeightGradOp<TensorT>()),
+      std::make_shared<ConstWeightInitOp<TensorT>>(ConstWeightInitOp<TensorT>(TensorT(2.0 * 3.14159265359))), std::make_shared<DummySolverOp<TensorT>>(DummySolverOp<TensorT>()), TensorT(0), TensorT(0), false, specify_layer);
+
+    // x and mu to (x - mu) ** 2
+    std::vector<std::string> xMinMu2_node_names = addSinglyConnected(model, name + "-GaussianXMinMu2", module_name + "-GaussianXMinMu2", gaussian_node_names, gaussian_node_names.size(), std::make_shared<PowOp<TensorT>>(PowOp<TensorT>(TensorT(2))), std::make_shared<PowGradOp<TensorT>>(PowGradOp<TensorT>(TensorT(2))), std::make_shared<SumOp<TensorT>>(SumOp<TensorT>()), std::make_shared<SumErrorOp<TensorT>>(SumErrorOp<TensorT>()), std::make_shared<SumWeightGradOp<TensorT>>(SumWeightGradOp<TensorT>()),
+      std::make_shared<ConstWeightInitOp<TensorT>>(ConstWeightInitOp<TensorT>(TensorT(1))), std::make_shared<DummySolverOp<TensorT>>(DummySolverOp<TensorT>()), TensorT(0), TensorT(0), false, specify_layer);
+    addSinglyConnected(model, module_name + "-GaussianXMinMu2", mu_node_names, xMinMu2_node_names,
+      std::make_shared<ConstWeightInitOp<TensorT>>(ConstWeightInitOp<TensorT>(TensorT(-1))), std::make_shared<DummySolverOp<TensorT>>(DummySolverOp<TensorT>()), TensorT(0), specify_layer);
+    
+    // sigma ** 2 to 1 / (2.0 * sigma ** 2)
+    std::vector<std::string> bellSigma_node_names = addSinglyConnected(model, name + "-GaussianBellSigma", module_name + "-GaussianBellSigma", sigma2_node_names, sigma2_node_names.size(), std::make_shared<InverseOp<TensorT>>(InverseOp<TensorT>()), std::make_shared<InverseGradOp<TensorT>>(InverseGradOp<TensorT>()), std::make_shared<SumOp<TensorT>>(SumOp<TensorT>()), std::make_shared<SumErrorOp<TensorT>>(SumErrorOp<TensorT>()), std::make_shared<SumWeightGradOp<TensorT>>(SumWeightGradOp<TensorT>()),
+      std::make_shared<ConstWeightInitOp<TensorT>>(ConstWeightInitOp<TensorT>(TensorT(2.0))), std::make_shared<DummySolverOp<TensorT>>(DummySolverOp<TensorT>()), TensorT(0), TensorT(0), false, specify_layer);
+    
+    // (x - mu) ** 2 and 1 / (2.0 * sigma ** 2) to bell = exp(- (x - mu) ** 2 / (2.0 * sigma ** 2))
+    std::vector<std::string> bell_node_names = addSinglyConnected(model, name + "-GaussianBell", module_name + "-GaussianBell", xMinMu2_node_names, xMinMu2_node_names.size(), std::make_shared<ExponentialOp<TensorT>>(ExponentialOp<TensorT>()), std::make_shared<ExponentialGradOp<TensorT>>(ExponentialGradOp<TensorT>()), std::make_shared<ProdOp<TensorT>>(ProdOp<TensorT>()), std::make_shared<ProdErrorOp<TensorT>>(ProdErrorOp<TensorT>()), std::make_shared<ProdWeightGradOp<TensorT>>(ProdWeightGradOp<TensorT>()),
+      std::make_shared<ConstWeightInitOp<TensorT>>(ConstWeightInitOp<TensorT>(TensorT(-1.0))), std::make_shared<DummySolverOp<TensorT>>(DummySolverOp<TensorT>()), TensorT(0), TensorT(0), false, specify_layer);
+    addSinglyConnected(model, module_name + "-GaussianBell", bellSigma_node_names, bell_node_names,
+      std::make_shared<ConstWeightInitOp<TensorT>>(ConstWeightInitOp<TensorT>(TensorT(1))), std::make_shared<DummySolverOp<TensorT>>(DummySolverOp<TensorT>()), TensorT(0), specify_layer);
+    
+    // scaling * bell
+    std::vector<std::string> gaussian__node_names = addSinglyConnected(model, name, module_name + "-Gaussian", scaling_node_names, scaling_node_names.size(), std::make_shared<LinearOp<TensorT>>(LinearOp<TensorT>()), std::make_shared<LinearGradOp<TensorT>>(LinearGradOp<TensorT>()), std::make_shared<ProdOp<TensorT>>(ProdOp<TensorT>()), std::make_shared<ProdErrorOp<TensorT>>(ProdErrorOp<TensorT>()), std::make_shared<ProdWeightGradOp<TensorT>>(ProdWeightGradOp<TensorT>()),
+      std::make_shared<ConstWeightInitOp<TensorT>>(ConstWeightInitOp<TensorT>(TensorT(1))), std::make_shared<DummySolverOp<TensorT>>(DummySolverOp<TensorT>()), TensorT(0), TensorT(0), false, specify_layer);
+    addSinglyConnected(model, module_name + "-Gaussian", bell_node_names, gaussian__node_names,
+      std::make_shared<ConstWeightInitOp<TensorT>>(ConstWeightInitOp<TensorT>(TensorT(1))), std::make_shared<DummySolverOp<TensorT>>(DummySolverOp<TensorT>()), TensorT(0), specify_layer);
+
+    return gaussian__node_names;
+  }
+
+  template<typename TensorT>
+  inline std::vector<std::string> ModelBuilder<TensorT>::addMixedGaussianPior(Model<TensorT>& model, const std::string& name, const std::string& module_name, const std::vector<std::string>& gaussian_node_names, const TensorT& logvar_1, const TensorT& logvar_2, const TensorT& pi, const bool& specify_layer)
+  {
+    // Make the mu (i.e., 0) layer and the logvar (i.e., scalar) layers
+    std::vector<std::string> mu_node_names, logvar1_node_names, logvar2_node_names;
+    for (int i = 0; i < gaussian_node_names.size(); ++i) {
+      // Mu
+      char* mu_name_char = new char[512];
+      sprintf(mu_name_char, "%s-MixedGaussianPriorMu-%012d", name.data(), i);
+      std::string mu_name(mu_name_char);
+      Node<TensorT> mu(mu_name, NodeType::zero, NodeStatus::activated, std::make_shared<LinearOp<TensorT>>(LinearOp<TensorT>()), std::make_shared<LinearGradOp<TensorT>>(LinearGradOp<TensorT>()), std::make_shared<SumOp<TensorT>>(SumOp<TensorT>()), std::make_shared<SumErrorOp<TensorT>>(SumErrorOp<TensorT>()), std::make_shared<SumWeightGradOp<TensorT>>(SumWeightGradOp<TensorT>()));
+      mu.setModuleName(module_name + "-MixedGaussianPriorMu");
+      if (specify_layer) mu.setLayerName(module_name + "-MixedGaussianPriorMu");
+      model.addNodes({ mu });
+      mu_node_names.push_back(mu_name);
+      delete[] mu_name_char;
+
+      // logvar1
+      logvar1_name_char = new char[512];
+      sprintf(logvar1_name_char, "%s-MixedGaussianPriorLogVar1-%012d", name.data(), i);
+      std::string logvar1_name(logvar1_name_char);
+      Node<TensorT> logvar1(logvar1_name, NodeType::hidden, NodeStatus::initialized, std::make_shared<LinearOp<TensorT>>(LinearOp<TensorT>()), std::make_shared<LinearGradOp<TensorT>>(LinearGradOp<TensorT>()), std::make_shared<SumOp<TensorT>>(SumOp<TensorT>()), std::make_shared<SumErrorOp<TensorT>>(SumErrorOp<TensorT>()), std::make_shared<SumWeightGradOp<TensorT>>(SumWeightGradOp<TensorT>()));
+      logvar1.setModuleName(module_name + "-MixedGaussianPriorLogVar1");
+      if (specify_layer) logvar1.setLayerName(module_name + "-MixedGaussianPriorLogVar1");
+      model.addNodes({ logvar1 });
+      logvar1_node_names.push_back(logvar1_name);
+      delete[] logvar1_name_char;
+
+      // logvar2
+      logvar2_name_char = new char[512];
+      sprintf(logvar2_name_char, "%s-MixedGaussianPriorLogVar2-%012d", name.data(), i);
+      std::string logvar2_name(logvar2_name_char);
+      Node<TensorT> logvar2(logvar2_name, NodeType::hidden, NodeStatus::initialized, std::make_shared<LinearOp<TensorT>>(LinearOp<TensorT>()), std::make_shared<LinearGradOp<TensorT>>(LinearGradOp<TensorT>()), std::make_shared<SumOp<TensorT>>(SumOp<TensorT>()), std::make_shared<SumErrorOp<TensorT>>(SumErrorOp<TensorT>()), std::make_shared<SumWeightGradOp<TensorT>>(SumWeightGradOp<TensorT>()));
+      logvar2.setModuleName(module_name + "-MixedGaussianPriorLogVar2");
+      if (specify_layer) logvar2.setLayerName(module_name + "-MixedGaussianPriorLogVar2");
+      model.addNodes({ logvar2 });
+      logvar2_node_names.push_back(logvar2_name);
+      delete[] logvar2_name_char;
+    }
+    addBiases(model, module_name + "-MixedGaussianPriorLogVar1Bias", logvar1_node_names, std::make_shared<ConstWeightInitOp<TensorT>>(ConstWeightInitOp<TensorT>(TensorT(logvar_1))), std::make_shared<DummySolverOp<TensorT>>(DummySolverOp<TensorT>()), TensorT(0), specify_layer);
+    addBiases(model, module_name + "-MixedGaussianPriorLogVar2Bias", logvar2_node_names, std::make_shared<ConstWeightInitOp<TensorT>>(ConstWeightInitOp<TensorT>(TensorT(logvar_2))), std::make_shared<DummySolverOp<TensorT>>(DummySolverOp<TensorT>()), TensorT(0), specify_layer);
+
+    // Make the two Gaussians
+    std::vector<std::string> gaussian1_node_names = addGaussian_(model, name + "-Gaussian-1", module_name + "-Gaussian-1", mu_node_names, logvar1_node_names, gaussian_node_names, specify_layer);
+    std::vector<std::string> gaussian2_node_names = addGaussian_(model, name + "-Gaussian-2", module_name + "-Gaussian-2", mu_node_names, logvar2_node_names, gaussian_node_names, specify_layer);
+    
+    // Mix the two Gaussians    
+    std::vector<std::string> mixedGaussianPrior_node_names = addSinglyConnected(model, name + "-MixedGaussianPrior", module_name + "-MixedGaussianPrior", gaussian1_node_names, gaussian1_node_names.size(), std::make_shared<LinearOp<TensorT>>(LinearOp<TensorT>()), std::make_shared<LinearGradOp<TensorT>>(LinearGradOp<TensorT>()), std::make_shared<SumOp<TensorT>>(SumOp<TensorT>()), std::make_shared<SumErrorOp<TensorT>>(SumErrorOp<TensorT>()), std::make_shared<SumWeightGradOp<TensorT>>(SumWeightGradOp<TensorT>()),
+    std::make_shared<ConstWeightInitOp<TensorT>>(ConstWeightInitOp<TensorT>(pi)), std::make_shared<DummySolverOp<TensorT>>(DummySolverOp<TensorT>()), TensorT(0), TensorT(0), false, specify_layer);
+    addSinglyConnected(model, module_name + "-MixedGaussianPrior", gaussian2_node_names, mixedGaussianPrior_node_names,
+      std::make_shared<ConstWeightInitOp<TensorT>>(ConstWeightInitOp<TensorT>(TensorT(1)-pi)), std::make_shared<DummySolverOp<TensorT>>(DummySolverOp<TensorT>()), TensorT(0), specify_layer);
+
+    return mixedGaussianPrior_node_names;
+  }
+
+  template<typename TensorT>
 	inline std::string ModelBuilder<TensorT>::makeUnityWeight(Model<TensorT>& model, const TensorT & scale, const std::string& module_name, const std::string& name_format, const std::string& lhs, const std::string& rhs, bool specify_layer)
 	{
 		// Create the unity weight

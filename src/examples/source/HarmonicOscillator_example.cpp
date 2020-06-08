@@ -1,12 +1,10 @@
 /**TODO:  Add copyright*/
 
 #include <SmartPeak/ml/PopulationTrainerExperimentalDefaultDevice.h>
-#include <SmartPeak/ml/ModelTrainerDefaultDevice.h>
+#include <SmartPeak/ml/ModelTrainerExperimentalDefaultDevice.h>
 #include <SmartPeak/ml/ModelReplicatorExperimental.h>
 #include <SmartPeak/ml/ModelBuilder.h>
 #include <SmartPeak/ml/Model.h>
-#include <SmartPeak/io/PopulationTrainerFile.h>
-#include <SmartPeak/io/ModelInterpreterFileDefaultDevice.h>
 #include <SmartPeak/io/Parameters.h>
 #include <SmartPeak/simulator/HarmonicOscillatorSimulator.h>
 
@@ -406,107 +404,6 @@ public:
     }
 
     model.setInputAndOutputNodes();
-  }
-  void adaptiveTrainerScheduler(
-    const int& n_generations,
-    const int& n_epochs,
-    Model<TensorT>& model,
-    ModelInterpreterDefaultDevice<TensorT>& model_interpreter,
-    const std::vector<float>& model_errors) {
-    // Check point the model every 1000 epochs
-    if (n_epochs % 1000 == 0 && n_epochs != 0) {
-      model_interpreter.getModelResults(model, false, true, false, false);
-      ModelFile<TensorT> data;
-      data.storeModelBinary(model.getName() + "_" + std::to_string(n_epochs) + "_model.binary", model);
-      ModelInterpreterFileDefaultDevice<TensorT> interpreter_data;
-      interpreter_data.storeModelInterpreterBinary(model.getName() + "_" + std::to_string(n_epochs) + "_interpreter.binary", model_interpreter);
-    }
-  }
-  void trainingModelLogger(const int& n_epochs, Model<TensorT>& model, ModelInterpreterDefaultDevice<TensorT>& model_interpreter, ModelLogger<TensorT>& model_logger,
-    const Eigen::Tensor<TensorT, 3>& expected_values, const std::vector<std::string>& output_nodes, const std::vector<std::string>& input_nodes, const TensorT& model_error) override
-  { // Left blank intentionally to prevent writing of files during training
-  }
-  void validationModelLogger(const int& n_epochs, Model<TensorT>& model, ModelInterpreterDefaultDevice<TensorT>& model_interpreter, ModelLogger<TensorT>& model_logger,
-    const Eigen::Tensor<TensorT, 3>& expected_values, const std::vector<std::string>& output_nodes, const std::vector<std::string>& input_nodes, const TensorT& model_error) override
-  { // Left blank intentionally to prevent writing of files during validation
-  }
-  void trainingModelLogger(const int& n_epochs, Model<TensorT>& model, ModelInterpreterDefaultDevice<TensorT>& model_interpreter, ModelLogger<TensorT>& model_logger,
-    const Eigen::Tensor<TensorT, 3>& expected_values, const std::vector<std::string>& output_nodes, const std::vector<std::string>& input_nodes, const TensorT& model_error_train, const TensorT& model_error_test,
-    const Eigen::Tensor<TensorT, 1>& model_metrics_train, const Eigen::Tensor<TensorT, 1>& model_metrics_test) override {
-    // Set the defaults
-    model_logger.setLogTimeEpoch(true);
-    model_logger.setLogTrainValMetricEpoch(true);
-    model_logger.setLogExpectedEpoch(false);
-    model_logger.setLogNodeInputsEpoch(false);
-    model_logger.setLogNodeOutputsEpoch(false);
-
-    // initialize all logs
-    if (n_epochs == 0) {
-      model_logger.setLogExpectedEpoch(true);
-      model_logger.setLogNodeInputsEpoch(true);
-      model_logger.setLogNodeOutputsEpoch(true);
-      model_logger.initLogs(model);
-    }
-
-    // Per n epoch logging
-    if (n_epochs % 1000 == 0) { // FIXME
-      model_logger.setLogExpectedEpoch(true);
-      model_logger.setLogNodeInputsEpoch(true);
-      model_logger.setLogNodeOutputsEpoch(true);
-      model_interpreter.getModelResults(model, true, false, false, true);
-    }
-
-    // Create the metric headers and data arrays
-    std::vector<std::string> log_train_headers = { "Train_Error" };
-    std::vector<std::string> log_test_headers = { "Test_Error" };
-    std::vector<TensorT> log_train_values = { model_error_train };
-    std::vector<TensorT> log_test_values = { model_error_test };
-    int metric_iter = 0;
-    for (const std::string& metric_name : this->getMetricNamesLinearized()) {
-      log_train_headers.push_back(metric_name);
-      log_test_headers.push_back(metric_name);
-      log_train_values.push_back(model_metrics_train(metric_iter));
-      log_test_values.push_back(model_metrics_test(metric_iter));
-      ++metric_iter;
-    }
-    model_logger.writeLogs(model, n_epochs, log_train_headers, log_test_headers, log_train_values, log_test_values, output_nodes, expected_values, {}, output_nodes, {}, input_nodes, {});
-  }
-  void evaluationModelLogger(const int& n_epochs, Model<TensorT>& model, ModelInterpreterDefaultDevice<TensorT>& model_interpreter, ModelLogger<TensorT>& model_logger,
-    const Eigen::Tensor<TensorT, 3>& expected_values, const std::vector<std::string>& output_nodes, const std::vector<std::string>& input_nodes, const Eigen::Tensor<TensorT, 1>& model_metrics) override
-  {
-    // Set the defaults
-    model_logger.setLogTimeEpoch(true);
-    model_logger.setLogTrainValMetricEpoch(true);
-    model_logger.setLogExpectedEpoch(false);
-    model_logger.setLogNodeInputsEpoch(false);
-    model_logger.setLogNodeOutputsEpoch(false);
-
-    // initialize all logs
-    if (n_epochs == 0) {
-      model_logger.setLogExpectedEpoch(true);
-      model_logger.setLogNodeInputsEpoch(true);
-      model_logger.setLogNodeOutputsEpoch(true);
-      model_logger.initLogs(model);
-    }
-
-    // Per n epoch logging
-    if (n_epochs % 1000 == 0) { // FIXME
-      model_logger.setLogExpectedEpoch(true);
-      model_logger.setLogNodeInputsEpoch(true);
-      model_logger.setLogNodeOutputsEpoch(true);
-      model_interpreter.getModelResults(model, true, false, false, true);
-    }
-
-    // Create the metric headers and data arrays
-    std::vector<std::string> log_headers;
-    std::vector<TensorT> log_values;
-    int metric_iter = 0;
-    for (const std::string& metric_name : this->getMetricNamesLinearized()) {
-      log_headers.push_back(metric_name);
-      log_values.push_back(model_metrics(metric_iter));
-      ++metric_iter;
-    }
-    model_logger.writeLogs(model, n_epochs, log_headers, {}, log_values, {}, output_nodes, expected_values, {}, output_nodes, {}, input_nodes_1, {});
   }
 };
 

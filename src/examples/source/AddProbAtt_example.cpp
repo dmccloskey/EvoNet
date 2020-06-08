@@ -1,13 +1,11 @@
 /**TODO:  Add copyright*/
 
 #include <SmartPeak/ml/PopulationTrainerExperimentalDefaultDevice.h>
-#include <SmartPeak/ml/ModelTrainerDefaultDevice.h>
+#include <SmartPeak/ml/ModelTrainerExperimentalDefaultDevice.h>
 #include <SmartPeak/ml/ModelReplicatorExperimental.h>
 #include <SmartPeak/ml/ModelBuilder.h>
 #include <SmartPeak/ml/Model.h>
-#include <SmartPeak/io/PopulationTrainerFile.h>
 #include <SmartPeak/simulator/AddProbSimulator.h>
-#include <SmartPeak/io/ModelInterpreterFileDefaultDevice.h>
 #include <SmartPeak/io/Parameters.h>
 
 #include <unsupported/Eigen/CXX11/Tensor>
@@ -106,7 +104,7 @@ public:
 
 // Extended classes
 template<typename TensorT>
-class ModelTrainerExt : public ModelTrainerDefaultDevice<TensorT>
+class ModelTrainerExt : public ModelTrainerExperimentalDefaultDevice<TensorT>
 {
 public:
 	/*
@@ -214,107 +212,6 @@ public:
       model.nodes_.at(node_name)->setType(NodeType::output);
     model.setInputAndOutputNodes();
 	}
-  void trainingModelLogger(const int& n_epochs, Model<TensorT>& model, ModelInterpreterDefaultDevice<TensorT>& model_interpreter, ModelLogger<TensorT>& model_logger,
-    const Eigen::Tensor<TensorT, 3>& expected_values, const std::vector<std::string>& output_nodes, const std::vector<std::string>& input_nodes, const TensorT& model_error) override
-  { // Left blank intentionally to prevent writing of files during training
-  }
-  void validationModelLogger(const int& n_epochs, Model<TensorT>& model, ModelInterpreterDefaultDevice<TensorT>& model_interpreter, ModelLogger<TensorT>& model_logger,
-    const Eigen::Tensor<TensorT, 3>& expected_values, const std::vector<std::string>& output_nodes, const std::vector<std::string>& input_nodes, const TensorT& model_error) override
-  { // Left blank intentionally to prevent writing of files during validation
-  }
-  void trainingModelLogger(const int& n_epochs, Model<TensorT>& model, ModelInterpreterDefaultDevice<TensorT>& model_interpreter, ModelLogger<TensorT>& model_logger,
-    const Eigen::Tensor<TensorT, 3>& expected_values, const std::vector<std::string>& output_nodes, const std::vector<std::string>& input_nodes, const TensorT& model_error_train, const TensorT& model_error_test,
-    const Eigen::Tensor<TensorT, 1>& model_metrics_train, const Eigen::Tensor<TensorT, 1>& model_metrics_test) override {
-    // Set the defaults
-    model_logger.setLogTimeEpoch(true);
-    model_logger.setLogTrainValMetricEpoch(true);
-    model_logger.setLogExpectedEpoch(false);
-    model_logger.setLogNodeInputsEpoch(false);
-    model_logger.setLogNodeOutputsEpoch(false);
-
-    // initialize all logs
-    if (n_epochs == 0) {
-      model_logger.setLogExpectedEpoch(true);
-      model_logger.setLogNodeInputsEpoch(true);
-      model_logger.setLogNodeOutputsEpoch(true);
-      model_logger.initLogs(model);
-    }
-
-    // Per n epoch logging
-    if (n_epochs % 1000 == 0) { // FIXME
-      model_logger.setLogExpectedEpoch(true);
-      model_logger.setLogNodeInputsEpoch(true);
-      model_logger.setLogNodeOutputsEpoch(true);
-      model_interpreter.getModelResults(model, true, false, false, true);
-    }
-
-    // Create the metric headers and data arrays
-    std::vector<std::string> log_train_headers = { "Train_Error" };
-    std::vector<std::string> log_test_headers = { "Test_Error" };
-    std::vector<TensorT> log_train_values = { model_error_train };
-    std::vector<TensorT> log_test_values = { model_error_test };
-    int metric_iter = 0;
-    for (const std::string& metric_name : this->getMetricNamesLinearized()) {
-      log_train_headers.push_back(metric_name);
-      log_test_headers.push_back(metric_name);
-      log_train_values.push_back(model_metrics_train(metric_iter));
-      log_test_values.push_back(model_metrics_test(metric_iter));
-      ++metric_iter;
-    }
-    model_logger.writeLogs(model, n_epochs, log_train_headers, log_test_headers, log_train_values, log_test_values, output_nodes, expected_values, {}, output_nodes, {}, input_nodes, {});
-  }
-  void evaluationModelLogger(const int& n_epochs, Model<TensorT>& model, ModelInterpreterDefaultDevice<TensorT>& model_interpreter, ModelLogger<TensorT>& model_logger,
-    const Eigen::Tensor<TensorT, 3>& expected_values, const std::vector<std::string>& output_nodes, const std::vector<std::string>& input_nodes, const Eigen::Tensor<TensorT, 1>& model_metrics) override
-  {
-    // Set the defaults
-    model_logger.setLogTimeEpoch(true);
-    model_logger.setLogTrainValMetricEpoch(true);
-    model_logger.setLogExpectedEpoch(false);
-    model_logger.setLogNodeInputsEpoch(false);
-    model_logger.setLogNodeOutputsEpoch(false);
-
-    // initialize all logs
-    if (n_epochs == 0) {
-      model_logger.setLogExpectedEpoch(true);
-      model_logger.setLogNodeInputsEpoch(true);
-      model_logger.setLogNodeOutputsEpoch(true);
-      model_logger.initLogs(model);
-    }
-
-    // Per n epoch logging
-    if (n_epochs % 1 == 0) { // FIXME
-      model_logger.setLogExpectedEpoch(true);
-      model_logger.setLogNodeInputsEpoch(true);
-      model_logger.setLogNodeOutputsEpoch(true);
-      model_interpreter.getModelResults(model, true, false, false, true);
-    }
-
-    // Create the metric headers and data arrays
-    std::vector<std::string> log_headers;
-    std::vector<TensorT> log_values;
-    int metric_iter = 0;
-    for (const std::string& metric_name : this->getMetricNamesLinearized()) {
-      log_headers.push_back(metric_name);
-      log_values.push_back(model_metrics(metric_iter));
-      ++metric_iter;
-    }
-    model_logger.writeLogs(model, n_epochs, log_headers, {}, log_values, {}, output_nodes, expected_values, {}, output_nodes, {}, input_nodes, {});
-  }
-  void adaptiveTrainerScheduler(
-    const int& n_generations,
-    const int& n_epochs,
-    Model<TensorT>& model,
-    ModelInterpreterDefaultDevice<TensorT>& model_interpreter,
-    const std::vector<float>& model_errors)override {
-    if (n_epochs % 1000 == 0 && n_epochs != 0) {
-      // save the model every 1000 epochs
-      model_interpreter.getModelResults(model, false, true, false, false);
-      ModelFile<TensorT> data;
-      data.storeModelBinary(model.getName() + "_" + std::to_string(n_epochs) + "_model.binary", model);
-      ModelInterpreterFileDefaultDevice<TensorT> interpreter_data;
-      interpreter_data.storeModelInterpreterBinary(model.getName() + "_" + std::to_string(n_epochs) + "_interpreter.binary", model_interpreter);
-    }
-  }
 };
 
 template<typename TensorT>
@@ -427,6 +324,7 @@ int main(int argc, char** argv)
   EvoNetParameters::Main::TrainModel train_model("train_model", true);
   EvoNetParameters::Main::EvolveModel evolve_model("evolve_model", false);
   EvoNetParameters::Main::EvaluateModel evaluate_model("evaluate_model", false);
+  EvoNetParameters::Main::EvaluateModels evaluate_models("evaluate_models", false);
   EvoNetParameters::Examples::NMask n_mask("n_mask", 2);
   EvoNetParameters::Examples::SequenceLength sequence_length("sequence_length", 25);
   EvoNetParameters::Examples::ModelType model_type("model_type", "Solution");
@@ -494,7 +392,7 @@ int main(int argc, char** argv)
   EvoNetParameters::ModelReplicator::SetModificationRateFixed set_modification_rate_fixed("set_modification_rate_fixed", false);
   EvoNetParameters::ModelReplicator::SetModificationRateByPrevError set_modification_rate_by_prev_error("set_modification_rate_by_prev_error", false);
   auto parameters = std::make_tuple(id, data_dir,
-    device_id, model_name, make_model, load_model_csv, load_model_binary, train_model, evolve_model, evaluate_model,
+    device_id, model_name, make_model, load_model_csv, load_model_binary, train_model, evolve_model, evaluate_model, evaluate_models,
     n_mask, sequence_length, model_type, simulation_type, biochemical_rxns_filename,
     population_name, n_generations, n_interpreters, prune_model_num, remove_isolated_nodes, check_complete_model_input_to_output, population_size, n_top, n_random, n_replicates_per_model, reset_model_copy_weights, reset_model_template_weights, population_logging, set_population_size_fixed, set_population_size_doubling, set_training_steps_by_model_size,
     batch_size, memory_size, n_epochs_training, n_epochs_validation, n_epochs_evaluation, n_tbtt_steps, n_tett_steps, verbosity, logging_training, logging_validation, logging_evaluation, find_cycles, fast_interpreter, preserve_ooo, interpret_model, reset_model, reset_interpreter,

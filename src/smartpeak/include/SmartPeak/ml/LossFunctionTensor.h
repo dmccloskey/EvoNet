@@ -204,7 +204,7 @@ public:
 			auto predicted_chip = predicted_tensor.chip(time_step, 1);
 
 			//error_tensor.chip(time_step, 1).device(device) += ((-expected_tensor * (predicted_chip.unaryExpr(ClipTensorOp<TensorT>(1e-6, 0, 1)).log())) * expected_tensor.constant(TensorT(1) / layer_size)).sum(Eigen::array<int, 1>({ 1 }));
-			error_tensor.chip(time_step, 1).device(device) += ((-expected_tensor * (predicted_chip.clip(TensorT(1e-6),TensorT(1)).log())) * expected_tensor.constant(TensorT(1) / TensorT(layer_size))).sum(Eigen::array<int, 1>({ 1 })) * error_tensor.chip(time_step, 1).constant(this->scale_);
+			error_tensor.chip(time_step, 1).device(device) += ((-expected_tensor * (predicted_chip.clip(TensorT(1e-6),TensorT(this->max_)).log())) * expected_tensor.constant(TensorT(1) / TensorT(layer_size))).sum(Eigen::array<int, 1>({ 1 })) * error_tensor.chip(time_step, 1).constant(this->scale_);
 		};
 	private:
 		TensorT n_ = TensorT(1); ///< the number of total classifiers
