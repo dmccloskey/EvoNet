@@ -703,6 +703,7 @@ namespace SmartPeak
 			throw std::runtime_error(error_char);
 		}
 		Eigen::Tensor<TensorT, 2> one((int)layer_tensors_[0]->getBatchSize(), (int)layer_tensors_[0]->getMemorySize());	one.setConstant((TensorT)1);
+    Eigen::Tensor<TensorT, 2> zero((int)layer_tensors_[0]->getBatchSize(), (int)layer_tensors_[0]->getMemorySize());	zero.setConstant((TensorT)0);
 		for (auto& node_map : model.nodes_) {
 			if (node_map.second->getType() == NodeType::bias) {
 				if (node_map.second->getTensorIndex().first != -1) {
@@ -717,6 +718,19 @@ namespace SmartPeak
 					// Error is cause by an added recursive link that "blocks" forward propogation
 				}
 			}
+      else if (node_map.second->getType() == NodeType::zero) {
+        if (node_map.second->getTensorIndex().first != -1) {
+          getLayerTensor(node_map.second->getTensorIndex().first)->getOutput().chip(node_map.second->getTensorIndex().second, 2) = zero;
+          getLayerTensor(node_map.second->getTensorIndex().first)->getInput().chip(node_map.second->getTensorIndex().second, 2) = zero;
+        }
+        else {
+          clear_cache(); // clean up before exiting
+          std::string error_char = "Node " + node_map.second->getName() + " has not been assigned a tensor index!";
+          std::cout << error_char << std::endl;
+          throw std::runtime_error(error_char);
+          // Error is cause by an added recursive link that "blocks" forward propogation
+        }
+      }
 		}
 	}
 
