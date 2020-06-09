@@ -3846,7 +3846,7 @@ public:
       delete[] mu_name_char;
 
       // logvar1
-      logvar1_name_char = new char[512];
+      char* logvar1_name_char = new char[512];
       sprintf(logvar1_name_char, "%s-MixedGaussianPriorLogVar1-%012d", name.data(), i);
       std::string logvar1_name(logvar1_name_char);
       Node<TensorT> logvar1(logvar1_name, NodeType::hidden, NodeStatus::initialized, std::make_shared<LinearOp<TensorT>>(LinearOp<TensorT>()), std::make_shared<LinearGradOp<TensorT>>(LinearGradOp<TensorT>()), std::make_shared<SumOp<TensorT>>(SumOp<TensorT>()), std::make_shared<SumErrorOp<TensorT>>(SumErrorOp<TensorT>()), std::make_shared<SumWeightGradOp<TensorT>>(SumWeightGradOp<TensorT>()));
@@ -3857,7 +3857,7 @@ public:
       delete[] logvar1_name_char;
 
       // logvar2
-      logvar2_name_char = new char[512];
+      char* logvar2_name_char = new char[512];
       sprintf(logvar2_name_char, "%s-MixedGaussianPriorLogVar2-%012d", name.data(), i);
       std::string logvar2_name(logvar2_name_char);
       Node<TensorT> logvar2(logvar2_name, NodeType::hidden, NodeStatus::initialized, std::make_shared<LinearOp<TensorT>>(LinearOp<TensorT>()), std::make_shared<LinearGradOp<TensorT>>(LinearGradOp<TensorT>()), std::make_shared<SumOp<TensorT>>(SumOp<TensorT>()), std::make_shared<SumErrorOp<TensorT>>(SumErrorOp<TensorT>()), std::make_shared<SumWeightGradOp<TensorT>>(SumWeightGradOp<TensorT>()));

@@ -1864,7 +1864,7 @@ namespace SmartPeak
 		// STEP 1: Preliminaries...
 		// initialize the node statuses to determine the FP propogation steps
 		for (auto& nodes_map : model.nodes_) {
-			if (nodes_map.second->getType() == NodeType::input || nodes_map.second->getType() == NodeType::bias)
+			if (nodes_map.second->getType() == NodeType::input || nodes_map.second->getType() == NodeType::bias || nodes_map.second->getType() == NodeType::zero)
 				nodes_map.second->setStatus(NodeStatus::activated);
 			else
 				nodes_map.second->setStatus(NodeStatus::initialized);
