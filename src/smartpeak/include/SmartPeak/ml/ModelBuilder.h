@@ -3786,8 +3786,8 @@ public:
   inline std::vector<std::string> ModelBuilder<TensorT>::addGaussianPosterior(Model<TensorT>& model, const std::string& name, const std::string& module_name, const std::vector<std::string>& mu_node_names, const std::vector<std::string>& logvar_node_names, const std::vector<std::string>& gaussian_node_names, const bool& specify_layer)
   {
     // Add the gaussian difference
-    std::vector<std::string> gaussian_node_names = addGaussian_(model, name, module_name, mu_node_names, logvar_node_names, gaussian_node_names, specify_layer);
-    return gaussian_node_names;
+    std::vector<std::string> gaussian_posterior_node_names = addGaussian_(model, name, module_name, mu_node_names, logvar_node_names, gaussian_node_names, specify_layer);
+    return gaussian_posterior_node_names;
   }
 
   template<typename TensorT>

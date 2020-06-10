@@ -133,6 +133,9 @@ public:
 			iarchive(model);
 			ifs.close();
 		}
+    else {
+      std::cout << "The model with filename " + filename + " was not found." << std::endl;
+    }
 		return true;
 	}
 

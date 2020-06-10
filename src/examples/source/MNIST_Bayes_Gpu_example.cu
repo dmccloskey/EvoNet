@@ -1,13 +1,10 @@
 /**TODO:  Add copyright*/
 
-#include <SmartPeak/ml/PopulationTrainerGpu.h>
-#include <SmartPeak/ml/ModelTrainerGpu.h>
-#include <SmartPeak/ml/ModelReplicator.h>
+#include <SmartPeak/ml/PopulationTrainerExperimentalGpu.h>
+#include <SmartPeak/ml/ModelTrainerExperimentalGpu.h>
+#include <SmartPeak/ml/ModelReplicatorExperimental.h>
 #include <SmartPeak/ml/ModelBuilder.h>
 #include <SmartPeak/ml/Model.h>
-#include <SmartPeak/io/PopulationTrainerFile.h>
-#include <SmartPeak/io/ModelInterpreterFileGpu.h>
-#include <SmartPeak/io/ModelFile.h>
 #include <SmartPeak/io/Parameters.h>
 
 #include <SmartPeak/simulator/MNISTSimulator.h>
@@ -18,7 +15,7 @@ using namespace SmartPeak;
 
 // Extended classes
 template<typename TensorT>
-class ModelTrainerExt : public ModelTrainerGpu<TensorT>
+class ModelTrainerExt : public ModelTrainerExperimentalGpu<TensorT>
 {
 public:
   /*
@@ -33,7 +30,7 @@ public:
   @param[in] n_hidden The length of the hidden layers
   @param[in] specify_layers Whether to give the `ModelInterpreter` "hints" as to the correct network structure during graph to tensor compilation
   */
-  void makeFullyConnBayes(Model<TensorT>& model, const int& n_inputs = 784, const int& n_outputs = 10, const int& n_hidden_0 = 512, const int& n_hidden_1 = 512, const int& n_hidden_2 = 512, const bool& add_gaussian = false, const bool& specify_layers = false, const TensorT& learning_rate = 1e-3, const TensorT& gradient_clipping = 100) {
+  void makeFullyConnBayes(Model<TensorT>& model, const int& n_inputs = 784, const int& n_outputs = 10, const int& n_hidden_0 = 512, const int& n_hidden_1 = 512, const int& n_hidden_2 = 512, const bool& add_gaussian = false, const TensorT& logvar_1 = -1, const TensorT& logvar_2 = -4, const TensorT& pi = 0.5, const bool& specify_layers = false, const TensorT& learning_rate = 1e-3, const TensorT& gradient_clipping = 100) {
     model.setId(0);
     model.setName("FullyConnectedBayesClassifier");
     ModelBuilder<TensorT> model_builder;
@@ -57,7 +54,7 @@ public:
     auto solver_dummy_op = std::make_shared<DummySolverOp<TensorT>>(DummySolverOp<TensorT>());
 
     // Define the nodes
-    std::vector<std::string> node_names_mu, node_names_logvar, node_names_encoding, node_names_input, node_names_mu_out, node_names_logvar_out;
+    std::vector<std::string> node_names_mu, node_names_logvar, node_names_encoding, node_names_input, node_names_prior, node_names_posterior;
 
     // Add the 1st FC layer
     if (n_hidden_0 > 0) {
@@ -70,26 +67,35 @@ public:
           solver_op, 0.0f, 0.0f, false, specify_layers);
         node_names_logvar = model_builder.addFullyConnected(model, "EN0LogVarEnc0", "EN0LogVarEnc0", node_names_input, n_hidden_0,
           activation_linear, activation_linear_grad, integration_op, integration_error_op, integration_weight_grad_op,
-          std::make_shared<RandWeightInitOp<TensorT>>(RandWeightInitOp<TensorT>((TensorT)(node_names_input.size() + n_hidden_0) / 2, 1)),
+          std::make_shared<ConstWeightInitOp<TensorT>>(ConstWeightInitOp<TensorT>(TensorT(-12/n_hidden_0))),
           solver_op, 0.0f, 0.0f, false, specify_layers);
-        node_names_encoding = model_builder.addGaussianEncoding(model, "EN0EncodingEnc0", "EN0EncodingEnc0", node_names_mu, node_names_logvar, specify_layers);
+        node_names_encoding = model_builder.addGaussianEncoding(model, "EN0GaussianEnc0", "EN0GaussianEnc0", node_names_mu, node_names_logvar, specify_layers);
         node_names = model_builder.addSinglyConnected(model, "EN0", "EN0", node_names_encoding, node_names_encoding.size(),
           activation, activation_grad, integration_op, integration_error_op, integration_weight_grad_op,
           std::make_shared<ConstWeightInitOp<TensorT>>(ConstWeightInitOp<TensorT>(1)),
-          solver_dummy_op, 0.0, 0.0, false, specify_layers);
+          solver_dummy_op, 0.0f, 0.0f, false, specify_layers);
+        // Add the calculations of the posterior and prior gaussians
+        node_names_posterior = model_builder.addGaussianPosterior(model, "EN0PosteriorEnc0", "EN0PosteriorEnc0", node_names_mu, node_names_logvar, node_names_encoding, specify_layers);
+        node_names_prior = model_builder.addMixedGaussianPior(model, "EN0PriorEnc0", "EN0PriorEnc0", node_names_encoding, logvar_1, logvar_2, pi, specify_layers);
         // Add the actual output nodes
-        node_names_mu_out = model_builder.addSinglyConnected(model, "EN0Mu0", "EN0Mu0", node_names_mu, node_names_mu.size(),
+        node_names_posterior = model_builder.addSinglyConnected(model, "EN0Posterior", "EN0Posterior", node_names_posterior, node_names_posterior.size(),
           activation_linear, activation_linear_grad, integration_op, integration_error_op, integration_weight_grad_op,
           std::make_shared<ConstWeightInitOp<TensorT>>(ConstWeightInitOp<TensorT>(1)),
           solver_dummy_op, 0.0f, 0.0f, false, true);
-        node_names_logvar_out = model_builder.addSinglyConnected(model, "EN0LogVar0", "EN0LogVar0", node_names_logvar, node_names_logvar.size(),
+        node_names_prior = model_builder.addSinglyConnected(model, "EN0Prior", "EN0Prior", node_names_prior, node_names_prior.size(),
+          activation_linear, activation_linear_grad, integration_op, integration_error_op, integration_weight_grad_op,
+          std::make_shared<ConstWeightInitOp<TensorT>>(ConstWeightInitOp<TensorT>(1)),
+          solver_dummy_op, 0.0f, 0.0f, false, true);
+        node_names_logvar = model_builder.addSinglyConnected(model, "EN0LogVar", "EN0LogVar", node_names_logvar, node_names_logvar.size(),
           activation_linear, activation_linear_grad, integration_op, integration_error_op, integration_weight_grad_op,
           std::make_shared<ConstWeightInitOp<TensorT>>(ConstWeightInitOp<TensorT>(1)),
           solver_dummy_op, 0.0f, 0.0f, false, true);
         // Specify the output node types manually
-        for (const std::string& node_name : node_names_mu_out)
+        for (const std::string& node_name : node_names_posterior)
           model.nodes_.at(node_name)->setType(NodeType::output);
-        for (const std::string& node_name : node_names_logvar_out)
+        for (const std::string& node_name : node_names_prior)
+          model.nodes_.at(node_name)->setType(NodeType::output);
+        for (const std::string& node_name : node_names_logvar)
           model.nodes_.at(node_name)->setType(NodeType::output);
       }
       else {
@@ -111,26 +117,35 @@ public:
           solver_op, 0.0f, 0.0f, false, specify_layers);
         node_names_logvar = model_builder.addFullyConnected(model, "EN1LogVarEnc0", "EN1LogVarEnc0", node_names_input, n_hidden_1,
           activation_linear, activation_linear_grad, integration_op, integration_error_op, integration_weight_grad_op,
-          std::make_shared<RandWeightInitOp<TensorT>>(RandWeightInitOp<TensorT>((TensorT)(node_names_input.size() + n_hidden_1) / 2, 1)),
+          std::make_shared<ConstWeightInitOp<TensorT>>(ConstWeightInitOp<TensorT>(TensorT(-12/n_hidden_1))),
           solver_op, 0.0f, 0.0f, false, specify_layers);
-        node_names_encoding = model_builder.addGaussianEncoding(model, "EN1EncodingEnc0", "EN1EncodingEnc0", node_names_mu, node_names_logvar, specify_layers);
+        node_names_encoding = model_builder.addGaussianEncoding(model, "EN1GaussianEnc0", "EN1GaussianEnc0", node_names_mu, node_names_logvar, specify_layers);
         node_names = model_builder.addSinglyConnected(model, "EN1", "EN1", node_names_encoding, node_names_encoding.size(),
           activation, activation_grad, integration_op, integration_error_op, integration_weight_grad_op,
           std::make_shared<ConstWeightInitOp<TensorT>>(ConstWeightInitOp<TensorT>(1)),
-          solver_dummy_op, 0.0, 0.0, false, specify_layers);
+          solver_dummy_op, 0.0f, 0.0f, false, specify_layers);
+        // Add the calculations of the posterior and prior gaussians
+        node_names_posterior = model_builder.addGaussianPosterior(model, "EN1PosteriorEnc0", "EN1PosteriorEnc0", node_names_mu, node_names_logvar, node_names_encoding, specify_layers);
+        node_names_prior = model_builder.addMixedGaussianPior(model, "EN1PriorEnc0", "EN1PriorEnc0", node_names_encoding, logvar_1, logvar_2, pi, specify_layers);
         // Add the actual output nodes
-        node_names_mu_out = model_builder.addSinglyConnected(model, "EN1Mu0", "EN1Mu0", node_names_mu, node_names_mu.size(),
+        node_names_posterior = model_builder.addSinglyConnected(model, "EN1Posterior", "EN1Posterior", node_names_posterior, node_names_posterior.size(),
           activation_linear, activation_linear_grad, integration_op, integration_error_op, integration_weight_grad_op,
           std::make_shared<ConstWeightInitOp<TensorT>>(ConstWeightInitOp<TensorT>(1)),
           solver_dummy_op, 0.0f, 0.0f, false, true);
-        node_names_logvar_out = model_builder.addSinglyConnected(model, "EN1LogVar0", "EN1LogVar0", node_names_logvar, node_names_logvar.size(),
+        node_names_prior = model_builder.addSinglyConnected(model, "EN1Prior", "EN1Prior", node_names_prior, node_names_prior.size(),
+          activation_linear, activation_linear_grad, integration_op, integration_error_op, integration_weight_grad_op,
+          std::make_shared<ConstWeightInitOp<TensorT>>(ConstWeightInitOp<TensorT>(1)),
+          solver_dummy_op, 0.0f, 0.0f, false, true);
+        node_names_logvar = model_builder.addSinglyConnected(model, "EN1LogVar", "EN1LogVar", node_names_logvar, node_names_logvar.size(),
           activation_linear, activation_linear_grad, integration_op, integration_error_op, integration_weight_grad_op,
           std::make_shared<ConstWeightInitOp<TensorT>>(ConstWeightInitOp<TensorT>(1)),
           solver_dummy_op, 0.0f, 0.0f, false, true);
         // Specify the output node types manually
-        for (const std::string& node_name : node_names_mu_out)
+        for (const std::string& node_name : node_names_posterior)
           model.nodes_.at(node_name)->setType(NodeType::output);
-        for (const std::string& node_name : node_names_logvar_out)
+        for (const std::string& node_name : node_names_prior)
+          model.nodes_.at(node_name)->setType(NodeType::output);
+        for (const std::string& node_name : node_names_logvar)
           model.nodes_.at(node_name)->setType(NodeType::output);
       }
       else {
@@ -152,26 +167,35 @@ public:
           solver_op, 0.0f, 0.0f, false, specify_layers);
         node_names_logvar = model_builder.addFullyConnected(model, "EN2LogVarEnc0", "EN2LogVarEnc0", node_names_input, n_outputs,
           activation_linear, activation_linear_grad, integration_op, integration_error_op, integration_weight_grad_op,
-          std::make_shared<RandWeightInitOp<TensorT>>(RandWeightInitOp<TensorT>((TensorT)(node_names_input.size() + n_outputs) / 2, 1)),
+          std::make_shared<ConstWeightInitOp<TensorT>>(ConstWeightInitOp<TensorT>(TensorT(-12/n_outputs))),
           solver_op, 0.0f, 0.0f, false, specify_layers);
-        node_names_encoding = model_builder.addGaussianEncoding(model, "EN2EncodingEnc0", "EN2EncodingEnc0", node_names_mu, node_names_logvar, specify_layers);
+        node_names_encoding = model_builder.addGaussianEncoding(model, "EN2GaussianEnc0", "EN2GaussianEnc0", node_names_mu, node_names_logvar, specify_layers);
         node_names = model_builder.addSinglyConnected(model, "EN2", "EN2", node_names_encoding, node_names_encoding.size(),
           activation, activation_grad, integration_op, integration_error_op, integration_weight_grad_op,
           std::make_shared<ConstWeightInitOp<TensorT>>(ConstWeightInitOp<TensorT>(1)),
-          solver_dummy_op, 0.0, 0.0, false, specify_layers);
+          solver_dummy_op, 0.0f, 0.0f, false, specify_layers);
+        // Add the calculations of the posterior and prior gaussians
+        node_names_posterior = model_builder.addGaussianPosterior(model, "EN2PosteriorEnc0", "EN2PosteriorEnc0", node_names_mu, node_names_logvar, node_names_encoding, specify_layers);
+        node_names_prior = model_builder.addMixedGaussianPior(model, "EN2PriorEnc0", "EN2PriorEnc0", node_names_encoding, logvar_1, logvar_2, pi, specify_layers);
         // Add the actual output nodes
-        node_names_mu_out = model_builder.addSinglyConnected(model, "EN2Mu0", "EN2Mu0", node_names_mu, node_names_mu.size(),
+        node_names_posterior = model_builder.addSinglyConnected(model, "EN2Posterior", "EN2Posterior", node_names_posterior, node_names_posterior.size(),
           activation_linear, activation_linear_grad, integration_op, integration_error_op, integration_weight_grad_op,
           std::make_shared<ConstWeightInitOp<TensorT>>(ConstWeightInitOp<TensorT>(1)),
           solver_dummy_op, 0.0f, 0.0f, false, true);
-        node_names_logvar_out = model_builder.addSinglyConnected(model, "EN2LogVar0", "EN2LogVar0", node_names_logvar, node_names_logvar.size(),
+        node_names_prior = model_builder.addSinglyConnected(model, "EN2Prior", "EN2Prior", node_names_prior, node_names_prior.size(),
+          activation_linear, activation_linear_grad, integration_op, integration_error_op, integration_weight_grad_op,
+          std::make_shared<ConstWeightInitOp<TensorT>>(ConstWeightInitOp<TensorT>(1)),
+          solver_dummy_op, 0.0f, 0.0f, false, true);
+        node_names_logvar = model_builder.addSinglyConnected(model, "EN2LogVar", "EN2LogVar", node_names_logvar, node_names_logvar.size(),
           activation_linear, activation_linear_grad, integration_op, integration_error_op, integration_weight_grad_op,
           std::make_shared<ConstWeightInitOp<TensorT>>(ConstWeightInitOp<TensorT>(1)),
           solver_dummy_op, 0.0f, 0.0f, false, true);
         // Specify the output node types manually
-        for (const std::string& node_name : node_names_mu_out)
+        for (const std::string& node_name : node_names_posterior)
           model.nodes_.at(node_name)->setType(NodeType::output);
-        for (const std::string& node_name : node_names_logvar_out)
+        for (const std::string& node_name : node_names_prior)
+          model.nodes_.at(node_name)->setType(NodeType::output);
+        for (const std::string& node_name : node_names_logvar)
           model.nodes_.at(node_name)->setType(NodeType::output);
       }
       else {
@@ -193,58 +217,6 @@ public:
       model.nodes_.at(node_name)->setType(NodeType::output);
     model.setInputAndOutputNodes();
   }
-  void adaptiveTrainerScheduler(const int& n_generations, const int& n_epochs, Model<TensorT>& model, ModelInterpreterGpu<TensorT>& model_interpreter, const std::vector<float>& model_errors) override {
-    if (n_epochs % 1000 == 0 && n_epochs != 0) {
-      // save the model every 1000 epochs
-      model_interpreter.getModelResults(model, false, true, false, false);
-      ModelFile<TensorT> data;
-
-      // Save to binary
-      data.storeModelBinary(model.getName() + "_" + std::to_string(n_epochs) + "_model.binary", model);
-      ModelInterpreterFileGpu<TensorT> interpreter_data;
-      interpreter_data.storeModelInterpreterBinary(model.getName() + "_" + std::to_string(n_epochs) + "_interpreter.binary", model_interpreter);
-    }
-  }
-  void trainingModelLogger(const int& n_epochs, Model<TensorT>& model, ModelInterpreterGpu<TensorT>& model_interpreter, ModelLogger<TensorT>& model_logger,
-    const Eigen::Tensor<TensorT, 3>& expected_values, const std::vector<std::string>& output_nodes, const std::vector<std::string>& input_nodes, const TensorT& model_error_train, const TensorT& model_error_test,
-    const Eigen::Tensor<TensorT, 1>& model_metrics_train, const Eigen::Tensor<TensorT, 1>& model_metrics_test) override
-  {
-    // Set the defaults
-    model_logger.setLogTimeEpoch(true);
-    model_logger.setLogTrainValMetricEpoch(true);
-    model_logger.setLogExpectedEpoch(false);
-    model_logger.setLogNodeOutputsEpoch(false);
-    model_logger.setLogNodeInputsEpoch(false);
-
-    // initialize all logs
-    if (n_epochs == 0) {
-      model_logger.setLogExpectedEpoch(true);
-      model_logger.setLogNodeOutputsEpoch(true);
-      model_logger.initLogs(model);
-    }
-
-    // Per n epoch logging
-    if (n_epochs % 1000 == 0) {
-      model_logger.setLogExpectedEpoch(true);
-      model_logger.setLogNodeOutputsEpoch(true);
-      model_interpreter.getModelResults(model, true, false, false, false);
-    }
-
-    // Create the metric headers and data arrays
-    std::vector<std::string> log_train_headers = { "Train_Error" };
-    std::vector<std::string> log_test_headers = { "Test_Error" };
-    std::vector<TensorT> log_train_values = { model_error_train };
-    std::vector<TensorT> log_test_values = { model_error_test };
-    int metric_iter = 0;
-    for (const std::string& metric_name : this->getMetricNamesLinearized()) {
-      log_train_headers.push_back(metric_name);
-      log_test_headers.push_back(metric_name);
-      log_train_values.push_back(model_metrics_train(metric_iter));
-      log_test_values.push_back(model_metrics_test(metric_iter));
-      ++metric_iter;
-    }
-    model_logger.writeLogs(model, n_epochs, log_train_headers, log_test_headers, log_train_values, log_test_values, output_nodes, expected_values, {}, output_nodes, {}, input_nodes, {});
-  }
 };
 
 template<typename TensorT>
@@ -254,7 +226,6 @@ public:
   bool add_gaussian_ = false;
   int n_hidden_0_ = 0;
   int n_hidden_1_ = 0;
-  int n_hidden_2_ = 0;
   void simulateData(Eigen::Tensor<TensorT, 3>& input_data, Eigen::Tensor<TensorT, 3>& loss_output_data, Eigen::Tensor<TensorT, 3>& metric_output_data, Eigen::Tensor<TensorT, 2>& time_steps, const bool& is_train)
   {
     // infer data dimensions based on the input tensors
@@ -292,24 +263,24 @@ public:
     input_data.slice(Eigen::array<Eigen::Index, 3>({ 0, 0, 0 }), Eigen::array<Eigen::Index, 3>({ batch_size, memory_size, this->training_data.dimension(1) })) = training_data;
 
     // Assign the input data
-    loss_output_data.setZero();
+    loss_output_data.setConstant(TensorT(1)); // negative log likelihood expected value
     loss_output_data.slice(Eigen::array<Eigen::Index, 3>({ 0, 0, 0 }), Eigen::array<Eigen::Index, 3>({ batch_size, memory_size, this->training_labels.dimension(1) })) = training_labels;
 
     // Assign the input data
-    metric_output_data.setZero();
+    metric_output_data.setZero(); // in order to compute the total magnitude of the logvar
     metric_output_data.slice(Eigen::array<Eigen::Index, 3>({ 0, 0, 0 }), Eigen::array<Eigen::Index, 3>({ batch_size, memory_size, this->training_labels.dimension(1) })) = training_labels;
 
     assert(memory_size == 1);
     if (add_gaussian_) {
-      if (n_hidden_0_ > 0 && n_hidden_1_ > 0 && n_hidden_2_ > 0) {
-        assert(n_output_nodes == this->training_labels.dimension(1) + 2 * n_hidden_0_ + 2 * n_hidden_1_ + 2 * n_hidden_2_);
-        assert(n_metric_output_nodes == this->training_labels.dimension(1) + n_hidden_0_ + n_hidden_1_ + n_hidden_2_);
-        assert(n_input_nodes == this->training_data.dimension(1) + n_hidden_0_ + n_hidden_1_ + n_hidden_2_);
+      if (n_hidden_0_ > 0 && n_hidden_1_ > 0) {
+        assert(n_output_nodes == this->training_labels.dimension(1) + 2 * n_hidden_0_ + 2 * n_hidden_1_ + 2 * this->training_labels.dimension(1));
+        assert(n_metric_output_nodes == this->training_labels.dimension(1) + n_hidden_0_ + n_hidden_1_ + this->training_labels.dimension(1));
+        assert(n_input_nodes == this->training_data.dimension(1) + n_hidden_0_ + n_hidden_1_ + this->training_labels.dimension(1));
 
         // Gaussian sampler input/output data
-        Eigen::Tensor<TensorT, 3> gaussian_samples(batch_size, memory_size, n_hidden_0_ + n_hidden_1_ + n_hidden_2_);
-        if (is_train) gaussian_samples = GaussianSampler<TensorT>(batch_size * memory_size, n_hidden_0_ + n_hidden_1_ + n_hidden_2_)
-          .reshape(Eigen::array<Eigen::Index, 3>({ batch_size, memory_size, n_hidden_0_ + n_hidden_1_ + n_hidden_2_ }));
+        Eigen::Tensor<TensorT, 3> gaussian_samples(batch_size, memory_size, n_hidden_0_ + n_hidden_1_ + this->training_labels.dimension(1));
+        if (is_train) gaussian_samples = GaussianSampler<TensorT>(batch_size * memory_size, n_hidden_0_ + n_hidden_1_ + this->training_labels.dimension(1))
+          .reshape(Eigen::array<Eigen::Index, 3>({ batch_size, memory_size, n_hidden_0_ + n_hidden_1_ + this->training_labels.dimension(1) }));
         else gaussian_samples.setZero();
 
         // Assign the input data
@@ -317,40 +288,40 @@ public:
           Eigen::array<Eigen::Index, 3>({ 0, 0, 0 }), Eigen::array<Eigen::Index, 3>({ batch_size, memory_size, n_hidden_0_ }));
         input_data.slice(Eigen::array<Eigen::Index, 3>({ 0, 0, this->training_data.dimension(1) + n_hidden_0_ }), Eigen::array<Eigen::Index, 3>({ batch_size, memory_size, n_hidden_1_ })) = gaussian_samples.slice(
           Eigen::array<Eigen::Index, 3>({ 0, 0, n_hidden_0_ }), Eigen::array<Eigen::Index, 3>({ batch_size, memory_size, n_hidden_1_ }));
-        input_data.slice(Eigen::array<Eigen::Index, 3>({ 0, 0, this->training_data.dimension(1) + n_hidden_0_ + n_hidden_1_ }), Eigen::array<Eigen::Index, 3>({ batch_size, memory_size, n_hidden_2_ })) = gaussian_samples.slice(
-          Eigen::array<Eigen::Index, 3>({ 0, 0, n_hidden_1_ }), Eigen::array<Eigen::Index, 3>({ batch_size, memory_size, n_hidden_2_ }));
-      }
-      else if (n_hidden_0_ > 0 && n_hidden_1_ > 0) {
-        assert(n_output_nodes == this->training_labels.dimension(1) + 2 * n_hidden_0_ + 2 * n_hidden_1_);
-        assert(n_metric_output_nodes == this->training_labels.dimension(1) + n_hidden_0_ + n_hidden_1_);
-        assert(n_input_nodes == this->training_data.dimension(1) + n_hidden_0_ + n_hidden_1_);
-
-        // Gaussian sampler input/output data
-        Eigen::Tensor<TensorT, 3> gaussian_samples(batch_size, memory_size, n_hidden_0_ + n_hidden_1_);
-        if (is_train) gaussian_samples = GaussianSampler<TensorT>(batch_size * memory_size, n_hidden_0_ + n_hidden_1_)
-          .reshape(Eigen::array<Eigen::Index, 3>({ batch_size, memory_size, n_hidden_0_ + n_hidden_1_ }));
-        else gaussian_samples.setZero();
-
-        // Assign the input data
-        input_data.slice(Eigen::array<Eigen::Index, 3>({ 0, 0, this->training_data.dimension(1) }), Eigen::array<Eigen::Index, 3>({ batch_size, memory_size, n_hidden_0_ })) = gaussian_samples.slice(
-          Eigen::array<Eigen::Index, 3>({ 0, 0, 0 }), Eigen::array<Eigen::Index, 3>({ batch_size, memory_size, n_hidden_0_ }));
-        input_data.slice(Eigen::array<Eigen::Index, 3>({ 0, 0, this->training_data.dimension(1) + n_hidden_0_ }), Eigen::array<Eigen::Index, 3>({ batch_size, memory_size, n_hidden_1_ })) = gaussian_samples.slice(
-          Eigen::array<Eigen::Index, 3>({ 0, 0, n_hidden_0_ }), Eigen::array<Eigen::Index, 3>({ batch_size, memory_size, n_hidden_1_ }));
+        input_data.slice(Eigen::array<Eigen::Index, 3>({ 0, 0, this->training_data.dimension(1) + n_hidden_0_ + n_hidden_1_ }), Eigen::array<Eigen::Index, 3>({ batch_size, memory_size, this->training_labels.dimension(1) })) = gaussian_samples.slice(
+          Eigen::array<Eigen::Index, 3>({ 0, 0, n_hidden_1_ }), Eigen::array<Eigen::Index, 3>({ batch_size, memory_size, this->training_labels.dimension(1) }));
       }
       else if (n_hidden_0_ > 0) {
-        assert(n_output_nodes == this->training_labels.dimension(1) + 2 * n_hidden_0_);
-        assert(n_metric_output_nodes == this->training_labels.dimension(1) + n_hidden_0_);
-        assert(n_input_nodes == this->training_data.dimension(1) + n_hidden_0_);
+        assert(n_output_nodes == this->training_labels.dimension(1) + 2 * n_hidden_0_ + 2 * this->training_labels.dimension(1));
+        assert(n_metric_output_nodes == this->training_labels.dimension(1) + n_hidden_0_ + this->training_labels.dimension(1));
+        assert(n_input_nodes == this->training_data.dimension(1) + n_hidden_0_ + this->training_labels.dimension(1));
 
         // Gaussian sampler input/output data
-        Eigen::Tensor<TensorT, 3> gaussian_samples(batch_size, memory_size, n_hidden_0_);
-        if (is_train) gaussian_samples = GaussianSampler<TensorT>(batch_size * memory_size, n_hidden_0_)
-          .reshape(Eigen::array<Eigen::Index, 3>({ batch_size, memory_size, n_hidden_0_ }));
+        Eigen::Tensor<TensorT, 3> gaussian_samples(batch_size, memory_size, n_hidden_0_ + this->training_labels.dimension(1));
+        if (is_train) gaussian_samples = GaussianSampler<TensorT>(batch_size * memory_size, n_hidden_0_ + this->training_labels.dimension(1))
+          .reshape(Eigen::array<Eigen::Index, 3>({ batch_size, memory_size, n_hidden_0_ + this->training_labels.dimension(1) }));
         else gaussian_samples.setZero();
 
         // Assign the input data
         input_data.slice(Eigen::array<Eigen::Index, 3>({ 0, 0, this->training_data.dimension(1) }), Eigen::array<Eigen::Index, 3>({ batch_size, memory_size, n_hidden_0_ })) = gaussian_samples.slice(
           Eigen::array<Eigen::Index, 3>({ 0, 0, 0 }), Eigen::array<Eigen::Index, 3>({ batch_size, memory_size, n_hidden_0_ }));
+        input_data.slice(Eigen::array<Eigen::Index, 3>({ 0, 0, this->training_data.dimension(1) + n_hidden_0_ }), Eigen::array<Eigen::Index, 3>({ batch_size, memory_size, this->training_labels.dimension(1) })) = gaussian_samples.slice(
+          Eigen::array<Eigen::Index, 3>({ 0, 0, n_hidden_0_ }), Eigen::array<Eigen::Index, 3>({ batch_size, memory_size, this->training_labels.dimension(1) }));
+      }
+      else {
+        assert(n_output_nodes == this->training_labels.dimension(1) + 2 * this->training_labels.dimension(1));
+        assert(n_metric_output_nodes == this->training_labels.dimension(1) + this->training_labels.dimension(1));
+        assert(n_input_nodes == this->training_data.dimension(1) + this->training_labels.dimension(1));
+
+        // Gaussian sampler input/output data
+        Eigen::Tensor<TensorT, 3> gaussian_samples(batch_size, memory_size, this->training_labels.dimension(1));
+        if (is_train) gaussian_samples = GaussianSampler<TensorT>(batch_size * memory_size, this->training_labels.dimension(1))
+          .reshape(Eigen::array<Eigen::Index, 3>({ batch_size, memory_size, this->training_labels.dimension(1) }));
+        else gaussian_samples.setZero();
+
+        // Assign the input data
+        input_data.slice(Eigen::array<Eigen::Index, 3>({ 0, 0, this->training_data.dimension(1) }), Eigen::array<Eigen::Index, 3>({ batch_size, memory_size, this->training_labels.dimension(1) })) = gaussian_samples.slice(
+          Eigen::array<Eigen::Index, 3>({ 0, 0, 0 }), Eigen::array<Eigen::Index, 3>({ batch_size, memory_size, this->training_labels.dimension(1) }));
       }
     }
     else {
@@ -368,11 +339,11 @@ public:
 };
 
 template<typename TensorT>
-class ModelReplicatorExt : public ModelReplicator<TensorT>
+class ModelReplicatorExt : public ModelReplicatorExperimental<TensorT>
 {};
 
 template<typename TensorT>
-class PopulationTrainerExt : public PopulationTrainerGpu<TensorT>
+class PopulationTrainerExt : public PopulationTrainerExperimentalGpu<TensorT>
 {};
 
 /**
@@ -390,26 +361,10 @@ void main_MNIST(const ParameterTypes& ...args) {
 
   // define the population trainer parameters
   PopulationTrainerExt<float> population_trainer;
-  population_trainer.setNGenerations(std::get<EvoNetParameters::PopulationTrainer::NGenerations>(parameters).get());
-  population_trainer.setPopulationSize(std::get<EvoNetParameters::PopulationTrainer::PopulationSize>(parameters).get());
-  population_trainer.setNReplicatesPerModel(std::get<EvoNetParameters::PopulationTrainer::NReplicatesPerModel>(parameters).get());
-  population_trainer.setNTop(std::get<EvoNetParameters::PopulationTrainer::NTop>(parameters).get());
-  population_trainer.setNRandom(std::get<EvoNetParameters::PopulationTrainer::NRandom>(parameters).get());
-  population_trainer.setLogging(std::get<EvoNetParameters::PopulationTrainer::Logging>(parameters).get());
-  population_trainer.setRemoveIsolatedNodes(std::get<EvoNetParameters::PopulationTrainer::RemoveIsolatedNodes>(parameters).get());
-  population_trainer.setPruneModelNum(std::get<EvoNetParameters::PopulationTrainer::PruneModelNum>(parameters).get());
-  population_trainer.setCheckCompleteModelInputToOutput(std::get<EvoNetParameters::PopulationTrainer::CheckCompleteModelInputToOutput>(parameters).get());
-  population_trainer.setResetModelCopyWeights(std::get<EvoNetParameters::PopulationTrainer::ResetModelCopyWeights>(parameters).get());
-  population_trainer.setResetModelTemplateWeights(std::get<EvoNetParameters::PopulationTrainer::ResetModelTemplateWeights>(parameters).get());
-  //population_trainer.set_population_size_fixed_ = std::get<EvoNetParameters::PopulationTrainer::SetPopulationSizeFixed>(parameters).get();
-  //population_trainer.set_population_size_doubling_ = std::get<EvoNetParameters::PopulationTrainer::SetPopulationSizeDoubling>(parameters).get();
+  setPopulationTrainerParameters(population_trainer, args...);
 
   // define the population logger
   PopulationLogger<float> population_logger(true, true);
-
-  // define the multithreading parameters
-  const int n_hard_threads = std::thread::hardware_concurrency();
-  const int n_threads = (std::get<EvoNetParameters::PopulationTrainer::NInterpreters>(parameters).get() > n_hard_threads) ? n_hard_threads : std::get<EvoNetParameters::PopulationTrainer::NInterpreters>(parameters).get(); // the number of threads
 
   // define the model logger
   ModelLogger<float> model_logger(true, true, false, false, false, false, false, false);
@@ -421,7 +376,6 @@ void main_MNIST(const ParameterTypes& ...args) {
   DataSimulatorExt<float> data_simulator;
   data_simulator.n_hidden_0_ = std::get<EvoNetParameters::ModelTrainer::NHidden0>(parameters).get();
   data_simulator.n_hidden_1_ = std::get<EvoNetParameters::ModelTrainer::NHidden1>(parameters).get();
-  data_simulator.n_hidden_2_ = std::get<EvoNetParameters::ModelTrainer::NHidden2>(parameters).get();
   data_simulator.add_gaussian_ = std::get<EvoNetParameters::ModelTrainer::AddGaussian>(parameters).get();
 
   // read in the training data
@@ -445,22 +399,22 @@ void main_MNIST(const ParameterTypes& ...args) {
   }
 
   // Make the encoding nodes and add them to the input
-  if (std::get<EvoNetParameters::ModelTrainer::AddGaussian>(parameters).get()){
+  if (std::get<EvoNetParameters::ModelTrainer::AddGaussian>(parameters).get()) {
     for (int i = 0; i < std::get<EvoNetParameters::ModelTrainer::NHidden0>(parameters).get(); ++i) {
       char name_char[512];
-      sprintf(name_char, "EN0EncodingEnc0_%012d-Sampler", i);
+      sprintf(name_char, "EN0GaussianEnc0_%012d-Sampler", i);
       std::string name(name_char);
       input_nodes.push_back(name);
     }
     for (int i = 0; i < std::get<EvoNetParameters::ModelTrainer::NHidden1>(parameters).get(); ++i) {
       char name_char[512];
-      sprintf(name_char, "EN1EncodingEnc0_%012d-Sampler", i);
+      sprintf(name_char, "EN1GaussianEnc0_%012d-Sampler", i);
       std::string name(name_char);
       input_nodes.push_back(name);
     }
-    for (int i = 0; i < std::get<EvoNetParameters::ModelTrainer::NHidden2>(parameters).get(); ++i) {
+    for (int i = 0; i < data_simulator.training_labels.dimension(1); ++i) {
       char name_char[512];
-      sprintf(name_char, "EN1EncodingEnc0_%012d-Sampler", i);
+      sprintf(name_char, "EN2GaussianEnc0_%012d-Sampler", i);
       std::string name(name_char);
       input_nodes.push_back(name);
     }
@@ -476,69 +430,64 @@ void main_MNIST(const ParameterTypes& ...args) {
   }
 
   // Make the mu nodes and logvar nodes
-  std::vector<std::string> encoding_nodes_en0mu0, encoding_nodes_en1mu0, encoding_nodes_en2mu0;
-  std::vector<std::string> encoding_nodes_en0logvar0, encoding_nodes_en0logvar1, encoding_nodes_en1logvar0;
+  std::vector<std::string> encoding_nodes_en0posterior, encoding_nodes_en1posterior, encoding_nodes_en2posterior;
+  std::vector<std::string> encoding_nodes_en0prior, encoding_nodes_en1prior, encoding_nodes_en2prior;
+  std::vector<std::string> encoding_nodes_en0logvar, encoding_nodes_en1logvar, encoding_nodes_en2logvar;
   if (std::get<EvoNetParameters::ModelTrainer::AddGaussian>(parameters).get()) {
     for (int i = 0; i < std::get<EvoNetParameters::ModelTrainer::NHidden0>(parameters).get(); ++i) {
       char* name_char = new char[512];
-      sprintf(name_char, "EN0Mu0_%012d", i);
+      sprintf(name_char, "EN0Posterior_%012d", i);
       std::string name(name_char);
-      encoding_nodes_en0mu0.push_back(name);
+      encoding_nodes_en0posterior.push_back(name);
       name_char = new char[512];
-      sprintf(name_char, "EN0LogVar0_%012d", i);
+      sprintf(name_char, "EN0Prior_%012d", i);
       name = name_char;
-      encoding_nodes_en0logvar0.push_back(name);
+      encoding_nodes_en0prior.push_back(name);
+      name_char = new char[512];
+      sprintf(name_char, "EN0LogVar_%012d", i);
+      name = name_char;
+      encoding_nodes_en0logvar.push_back(name);
       delete[] name_char;
     }
     for (int i = 0; i < std::get<EvoNetParameters::ModelTrainer::NHidden1>(parameters).get(); ++i) {
       char* name_char = new char[512];
-      sprintf(name_char, "EN1Mu0_%012d", i);
+      sprintf(name_char, "EN1Posterior_%012d", i);
       std::string name(name_char);
-      encoding_nodes_en1mu0.push_back(name);
+      encoding_nodes_en1posterior.push_back(name);
       name_char = new char[512];
-      sprintf(name_char, "EN1LogVar0_%012d", i);
+      sprintf(name_char, "EN1Prior_%012d", i);
       name = name_char;
-      encoding_nodes_en1logvar0.push_back(name);
+      encoding_nodes_en1prior.push_back(name);
+      name_char = new char[512];
+      sprintf(name_char, "EN1LogVar_%012d", i);
+      name = name_char;
+      encoding_nodes_en1logvar.push_back(name);
       delete[] name_char;
     }
-    for (int i = 0; i < std::get<EvoNetParameters::ModelTrainer::NHidden2>(parameters).get(); ++i) {
+    for (int i = 0; i < data_simulator.training_labels.dimension(1); ++i) {
       char* name_char = new char[512];
-      sprintf(name_char, "EN2Mu0_%012d", i);
+      sprintf(name_char, "EN2Posterior_%012d", i);
       std::string name(name_char);
-      encoding_nodes_en2mu0.push_back(name);
+      encoding_nodes_en2posterior.push_back(name);
       name_char = new char[512];
-      sprintf(name_char, "EN2LogVar0_%012d", i);
+      sprintf(name_char, "EN2Prior_%012d", i);
       name = name_char;
-      encoding_nodes_en2logvar0.push_back(name);
+      encoding_nodes_en2prior.push_back(name);
+      name_char = new char[512];
+      sprintf(name_char, "EN2LogVar_%012d", i);
+      name = name_char;
+      encoding_nodes_en2logvar.push_back(name);
       delete[] name_char;
     }
   }
 
-  // define the model trainers and resources for the trainers
+  // define the model interpreters
   std::vector<ModelInterpreterGpu<float>> model_interpreters;
-  for (size_t i = 0; i < n_threads; ++i) {
-    ModelResources model_resources = { ModelDevice(std::get<EvoNetParameters::Main::DeviceId>(parameters).get(), 1) };
-    ModelInterpreterGpu<float> model_interpreter(model_resources);
-    model_interpreters.push_back(model_interpreter);
-  }
+  setModelInterpreterParameters(model_interpreters, args...);
+
+  // define the model trainer
   ModelTrainerExt<float> model_trainer;
-  model_trainer.setBatchSize(std::get<EvoNetParameters::ModelTrainer::BatchSize>(parameters).get());
-  model_trainer.setMemorySize(std::get<EvoNetParameters::ModelTrainer::MemorySize>(parameters).get());
-  model_trainer.setNEpochsTraining(std::get<EvoNetParameters::ModelTrainer::NEpochsTraining>(parameters).get());
-  model_trainer.setNEpochsValidation(std::get<EvoNetParameters::ModelTrainer::NEpochsValidation>(parameters).get());
-  model_trainer.setNEpochsEvaluation(std::get<EvoNetParameters::ModelTrainer::NEpochsEvaluation>(parameters).get());
-  model_trainer.setNTBPTTSteps(std::get<EvoNetParameters::ModelTrainer::NTBTTSteps>(parameters).get());
-  model_trainer.setNTETTSteps(std::get<EvoNetParameters::ModelTrainer::NTETTSteps>(parameters).get());
-  model_trainer.setVerbosityLevel(std::get<EvoNetParameters::ModelTrainer::Verbosity>(parameters).get());
-  model_trainer.setLogging(std::get<EvoNetParameters::ModelTrainer::LoggingTraining>(parameters).get(),
-    std::get<EvoNetParameters::ModelTrainer::LoggingValidation>(parameters).get(),
-    std::get<EvoNetParameters::ModelTrainer::LoggingEvaluation>(parameters).get());
-  model_trainer.setFindCycles(std::get<EvoNetParameters::ModelTrainer::FindCycles>(parameters).get()); //true
-  model_trainer.setFastInterpreter(std::get<EvoNetParameters::ModelTrainer::FastInterpreter>(parameters).get()); //false
-  model_trainer.setPreserveOoO(std::get<EvoNetParameters::ModelTrainer::PreserveOoO>(parameters).get());
-  model_trainer.setInterpretModel(std::get<EvoNetParameters::ModelTrainer::InterpretModel>(parameters).get());
-  model_trainer.setResetModel(std::get<EvoNetParameters::ModelTrainer::ResetModel>(parameters).get());
-  model_trainer.setResetInterpreter(std::get<EvoNetParameters::ModelTrainer::ResetInterpreter>(parameters).get());
+  setModelTrainerParameters(model_trainer, args...);
 
   std::vector<LossFunctionHelper<float>> loss_function_helpers;
   LossFunctionHelper<float> loss_function_helper1, loss_function_helper2, loss_function_helper3;
@@ -548,35 +497,33 @@ void main_MNIST(const ParameterTypes& ...args) {
   loss_function_helpers.push_back(loss_function_helper1);
   if (std::get<EvoNetParameters::ModelTrainer::AddGaussian>(parameters).get()) {
     if (std::get<EvoNetParameters::ModelTrainer::NHidden0>(parameters).get() > 0) {
-      loss_function_helper2.output_nodes_ = encoding_nodes_en0mu0;
-      loss_function_helper2.loss_functions_ = { std::make_shared<KLDivergenceMuLossOp<float>>(KLDivergenceMuLossOp<float>(1e-6, 1 / model_trainer.getBatchSize(), 0.0)) };
-      loss_function_helper2.loss_function_grads_ = { std::make_shared<KLDivergenceMuLossGradOp<float>>(KLDivergenceMuLossGradOp<float>(1e-6, 1 / model_trainer.getBatchSize(), 0.0)) };
+      loss_function_helper2.output_nodes_ = encoding_nodes_en0posterior;
+      loss_function_helper2.loss_functions_ = { std::make_shared<NegativeLogLikelihoodLossOp<float>>(NegativeLogLikelihoodLossOp<float>(1e-6, -1 / model_trainer.getBatchSize())) };
+      loss_function_helper2.loss_function_grads_ = { std::make_shared<NegativeLogLikelihoodLossGradOp<float>>(NegativeLogLikelihoodLossGradOp<float>(1e-6, -1 / model_trainer.getBatchSize())) };
       loss_function_helpers.push_back(loss_function_helper2);
-      loss_function_helper3.output_nodes_ = encoding_nodes_en0logvar0;
-      loss_function_helper3.loss_functions_ = { std::make_shared<KLDivergenceLogVarLossOp<float>>(KLDivergenceLogVarLossOp<float>(1e-6, 1 / model_trainer.getBatchSize(), 0.0)) };
-      loss_function_helper3.loss_function_grads_ = { std::make_shared<KLDivergenceLogVarLossGradOp<float>>(KLDivergenceLogVarLossGradOp<float>(1e-6, 1 / model_trainer.getBatchSize(), 0.0)) };
+      loss_function_helper3.output_nodes_ = encoding_nodes_en0prior;
+      loss_function_helper3.loss_functions_ = { std::make_shared<NegativeLogLikelihoodLossOp<float>>(NegativeLogLikelihoodLossOp<float>(1e-6, 1 / model_trainer.getBatchSize())) };
+      loss_function_helper3.loss_function_grads_ = { std::make_shared<NegativeLogLikelihoodLossGradOp<float>>(NegativeLogLikelihoodLossGradOp<float>(1e-6, 1 / model_trainer.getBatchSize())) };
       loss_function_helpers.push_back(loss_function_helper3);
     }
     if (std::get<EvoNetParameters::ModelTrainer::NHidden1>(parameters).get() > 0) {
-      loss_function_helper2.output_nodes_ = encoding_nodes_en1mu0;
-      loss_function_helper2.loss_functions_ = { std::make_shared<KLDivergenceMuLossOp<float>>(KLDivergenceMuLossOp<float>(1e-6, 1 / model_trainer.getBatchSize(), 0.0)) };
-      loss_function_helper2.loss_function_grads_ = { std::make_shared<KLDivergenceMuLossGradOp<float>>(KLDivergenceMuLossGradOp<float>(1e-6, 1 / model_trainer.getBatchSize(), 0.0)) };
+      loss_function_helper2.output_nodes_ = encoding_nodes_en1posterior;
+      loss_function_helper2.loss_functions_ = { std::make_shared<NegativeLogLikelihoodLossOp<float>>(NegativeLogLikelihoodLossOp<float>(1e-6, -1 / model_trainer.getBatchSize())) };
+      loss_function_helper2.loss_function_grads_ = { std::make_shared<NegativeLogLikelihoodLossGradOp<float>>(NegativeLogLikelihoodLossGradOp<float>(1e-6, -1 / model_trainer.getBatchSize())) };
       loss_function_helpers.push_back(loss_function_helper2);
-      loss_function_helper3.output_nodes_ = encoding_nodes_en1logvar0;
-      loss_function_helper3.loss_functions_ = { std::make_shared<KLDivergenceLogVarLossOp<float>>(KLDivergenceLogVarLossOp<float>(1e-6, 1 / model_trainer.getBatchSize(), 0.0)) };
-      loss_function_helper3.loss_function_grads_ = { std::make_shared<KLDivergenceLogVarLossGradOp<float>>(KLDivergenceLogVarLossGradOp<float>(1e-6, 1 / model_trainer.getBatchSize(), 0.0)) };
+      loss_function_helper3.output_nodes_ = encoding_nodes_en1prior;
+      loss_function_helper3.loss_functions_ = { std::make_shared<NegativeLogLikelihoodLossOp<float>>(NegativeLogLikelihoodLossOp<float>(1e-6, 1 / model_trainer.getBatchSize())) };
+      loss_function_helper3.loss_function_grads_ = { std::make_shared<NegativeLogLikelihoodLossGradOp<float>>(NegativeLogLikelihoodLossGradOp<float>(1e-6, 1 / model_trainer.getBatchSize())) };
       loss_function_helpers.push_back(loss_function_helper3);
     }
-    if (std::get<EvoNetParameters::ModelTrainer::NHidden2>(parameters).get() > 0) {
-      loss_function_helper2.output_nodes_ = encoding_nodes_en2mu0;
-      loss_function_helper2.loss_functions_ = { std::make_shared<KLDivergenceMuLossOp<float>>(KLDivergenceMuLossOp<float>(1e-6, 1 / model_trainer.getBatchSize(), 0.0)) };
-      loss_function_helper2.loss_function_grads_ = { std::make_shared<KLDivergenceMuLossGradOp<float>>(KLDivergenceMuLossGradOp<float>(1e-6, 1 / model_trainer.getBatchSize(), 0.0)) };
-      loss_function_helpers.push_back(loss_function_helper2);
-      loss_function_helper3.output_nodes_ = encoding_nodes_en2logvar0;
-      loss_function_helper3.loss_functions_ = { std::make_shared<KLDivergenceLogVarLossOp<float>>(KLDivergenceLogVarLossOp<float>(1e-6, 1 / model_trainer.getBatchSize(), 0.0)) };
-      loss_function_helper3.loss_function_grads_ = { std::make_shared<KLDivergenceLogVarLossGradOp<float>>(KLDivergenceLogVarLossGradOp<float>(1e-6, 1 / model_trainer.getBatchSize(), 0.0)) };
-      loss_function_helpers.push_back(loss_function_helper3);
-    }
+    loss_function_helper2.output_nodes_ = encoding_nodes_en2posterior;
+    loss_function_helper2.loss_functions_ = { std::make_shared<NegativeLogLikelihoodLossOp<float>>(NegativeLogLikelihoodLossOp<float>(1e-6, -1 / model_trainer.getBatchSize())) };
+    loss_function_helper2.loss_function_grads_ = { std::make_shared<NegativeLogLikelihoodLossGradOp<float>>(NegativeLogLikelihoodLossGradOp<float>(1e-6, -1 / model_trainer.getBatchSize())) };
+    loss_function_helpers.push_back(loss_function_helper2);
+    loss_function_helper3.output_nodes_ = encoding_nodes_en2prior;
+    loss_function_helper3.loss_functions_ = { std::make_shared<NegativeLogLikelihoodLossOp<float>>(NegativeLogLikelihoodLossOp<float>(1e-6, 1 / model_trainer.getBatchSize())) };
+    loss_function_helper3.loss_function_grads_ = { std::make_shared<NegativeLogLikelihoodLossGradOp<float>>(NegativeLogLikelihoodLossGradOp<float>(1e-6, 1 / model_trainer.getBatchSize())) };
+    loss_function_helpers.push_back(loss_function_helper3);
   }
   model_trainer.setLossFunctionHelpers(loss_function_helpers);
 
@@ -588,106 +535,45 @@ void main_MNIST(const ParameterTypes& ...args) {
   metric_function_helpers.push_back(metric_function_helper1);
   if (std::get<EvoNetParameters::ModelTrainer::AddGaussian>(parameters).get()) {
     if (std::get<EvoNetParameters::ModelTrainer::NHidden0>(parameters).get() > 0) {
-      metric_function_helper1.output_nodes_ = encoding_nodes_en0logvar0;
+      metric_function_helper1.output_nodes_ = encoding_nodes_en1logvar;
       metric_function_helper1.metric_functions_ = { std::make_shared<MAEOp<float>>(MAEOp<float>()) };
-      metric_function_helper1.metric_names_ = { "MAE_EN0LogVar0" };
+      metric_function_helper1.metric_names_ = { "MAE_EN0LogVar" };
       metric_function_helpers.push_back(metric_function_helper1);
     }
     if (std::get<EvoNetParameters::ModelTrainer::NHidden1>(parameters).get() > 0) {
-      metric_function_helper1.output_nodes_ = encoding_nodes_en1logvar0;
+      metric_function_helper1.output_nodes_ = encoding_nodes_en1logvar;
       metric_function_helper1.metric_functions_ = { std::make_shared<MAEOp<float>>(MAEOp<float>()) };
-      metric_function_helper1.metric_names_ = { "MAE_EN1LogVar0" };
+      metric_function_helper1.metric_names_ = { "MAE_EN1LogVar" };
       metric_function_helpers.push_back(metric_function_helper1);
     }
-    if (std::get<EvoNetParameters::ModelTrainer::NHidden2>(parameters).get() > 0) {
-      metric_function_helper1.output_nodes_ = encoding_nodes_en2logvar0;
-      metric_function_helper1.metric_functions_ = { std::make_shared<MAEOp<float>>(MAEOp<float>()) };
-      metric_function_helper1.metric_names_ = { "MAE_EN2LogVar0" };
-      metric_function_helpers.push_back(metric_function_helper1);
-    }
+    metric_function_helper1.output_nodes_ = encoding_nodes_en2logvar;
+    metric_function_helper1.metric_functions_ = { std::make_shared<MAEOp<float>>(MAEOp<float>()) };
+    metric_function_helper1.metric_names_ = { "MAE_EN2LogVar" };
+    metric_function_helpers.push_back(metric_function_helper1);
   }
   model_trainer.setMetricFunctionHelpers(metric_function_helpers);
 
   // define the model replicator for growth mode
   ModelReplicatorExt<float> model_replicator;
-  model_replicator.setNodeActivations({ std::make_pair(std::make_shared<ReLUOp<float>>(ReLUOp<float>()), std::make_shared<ReLUGradOp<float>>(ReLUGradOp<float>())),
-    std::make_pair(std::make_shared<LinearOp<float>>(LinearOp<float>()), std::make_shared<LinearGradOp<float>>(LinearGradOp<float>())),
-    std::make_pair(std::make_shared<ELUOp<float>>(ELUOp<float>()), std::make_shared<ELUGradOp<float>>(ELUGradOp<float>())),
-    std::make_pair(std::make_shared<SigmoidOp<float>>(SigmoidOp<float>()), std::make_shared<SigmoidGradOp<float>>(SigmoidGradOp<float>())),
-    std::make_pair(std::make_shared<TanHOp<float>>(TanHOp<float>()), std::make_shared<TanHGradOp<float>>(TanHGradOp<float>()))//,
-    });
-  model_replicator.setNodeIntegrations({ std::make_tuple(std::make_shared<ProdOp<float>>(ProdOp<float>()), std::make_shared<ProdErrorOp<float>>(ProdErrorOp<float>()), std::make_shared<ProdWeightGradOp<float>>(ProdWeightGradOp<float>())),
-    std::make_tuple(std::make_shared<SumOp<float>>(SumOp<float>()), std::make_shared<SumErrorOp<float>>(SumErrorOp<float>()), std::make_shared<SumWeightGradOp<float>>(SumWeightGradOp<float>())),
-    });
-  //model_replicator.set_modification_rate_by_prev_error_ = std::get<EvoNetParameters::ModelReplicator::SetModificationRateByPrevError>(parameters).get();
-  //model_replicator.set_modification_rate_fixed_ = std::get<EvoNetParameters::ModelReplicator::SetModificationRateFixed>(parameters).get();
-  model_replicator.setRandomModifications(
-    std::make_pair(std::get<EvoNetParameters::ModelReplicator::NNodeDownAdditionsLB>(parameters).get(), std::get<EvoNetParameters::ModelReplicator::NNodeDownAdditionsUB>(parameters).get()),
-    std::make_pair(std::get<EvoNetParameters::ModelReplicator::NNodeRightAdditionsLB>(parameters).get(), std::get<EvoNetParameters::ModelReplicator::NNodeRightAdditionsUB>(parameters).get()),
-    std::make_pair(std::get<EvoNetParameters::ModelReplicator::NNodeDownCopiesLB>(parameters).get(), std::get<EvoNetParameters::ModelReplicator::NNodeDownCopiesUB>(parameters).get()),
-    std::make_pair(std::get<EvoNetParameters::ModelReplicator::NNodeRightCopiesLB>(parameters).get(), std::get<EvoNetParameters::ModelReplicator::NNodeRightCopiesUB>(parameters).get()),
-    std::make_pair(std::get<EvoNetParameters::ModelReplicator::NLinkAdditionsLB>(parameters).get(), std::get<EvoNetParameters::ModelReplicator::NLinkAdditionsUB>(parameters).get()),
-    std::make_pair(std::get<EvoNetParameters::ModelReplicator::NLinkCopiesLB>(parameters).get(), std::get<EvoNetParameters::ModelReplicator::NLinkCopiesUB>(parameters).get()),
-    std::make_pair(std::get<EvoNetParameters::ModelReplicator::NNodeDeletionsLB>(parameters).get(), std::get<EvoNetParameters::ModelReplicator::NNodeDeletionsUB>(parameters).get()),
-    std::make_pair(std::get<EvoNetParameters::ModelReplicator::NLinkDeletionsLB>(parameters).get(), std::get<EvoNetParameters::ModelReplicator::NLinkDeletionsUB>(parameters).get()),
-    std::make_pair(std::get<EvoNetParameters::ModelReplicator::NNodeActivationChangesLB>(parameters).get(), std::get<EvoNetParameters::ModelReplicator::NNodeActivationChangesUB>(parameters).get()),
-    std::make_pair(std::get<EvoNetParameters::ModelReplicator::NNodeIntegrationChangesLB>(parameters).get(), std::get<EvoNetParameters::ModelReplicator::NNodeIntegrationChangesUB>(parameters).get()),
-    std::make_pair(std::get<EvoNetParameters::ModelReplicator::NModuleAdditionsLB>(parameters).get(), std::get<EvoNetParameters::ModelReplicator::NModuleAdditionsUB>(parameters).get()),
-    std::make_pair(std::get<EvoNetParameters::ModelReplicator::NModuleCopiesLB>(parameters).get(), std::get<EvoNetParameters::ModelReplicator::NModuleCopiesUB>(parameters).get()),
-    std::make_pair(std::get<EvoNetParameters::ModelReplicator::NModuleDeletionsLB>(parameters).get(), std::get<EvoNetParameters::ModelReplicator::NModuleDeletionsUB>(parameters).get()));
+  setModelReplicatorParameters(model_replicator, args...);
 
   // define the initial population
   Model<float> model;
   if (std::get<EvoNetParameters::Main::MakeModel>(parameters).get()) {
     std::cout << "Making the model..." << std::endl;
     model_trainer.makeFullyConnBayes(model, input_nodes.size(), output_nodes.size(), std::get<EvoNetParameters::ModelTrainer::NHidden0>(parameters).get(), std::get<EvoNetParameters::ModelTrainer::NHidden1>(parameters).get(), std::get<EvoNetParameters::ModelTrainer::NHidden2>(parameters).get(), std::get<EvoNetParameters::ModelTrainer::AddGaussian>(parameters).get(),
-      true, std::get<EvoNetParameters::ModelTrainer::LearningRate>(parameters).get(), std::get<EvoNetParameters::ModelTrainer::GradientClipping>(parameters).get());  // Baseline
+      -1, -4, 0.5, true, std::get<EvoNetParameters::ModelTrainer::LearningRate>(parameters).get(), std::get<EvoNetParameters::ModelTrainer::GradientClipping>(parameters).get());  // Baseline
     model.setId(0);
   }
-  else if (std::get<EvoNetParameters::Main::LoadModelBinary>(parameters).get()) {
-    // read in the trained model
-    std::cout << "Reading in the model from binary..." << std::endl;
+  else {
     ModelFile<float> model_file;
-    model_file.loadModelBinary(std::get<EvoNetParameters::General::OutputDir>(parameters).get() + std::get<EvoNetParameters::Main::ModelName>(parameters).get() + "_model.binary", model);
-    model.setId(1);
     ModelInterpreterFileGpu<float> model_interpreter_file;
-    model_interpreter_file.loadModelInterpreterBinary(std::get<EvoNetParameters::General::OutputDir>(parameters).get() + std::get<EvoNetParameters::Main::ModelName>(parameters).get() + "_interpreter.binary", model_interpreters[0]); // FIX ME!
-  }
-  else if (std::get<EvoNetParameters::Main::LoadModelCsv>(parameters).get()) {
-    // read in the trained model
-    std::cout << "Reading in the model from csv..." << std::endl;
-    ModelFile<float> model_file;
-    model_file.loadModelCsv(std::get<EvoNetParameters::General::OutputDir>(parameters).get() + std::get<EvoNetParameters::Main::ModelName>(parameters).get() + "_nodes.csv", std::get<EvoNetParameters::General::DataDir>(parameters).get() + std::get<EvoNetParameters::Main::ModelName>(parameters).get() + "_links.csv", std::get<EvoNetParameters::General::DataDir>(parameters).get() + std::get<EvoNetParameters::Main::ModelName>(parameters).get() + "_weights.csv", model, true, true, true);
-    model.setId(1);
+    loadModelFromParameters(model, model_interpreters.at(0), model_file, model_interpreter_file, args...);
   }
   model.setName(std::get<EvoNetParameters::General::OutputDir>(parameters).get() + std::get<EvoNetParameters::Main::ModelName>(parameters).get()); //So that all output will be written to a specific directory
 
-  if (std::get<EvoNetParameters::Main::TrainModel>(parameters).get()) {
-    // Train the model
-    model.setName(model.getName() + "_train");
-    std::pair<std::vector<float>, std::vector<float>> model_errors = model_trainer.trainModel(model, data_simulator,
-      input_nodes, model_logger, model_interpreters.front());
-  }
-  else if (std::get<EvoNetParameters::Main::EvolveModel>(parameters).get()) {
-    // Evolve the population
-    std::vector<Model<float>> population = { model };
-    std::vector<std::vector<std::tuple<int, std::string, float>>> models_validation_errors_per_generation = population_trainer.evolveModels(
-      population, std::get<EvoNetParameters::General::OutputDir>(parameters).get() + std::get<EvoNetParameters::PopulationTrainer::PopulationName>(parameters).get(), //So that all output will be written to a specific directory
-      model_trainer, model_interpreters, model_replicator, data_simulator, model_logger, population_logger, input_nodes);
-
-    PopulationTrainerFile<float> population_trainer_file;
-    population_trainer_file.storeModels(population, std::get<EvoNetParameters::General::OutputDir>(parameters).get() + std::get<EvoNetParameters::PopulationTrainer::PopulationName>(parameters).get());
-    population_trainer_file.storeModelValidations(std::get<EvoNetParameters::General::OutputDir>(parameters).get() + std::get<EvoNetParameters::PopulationTrainer::PopulationName>(parameters).get() + "Errors.csv", models_validation_errors_per_generation);
-  }
-  else if (std::get<EvoNetParameters::Main::EvaluateModel>(parameters).get()) {
-    //// Evaluate the population
-    //std::vector<Model<float>> population = { model };
-    //population_trainer.evaluateModels(
-    //  population, model_trainer, model_interpreters, model_replicator, data_simulator, model_logger, input_nodes);
-    // Evaluate the model
-    model.setName(model.getName() + "_evaluation");
-    Eigen::Tensor<float, 4> model_output = model_trainer.evaluateModel(model, data_simulator, input_nodes, model_logger, model_interpreters.front());
-  }
+  // Run the training, evaluation, or evolution
+  runTrainEvalEvoFromParameters<float>(model, model_interpreters, model_trainer, population_trainer, model_replicator, data_simulator, model_logger, population_logger, input_nodes, args...);
 }
 
 /// MNIST_CovNet_example 0 C:/Users/dmccloskey/Documents/GitHub/mnist/Parameters.csv
@@ -710,6 +596,7 @@ int main(int argc, char** argv)
   EvoNetParameters::Main::TrainModel train_model("train_model", true);
   EvoNetParameters::Main::EvolveModel evolve_model("evolve_model", false);
   EvoNetParameters::Main::EvaluateModel evaluate_model("evaluate_model", false);
+  EvoNetParameters::Main::EvaluateModels evaluate_models("evaluate_models", false);
   EvoNetParameters::Examples::ModelType model_type("model_type", "Solution");
   EvoNetParameters::Examples::SimulationType simulation_type("simulation_type", "");
   EvoNetParameters::PopulationTrainer::PopulationName population_name("population_name", "");
@@ -727,6 +614,7 @@ int main(int argc, char** argv)
   EvoNetParameters::PopulationTrainer::Logging population_logging("population_logging", true);
   EvoNetParameters::PopulationTrainer::SetPopulationSizeFixed set_population_size_fixed("set_population_size_fixed", false);
   EvoNetParameters::PopulationTrainer::SetPopulationSizeDoubling set_population_size_doubling("set_population_size_doubling", true);
+  EvoNetParameters::PopulationTrainer::SetTrainingStepsByModelSize set_training_steps_by_model_size("set_training_steps_by_model_size", false);
   EvoNetParameters::ModelTrainer::BatchSize batch_size("batch_size", 32);
   EvoNetParameters::ModelTrainer::MemorySize memory_size("memory_size", 1);
   EvoNetParameters::ModelTrainer::NEpochsTraining n_epochs_training("n_epochs_training", 1000);
@@ -780,9 +668,9 @@ int main(int argc, char** argv)
   EvoNetParameters::ModelReplicator::SetModificationRateFixed set_modification_rate_fixed("set_modification_rate_fixed", false);
   EvoNetParameters::ModelReplicator::SetModificationRateByPrevError set_modification_rate_by_prev_error("set_modification_rate_by_prev_error", false);
   auto parameters = std::make_tuple(id, data_dir, output_dir,
-    device_id, model_name, make_model, load_model_csv, load_model_binary, train_model, evolve_model, evaluate_model,
+    device_id, model_name, make_model, load_model_csv, load_model_binary, train_model, evolve_model, evaluate_model, evaluate_models,
     model_type, simulation_type,
-    population_name, n_generations, n_interpreters, prune_model_num, remove_isolated_nodes, check_complete_model_input_to_output, population_size, n_top, n_random, n_replicates_per_model, reset_model_copy_weights, reset_model_template_weights, population_logging, set_population_size_fixed, set_population_size_doubling,
+    population_name, n_generations, n_interpreters, prune_model_num, remove_isolated_nodes, check_complete_model_input_to_output, population_size, n_top, n_random, n_replicates_per_model, reset_model_copy_weights, reset_model_template_weights, population_logging, set_population_size_fixed, set_population_size_doubling, set_training_steps_by_model_size,
     batch_size, memory_size, n_epochs_training, n_epochs_validation, n_epochs_evaluation, n_tbtt_steps, n_tett_steps, verbosity, logging_training, logging_validation, logging_evaluation, find_cycles, fast_interpreter, preserve_ooo, interpret_model, reset_model, reset_interpreter,
     n_hidden_0, n_hidden_1, n_hidden_2, add_gaussian, add_mixed_gaussian, learning_rate, gradient_clipping,
     n_node_down_additions_lb, n_node_right_additions_lb, n_node_down_copies_lb, n_node_right_copies_lb, n_link_additons_lb, n_link_copies_lb, n_node_deletions_lb, n_link_deletions_lb, n_node_activation_changes_lb, n_node_integration_changes_lb, n_module_additions_lb, n_module_copies_lb, n_module_deletions_lb, n_node_down_additions_ub, n_node_right_additions_ub, n_node_down_copies_ub, n_node_right_copies_ub, n_link_additons_ub, n_link_copies_ub, n_node_deletions_ub, n_link_deletions_ub, n_node_activation_changes_ub, n_node_integration_changes_ub, n_module_additions_ub, n_module_copies_ub, n_module_deletions_ub, set_modification_rate_fixed, set_modification_rate_by_prev_error);

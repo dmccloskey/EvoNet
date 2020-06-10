@@ -2102,7 +2102,7 @@ namespace SmartPeak
     }
     if (getLayerTensor(layer_id)->getLayerSize() != node_names.size()) {
       clear_cache(); // clean up before exiting
-      std::string error_char = "The number of output nodes does not match the output layer tensor size.";
+      std::string error_char = "The number of output nodes " + std::to_string(getLayerTensor(layer_id)->getLayerSize()) + " does not match the output layer tensor size " + std::to_string(node_names.size());
       throw std::runtime_error(error_char);
     }
 

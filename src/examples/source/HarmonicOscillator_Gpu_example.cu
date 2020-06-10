@@ -450,7 +450,7 @@ void main_(const ParameterTypes& ...args) {
   data_simulator.simulation_name_ = std::get<EvoNetParameters::Examples::SimulationType>(parameters).get();
 
   // define the model interpreters
-  std::vector<ModelInterpreterDefaultDevice<float>> model_interpreters;
+  std::vector<ModelInterpreterGpu<float>> model_interpreters;
   setModelInterpreterParameters(model_interpreters, args...);
 
   // define the model trainer
