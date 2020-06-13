@@ -49,6 +49,10 @@ public:
     auto integration_error_op = std::make_shared<SumErrorOp<TensorT>>(SumErrorOp<TensorT>());
     auto integration_weight_grad_op = std::make_shared<SumWeightGradOp<TensorT>>(SumWeightGradOp<TensorT>());
 
+    // Define the weight inits
+    auto weight_init_mu = std::make_shared<RandWeightInitOp<TensorT>>(RandWeightInitOp<TensorT>((TensorT)(n_inputs + n_hidden_0) / 2, 1));
+    auto weight_init_logvar = std::make_shared<ConstWeightInitOp<TensorT>>(ConstWeightInitOp<TensorT>(TensorT(-12 / n_hidden_0)));
+
     // Define the solver
     auto solver_op = std::make_shared<AdamOp<TensorT>>(AdamOp<TensorT>(learning_rate, 0.9, 0.999, 1e-8, gradient_clipping));
     auto solver_dummy_op = std::make_shared<DummySolverOp<TensorT>>(DummySolverOp<TensorT>());
@@ -60,20 +64,11 @@ public:
     if (n_hidden_0 > 0) {
       node_names_input = node_names;
       if (add_gaussian) {
-        // Add the gaussian nodes
-        node_names_mu = model_builder.addFullyConnected(model, "EN0MuEnc0", "EN0MuEnc0", node_names_input, n_hidden_0,
-          activation_linear, activation_linear_grad, integration_op, integration_error_op, integration_weight_grad_op,
-          std::make_shared<RandWeightInitOp<TensorT>>(RandWeightInitOp<TensorT>((TensorT)(node_names_input.size() + n_hidden_0) / 2, 1)),
-          solver_op, 0.0f, 0.0f, false, specify_layers);
-        node_names_logvar = model_builder.addFullyConnected(model, "EN0LogVarEnc0", "EN0LogVarEnc0", node_names_input, n_hidden_0,
-          activation_linear, activation_linear_grad, integration_op, integration_error_op, integration_weight_grad_op,
-          std::make_shared<RandWeightInitOp<TensorT>>(RandWeightInitOp<TensorT>((TensorT)(node_names_input.size() + n_hidden_0) / 2, 1)),
-          solver_op, 0.0f, 0.0f, false, specify_layers);
-        node_names_encoding = model_builder.addGaussianEncoding(model, "EN0GaussianEnc0", "EN0GaussianEnc0", node_names_mu, node_names_logvar, specify_layers);
-        node_names = node_names_encoding;
-        // Add the calculations of the posterior and prior gaussians
-        node_names_posterior = model_builder.addGaussianPosterior(model, "EN0PosteriorEnc0", "EN0PosteriorEnc0", node_names_mu, node_names_logvar, node_names_encoding, specify_layers);
-        node_names_prior = model_builder.addMixedGaussianPior(model, "EN0PriorEnc0", "EN0PriorEnc0", node_names_encoding, logvar_1, logvar_2, pi, specify_layers);
+        // Add the bayesian nodes
+        node_names = model_builder.addFullyConnectedBayesian(model, "EN0", "EN0", node_names_input, n_hidden_0,
+          activation, activation_grad, integration_op, integration_error_op, integration_weight_grad_op,
+          weight_init_mu, solver_op, weight_init_logvar, solver_op, logvar_1, logvar_2, pi,
+          node_names_logvar, node_names_posterior, node_names_prior, specify_layers);
         // Add the actual output nodes
         node_names_posterior = model_builder.addSinglyConnected(model, "EN0Posterior", "EN0Posterior", node_names_posterior, node_names_posterior.size(),
           activation_linear, activation_linear_grad, integration_op, integration_error_op, integration_weight_grad_op,
@@ -107,20 +102,11 @@ public:
     if (n_hidden_1 > 0) {
       node_names_input = node_names;
       if (add_gaussian) {
-        // Add the gaussian nodes
-        node_names_mu = model_builder.addFullyConnected(model, "EN1MuEnc0", "EN1MuEnc0", node_names_input, n_hidden_1,
-          activation_linear, activation_linear_grad, integration_op, integration_error_op, integration_weight_grad_op,
-          std::make_shared<RandWeightInitOp<TensorT>>(RandWeightInitOp<TensorT>((TensorT)(node_names_input.size() + n_hidden_1) / 2, 1)),
-          solver_op, 0.0f, 0.0f, false, specify_layers);
-        node_names_logvar = model_builder.addFullyConnected(model, "EN1LogVarEnc0", "EN1LogVarEnc0", node_names_input, n_hidden_1,
-          activation_linear, activation_linear_grad, integration_op, integration_error_op, integration_weight_grad_op,
-          std::make_shared<RandWeightInitOp<TensorT>>(RandWeightInitOp<TensorT>((TensorT)(node_names_input.size() + n_hidden_1) / 2, 1)),
-          solver_op, 0.0f, 0.0f, false, specify_layers);
-        node_names_encoding = model_builder.addGaussianEncoding(model, "EN1GaussianEnc0", "EN1GaussianEnc0", node_names_mu, node_names_logvar, specify_layers);
-        node_names = node_names_encoding;
-        // Add the calculations of the posterior and prior gaussians
-        node_names_posterior = model_builder.addGaussianPosterior(model, "EN1PosteriorEnc0", "EN1PosteriorEnc0", node_names_mu, node_names_logvar, node_names_encoding, specify_layers);
-        node_names_prior = model_builder.addMixedGaussianPior(model, "EN1PriorEnc0", "EN1PriorEnc0", node_names_encoding, logvar_1, logvar_2, pi, specify_layers);
+        // Add the bayesian nodes
+        node_names = model_builder.addFullyConnectedBayesian(model, "EN1", "EN1", node_names_input, n_hidden_1,
+          activation, activation_grad, integration_op, integration_error_op, integration_weight_grad_op,
+          weight_init_mu, solver_op, weight_init_logvar, solver_op, logvar_1, logvar_2, pi,
+          node_names_logvar, node_names_posterior, node_names_prior, specify_layers);
         // Add the actual output nodes
         node_names_posterior = model_builder.addSinglyConnected(model, "EN1Posterior", "EN1Posterior", node_names_posterior, node_names_posterior.size(),
           activation_linear, activation_linear_grad, integration_op, integration_error_op, integration_weight_grad_op,
@@ -154,20 +140,11 @@ public:
     if (n_outputs > 0) {
       node_names_input = node_names;
       if (add_gaussian) {
-        // Add the gaussian nodes
-        node_names_mu = model_builder.addFullyConnected(model, "EN2MuEnc0", "EN2MuEnc0", node_names_input, n_outputs,
-          activation_linear, activation_linear_grad, integration_op, integration_error_op, integration_weight_grad_op,
-          std::make_shared<RandWeightInitOp<TensorT>>(RandWeightInitOp<TensorT>((TensorT)(node_names_input.size() + n_outputs) / 2, 1)),
-          solver_op, 0.0f, 0.0f, false, specify_layers);
-        node_names_logvar = model_builder.addFullyConnected(model, "EN2LogVarEnc0", "EN2LogVarEnc0", node_names_input, n_outputs,
-          activation_linear, activation_linear_grad, integration_op, integration_error_op, integration_weight_grad_op,
-          std::make_shared<RandWeightInitOp<TensorT>>(RandWeightInitOp<TensorT>((TensorT)(node_names_input.size() + n_outputs) / 2, 1)),
-          solver_op, 0.0f, 0.0f, false, specify_layers);
-        node_names_encoding = model_builder.addGaussianEncoding(model, "EN2GaussianEnc0", "EN2GaussianEnc0", node_names_mu, node_names_logvar, specify_layers);
-        node_names = node_names_encoding;
-        // Add the calculations of the posterior and prior gaussians
-        node_names_posterior = model_builder.addGaussianPosterior(model, "EN2PosteriorEnc0", "EN2PosteriorEnc0", node_names_mu, node_names_logvar, node_names_encoding, specify_layers);
-        node_names_prior = model_builder.addMixedGaussianPior(model, "EN2PriorEnc0", "EN2PriorEnc0", node_names_encoding, logvar_1, logvar_2, pi, specify_layers);
+        // Add the bayesian nodes
+        node_names = model_builder.addFullyConnectedBayesian(model, "EN2", "EN2", node_names_input, n_outputs,
+          activation, activation_grad, integration_op, integration_error_op, integration_weight_grad_op,
+          weight_init_mu, solver_op, weight_init_logvar, solver_op, logvar_1, logvar_2, pi,
+          node_names_logvar, node_names_posterior, node_names_prior, specify_layers);
         // Add the actual output nodes
         node_names_posterior = model_builder.addSinglyConnected(model, "EN2Posterior", "EN2Posterior", node_names_posterior, node_names_posterior.size(),
           activation_linear, activation_linear_grad, integration_op, integration_error_op, integration_weight_grad_op,
@@ -390,24 +367,32 @@ void main_MNIST(const ParameterTypes& ...args) {
   }
 
   // Make the encoding nodes and add them to the input
+  assert(std::get<EvoNetParameters::ModelTrainer::NHidden0>(parameters).get() > 0);
+  assert(std::get<EvoNetParameters::ModelTrainer::NHidden1>(parameters).get() > 0);
   if (std::get<EvoNetParameters::ModelTrainer::AddGaussian>(parameters).get()) {
+    for (int i = 0; i < input_size; ++i) {
+      for (int j = 0; j < std::get<EvoNetParameters::ModelTrainer::NHidden0>(parameters).get(); ++j) {
+        char name_char[512];
+        sprintf(name_char, "EN0-Input_%012d-Gaussian_%012d-Sampler", i, j);
+        std::string name(name_char);
+        input_nodes.push_back(name);
+      }
+    }
     for (int i = 0; i < std::get<EvoNetParameters::ModelTrainer::NHidden0>(parameters).get(); ++i) {
-      char name_char[512];
-      sprintf(name_char, "EN0GaussianEnc0_%012d-Sampler", i);
-      std::string name(name_char);
-      input_nodes.push_back(name);
+      for (int j = 0; j < std::get<EvoNetParameters::ModelTrainer::NHidden1>(parameters).get(); ++j) {
+        char name_char[512];
+        sprintf(name_char, "EN1-EN0_%012d-Gaussian_%012d-Sampler", i, j);
+        std::string name(name_char);
+        input_nodes.push_back(name);
+      }
     }
     for (int i = 0; i < std::get<EvoNetParameters::ModelTrainer::NHidden1>(parameters).get(); ++i) {
-      char name_char[512];
-      sprintf(name_char, "EN1GaussianEnc0_%012d-Sampler", i);
-      std::string name(name_char);
-      input_nodes.push_back(name);
-    }
-    for (int i = 0; i < data_simulator.training_labels.dimension(1); ++i) {
-      char name_char[512];
-      sprintf(name_char, "EN2GaussianEnc0_%012d-Sampler", i);
-      std::string name(name_char);
-      input_nodes.push_back(name);
+      for (int j = 0; j < data_simulator.training_labels.dimension(1); ++j) {
+        char name_char[512];
+        sprintf(name_char, "EN2-EN1_%012d-Gaussian_%012d-Sampler", i, j);
+        std::string name(name_char);
+        input_nodes.push_back(name);
+      }
     }
   }
 
