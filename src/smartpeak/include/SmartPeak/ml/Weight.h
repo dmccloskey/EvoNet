@@ -356,7 +356,7 @@ private:
 	template<typename TensorT>
 	inline void Weight<TensorT>::setDropProbability(const TensorT & drop_probability)
 	{
-		//drop_probability_ = drop_probability;
+		drop_probability_ = drop_probability;
 		//RandBinaryOp<TensorT> rand_bin(drop_probability_);
 		//setDrop(rand_bin((TensorT)1));
 	}

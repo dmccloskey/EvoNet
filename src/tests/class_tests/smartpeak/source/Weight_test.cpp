@@ -61,14 +61,14 @@ BOOST_AUTO_TEST_CASE(gettersAndSetters)
   weight.setId(1);
 	weight.setModuleId(2);
 	weight.setModuleName("2");
-	weight.setDropProbability(0.0f);
+	weight.setDropProbability(1.0f);
 
 	// Check getters
   BOOST_CHECK_EQUAL(weight.getId(), 1);
   BOOST_CHECK_EQUAL(weight.getName(), "1");
 	BOOST_CHECK_EQUAL(weight.getModuleId(), 2);
 	BOOST_CHECK_EQUAL(weight.getModuleName(), "2");
-	BOOST_CHECK_EQUAL(weight.getDropProbability(), 0.0f);
+	BOOST_CHECK_EQUAL(weight.getDropProbability(), 1.0f);
 	BOOST_CHECK_EQUAL(weight.getDrop(), 1.0f);
 
 	// Check name getter
@@ -92,8 +92,7 @@ BOOST_AUTO_TEST_CASE(gettersAndSetters)
 
 	// Check drop probability mask
 	weight.setDropProbability(1.0f);
-	BOOST_CHECK_EQUAL(weight.getDrop(), 0.0f);
-	//BOOST_CHECK_EQUAL(weight.getWeight(), 0.0f); // [TODO: re-implement drop connection]
+	BOOST_CHECK_EQUAL(weight.getDrop(), 1.0f);
 }
 
 BOOST_AUTO_TEST_CASE(initWeight) 
