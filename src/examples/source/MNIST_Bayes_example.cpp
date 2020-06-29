@@ -50,8 +50,15 @@ public:
     auto integration_weight_grad_op = std::make_shared<SumWeightGradOp<TensorT>>(SumWeightGradOp<TensorT>());
 
     // Define the weight inits
-    auto weight_init_mu = std::make_shared<RandWeightInitOp<TensorT>>(RandWeightInitOp<TensorT>((TensorT)(n_inputs + n_hidden_0) / 2, 1));
-    auto weight_init_logvar = std::make_shared<ConstWeightInitOp<TensorT>>(ConstWeightInitOp<TensorT>(TensorT(-12 / n_hidden_0)));
+    std::shared_ptr<WeightInitOp<TensorT>> weight_init_mu, weight_init_logvar;
+    if (n_hidden_0 > 0) {
+      weight_init_mu = std::make_shared<RandWeightInitOp<TensorT>>(RandWeightInitOp<TensorT>((TensorT)(n_inputs + n_hidden_0) / 2, 1));
+      weight_init_logvar = std::make_shared<ConstWeightInitOp<TensorT>>(ConstWeightInitOp<TensorT>(TensorT(-12 / n_hidden_0)));
+    }
+    else {
+      weight_init_mu = std::make_shared<RandWeightInitOp<TensorT>>(RandWeightInitOp<TensorT>((TensorT)(n_inputs + n_outputs) / 2, 1));
+      weight_init_logvar = std::make_shared<ConstWeightInitOp<TensorT>>(ConstWeightInitOp<TensorT>(TensorT(-12 / n_outputs)));
+    }
 
     // Define the solver
     auto solver_op = std::make_shared<AdamOp<TensorT>>(AdamOp<TensorT>(learning_rate, 0.9, 0.999, 1e-8, gradient_clipping));
@@ -241,55 +248,55 @@ public:
     assert(memory_size == 1);
     if (add_gaussian_) {
       if (n_hidden_0_ > 0 && n_hidden_1_ > 0) {
-        assert(n_output_nodes == this->training_labels.dimension(1) + 2 * n_hidden_0_ + 2 * n_hidden_1_ + 2 * this->training_labels.dimension(1));
-        assert(n_metric_output_nodes == this->training_labels.dimension(1) + n_hidden_0_ + n_hidden_1_ + this->training_labels.dimension(1));
-        assert(n_input_nodes == this->training_data.dimension(1) + n_hidden_0_ + n_hidden_1_ + this->training_labels.dimension(1));
+        assert(n_output_nodes == this->training_labels.dimension(1) + 2 * this->training_data.dimension(1) * n_hidden_0_ + 2 * n_hidden_0_ * n_hidden_1_ + 2 * n_hidden_1_ * this->training_labels.dimension(1));
+        assert(n_metric_output_nodes == this->training_labels.dimension(1) + this->training_data.dimension(1) * n_hidden_0_ + n_hidden_0_ * n_hidden_1_ + n_hidden_1_ * this->training_labels.dimension(1));
+        assert(n_input_nodes == this->training_data.dimension(1) + this->training_data.dimension(1) * n_hidden_0_ + n_hidden_0_ * n_hidden_1_ + n_hidden_1_ * this->training_labels.dimension(1));
 
         // Gaussian sampler input/output data
-        Eigen::Tensor<TensorT, 3> gaussian_samples(batch_size, memory_size, n_hidden_0_ + n_hidden_1_ + this->training_labels.dimension(1));
-        if (is_train) gaussian_samples = GaussianSampler<TensorT>(batch_size * memory_size, n_hidden_0_ + n_hidden_1_ + this->training_labels.dimension(1))
-          .reshape(Eigen::array<Eigen::Index, 3>({ batch_size, memory_size, n_hidden_0_ + n_hidden_1_ + this->training_labels.dimension(1) }));
+        Eigen::Tensor<TensorT, 3> gaussian_samples(batch_size, memory_size, this->training_data.dimension(1) * n_hidden_0_ + n_hidden_0_ * n_hidden_1_ + n_hidden_1_ * this->training_labels.dimension(1));
+        if (is_train) gaussian_samples = GaussianSampler<TensorT>(batch_size * memory_size, this->training_data.dimension(1) * n_hidden_0_ + n_hidden_0_ * n_hidden_1_ + n_hidden_1_ * this->training_labels.dimension(1))
+          .reshape(Eigen::array<Eigen::Index, 3>({ batch_size, memory_size, this->training_data.dimension(1) * n_hidden_0_ + n_hidden_0_ * n_hidden_1_ + n_hidden_1_ * this->training_labels.dimension(1) }));
         else gaussian_samples.setZero();
 
         // Assign the input data
-        input_data.slice(Eigen::array<Eigen::Index, 3>({ 0, 0, this->training_data.dimension(1) }), Eigen::array<Eigen::Index, 3>({ batch_size, memory_size, n_hidden_0_ })) = gaussian_samples.slice(
-          Eigen::array<Eigen::Index, 3>({ 0, 0, 0 }), Eigen::array<Eigen::Index, 3>({ batch_size, memory_size, n_hidden_0_ }));
-        input_data.slice(Eigen::array<Eigen::Index, 3>({ 0, 0, this->training_data.dimension(1) + n_hidden_0_ }), Eigen::array<Eigen::Index, 3>({ batch_size, memory_size, n_hidden_1_ })) = gaussian_samples.slice(
-          Eigen::array<Eigen::Index, 3>({ 0, 0, n_hidden_0_ }), Eigen::array<Eigen::Index, 3>({ batch_size, memory_size, n_hidden_1_ }));
-        input_data.slice(Eigen::array<Eigen::Index, 3>({ 0, 0, this->training_data.dimension(1) + n_hidden_0_ + n_hidden_1_ }), Eigen::array<Eigen::Index, 3>({ batch_size, memory_size, this->training_labels.dimension(1) })) = gaussian_samples.slice(
-          Eigen::array<Eigen::Index, 3>({ 0, 0, n_hidden_1_ }), Eigen::array<Eigen::Index, 3>({ batch_size, memory_size, this->training_labels.dimension(1) }));
+        input_data.slice(Eigen::array<Eigen::Index, 3>({ 0, 0, this->training_data.dimension(1) }), Eigen::array<Eigen::Index, 3>({ batch_size, memory_size, this->training_data.dimension(1) * n_hidden_0_ })) = gaussian_samples.slice(
+          Eigen::array<Eigen::Index, 3>({ 0, 0, 0 }), Eigen::array<Eigen::Index, 3>({ batch_size, memory_size, this->training_data.dimension(1) * n_hidden_0_ }));
+        input_data.slice(Eigen::array<Eigen::Index, 3>({ 0, 0, this->training_data.dimension(1) + this->training_data.dimension(1) * n_hidden_0_ }), Eigen::array<Eigen::Index, 3>({ batch_size, memory_size, n_hidden_0_ * n_hidden_1_ })) = gaussian_samples.slice(
+          Eigen::array<Eigen::Index, 3>({ 0, 0, this->training_data.dimension(1) * n_hidden_0_ }), Eigen::array<Eigen::Index, 3>({ batch_size, memory_size, n_hidden_0_ * n_hidden_1_ }));
+        input_data.slice(Eigen::array<Eigen::Index, 3>({ 0, 0, this->training_data.dimension(1) + this->training_data.dimension(1) * n_hidden_0_ + n_hidden_0_ * n_hidden_1_ }), Eigen::array<Eigen::Index, 3>({ batch_size, memory_size, n_hidden_1_ * this->training_labels.dimension(1) })) = gaussian_samples.slice(
+          Eigen::array<Eigen::Index, 3>({ 0, 0, this->training_data.dimension(1) * n_hidden_0_ + n_hidden_0_ * n_hidden_1_ }), Eigen::array<Eigen::Index, 3>({ batch_size, memory_size, n_hidden_1_ * this->training_labels.dimension(1) }));
       }
       else if (n_hidden_0_ > 0) {
-        assert(n_output_nodes == this->training_labels.dimension(1) + 2 * n_hidden_0_ + 2 * this->training_labels.dimension(1));
-        assert(n_metric_output_nodes == this->training_labels.dimension(1) + n_hidden_0_ + this->training_labels.dimension(1));
-        assert(n_input_nodes == this->training_data.dimension(1) + n_hidden_0_ + this->training_labels.dimension(1));
+        assert(n_output_nodes == this->training_labels.dimension(1) + 2 * this->training_data.dimension(1) * n_hidden_0_ + 2 * n_hidden_0_ * this->training_labels.dimension(1));
+        assert(n_metric_output_nodes == this->training_labels.dimension(1) + this->training_data.dimension(1) * n_hidden_0_ + n_hidden_0_ * this->training_labels.dimension(1));
+        assert(n_input_nodes == this->training_data.dimension(1) + this->training_data.dimension(1) * n_hidden_0_ + n_hidden_0_ * this->training_labels.dimension(1));
 
         // Gaussian sampler input/output data
-        Eigen::Tensor<TensorT, 3> gaussian_samples(batch_size, memory_size, n_hidden_0_ + this->training_labels.dimension(1));
-        if (is_train) gaussian_samples = GaussianSampler<TensorT>(batch_size * memory_size, n_hidden_0_ + this->training_labels.dimension(1))
-          .reshape(Eigen::array<Eigen::Index, 3>({ batch_size, memory_size, n_hidden_0_ + this->training_labels.dimension(1) }));
+        Eigen::Tensor<TensorT, 3> gaussian_samples(batch_size, memory_size, this->training_data.dimension(1) * n_hidden_0_ + n_hidden_0_ * this->training_labels.dimension(1));
+        if (is_train) gaussian_samples = GaussianSampler<TensorT>(batch_size * memory_size, this->training_data.dimension(1) * n_hidden_0_ + n_hidden_0_ * this->training_labels.dimension(1))
+          .reshape(Eigen::array<Eigen::Index, 3>({ batch_size, memory_size, this->training_data.dimension(1) * n_hidden_0_ + n_hidden_0_ * this->training_labels.dimension(1) }));
         else gaussian_samples.setZero();
 
         // Assign the input data
-        input_data.slice(Eigen::array<Eigen::Index, 3>({ 0, 0, this->training_data.dimension(1) }), Eigen::array<Eigen::Index, 3>({ batch_size, memory_size, n_hidden_0_ })) = gaussian_samples.slice(
-          Eigen::array<Eigen::Index, 3>({ 0, 0, 0 }), Eigen::array<Eigen::Index, 3>({ batch_size, memory_size, n_hidden_0_ }));
-        input_data.slice(Eigen::array<Eigen::Index, 3>({ 0, 0, this->training_data.dimension(1) + n_hidden_0_ }), Eigen::array<Eigen::Index, 3>({ batch_size, memory_size, this->training_labels.dimension(1) })) = gaussian_samples.slice(
-          Eigen::array<Eigen::Index, 3>({ 0, 0, n_hidden_0_ }), Eigen::array<Eigen::Index, 3>({ batch_size, memory_size, this->training_labels.dimension(1) }));
+        input_data.slice(Eigen::array<Eigen::Index, 3>({ 0, 0, this->training_data.dimension(1) }), Eigen::array<Eigen::Index, 3>({ batch_size, memory_size, this->training_data.dimension(1) * n_hidden_0_ })) = gaussian_samples.slice(
+          Eigen::array<Eigen::Index, 3>({ 0, 0, 0 }), Eigen::array<Eigen::Index, 3>({ batch_size, memory_size, this->training_data.dimension(1) * n_hidden_0_ }));
+        input_data.slice(Eigen::array<Eigen::Index, 3>({ 0, 0, this->training_data.dimension(1) + this->training_data.dimension(1) * n_hidden_0_ }), Eigen::array<Eigen::Index, 3>({ batch_size, memory_size, n_hidden_0_ * this->training_labels.dimension(1) })) = gaussian_samples.slice(
+          Eigen::array<Eigen::Index, 3>({ 0, 0, this->training_data.dimension(1) * n_hidden_0_ }), Eigen::array<Eigen::Index, 3>({ batch_size, memory_size, n_hidden_0_ * this->training_labels.dimension(1) }));
       }
       else {
-        assert(n_output_nodes == this->training_labels.dimension(1) + 2 * this->training_labels.dimension(1));
-        assert(n_metric_output_nodes == this->training_labels.dimension(1) + this->training_labels.dimension(1));
-        assert(n_input_nodes == this->training_data.dimension(1) + this->training_labels.dimension(1));
+        assert(n_output_nodes == this->training_labels.dimension(1) + 2 * this->training_data.dimension(1) * this->training_labels.dimension(1));
+        assert(n_metric_output_nodes == this->training_labels.dimension(1) + this->training_data.dimension(1) * this->training_labels.dimension(1));
+        assert(n_input_nodes == this->training_data.dimension(1) + this->training_data.dimension(1) * this->training_labels.dimension(1));
 
         // Gaussian sampler input/output data
-        Eigen::Tensor<TensorT, 3> gaussian_samples(batch_size, memory_size, this->training_labels.dimension(1));
-        if (is_train) gaussian_samples = GaussianSampler<TensorT>(batch_size * memory_size, this->training_labels.dimension(1))
-          .reshape(Eigen::array<Eigen::Index, 3>({ batch_size, memory_size, this->training_labels.dimension(1) }));
+        Eigen::Tensor<TensorT, 3> gaussian_samples(batch_size, memory_size, this->training_data.dimension(1) * this->training_labels.dimension(1));
+        if (is_train) gaussian_samples = GaussianSampler<TensorT>(batch_size * memory_size, this->training_data.dimension(1) * this->training_labels.dimension(1))
+          .reshape(Eigen::array<Eigen::Index, 3>({ batch_size, memory_size, this->training_data.dimension(1) * this->training_labels.dimension(1) }));
         else gaussian_samples.setZero();
 
         // Assign the input data
-        input_data.slice(Eigen::array<Eigen::Index, 3>({ 0, 0, this->training_data.dimension(1) }), Eigen::array<Eigen::Index, 3>({ batch_size, memory_size, this->training_labels.dimension(1) })) = gaussian_samples.slice(
-          Eigen::array<Eigen::Index, 3>({ 0, 0, 0 }), Eigen::array<Eigen::Index, 3>({ batch_size, memory_size, this->training_labels.dimension(1) }));
+        input_data.slice(Eigen::array<Eigen::Index, 3>({ 0, 0, this->training_data.dimension(1) }), Eigen::array<Eigen::Index, 3>({ batch_size, memory_size, this->training_data.dimension(1) * this->training_labels.dimension(1) })) = gaussian_samples.slice(
+          Eigen::array<Eigen::Index, 3>({ 0, 0, 0 }), Eigen::array<Eigen::Index, 3>({ batch_size, memory_size, this->training_data.dimension(1) * this->training_labels.dimension(1) }));
       }
     }
     else {
@@ -317,7 +324,7 @@ class PopulationTrainerExt : public PopulationTrainerExperimentalDefaultDevice<T
 /**
  @brief Image classification MNIST example whereby all pixels are
   linearized and read into the model.  The model then attempts to
-  classify the image using a CovNet architecture
+  classify the image using a Bayesian fully connected architecture
 
   Data processing:
   - whole image pixels (linearized) 28x28 normalized to 0 to 1
@@ -341,6 +348,7 @@ void main_MNIST(const ParameterTypes& ...args) {
   const std::size_t input_size = 784;
   const std::size_t training_data_size = 60000; //60000;
   const std::size_t validation_data_size = 10000; //10000;
+  const std::size_t output_size = 10;
   DataSimulatorExt<float> data_simulator;
   data_simulator.n_hidden_0_ = std::get<EvoNetParameters::ModelTrainer::NHidden0>(parameters).get();
   data_simulator.n_hidden_1_ = std::get<EvoNetParameters::ModelTrainer::NHidden1>(parameters).get();
@@ -367,31 +375,45 @@ void main_MNIST(const ParameterTypes& ...args) {
   }
 
   // Make the encoding nodes and add them to the input
-  assert(std::get<EvoNetParameters::ModelTrainer::NHidden0>(parameters).get() > 0);
-  assert(std::get<EvoNetParameters::ModelTrainer::NHidden1>(parameters).get() > 0);
+  assert((
+    std::get<EvoNetParameters::ModelTrainer::NHidden0>(parameters).get() > 0 && std::get<EvoNetParameters::ModelTrainer::NHidden1>(parameters).get() > 0) || (
+      std::get<EvoNetParameters::ModelTrainer::NHidden0>(parameters).get() == 0 && std::get<EvoNetParameters::ModelTrainer::NHidden1>(parameters).get() == 0)
+  );
   if (std::get<EvoNetParameters::ModelTrainer::AddGaussian>(parameters).get()) {
-    for (int i = 0; i < input_size; ++i) {
-      for (int j = 0; j < std::get<EvoNetParameters::ModelTrainer::NHidden0>(parameters).get(); ++j) {
-        char name_char[512];
-        sprintf(name_char, "EN0-Input_%012d-Gaussian_%012d-Sampler", i, j);
-        std::string name(name_char);
-        input_nodes.push_back(name);
+    if (std::get<EvoNetParameters::ModelTrainer::NHidden0>(parameters).get() > 0 && std::get<EvoNetParameters::ModelTrainer::NHidden1>(parameters).get() > 0) {
+      for (int i = 0; i < input_size; ++i) {
+        for (int j = 0; j < std::get<EvoNetParameters::ModelTrainer::NHidden0>(parameters).get(); ++j) {
+          char name_char[512];
+          sprintf(name_char, "EN0-Input_%012d-Gaussian_%012d-Sampler", i, j);
+          std::string name(name_char);
+          input_nodes.push_back(name);
+        }
+      }
+      for (int i = 0; i < std::get<EvoNetParameters::ModelTrainer::NHidden0>(parameters).get(); ++i) {
+        for (int j = 0; j < std::get<EvoNetParameters::ModelTrainer::NHidden1>(parameters).get(); ++j) {
+          char name_char[512];
+          sprintf(name_char, "EN1-EN0_%012d-Gaussian_%012d-Sampler", i, j);
+          std::string name(name_char);
+          input_nodes.push_back(name);
+        }
+      }
+      for (int i = 0; i < std::get<EvoNetParameters::ModelTrainer::NHidden1>(parameters).get(); ++i) {
+        for (int j = 0; j < data_simulator.training_labels.dimension(1); ++j) {
+          char name_char[512];
+          sprintf(name_char, "EN2-EN1_%012d-Gaussian_%012d-Sampler", i, j);
+          std::string name(name_char);
+          input_nodes.push_back(name);
+        }
       }
     }
-    for (int i = 0; i < std::get<EvoNetParameters::ModelTrainer::NHidden0>(parameters).get(); ++i) {
-      for (int j = 0; j < std::get<EvoNetParameters::ModelTrainer::NHidden1>(parameters).get(); ++j) {
-        char name_char[512];
-        sprintf(name_char, "EN1-EN0_%012d-Gaussian_%012d-Sampler", i, j);
-        std::string name(name_char);
-        input_nodes.push_back(name);
-      }
-    }
-    for (int i = 0; i < std::get<EvoNetParameters::ModelTrainer::NHidden1>(parameters).get(); ++i) {
-      for (int j = 0; j < data_simulator.training_labels.dimension(1); ++j) {
-        char name_char[512];
-        sprintf(name_char, "EN2-EN1_%012d-Gaussian_%012d-Sampler", i, j);
-        std::string name(name_char);
-        input_nodes.push_back(name);
+    else {
+      for (int i = 0; i < input_size; ++i) {
+        for (int j = 0; j < data_simulator.training_labels.dimension(1); ++j) {
+          char name_char[512];
+          sprintf(name_char, "EN2-Input_%012d-Gaussian_%012d-Sampler", i, j);
+          std::string name(name_char);
+          input_nodes.push_back(name);
+        }
       }
     }
   }
@@ -410,50 +432,77 @@ void main_MNIST(const ParameterTypes& ...args) {
   std::vector<std::string> encoding_nodes_en0prior, encoding_nodes_en1prior, encoding_nodes_en2prior;
   std::vector<std::string> encoding_nodes_en0logvar, encoding_nodes_en1logvar, encoding_nodes_en2logvar;
   if (std::get<EvoNetParameters::ModelTrainer::AddGaussian>(parameters).get()) {
-    for (int i = 0; i < std::get<EvoNetParameters::ModelTrainer::NHidden0>(parameters).get(); ++i) {
-      char* name_char = new char[512];
-      sprintf(name_char, "EN0Posterior_%012d", i);
-      std::string name(name_char);
-      encoding_nodes_en0posterior.push_back(name);
-      name_char = new char[512];
-      sprintf(name_char, "EN0Prior_%012d", i);
-      name = name_char;
-      encoding_nodes_en0prior.push_back(name);
-      name_char = new char[512];
-      sprintf(name_char, "EN0LogVar_%012d", i);
-      name = name_char;
-      encoding_nodes_en0logvar.push_back(name);
-      delete[] name_char;
+    if (std::get<EvoNetParameters::ModelTrainer::NHidden0>(parameters).get() > 0 && std::get<EvoNetParameters::ModelTrainer::NHidden1>(parameters).get() > 0) {
+      for (int i = 0; i < input_size; ++i) {
+        for (int j = 0; j < std::get<EvoNetParameters::ModelTrainer::NHidden0>(parameters).get(); ++j) {
+          char* name_char = new char[512];
+          sprintf(name_char, "EN0Posterior_%012d", i * std::get<EvoNetParameters::ModelTrainer::NHidden0>(parameters).get() + j);
+          std::string name(name_char);
+          encoding_nodes_en0posterior.push_back(name);
+          name_char = new char[512];
+          sprintf(name_char, "EN0Prior_%012d", i * std::get<EvoNetParameters::ModelTrainer::NHidden0>(parameters).get() + j);
+          name = name_char;
+          encoding_nodes_en0prior.push_back(name);
+          name_char = new char[512];
+          sprintf(name_char, "EN0LogVar_%012d", i * std::get<EvoNetParameters::ModelTrainer::NHidden0>(parameters).get() + j);
+          name = name_char;
+          encoding_nodes_en0logvar.push_back(name);
+          delete[] name_char;
+        }
+      }
+      for (int i = 0; i < std::get<EvoNetParameters::ModelTrainer::NHidden0>(parameters).get(); ++i) {
+        for (int j = 0; j < std::get<EvoNetParameters::ModelTrainer::NHidden1>(parameters).get(); ++j) {
+          char* name_char = new char[512];
+          sprintf(name_char, "EN1Posterior_%012d", i * std::get<EvoNetParameters::ModelTrainer::NHidden1>(parameters).get() + j);
+          std::string name(name_char);
+          encoding_nodes_en1posterior.push_back(name);
+          name_char = new char[512];
+          sprintf(name_char, "EN1Prior_%012d", i * std::get<EvoNetParameters::ModelTrainer::NHidden1>(parameters).get() + j);
+          name = name_char;
+          encoding_nodes_en1prior.push_back(name);
+          name_char = new char[512];
+          sprintf(name_char, "EN1LogVar_%012d", i * std::get<EvoNetParameters::ModelTrainer::NHidden1>(parameters).get() + j);
+          name = name_char;
+          encoding_nodes_en1logvar.push_back(name);
+          delete[] name_char;
+        }
+      }
+      for (int i = 0; i < std::get<EvoNetParameters::ModelTrainer::NHidden1>(parameters).get(); ++i) {
+        for (int j = 0; j < data_simulator.training_labels.dimension(1); ++j) {
+          char* name_char = new char[512];
+          sprintf(name_char, "EN2Posterior_%012d", i * data_simulator.training_labels.dimension(1) + j);
+          std::string name(name_char);
+          encoding_nodes_en2posterior.push_back(name);
+          name_char = new char[512];
+          sprintf(name_char, "EN2Prior_%012d", i * data_simulator.training_labels.dimension(1) + j);
+          name = name_char;
+          encoding_nodes_en2prior.push_back(name);
+          name_char = new char[512];
+          sprintf(name_char, "EN2LogVar_%012d", i * data_simulator.training_labels.dimension(1) + j);
+          name = name_char;
+          encoding_nodes_en2logvar.push_back(name);
+          delete[] name_char;
+        }
+      }
     }
-    for (int i = 0; i < std::get<EvoNetParameters::ModelTrainer::NHidden1>(parameters).get(); ++i) {
-      char* name_char = new char[512];
-      sprintf(name_char, "EN1Posterior_%012d", i);
-      std::string name(name_char);
-      encoding_nodes_en1posterior.push_back(name);
-      name_char = new char[512];
-      sprintf(name_char, "EN1Prior_%012d", i);
-      name = name_char;
-      encoding_nodes_en1prior.push_back(name);
-      name_char = new char[512];
-      sprintf(name_char, "EN1LogVar_%012d", i);
-      name = name_char;
-      encoding_nodes_en1logvar.push_back(name);
-      delete[] name_char;
-    }
-    for (int i = 0; i < data_simulator.training_labels.dimension(1); ++i) {
-      char* name_char = new char[512];
-      sprintf(name_char, "EN2Posterior_%012d", i);
-      std::string name(name_char);
-      encoding_nodes_en2posterior.push_back(name);
-      name_char = new char[512];
-      sprintf(name_char, "EN2Prior_%012d", i);
-      name = name_char;
-      encoding_nodes_en2prior.push_back(name);
-      name_char = new char[512];
-      sprintf(name_char, "EN2LogVar_%012d", i);
-      name = name_char;
-      encoding_nodes_en2logvar.push_back(name);
-      delete[] name_char;
+    else {
+      for (int i = 0; i < input_size; ++i) {
+        for (int j = 0; j < data_simulator.training_labels.dimension(1); ++j) {
+          char* name_char = new char[512];
+          sprintf(name_char, "EN2Posterior_%012d", i * data_simulator.training_labels.dimension(1) + j);
+          std::string name(name_char);
+          encoding_nodes_en2posterior.push_back(name);
+          name_char = new char[512];
+          sprintf(name_char, "EN2Prior_%012d", i * data_simulator.training_labels.dimension(1) + j);
+          name = name_char;
+          encoding_nodes_en2prior.push_back(name);
+          name_char = new char[512];
+          sprintf(name_char, "EN2LogVar_%012d", i * data_simulator.training_labels.dimension(1) + j);
+          name = name_char;
+          encoding_nodes_en2logvar.push_back(name);
+          delete[] name_char;
+        }
+      }
     }
   }
 
@@ -511,7 +560,7 @@ void main_MNIST(const ParameterTypes& ...args) {
   metric_function_helpers.push_back(metric_function_helper1);
   if (std::get<EvoNetParameters::ModelTrainer::AddGaussian>(parameters).get()) {
     if (std::get<EvoNetParameters::ModelTrainer::NHidden0>(parameters).get() > 0) {
-      metric_function_helper1.output_nodes_ = encoding_nodes_en1logvar;
+      metric_function_helper1.output_nodes_ = encoding_nodes_en0logvar;
       metric_function_helper1.metric_functions_ = { std::make_shared<MAEOp<float>>(MAEOp<float>()) };
       metric_function_helper1.metric_names_ = { "MAE_EN0LogVar" };
       metric_function_helpers.push_back(metric_function_helper1);
@@ -537,7 +586,7 @@ void main_MNIST(const ParameterTypes& ...args) {
   Model<float> model;
   if (std::get<EvoNetParameters::Main::MakeModel>(parameters).get()) {
     std::cout << "Making the model..." << std::endl;
-    model_trainer.makeFullyConnBayes(model, input_nodes.size(), output_nodes.size(), std::get<EvoNetParameters::ModelTrainer::NHidden0>(parameters).get(), std::get<EvoNetParameters::ModelTrainer::NHidden1>(parameters).get(), std::get<EvoNetParameters::ModelTrainer::NHidden2>(parameters).get(), std::get<EvoNetParameters::ModelTrainer::AddGaussian>(parameters).get(),
+    model_trainer.makeFullyConnBayes(model, input_size, output_size, std::get<EvoNetParameters::ModelTrainer::NHidden0>(parameters).get(), std::get<EvoNetParameters::ModelTrainer::NHidden1>(parameters).get(), std::get<EvoNetParameters::ModelTrainer::NHidden2>(parameters).get(), std::get<EvoNetParameters::ModelTrainer::AddGaussian>(parameters).get(),
       -1, -4, 0.5, true, std::get<EvoNetParameters::ModelTrainer::LearningRate>(parameters).get(), std::get<EvoNetParameters::ModelTrainer::GradientClipping>(parameters).get());  // Baseline
     model.setId(0);
   }
