@@ -1,14 +1,8 @@
 /**TODO:  Add copyright*/
 
-#include <SmartPeak/ml/PopulationTrainerGpu.h>
-#include <SmartPeak/ml/ModelTrainerGpu.h>
-#include <SmartPeak/ml/ModelReplicator.h>
+#include <SmartPeak/ml/ModelTrainerExperimentalGpu.h>
 #include <SmartPeak/ml/ModelBuilder.h>
-#include <SmartPeak/ml/Model.h>
-#include <SmartPeak/io/PopulationTrainerFile.h>
-#include <SmartPeak/io/ModelFile.h>
-#include <SmartPeak/io/ModelInterpreterFileGpu.h>
-
+#include <SmartPeak/io/Parameters.h>
 #include <SmartPeak/simulator/ChromatogramSimulator.h>
 
 #include <unsupported/Eigen/CXX11/Tensor>
@@ -40,7 +34,7 @@ Post-processing:
 
 // Extended 
 template<typename TensorT>
-class ModelTrainerExt : public ModelTrainerGpu<TensorT>
+class ModelTrainerExt : public ModelTrainerExperimentalGpu<TensorT>
 {
 public:
   /*
@@ -50,8 +44,7 @@ public:
   void makeDenoisingAE(Model<TensorT>& model, int n_inputs = 512, int n_encodings = 32,
     int n_hidden_0 = 512, int n_hidden_1 = 256, int n_hidden_2 = 64,
     int n_isPeak_0 = 256, int n_isPeak_1 = 64,
-    int n_isPeakApex_0 = 256, int n_isPeakApex_1 = 64,
-    bool add_norm = true, bool specify_layers = true) {
+    int n_isPeakApex_0 = 256, int n_isPeakApex_1 = 64, bool specify_layers = true) {
     model.setId(0);
     model.setName("DenoisingAE");
     ModelBuilder<TensorT> model_builder;
@@ -59,16 +52,9 @@ public:
     // Add the inputs
     std::vector<std::string> node_names = model_builder.addInputNodes(model, "Intensity", "Input", n_inputs, true);
 
-    // Define the activation based on `add_norm`
-    std::shared_ptr<ActivationOp<TensorT>> activation, activation_grad;
-    if (add_norm) {
-      activation = std::make_shared<LinearOp<TensorT>>(LinearOp<TensorT>());
-      activation_grad = std::make_shared<LinearGradOp<TensorT>>(LinearGradOp<TensorT>());
-    }
-    else {
-      activation = std::make_shared<LeakyReLUOp<TensorT>>(LeakyReLUOp<TensorT>());
-      activation_grad = std::make_shared<LeakyReLUGradOp<TensorT>>(LeakyReLUGradOp<TensorT>());
-    }
+    // Define the activation
+    auto activation = std::make_shared<LeakyReLUOp<TensorT>>(LeakyReLUOp<TensorT>());
+    auto activation_grad = std::make_shared<LeakyReLUGradOp<TensorT>>(LeakyReLUGradOp<TensorT>());
 
     // Define the node integration
     auto integration_op = std::make_shared<SumOp<TensorT>>(SumOp<TensorT>());
@@ -76,7 +62,7 @@ public:
     auto integration_weight_grad_op = std::make_shared<SumWeightGradOp<TensorT>>(SumWeightGradOp<TensorT>());
 
     // Define the solver
-    auto solver_op = std::make_shared<AdamOp<TensorT>>(AdamOp<TensorT>(1e-5, 0.9, 0.999, 1e-8, 10));
+    auto solver_op = std::make_shared<AdamOp<TensorT>>(AdamOp<TensorT>(1e-4, 0.9, 0.999, 1e-8, 10));
 
     // Add the Encoder FC layers
     if (n_hidden_0 > 0) {
@@ -84,48 +70,18 @@ public:
         activation, activation_grad, integration_op, integration_error_op, integration_weight_grad_op,
         std::make_shared<RandWeightInitOp<TensorT>>(RandWeightInitOp<TensorT>((TensorT)(node_names.size() + n_hidden_0) / 2, 1)),
         solver_op, 0.0f, 0.0f, false, specify_layers);
-      if (add_norm) {
-        node_names = model_builder.addNormalization(model, "EN_Intensity_0-Norm", "EN_Intensity_0-Norm", node_names, specify_layers);
-        node_names = model_builder.addSinglyConnected(model, "EN_Intensity_0-Norm-gain", "EN_Intensity_0-Norm-gain", node_names, node_names.size(),
-          std::make_shared<LeakyReLUOp<TensorT>>(LeakyReLUOp<TensorT>()),
-          std::make_shared<LeakyReLUGradOp<TensorT>>(LeakyReLUGradOp<TensorT>()),
-          integration_op, integration_error_op, integration_weight_grad_op,
-          std::make_shared<ConstWeightInitOp<TensorT>>(ConstWeightInitOp<TensorT>(1)),
-          solver_op,
-          0.0, 0.0, true, specify_layers);
-      }
     }
     if (n_hidden_1 > 0) {
       node_names = model_builder.addFullyConnected(model, "EN_Intensity_1", "EN_Intensity_1", node_names, n_hidden_1,
         activation, activation_grad, integration_op, integration_error_op, integration_weight_grad_op,
         std::make_shared<RandWeightInitOp<TensorT>>(RandWeightInitOp<TensorT>((TensorT)(node_names.size() + n_hidden_1) / 2, 1)),
         solver_op, 0.0f, 0.0f, false, specify_layers);
-      if (add_norm) {
-        node_names = model_builder.addNormalization(model, "EN_Intensity_1-Norm", "EN_Intensity_1-Norm", node_names, specify_layers);
-        node_names = model_builder.addSinglyConnected(model, "EN_Intensity_1-Norm-gain", "EN_Intensity_1-Norm-gain", node_names, node_names.size(),
-          std::make_shared<LeakyReLUOp<TensorT>>(LeakyReLUOp<TensorT>()),
-          std::make_shared<LeakyReLUGradOp<TensorT>>(LeakyReLUGradOp<TensorT>()),
-          integration_op, integration_error_op, integration_weight_grad_op,
-          std::make_shared<ConstWeightInitOp<TensorT>>(ConstWeightInitOp<TensorT>(1)),
-          solver_op,
-          0.0, 0.0, true, specify_layers);
-      }
     }
     if (n_hidden_2 > 0) {
       node_names = model_builder.addFullyConnected(model, "EN_Intensity_2", "EN_Intensity_2", node_names, n_hidden_2,
         activation, activation_grad, integration_op, integration_error_op, integration_weight_grad_op,
         std::make_shared<RandWeightInitOp<TensorT>>(RandWeightInitOp<TensorT>((TensorT)(node_names.size() + n_hidden_2) / 2, 1)),
         solver_op, 0.0f, 0.0f, false, specify_layers);
-      if (add_norm) {
-        node_names = model_builder.addNormalization(model, "EN_Intensity_2-Norm", "EN_Intensity_2-Norm", node_names, specify_layers);
-        node_names = model_builder.addSinglyConnected(model, "EN_Intensity_2-Norm-gain", "EN_Intensity_2-Norm-gain", node_names, node_names.size(),
-          std::make_shared<LeakyReLUOp<TensorT>>(LeakyReLUOp<TensorT>()),
-          std::make_shared<LeakyReLUGradOp<TensorT>>(LeakyReLUGradOp<TensorT>()),
-          integration_op, integration_error_op, integration_weight_grad_op,
-          std::make_shared<ConstWeightInitOp<TensorT>>(ConstWeightInitOp<TensorT>(1)),
-          solver_op,
-          0.0, 0.0, true, specify_layers);
-      }
     }
 
     // Add the encoding layers for Intensity
@@ -133,15 +89,6 @@ public:
       activation, activation_grad, integration_op, integration_error_op, integration_weight_grad_op,
       std::make_shared<RandWeightInitOp<TensorT>>(RandWeightInitOp<TensorT>((int)(node_names.size() + n_encodings) / 2, 1)),
       solver_op, 0.0f, 0.0f, false, specify_layers);
-    if (add_norm) {
-      node_names = model_builder.addNormalization(model, "Encoding-Norm", "Encoding-Norm", node_names, specify_layers);
-      node_names = model_builder.addSinglyConnected(model, "Encoding-Norm-gain", "Encoding-Norm-gain", node_names, node_names.size(),
-        std::make_shared<LeakyReLUOp<TensorT>>(LeakyReLUOp<TensorT>()),
-        std::make_shared<LeakyReLUGradOp<TensorT>>(LeakyReLUGradOp<TensorT>()),
-        integration_op, integration_error_op, integration_weight_grad_op,
-        std::make_shared<ConstWeightInitOp<TensorT>>(ConstWeightInitOp<TensorT>(1)),
-        solver_op, 0.0, 0.0, true, specify_layers);
-    }
 
     // Add the Decoder FC layers
     node_names = node_names_encoding;
@@ -150,48 +97,18 @@ public:
         activation, activation_grad, integration_op, integration_error_op, integration_weight_grad_op,
         std::make_shared<RandWeightInitOp<TensorT>>(RandWeightInitOp<TensorT>((TensorT)(node_names.size() + n_hidden_2) / 2, 1)),
         solver_op, 0.0f, 0.0f, false, specify_layers);
-      if (add_norm) {
-        node_names = model_builder.addNormalization(model, "DE_Intensity_2-Norm", "DE_Intensity_2-Norm", node_names, specify_layers);
-        node_names = model_builder.addSinglyConnected(model, "DE_Intensity_2-Norm-gain", "DE_Intensity_2-Norm-gain", node_names, node_names.size(),
-          std::make_shared<LeakyReLUOp<TensorT>>(LeakyReLUOp<TensorT>()), // Nonlinearity occures after the normalization
-          std::make_shared<LeakyReLUGradOp<TensorT>>(LeakyReLUGradOp<TensorT>()),
-          integration_op, integration_error_op, integration_weight_grad_op,
-          std::make_shared<ConstWeightInitOp<TensorT>>(ConstWeightInitOp<TensorT>(1)),
-          solver_op,
-          0.0, 0.0, true, specify_layers);
-      }
     }
     if (n_hidden_1 > 0) {
       node_names = model_builder.addFullyConnected(model, "DE_Intensity_1", "DE_Intensity_1", node_names, n_hidden_1,
         activation, activation_grad, integration_op, integration_error_op, integration_weight_grad_op,
         std::make_shared<RandWeightInitOp<TensorT>>(RandWeightInitOp<TensorT>((TensorT)(node_names.size() + n_hidden_1) / 2, 1)),
         solver_op, 0.0f, 0.0f, false, specify_layers);
-      if (add_norm) {
-        node_names = model_builder.addNormalization(model, "DE_Intensity_1-Norm", "DE_Intensity_1-Norm", node_names, specify_layers);
-        node_names = model_builder.addSinglyConnected(model, "DE_Intensity_1-Norm-gain", "DE_Intensity_1-Norm-gain", node_names, node_names.size(),
-          std::make_shared<LeakyReLUOp<TensorT>>(LeakyReLUOp<TensorT>()), // Nonlinearity occures after the normalization
-          std::make_shared<LeakyReLUGradOp<TensorT>>(LeakyReLUGradOp<TensorT>()),
-          integration_op, integration_error_op, integration_weight_grad_op,
-          std::make_shared<ConstWeightInitOp<TensorT>>(ConstWeightInitOp<TensorT>(1)),
-          solver_op,
-          0.0, 0.0, true, specify_layers);
-      }
     }
     if (n_hidden_0 > 0) {
       node_names = model_builder.addFullyConnected(model, "DE_Intensity_0", "DE_Intensity_0", node_names, n_hidden_0,
         activation, activation_grad, integration_op, integration_error_op, integration_weight_grad_op,
         std::make_shared<RandWeightInitOp<TensorT>>(RandWeightInitOp<TensorT>((TensorT)(node_names.size() + n_hidden_0) / 2, 1)),
         solver_op, 0.0f, 0.0f, false, specify_layers);
-      if (add_norm) {
-        node_names = model_builder.addNormalization(model, "DE_Intensity_0-Norm", "DE_Intensity_0-Norm", node_names, specify_layers);
-        node_names = model_builder.addSinglyConnected(model, "DE_Intensity_0-Norm-gain", "DE_Intensity_0-Norm-gain", node_names, node_names.size(),
-          std::make_shared<LeakyReLUOp<TensorT>>(LeakyReLUOp<TensorT>()), // Nonlinearity occures after the normalization
-          std::make_shared<LeakyReLUGradOp<TensorT>>(LeakyReLUGradOp<TensorT>()),
-          integration_op, integration_error_op, integration_weight_grad_op,
-          std::make_shared<ConstWeightInitOp<TensorT>>(ConstWeightInitOp<TensorT>(1)),
-          solver_op,
-          0.0, 0.0, true, specify_layers);
-      }
     }
 
     // Add the output nodes
@@ -221,28 +138,12 @@ public:
         activation, activation_grad, integration_op, integration_error_op, integration_weight_grad_op,
         std::make_shared<RandWeightInitOp<TensorT>>(RandWeightInitOp<TensorT>((int)(node_names.size() + n_isPeakApex_1) / 2, 1)),
         solver_op, 0.0f, 0.0f, false, specify_layers);
-      if (add_norm) {
-        node_names = model_builder.addNormalization(model, "DE_IsPeakApex_1-Norm", "DE_IsPeakApex_1-Norm", node_names, specify_layers);
-        node_names = model_builder.addSinglyConnected(model, "DE_IsPeakApex_1-Norm-gain", "DE_IsPeakApex_1-Norm-gain", node_names, node_names.size(),
-          std::make_shared<LeakyReLUOp<TensorT>>(LeakyReLUOp<TensorT>()),
-          std::make_shared<LeakyReLUGradOp<TensorT>>(LeakyReLUGradOp<TensorT>()), integration_op, integration_error_op, integration_weight_grad_op,
-          std::make_shared<ConstWeightInitOp<TensorT>>(ConstWeightInitOp<TensorT>(1)),
-          solver_op, 0.0, 0.0, true, specify_layers);
-      }
     }
     if (n_isPeakApex_0 > 0) {
       node_names = model_builder.addFullyConnected(model, "DE_IsPeakApex_0", "DE_IsPeakApex_0", node_names, n_isPeakApex_0,
         activation, activation_grad, integration_op, integration_error_op, integration_weight_grad_op,
         std::make_shared<RandWeightInitOp<TensorT>>(RandWeightInitOp<TensorT>((int)(node_names.size() + n_isPeakApex_0) / 2, 1)),
         solver_op, 0.0f, 0.0f, false, specify_layers);
-      if (add_norm) {
-        node_names = model_builder.addNormalization(model, "DE_IsPeakApex_0-Norm", "DE_IsPeakApex_0-Norm", node_names, specify_layers);
-        node_names = model_builder.addSinglyConnected(model, "DE_IsPeakApex_0-Norm-gain", "DE_IsPeakApex_0-Norm-gain", node_names, node_names.size(),
-          std::make_shared<LeakyReLUOp<TensorT>>(LeakyReLUOp<TensorT>()),
-          std::make_shared<LeakyReLUGradOp<TensorT>>(LeakyReLUGradOp<TensorT>()), integration_op, integration_error_op, integration_weight_grad_op,
-          std::make_shared<ConstWeightInitOp<TensorT>>(ConstWeightInitOp<TensorT>(1)),
-          solver_op, 0.0, 0.0, true, specify_layers);
-      }
     }
 
     // Add the output nodes
@@ -272,27 +173,12 @@ public:
         activation, activation_grad, integration_op, integration_error_op, integration_weight_grad_op,
         std::make_shared<RandWeightInitOp<TensorT>>(RandWeightInitOp<TensorT>((int)(node_names.size() + n_isPeak_1) / 2, 1)),
         solver_op, 0.0f, 0.0f, false, specify_layers);
-      if (add_norm) {
-        node_names = model_builder.addNormalization(model, "DE_IsPeak_1-Norm", "DE_IsPeak_1-Norm", node_names, specify_layers);
-        node_names = model_builder.addSinglyConnected(model, "DE_IsPeak_1-Norm-gain", "DE_IsPeak_1-Norm-gain", node_names, node_names.size(),
-          std::make_shared<LeakyReLUOp<TensorT>>(LeakyReLUOp<TensorT>()),
-          std::make_shared<LeakyReLUGradOp<TensorT>>(LeakyReLUGradOp<TensorT>()), integration_op, integration_error_op, integration_weight_grad_op,
-          std::make_shared<ConstWeightInitOp<TensorT>>(ConstWeightInitOp<TensorT>(1)),
-          solver_op, 0.0, 0.0, true, specify_layers);
-      }
     }
     if (n_isPeak_0 > 0) {
       node_names = model_builder.addFullyConnected(model, "DE_IsPeak_0", "DE_IsPeak_0", node_names, n_isPeak_0,
         activation, activation_grad, integration_op, integration_error_op, integration_weight_grad_op,
         std::make_shared<RandWeightInitOp<TensorT>>(RandWeightInitOp<TensorT>((int)(node_names.size() + n_isPeak_0) / 2, 1)),
         solver_op, 0.0f, 0.0f, false, specify_layers);
-      if (add_norm) {
-        node_names = model_builder.addNormalization(model, "DE_IsPeak_0-Norm", "DE_IsPeak_0-Norm", node_names, specify_layers);
-        node_names = model_builder.addSinglyConnected(model, "DE_IsPeak_0-Norm-gain", "DE_IsPeak_0-Norm-gain", node_names, node_names.size(),
-          activation, activation_grad, integration_op, integration_error_op, integration_weight_grad_op,
-          std::make_shared<ConstWeightInitOp<TensorT>>(ConstWeightInitOp<TensorT>(1)),
-          solver_op, 0.0, 0.0, true, specify_layers);
-      }
     }
 
     // Add the output nodes
@@ -319,73 +205,6 @@ public:
 
     //if (!model.checkCompleteInputToOutput())
     //  std::cout << "Model input and output are not fully connected!" << std::endl;
-  }
-
-  void adaptiveTrainerScheduler(
-    const int& n_generations,
-    const int& n_epochs,
-    Model<TensorT>& model,
-    ModelInterpreterGpu<TensorT>& model_interpreter,
-    const std::vector<TensorT>& model_errors) override {
-    //if (n_epochs % 1000 == 0 && n_epochs > 5000) {
-    //  // anneal the learning rate by half on each plateau
-    //  TensorT lr_new = this->reduceLROnPlateau(model_errors, 0.5, 1000, 100, 0.1);
-    //  if (lr_new < 1.0) {
-    //    model_interpreter.updateSolverParams(0, lr_new);
-    //    std::cout << "The learning rate has been annealed by a factor of " << lr_new << std::endl;
-    //  }
-    //}
-    // Check point the model every 1000 epochs
-    if (n_epochs % 1000 == 0 && n_epochs != 0) {
-      model_interpreter.getModelResults(model, false, true, false, false);
-      // save the model and interpreter in binary format
-      ModelFile<TensorT> data;
-      data.storeModelBinary(model.getName() + "_" + std::to_string(n_epochs) + "_model.binary", model);
-      ModelInterpreterFileGpu<TensorT> interpreter_data;
-      interpreter_data.storeModelInterpreterBinary(model.getName() + "_" + std::to_string(n_epochs) + "_interpreter.binary", model_interpreter);
-    }
-  }
-  void trainingModelLogger(const int & n_epochs, Model<TensorT>& model, ModelInterpreterGpu<TensorT>& model_interpreter, ModelLogger<TensorT>& model_logger,
-    const Eigen::Tensor<TensorT, 3>& expected_values, const std::vector<std::string>& output_nodes, const std::vector<std::string>& input_nodes, const TensorT & model_error_train, const TensorT & model_error_test,
-    const Eigen::Tensor<TensorT, 1> & model_metrics_train, const Eigen::Tensor<TensorT, 1> & model_metrics_test) override
-  {
-    // Set the defaults
-    model_logger.setLogTimeEpoch(true);
-    model_logger.setLogTrainValMetricEpoch(true);
-    model_logger.setLogExpectedEpoch(false);
-    model_logger.setLogNodeOutputsEpoch(false);
-    model_logger.setLogNodeInputsEpoch(false);
-
-    // initialize all logs
-    if (n_epochs == 0) {
-      model_logger.setLogExpectedEpoch(true);
-      model_logger.setLogNodeOutputsEpoch(true);
-      model_logger.setLogNodeInputsEpoch(true);
-      model_logger.initLogs(model);
-    }
-
-    // Per n epoch logging
-    if (n_epochs % 1000 == 0) {
-      model_logger.setLogExpectedEpoch(true);
-      model_logger.setLogNodeOutputsEpoch(true);
-      model_logger.setLogNodeInputsEpoch(true);
-      model_interpreter.getModelResults(model, true, false, false, true);
-    }
-
-    // Create the metric headers and data arrays
-    std::vector<std::string> log_train_headers = { "Train_Error" };
-    std::vector<std::string> log_test_headers = { "Test_Error" };
-    std::vector<TensorT> log_train_values = { model_error_train };
-    std::vector<TensorT> log_test_values = { model_error_test };
-    int metric_iter = 0;
-    for (const std::string& metric_name : this->metric_names_) {
-      log_train_headers.push_back(metric_name);
-      log_test_headers.push_back(metric_name);
-      log_train_values.push_back(model_metrics_train(metric_iter));
-      log_test_values.push_back(model_metrics_test(metric_iter));
-      ++metric_iter;
-    }
-    model_logger.writeLogs(model, n_epochs, log_train_headers, log_test_headers, log_train_values, log_test_values, output_nodes, expected_values, {}, output_nodes, {}, input_nodes, {});
   }
 };
 
@@ -544,77 +363,59 @@ public:
   std::pair<TensorT, TensorT> emg_sigma_ = std::make_pair(0.1, 0.3);
 };
 
-template<typename TensorT>
-class ModelReplicatorExt : public ModelReplicator<TensorT>
-{};
-
-template<typename TensorT>
-class PopulationTrainerExt : public PopulationTrainerGpu<TensorT>
-{};
-
-void main_DenoisingAE(const std::string& data_dir, const bool& make_model, const bool& train_model) {
-
-  const int n_hard_threads = std::thread::hardware_concurrency();
-  const int n_threads = 1;
-
-  // define the populatin trainer
-  PopulationTrainerExt<float> population_trainer;
-  population_trainer.setNGenerations(1);
-  population_trainer.setNTop(1);
-  population_trainer.setNRandom(1);
-  population_trainer.setNReplicatesPerModel(1);
-  population_trainer.setLogging(false);
-
-  // define the population logger
-  PopulationLogger<float> population_logger(true, true);
+template<class ...ParameterTypes>
+void main_(const ParameterTypes& ...args) {
+  auto parameters = std::make_tuple(args...);
 
   // define the model logger
   ModelLogger<float> model_logger(true, true, true, false, false, false, false);
 
   // define the data simulator
   const std::size_t input_size = 512;
-  const std::size_t encoding_size = 16;
+  const std::size_t encoding_size = input_size / 8;
   DataSimulatorExt<float> data_simulator;
 
-  // Hard
-  //data_simulator.step_size_mu_ = std::make_pair(1, 1);
-  //data_simulator.step_size_sigma_ = std::make_pair(0, 0);
-  //data_simulator.chrom_window_size_ = std::make_pair(input_size, input_size);
-  //data_simulator.noise_mu_ = std::make_pair(0, 0);
-  //data_simulator.noise_sigma_ = std::make_pair(0, 5.0);
-  //data_simulator.baseline_height_ = std::make_pair(0, 0);
-  //data_simulator.n_peaks_ = std::make_pair(10, 20);
-  //data_simulator.emg_h_ = std::make_pair(10, 100);
-  //data_simulator.emg_tau_ = std::make_pair(0, 1);
-  //data_simulator.emg_mu_offset_ = std::make_pair(-10, 10);
-  //data_simulator.emg_sigma_ = std::make_pair(10, 30);
-
-  //// Easy (Some issues with the peak start/stop not touching the baseline)
-  //data_simulator.step_size_mu_ = std::make_pair(1, 1);
-  //data_simulator.step_size_sigma_ = std::make_pair(0, 0);
-  //data_simulator.chrom_window_size_ = std::make_pair(input_size, input_size);
-  //data_simulator.noise_mu_ = std::make_pair(0, 0);
-  //data_simulator.noise_sigma_ = std::make_pair(0, 0.2);
-  //data_simulator.baseline_height_ = std::make_pair(0, 0);
-  //data_simulator.n_peaks_ = std::make_pair(1, 5);
-  //data_simulator.emg_h_ = std::make_pair(0.1, 1.0);
-  //data_simulator.emg_tau_ = std::make_pair(0, 0);
-  //data_simulator.emg_mu_offset_ = std::make_pair(0, 0);
-  //data_simulator.emg_sigma_ = std::make_pair(10, 30);
-
-  // Test
-  data_simulator.step_size_mu_ = std::make_pair(1, 1);
-  data_simulator.step_size_sigma_ = std::make_pair(0, 0);
-  data_simulator.chrom_window_size_ = std::make_pair(input_size, input_size);
-  data_simulator.noise_mu_ = std::make_pair(0, 0);
-  //data_simulator.noise_sigma_ = std::make_pair(0, 0.2);
-  data_simulator.noise_sigma_ = std::make_pair(0, 0);
-  data_simulator.baseline_height_ = std::make_pair(0, 0);
-  data_simulator.n_peaks_ = std::make_pair(1, 2);
-  data_simulator.emg_h_ = std::make_pair(1, 1);
-  data_simulator.emg_tau_ = std::make_pair(0, 0);
-  data_simulator.emg_mu_offset_ = std::make_pair(0, 0);
-  data_simulator.emg_sigma_ = std::make_pair(10, 10);
+  if (std::get<EvoNetParameters::Examples::SimulationType>(parameters).get() == "Hard") {
+    data_simulator.step_size_mu_ = std::make_pair(1, 1);
+    data_simulator.step_size_sigma_ = std::make_pair(0, 0);
+    data_simulator.chrom_window_size_ = std::make_pair(input_size, input_size);
+    data_simulator.noise_mu_ = std::make_pair(0, 0);
+    data_simulator.noise_sigma_ = std::make_pair(0, 5.0);
+    data_simulator.baseline_height_ = std::make_pair(0, 0);
+    data_simulator.n_peaks_ = std::make_pair(10, 20);
+    data_simulator.emg_h_ = std::make_pair(10, 100);
+    data_simulator.emg_tau_ = std::make_pair(0, 1);
+    data_simulator.emg_mu_offset_ = std::make_pair(-10, 10);
+    data_simulator.emg_sigma_ = std::make_pair(10, 30);
+  }
+  else if (std::get<EvoNetParameters::Examples::SimulationType>(parameters).get() == "Medium") {
+    // Some issues with the peak start/stop not touching the baseline
+    data_simulator.step_size_mu_ = std::make_pair(1, 1);
+    data_simulator.step_size_sigma_ = std::make_pair(0, 0);
+    data_simulator.chrom_window_size_ = std::make_pair(input_size, input_size);
+    data_simulator.noise_mu_ = std::make_pair(0, 0);
+    data_simulator.noise_sigma_ = std::make_pair(0, 0.2);
+    data_simulator.baseline_height_ = std::make_pair(0, 0);
+    data_simulator.n_peaks_ = std::make_pair(1, 5);
+    data_simulator.emg_h_ = std::make_pair(0.1, 1.0);
+    data_simulator.emg_tau_ = std::make_pair(0, 0);
+    data_simulator.emg_mu_offset_ = std::make_pair(0, 0);
+    data_simulator.emg_sigma_ = std::make_pair(10, 30);
+  }
+  else if (std::get<EvoNetParameters::Examples::SimulationType>(parameters).get() == "Easy") {
+    data_simulator.step_size_mu_ = std::make_pair(1, 1);
+    data_simulator.step_size_sigma_ = std::make_pair(0, 0);
+    data_simulator.chrom_window_size_ = std::make_pair(input_size, input_size);
+    data_simulator.noise_mu_ = std::make_pair(0, 0);
+    //data_simulator.noise_sigma_ = std::make_pair(0, 0.2);
+    data_simulator.noise_sigma_ = std::make_pair(0, 0);
+    data_simulator.baseline_height_ = std::make_pair(0, 0);
+    data_simulator.n_peaks_ = std::make_pair(1, 2);
+    data_simulator.emg_h_ = std::make_pair(1, 1);
+    data_simulator.emg_tau_ = std::make_pair(0, 0);
+    data_simulator.emg_mu_offset_ = std::make_pair(0, 0);
+    data_simulator.emg_sigma_ = std::make_pair(10, 10);
+  }
 
   // Make the input nodes
   std::vector<std::string> input_nodes;
@@ -655,104 +456,170 @@ void main_DenoisingAE(const std::string& data_dir, const bool& make_model, const
     output_nodes_isPeak.push_back(name);
   }
 
-  // define the model trainers and resources for the trainers
+  // define the model interpreters
   std::vector<ModelInterpreterGpu<float>> model_interpreters;
-  for (size_t i = 0; i < n_threads; ++i) {
-    ModelResources model_resources = { ModelDevice(0, 1) };
-    ModelInterpreterGpu<float> model_interpreter(model_resources);
-    model_interpreters.push_back(model_interpreter);
-  }
-  ModelTrainerExt<float> model_trainer;
-  model_trainer.setBatchSize(128);
-  model_trainer.setNEpochsTraining(100001);
-  model_trainer.setNEpochsValidation(25);
-  model_trainer.setNEpochsEvaluation(25);
-  model_trainer.setMemorySize(1);
-  model_trainer.setVerbosityLevel(1);
-  model_trainer.setLogging(true, true, false);
-  model_trainer.setFindCycles(false);
-  model_trainer.setFastInterpreter(true);
-  model_trainer.setPreserveOoO(true);
-  model_trainer.setLossFunctions({ std::make_shared<MSELossOp<float>>(MSELossOp<float>(1e-6, 1.0)),
-    std::make_shared<BCEWithLogitsLossOp<float>>(BCEWithLogitsLossOp<float>(1e-6, 1.0 / float(input_size))),
-    std::make_shared<BCEWithLogitsLossOp<float>>(BCEWithLogitsLossOp<float>(1e-6, 1.0 / float(input_size))) });
-  model_trainer.setLossFunctionGrads({ std::make_shared<MSELossGradOp<float>>(MSELossGradOp<float>(1e-6, 1.0)),
-    std::make_shared<BCEWithLogitsLossGradOp<float>>(BCEWithLogitsLossGradOp<float>(1e-6, 1.0 / float(input_size))),
-    std::make_shared<BCEWithLogitsLossGradOp<float>>(BCEWithLogitsLossGradOp<float>(1e-6, 1.0 / float(input_size))) });
-  model_trainer.setLossOutputNodes({ output_nodes_intensity, output_nodes_isPeakApex, output_nodes_isPeak });
-  model_trainer.setMetricFunctions({ std::make_shared<MAEOp<float>>(MAEOp<float>()),
-    std::shared_ptr<MetricFunctionOp<float>>(new PrecisionBCOp<float>()),
-    std::shared_ptr<MetricFunctionOp<float>>(new PrecisionBCOp<float>()) });
-  model_trainer.setMetricOutputNodes({ output_nodes_intensity, output_nodes_isPeakApex, output_nodes_isPeak });
-  model_trainer.setMetricNames({ "Reconstruction-MAE", "IsPeakApex-PrecisionBC", "IsPeak-PrecisionBC" });
+  setModelInterpreterParameters(model_interpreters, args...);
 
-  // define the model replicator for growth mode
-  ModelReplicatorExt<float> model_replicator;
+  // define the model trainer
+  ModelTrainerExt<float> model_trainer;
+  setModelTrainerParameters(model_trainer, args...);
+
+  std::vector<LossFunctionHelper<float>> loss_function_helpers;
+  LossFunctionHelper<float> loss_function_helper1, loss_function_helper2, loss_function_helper3;
+  loss_function_helper1.output_nodes_ = output_nodes_intensity;
+  loss_function_helper1.loss_functions_ = { std::make_shared<MSELossOp<float>>(MSELossOp<float>(1e-6, 1.0 / float(input_size))) };
+  loss_function_helper1.loss_function_grads_ = { std::make_shared<MSELossGradOp<float>>(MSELossGradOp<float>(1e-6, 1.0 / float(input_size))) };
+  loss_function_helpers.push_back(loss_function_helper1);
+  loss_function_helper2.output_nodes_ = output_nodes_isPeakApex;
+  loss_function_helper2.loss_functions_ = { std::make_shared<BCEWithLogitsLossOp<float>>(BCEWithLogitsLossOp<float>(1e-6, 1.0 / float(input_size))) };
+  loss_function_helper2.loss_function_grads_ = { std::make_shared<BCEWithLogitsLossGradOp<float>>(BCEWithLogitsLossGradOp<float>(1e-6, 1.0 / float(input_size))) };
+  loss_function_helpers.push_back(loss_function_helper2);
+  loss_function_helper3.output_nodes_ = output_nodes_isPeak;
+  loss_function_helper3.loss_functions_ = { std::make_shared<BCEWithLogitsLossOp<float>>(BCEWithLogitsLossOp<float>(1e-6, 1.0 / float(input_size))) };
+  loss_function_helper3.loss_function_grads_ = { std::make_shared<BCEWithLogitsLossGradOp<float>>(BCEWithLogitsLossGradOp<float>(1e-6, 1.0 / float(input_size))) };
+  loss_function_helpers.push_back(loss_function_helper3);
+  model_trainer.setLossFunctionHelpers(loss_function_helpers);
+
+  std::vector<MetricFunctionHelper<float>> metric_function_helpers;
+  MetricFunctionHelper<float> metric_function_helper1, metric_function_helper2, metric_function_helper3;
+  metric_function_helper1.output_nodes_ = output_nodes_intensity;
+  metric_function_helper1.metric_functions_ = { std::make_shared<MAEOp<float>>(MAEOp<float>()) };
+  metric_function_helper1.metric_names_ = { "Reconstruction-MAE" };
+  metric_function_helpers.push_back(metric_function_helper1);
+  metric_function_helper2.output_nodes_ = output_nodes_isPeakApex;
+  metric_function_helper2.metric_functions_ = { std::make_shared<PrecisionBCOp<float>>(PrecisionBCOp<float>()) };
+  metric_function_helper2.metric_names_ = { "IsPeakApex-PrecisionBC" };
+  metric_function_helpers.push_back(metric_function_helper2);
+  metric_function_helper3.output_nodes_ = output_nodes_isPeak;
+  metric_function_helper3.metric_functions_ = { std::make_shared<PrecisionBCOp<float>>(PrecisionBCOp<float>()) };
+  metric_function_helper3.metric_names_ = { "IsPeak-PrecisionBC" };
+  metric_function_helpers.push_back(metric_function_helper3);
+  model_trainer.setMetricFunctionHelpers(metric_function_helpers);
 
   // define the initial population
-  std::cout << "Initializing the population..." << std::endl;
   Model<float> model;
-  if (make_model) {
-    model_trainer.makeDenoisingAE(model, input_size, encoding_size, 256, 256, 0, 256, 0, 256, 0, false, true);
+  if (std::get<EvoNetParameters::Main::MakeModel>(parameters).get()) {
+    std::cout << "Making the model..." << std::endl;
+    model_trainer.makeDenoisingAE(model, input_size, encoding_size,
+      std::get<EvoNetParameters::ModelTrainer::NHidden0>(parameters).get(),
+      std::get<EvoNetParameters::ModelTrainer::NHidden1>(parameters).get(),
+      std::get<EvoNetParameters::ModelTrainer::NHidden2>(parameters).get(),
+      std::get<EvoNetParameters::ModelTrainer::NHidden1>(parameters).get(),
+      std::get<EvoNetParameters::ModelTrainer::NHidden2>(parameters).get(),
+      std::get<EvoNetParameters::ModelTrainer::NHidden1>(parameters).get(),
+      std::get<EvoNetParameters::ModelTrainer::NHidden2>(parameters).get(),
+      true);
+    model.setId(0);
   }
   else {
-    std::cout << "Reading in the model..." << std::endl;
-    const std::string model_filename = data_dir + "DenoisingAE_model.binary";
-    const std::string interpreter_filename = data_dir + "DenoisingAE_interpreter.binary";
-
-    // read in and modify the model
     ModelFile<float> model_file;
-    model_file.loadModelBinary(model_filename, model);
-    model.setId(1);
-    model.setName("PeakInt-0");
-
-    // read in the model interpreter data
     ModelInterpreterFileGpu<float> model_interpreter_file;
-    model_interpreter_file.loadModelInterpreterBinary(interpreter_filename, model_interpreters[0]); // FIX ME!
+    loadModelFromParameters(model, model_interpreters.at(0), model_file, model_interpreter_file, args...);
   }
-  //std::vector<Model<float>> population = { model };
+  model.setName(std::get<EvoNetParameters::General::DataDir>(parameters).get() + std::get<EvoNetParameters::Main::ModelName>(parameters).get()); //So that all output will be written to a specific directory
 
-  if (train_model) {
-    // Train the model
-    std::pair<std::vector<float>, std::vector<float>> model_errors = model_trainer.trainModel(model, data_simulator,
-      input_nodes, model_logger, model_interpreters.front());
-
-    //PopulationTrainerFile<float> population_trainer_file;
-    //population_trainer_file.storeModels(population, "PeakIntegrator");
-
-    //// Evolve the population
-    //std::vector<std::vector<std::tuple<int, std::string, float>>> models_validation_errors_per_generation = population_trainer.evolveModels(
-    //  population, model_trainer, model_interpreters, model_replicator, data_simulator, model_logger, population_logger, input_nodes);
-
-    //PopulationTrainerFile<float> population_trainer_file;
-    //population_trainer_file.storeModels(population, "PeakIntegrator");
-    //population_trainer_file.storeModelValidations("PeakIntegrator_Errors.csv", models_validation_errors_per_generation);
-  }
-  else {
-    //// Evaluate the population
-    //population_trainer.evaluateModels(
-    //  population, model_trainer, model_interpreters, model_replicator, data_simulator, model_logger, input_nodes);
-  }
+  // Train the model
+  std::pair<std::vector<float>, std::vector<float>> model_errors = model_trainer.trainModel(model, data_simulator,
+    input_nodes, model_logger, model_interpreters.front());
 }
 
 int main(int argc, char** argv)
 {
   // Parse the user commands
-  std::string data_dir = "C:/Users/dmccloskey/Documents/GitHub/mnist/";
-  //std::string data_dir = "/home/user/data/";
-  //std::string data_dir = "C:/Users/domccl/GitHub/mnist/";
-  bool make_model = true, train_model = true;
-  if (argc >= 2) {
-    data_dir = argv[1];
-  }
-  if (argc >= 3) {
-    make_model = (argv[2] == std::string("true")) ? true : false;
-  }
-  if (argc >= 4) {
-    train_model = (argv[3] == std::string("true")) ? true : false;
-  }
-  // run the application
-  main_DenoisingAE(data_dir, make_model, train_model);
+  int id_int = -1;
+  std::string parameters_filename = "";
+  parseCommandLineArguments(argc, argv, id_int, parameters_filename);
 
+  // Set the parameter names and defaults
+  EvoNetParameters::General::ID id("id", -1);
+  EvoNetParameters::General::DataDir data_dir("data_dir", std::string(""));
+  EvoNetParameters::Main::DeviceId device_id("device_id", 0);
+  EvoNetParameters::Main::ModelName model_name("model_name", "");
+  EvoNetParameters::Main::MakeModel make_model("make_model", true);
+  EvoNetParameters::Main::LoadModelCsv load_model_csv("load_model_csv", false);
+  EvoNetParameters::Main::LoadModelBinary load_model_binary("load_model_binary", false);
+  EvoNetParameters::Main::TrainModel train_model("train_model", true);
+  EvoNetParameters::Main::EvolveModel evolve_model("evolve_model", false);
+  EvoNetParameters::Main::EvaluateModel evaluate_model("evaluate_model", false);
+  EvoNetParameters::Main::EvaluateModels evaluate_models("evaluate_models", false);
+  EvoNetParameters::Examples::ModelType model_type("model_type", "Solution");
+  EvoNetParameters::Examples::SimulationType simulation_type("simulation_type", "");
+  EvoNetParameters::PopulationTrainer::PopulationName population_name("population_name", "");
+  EvoNetParameters::PopulationTrainer::NGenerations n_generations("n_generations", 1);
+  EvoNetParameters::PopulationTrainer::NInterpreters n_interpreters("n_interpreters", 1);
+  EvoNetParameters::PopulationTrainer::PruneModelNum prune_model_num("prune_model_num", 10);
+  EvoNetParameters::PopulationTrainer::RemoveIsolatedNodes remove_isolated_nodes("remove_isolated_nodes", true);
+  EvoNetParameters::PopulationTrainer::CheckCompleteModelInputToOutput check_complete_model_input_to_output("check_complete_model_input_to_output", true);
+  EvoNetParameters::PopulationTrainer::PopulationSize population_size("population_size", 128);
+  EvoNetParameters::PopulationTrainer::NTop n_top("n_top", 8);
+  EvoNetParameters::PopulationTrainer::NRandom n_random("n_random", 8);
+  EvoNetParameters::PopulationTrainer::NReplicatesPerModel n_replicates_per_model("n_replicates_per_model", 1);
+  EvoNetParameters::PopulationTrainer::ResetModelCopyWeights reset_model_copy_weights("reset_model_copy_weights", true);
+  EvoNetParameters::PopulationTrainer::ResetModelTemplateWeights reset_model_template_weights("reset_model_template_weights", true);
+  EvoNetParameters::PopulationTrainer::Logging population_logging("population_logging", true);
+  EvoNetParameters::PopulationTrainer::SetPopulationSizeFixed set_population_size_fixed("set_population_size_fixed", false);
+  EvoNetParameters::PopulationTrainer::SetPopulationSizeDoubling set_population_size_doubling("set_population_size_doubling", true);
+  EvoNetParameters::PopulationTrainer::SetTrainingStepsByModelSize set_training_steps_by_model_size("set_training_steps_by_model_size", false);
+  EvoNetParameters::ModelTrainer::BatchSize batch_size("batch_size", 32);
+  EvoNetParameters::ModelTrainer::MemorySize memory_size("memory_size", 64);
+  EvoNetParameters::ModelTrainer::NEpochsTraining n_epochs_training("n_epochs_training", 1000);
+  EvoNetParameters::ModelTrainer::NEpochsValidation n_epochs_validation("n_epochs_validation", 25);
+  EvoNetParameters::ModelTrainer::NEpochsEvaluation n_epochs_evaluation("n_epochs_evaluation", 10);
+  EvoNetParameters::ModelTrainer::NTBTTSteps n_tbtt_steps("n_tbtt_steps", 64);
+  EvoNetParameters::ModelTrainer::NTETTSteps n_tett_steps("n_tett_steps", 64);
+  EvoNetParameters::ModelTrainer::Verbosity verbosity("verbosity", 1);
+  EvoNetParameters::ModelTrainer::LoggingTraining logging_training("logging_training", true);
+  EvoNetParameters::ModelTrainer::LoggingValidation logging_validation("logging_validation", false);
+  EvoNetParameters::ModelTrainer::LoggingEvaluation logging_evaluation("logging_evaluation", true);
+  EvoNetParameters::ModelTrainer::FindCycles find_cycles("find_cycles", true);
+  EvoNetParameters::ModelTrainer::FastInterpreter fast_interpreter("fast_interpreter", true);
+  EvoNetParameters::ModelTrainer::PreserveOoO preserve_ooo("preserve_ooo", true);
+  EvoNetParameters::ModelTrainer::InterpretModel interpret_model("interpret_model", true);
+  EvoNetParameters::ModelTrainer::ResetModel reset_model("reset_model", false);
+  EvoNetParameters::ModelTrainer::NHidden0 n_hidden_0("n_hidden_0", 512);
+  EvoNetParameters::ModelTrainer::NHidden1 n_hidden_1("n_hidden_1", 256);
+  EvoNetParameters::ModelTrainer::NHidden2 n_hidden_2("n_hidden_2", 128);
+  EvoNetParameters::ModelTrainer::ResetInterpreter reset_interpreter("reset_interpreter", true);
+  EvoNetParameters::ModelReplicator::NNodeDownAdditionsLB n_node_down_additions_lb("n_node_down_additions_lb", 0);
+  EvoNetParameters::ModelReplicator::NNodeRightAdditionsLB n_node_right_additions_lb("n_node_right_additions_lb", 0);
+  EvoNetParameters::ModelReplicator::NNodeDownCopiesLB n_node_down_copies_lb("n_node_down_copies_lb", 0);
+  EvoNetParameters::ModelReplicator::NNodeRightCopiesLB n_node_right_copies_lb("n_node_right_copies_lb", 0);
+  EvoNetParameters::ModelReplicator::NLinkAdditionsLB n_link_additons_lb("n_link_additons_lb", 0);
+  EvoNetParameters::ModelReplicator::NLinkCopiesLB n_link_copies_lb("n_link_copies_lb", 0);
+  EvoNetParameters::ModelReplicator::NNodeDeletionsLB n_node_deletions_lb("n_node_deletions_lb", 0);
+  EvoNetParameters::ModelReplicator::NLinkDeletionsLB n_link_deletions_lb("n_link_deletions_lb", 0);
+  EvoNetParameters::ModelReplicator::NNodeActivationChangesLB n_node_activation_changes_lb("n_node_activation_changes_lb", 0);
+  EvoNetParameters::ModelReplicator::NNodeIntegrationChangesLB n_node_integration_changes_lb("n_node_integration_changes_lb", 0);
+  EvoNetParameters::ModelReplicator::NModuleAdditionsLB n_module_additions_lb("n_module_additions_lb", 0);
+  EvoNetParameters::ModelReplicator::NModuleCopiesLB n_module_copies_lb("n_module_copies_lb", 0);
+  EvoNetParameters::ModelReplicator::NModuleDeletionsLB n_module_deletions_lb("n_module_deletions_lb", 0);
+  EvoNetParameters::ModelReplicator::NNodeDownAdditionsUB n_node_down_additions_ub("n_node_down_additions_ub", 0);
+  EvoNetParameters::ModelReplicator::NNodeRightAdditionsUB n_node_right_additions_ub("n_node_right_additions_ub", 0);
+  EvoNetParameters::ModelReplicator::NNodeDownCopiesUB n_node_down_copies_ub("n_node_down_copies_ub", 0);
+  EvoNetParameters::ModelReplicator::NNodeRightCopiesUB n_node_right_copies_ub("n_node_right_copies_ub", 0);
+  EvoNetParameters::ModelReplicator::NLinkAdditionsUB n_link_additons_ub("n_link_additons_ub", 0);
+  EvoNetParameters::ModelReplicator::NLinkCopiesUB n_link_copies_ub("n_link_copies_ub", 0);
+  EvoNetParameters::ModelReplicator::NNodeDeletionsUB n_node_deletions_ub("n_node_deletions_ub", 0);
+  EvoNetParameters::ModelReplicator::NLinkDeletionsUB n_link_deletions_ub("n_link_deletions_ub", 0);
+  EvoNetParameters::ModelReplicator::NNodeActivationChangesUB n_node_activation_changes_ub("n_node_activation_changes_ub", 0);
+  EvoNetParameters::ModelReplicator::NNodeIntegrationChangesUB n_node_integration_changes_ub("n_node_integration_changes_ub", 0);
+  EvoNetParameters::ModelReplicator::NModuleAdditionsUB n_module_additions_ub("n_module_additions_ub", 0);
+  EvoNetParameters::ModelReplicator::NModuleCopiesUB n_module_copies_ub("n_module_copies_ub", 0);
+  EvoNetParameters::ModelReplicator::NModuleDeletionsUB n_module_deletions_ub("n_module_deletions_ub", 0);
+  EvoNetParameters::ModelReplicator::SetModificationRateFixed set_modification_rate_fixed("set_modification_rate_fixed", false);
+  EvoNetParameters::ModelReplicator::SetModificationRateByPrevError set_modification_rate_by_prev_error("set_modification_rate_by_prev_error", false);
+  auto parameters = std::make_tuple(id, data_dir,
+    device_id, model_name, make_model, load_model_csv, load_model_binary, train_model, evolve_model, evaluate_model, evaluate_models,
+    model_type, simulation_type,
+    population_name, n_generations, n_interpreters, prune_model_num, remove_isolated_nodes, check_complete_model_input_to_output, population_size, n_top, n_random, n_replicates_per_model, reset_model_copy_weights, reset_model_template_weights, population_logging, set_population_size_fixed, set_population_size_doubling, set_training_steps_by_model_size,
+    batch_size, memory_size, n_epochs_training, n_epochs_validation, n_epochs_evaluation, n_tbtt_steps, n_tett_steps, verbosity, logging_training, logging_validation, logging_evaluation, find_cycles, fast_interpreter, preserve_ooo, interpret_model, reset_model, n_hidden_0, n_hidden_1, n_hidden_2, reset_interpreter,
+    n_node_down_additions_lb, n_node_right_additions_lb, n_node_down_copies_lb, n_node_right_copies_lb, n_link_additons_lb, n_link_copies_lb, n_node_deletions_lb, n_link_deletions_lb, n_node_activation_changes_lb, n_node_integration_changes_lb, n_module_additions_lb, n_module_copies_lb, n_module_deletions_lb, n_node_down_additions_ub, n_node_right_additions_ub, n_node_down_copies_ub, n_node_right_copies_ub, n_link_additons_ub, n_link_copies_ub, n_node_deletions_ub, n_link_deletions_ub, n_node_activation_changes_ub, n_node_integration_changes_ub, n_module_additions_ub, n_module_copies_ub, n_module_deletions_ub, set_modification_rate_fixed, set_modification_rate_by_prev_error);
+
+  // Read in the parameters
+  LoadParametersFromCsv loadParametersFromCsv(id_int, parameters_filename);
+  parameters = SmartPeak::apply([&loadParametersFromCsv](auto&& ...args) { return loadParametersFromCsv(args...); }, parameters);
+
+  // Run the application
+  SmartPeak::apply([](auto&& ...args) { main_(args ...); }, parameters);
   return 0;
 }
