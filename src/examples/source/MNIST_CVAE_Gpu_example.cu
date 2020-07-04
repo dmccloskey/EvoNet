@@ -479,7 +479,7 @@ public:
       }
     }
   }
-  void simulateEvaluationData(Eigen::Tensor<TensorT, 3>& input_data, Eigen::Tensor<TensorT, 2>& time_steps) override
+  void simulateEvaluationData(Eigen::Tensor<TensorT, 3>& input_data, Eigen::Tensor<TensorT, 3>& metric_output_data, Eigen::Tensor<TensorT, 2>& time_steps) override
   {
     // infer data dimensions based on the input tensors
     const int batch_size = input_data.dimension(0);
@@ -495,7 +495,7 @@ public:
     input_data.slice(offsets, extents) = input_data.slice(offsets, extents).random();
 
     // Assign the encoding values by sampling the 95% confidence limits of the inverse normal distribution
-    const TensorT step_size = (0.95 - 0.05) / (batch_size - 1);
+    const TensorT step_size = (0.95 - 0.05) / batch_size;
     input_data.chip(encodings_traversal_iter_, 2) = (input_data.chip(encodings_traversal_iter_, 2).constant(step_size).cumsum(0) +
       input_data.chip(encodings_traversal_iter_, 2).constant(TensorT(0.05))).ndtri();
 

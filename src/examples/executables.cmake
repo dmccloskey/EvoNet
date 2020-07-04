@@ -1,4 +1,5 @@
 set(ml_executables_list
+  MNIST_Bayes_example
   MNIST_CovNet_example
   MNIST_CVAE_example
   #MNIST_DenoisingAE_example
@@ -22,16 +23,17 @@ set(ml_executables_list
 )
 
 set(cuda_executables_list
-  CUDA_example
   HarmonicOscillator_Gpu_example
   KineticModel_Gpu_example
   KineticModel2_Gpu_example
+  MNIST_Bayes_Gpu_example
   MNIST_CovNet_Gpu_example
   MNIST_CVAE_Gpu_example
   #MNIST_DenoisingAE_Gpu_example
   MNIST_DotProdAtten_Gpu_example
   MNIST_LSTM_Gpu_example
   MNIST_VAE_Gpu_example
+  AddProbAtt_Gpu_example
   AddProbRec_Gpu_example
   Metabolomics_BatchCorrection_Gpu
   Metabolomics_Classification_Gpu

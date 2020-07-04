@@ -178,6 +178,8 @@ BOOST_AUTO_TEST_CASE(gettersAndSetters)
   population_trainer.setCheckCompleteModelInputToOutput(false);
   population_trainer.setSelectModels(false);
   population_trainer.setResetModelCopyWeights(true);
+  population_trainer.setResetModelTemplateWeights(true);
+  population_trainer.setPopulationSize(256);
 
 	BOOST_CHECK_EQUAL(population_trainer.getNTop(), 4);
 	BOOST_CHECK_EQUAL(population_trainer.getNRandom(), 1);
@@ -189,6 +191,8 @@ BOOST_AUTO_TEST_CASE(gettersAndSetters)
   BOOST_CHECK(!population_trainer.getCheckCompleteModelInputToOutput());
   BOOST_CHECK(!population_trainer.getSelectModels());
   BOOST_CHECK(population_trainer.getResetModelCopyWeights());
+  BOOST_CHECK(population_trainer.getResetModelTemplateWeights());
+  BOOST_CHECK_EQUAL(population_trainer.getPopulationSize(), 256);
 }
 
 BOOST_AUTO_TEST_CASE(setNEpochsTraining)
@@ -312,11 +316,12 @@ BOOST_AUTO_TEST_CASE(replicateModels)
 	ModelBuilder<float> model_builder;
 
   // create an initial population
-  std::vector<Model<float>> population1, population2, population3;
+  std::vector<Model<float>> population1, population2, population3,
+    population4, population5, population6, population7, population8;
 	for (int i = 0; i < 2; ++i)
 	{
 		Model<float> model;
-
+    model.setId(0);
 		// make the baseline model
 		std::vector<std::string> node_names = model_builder.addInputNodes(model, "Input", "Input", 1);
 		node_names = model_builder.addFullyConnected(model, "Hidden1", "Mod1", node_names,
@@ -334,10 +339,16 @@ BOOST_AUTO_TEST_CASE(replicateModels)
 		//model.initError(4, 4);
 		model.findCycles();
 
-		Model<float> model1(model), model2(model), model3(model); // copy the models
+		Model<float> model1(model), model2(model), model3(model), // copy the models
+      model4(model), model5(model), model6(model), model7(model), model8(model);
 		population1.push_back(model1); // push the copies to the different test populations
 		population2.push_back(model2);
 		population3.push_back(model3);
+    population4.push_back(model4);
+    population5.push_back(model5);
+    population6.push_back(model6);
+    population7.push_back(model7);
+    population8.push_back(model8);
 	}
 
 	// control (no modifications)
@@ -355,10 +366,11 @@ BOOST_AUTO_TEST_CASE(replicateModels)
 		std::make_pair(0, 0),
 		std::make_pair(0, 0),
 		std::make_pair(0, 0));
-  population_trainer.replicateModels(population1, model_replicator);
-
-	// check for the expected size
-	BOOST_CHECK_EQUAL(population1.size(), 6);
+  population_trainer.replicateModels(population1, model_replicator);	
+	BOOST_CHECK_EQUAL(population1.size(), 6); // check for the expected size
+  for (auto& model : population1)
+    for (const auto& weight_map : model.getWeightsMap())
+      BOOST_CHECK(weight_map.second->getInitWeight());
 
 	// control (additions only)
 	model_replicator.setRandomModifications(
@@ -376,9 +388,7 @@ BOOST_AUTO_TEST_CASE(replicateModels)
 		std::make_pair(0, 0),
 		std::make_pair(0, 0));
 	population_trainer.replicateModels(population2, model_replicator);
-
-  // check for the expected size
-  BOOST_CHECK_EQUAL(population2.size(), 6);
+  BOOST_CHECK_EQUAL(population2.size(), 6); // check for the expected size
 
 	// break the new replicates (deletions only)
 	model_replicator.setRandomModifications(
@@ -395,11 +405,87 @@ BOOST_AUTO_TEST_CASE(replicateModels)
 		std::make_pair(0, 0),
 		std::make_pair(0, 0),
 		std::make_pair(0, 0));
-	population_trainer.replicateModels(population3, model_replicator);
+	population_trainer.replicateModels(population3, model_replicator);	
+	BOOST_CHECK_EQUAL(population3.size(), 6); // check for the expected size and # of new modified models (i.e., 0)
+  for (int i = 0; i < population3.size(); ++i) {
+    if (i < 2) BOOST_CHECK_EQUAL(population3.at(i).links_.size(), 4);
+    else BOOST_CHECK_EQUAL(population3.at(i).links_.size(), 0);
+  }
 
-	// check for the expected size
-	BOOST_CHECK_EQUAL(population3.size(), 2);
+  // reset_model_copy_weights = true
+  population_trainer.setResetModelCopyWeights(true);
+  population_trainer.setResetModelTemplateWeights(false);
+  for (auto& model : population4)
+    for (auto& weight_map : model.getWeightsMap())
+      weight_map.second->setInitWeight(false);
+  model_replicator.setRandomModifications(
+    std::make_pair(0, 0),
+    std::make_pair(0, 0), // addNodeRight
+    std::make_pair(0, 0), // copyNodeDown 
+    std::make_pair(0, 0), // copyNodeRight
+    std::make_pair(0, 0),
+    std::make_pair(0, 0),
+    std::make_pair(0, 0),
+    std::make_pair(0, 0),
+    std::make_pair(0, 0),
+    std::make_pair(0, 0),
+    std::make_pair(0, 0),
+    std::make_pair(0, 0),
+    std::make_pair(0, 0));
+  population_trainer.replicateModels(population4, model_replicator);
+  BOOST_CHECK_EQUAL(population4.size(), 6); // check for the expected size
+  for (auto& model : population4) {
+    for (const auto& weight_map : model.getWeightsMap()) {
+      if (model.getId() == 0) {
+        BOOST_CHECK(!weight_map.second->getInitWeight());
+      }
+      else {
+        BOOST_CHECK(weight_map.second->getInitWeight());
+      }
+    }
+  }
 
+  // reset_model_template_weights = true
+  population_trainer.setResetModelCopyWeights(false);
+  population_trainer.setResetModelTemplateWeights(true);
+  for (auto& model : population5)
+    for (auto& weight_map : model.getWeightsMap())
+      weight_map.second->setInitWeight(false);
+  population_trainer.replicateModels(population5, model_replicator);
+  BOOST_CHECK_EQUAL(population5.size(), 6); // check for the expected size
+  for (auto& model : population5) {
+    for (const auto& weight_map : model.getWeightsMap()) {
+      if (model.getId() == 0) {
+        BOOST_CHECK(weight_map.second->getInitWeight());
+      }
+      else {
+        BOOST_CHECK(!weight_map.second->getInitWeight());
+      }
+    }
+  }
+
+  // remove_isolated_nodes = false
+  population_trainer.setResetModelCopyWeights(false);
+  population_trainer.setResetModelTemplateWeights(false);
+  population_trainer.setRemoveIsolatedNodes(false);
+  population_trainer.replicateModels(population6, model_replicator);
+  BOOST_CHECK_EQUAL(population6.size(), 6); // check for the expected size
+  // TODO: implement test
+
+  // prune_model_num > 10
+  population_trainer.setRemoveIsolatedNodes(true);
+  population_trainer.setPruneModelNum(100);
+  population_trainer.replicateModels(population7, model_replicator);
+  BOOST_CHECK_EQUAL(population7.size(), 6); // check for the expected size
+  // TODO: implement test
+
+  // check_complete_input_to_output = false
+  population_trainer.setPruneModelNum(10);
+  population_trainer.setCheckCompleteModelInputToOutput(false);
+  population_trainer.replicateModels(population8, model_replicator);
+  BOOST_CHECK_EQUAL(population8.size(), 6); // check for the expected size
+  // TODO: implement test
+  
   // // check for the expected tags
   // int cnt = 0;
   // for (const Model& model: population)
@@ -431,7 +517,7 @@ BOOST_AUTO_TEST_CASE(trainModels)
   PopulationTrainerExt<float> population_trainer;
 
 	std::vector<ModelInterpreterDefaultDevice<float>> model_interpreters;
-	for (size_t i = 0; i < 1; ++i) {
+	for (size_t i = 0; i < 2; ++i) {
 		ModelResources model_resources = { ModelDevice(0, 1) };
 		model_interpreters.push_back(ModelInterpreterDefaultDevice<float>(model_resources));
 	}
@@ -566,7 +652,7 @@ BOOST_AUTO_TEST_CASE(evalModels)
 	PopulationTrainerExt<float> population_trainer;
 
 	std::vector<ModelInterpreterDefaultDevice<float>> model_interpreters;
-	for (size_t i = 0; i < 1; ++i) {
+	for (size_t i = 0; i < 2; ++i) {
 		ModelResources model_resources = { ModelDevice(0, 1) };
 		model_interpreters.push_back(ModelInterpreterDefaultDevice<float>(model_resources));
 	}
@@ -706,7 +792,7 @@ BOOST_AUTO_TEST_CASE(exampleUsage)
 
 	// define the model trainers and resources for the trainers
 	std::vector<ModelInterpreterDefaultDevice<float>> model_interpreters;
-	for (size_t i = 0; i < 1; ++i) {
+	for (size_t i = 0; i < 2; ++i) {
 		ModelResources model_resources = { ModelDevice(0, 1) };
 		model_interpreters.push_back(ModelInterpreterDefaultDevice<float>(model_resources));
 	}
@@ -760,7 +846,7 @@ BOOST_AUTO_TEST_CASE(exampleUsage)
 
 	// Evolve the population
 	std::vector<std::vector<std::tuple<int, std::string, float>>> models_validation_errors_per_generation = population_trainer.evolveModels(
-		population, model_trainer, model_interpreters,model_replicator, data_simulator, model_logger, population_logger, input_nodes);
+		population, "Test_population", model_trainer, model_interpreters,model_replicator, data_simulator, model_logger, population_logger, input_nodes);
 
 	PopulationTrainerFile<float> population_trainer_file;
 	population_trainer_file.storeModels(population, "populationTrainer");

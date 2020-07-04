@@ -23,13 +23,19 @@
 #include <future>
 #include <mutex>
 
-static std::mutex trainModel_mutex;
-static std::mutex validateModel_mutex;
-static std::mutex replicateModel_mutex;
-static std::mutex evalModel_mutex;
-
 namespace SmartPeak
 {
+  // Concurrency helpers
+  static std::mutex trainModel_mutex;
+  static std::mutex validateModel_mutex;
+  static std::mutex replicateModel_mutex;
+  static std::mutex evalModel_mutex;
+  std::atomic_size_t train_models_iter_{ 0 };
+  std::atomic_size_t validate_models_iter_{ 0 };
+  std::atomic_size_t replicate_models_iter_{ 0 };
+  std::atomic_size_t models_id_iter_{ 0 };
+  std::atomic_size_t eval_models_iter_{ 0 };
+
   /**
     @brief Class to train a vector of models
   */
@@ -50,6 +56,8 @@ public:
     void setCheckCompleteModelInputToOutput(const bool& check_complete_input_to_output);
     void setSelectModels(const bool& select_models);
     void setResetModelCopyWeights(const bool& reset_model_copy_weights);
+    void setResetModelTemplateWeights(const bool& reset_model_template_weights);
+    void setPopulationSize(const int& population_size) { population_size_ = population_size; }
 
 		int getNTop() const; ///< batch_size setter
 		int getNRandom() const; ///< memory_size setter
@@ -61,6 +69,8 @@ public:
     bool getCheckCompleteModelInputToOutput() const;
     bool getSelectModels() const;
     bool getResetModelCopyWeights() const;
+    bool getResetModelTemplateWeights() const;
+    int getPopulationSize() { return population_size_; }
 
     /**
       @brief Remove models with non-unique names from the population of models
@@ -98,10 +108,19 @@ public:
 
       @returns key value pair of model_name and model_error
     */ 
+    static bool validateModels_(
+      std::vector<Model<TensorT>>& model,
+      ModelTrainer<TensorT, InterpreterT>& model_trainer, InterpreterT& model_interpreter,
+      ModelLogger<TensorT>& model_logger,
+      const Eigen::Tensor<TensorT, 4>& input,
+      const Eigen::Tensor<TensorT, 4>& output,
+      const Eigen::Tensor<TensorT, 3>& time_steps,
+      const std::vector<std::string>& input_nodes,
+      std::vector<std::tuple<int, std::string, TensorT>>& model_validation_errors);
     static std::tuple<int, std::string, TensorT> validateModel_(
-      Model<TensorT>* model,
-      ModelTrainer<TensorT, InterpreterT>* model_trainer, InterpreterT* model_interpreter,
-			ModelLogger<TensorT>* model_logger,
+      Model<TensorT>& model,
+      ModelTrainer<TensorT, InterpreterT>& model_trainer, InterpreterT& model_interpreter,
+			ModelLogger<TensorT>& model_logger,
       const Eigen::Tensor<TensorT, 4>& input,
       const Eigen::Tensor<TensorT, 4>& output,
       const Eigen::Tensor<TensorT, 3>& time_steps,
@@ -135,6 +154,7 @@ public:
           modified)
 
       [TESTS: add thread tests]
+      [TESTS: add tests for remove_isolated_nodes, prune_model_num, check_complete_input_to_output, reset_model_copy_weights, and reset_model_template_weights parameters]
 
       @param[in, out] models The vector (i.e., population) of models to modify
       @param[in] model_replicator The replicator to use
@@ -144,13 +164,21 @@ public:
     void replicateModels(
       std::vector<Model<TensorT>>& models,
       ModelReplicator<TensorT>& model_replicator,
-      std::string unique_str = "",
-      int n_threads = 1);
+      const std::string& unique_str = "",
+      const int& n_threads = 1);
+
+    static bool replicateModels_(
+      std::vector<Model<TensorT>>& models,
+      ModelReplicator<TensorT>& model_replicator,
+      const std::string& unique_str,
+      const int& models_to_replicate, const int& n_replicates_per_model,
+      const bool& remove_isolated_nodes, const int& prune_model_num, const bool& check_complete_input_to_output, const bool& reset_model_copy_weights);
 
     static std::pair<bool, Model<TensorT>> replicateModel_(
-      Model<TensorT>* model,
-      ModelReplicator<TensorT>* model_replicator,
-      std::string unique_str, int cnt, bool remove_isolated_nodes, int prune_model_num, bool check_complete_input_to_output, bool reset_model_copy_weights);
+      const Model<TensorT>& model,
+      ModelReplicator<TensorT>& model_replicator,
+      const std::string& unique_str, const int& cnt,
+      const bool& remove_isolated_nodes, const int& prune_model_num, const bool& check_complete_input_to_output, const bool& reset_model_copy_weights);
  
     /**
       @brief Trains each of the models in the population
@@ -170,10 +198,19 @@ public:
       const Eigen::Tensor<TensorT, 3>& time_steps,
       const std::vector<std::string>& input_nodes);
 
-    static std::pair<bool, Model<TensorT>> trainModel_(
-      Model<TensorT>* model,
-      ModelTrainer<TensorT, InterpreterT>* model_trainer, InterpreterT* model_interpreter,
-			ModelLogger<TensorT>* model_logger,
+    static bool trainModels_(
+      std::vector<Model<TensorT>>& models,
+      ModelTrainer<TensorT, InterpreterT>& model_trainer, InterpreterT& model_interpreter,
+      ModelLogger<TensorT>& model_logger,
+      const Eigen::Tensor<TensorT, 4>& input,
+      const Eigen::Tensor<TensorT, 4>& output,
+      const Eigen::Tensor<TensorT, 3>& time_steps,
+      const std::vector<std::string>& input_nodes);
+
+    static bool trainModel_(
+      Model<TensorT>& model,
+      ModelTrainer<TensorT, InterpreterT>& model_trainer, InterpreterT& model_interpreter,
+			ModelLogger<TensorT>& model_logger,
       const Eigen::Tensor<TensorT, 4>& input,
       const Eigen::Tensor<TensorT, 4>& output,
       const Eigen::Tensor<TensorT, 3>& time_steps,
@@ -196,27 +233,37 @@ public:
 			const Eigen::Tensor<TensorT, 3>& time_steps,
 			const std::vector<std::string>& input_nodes);
 
+    static bool evalModels_(
+      std::vector<Model<TensorT>>& models,
+      ModelTrainer<TensorT, InterpreterT>& model_trainer, InterpreterT& model_interpreters,
+      ModelLogger<TensorT>& model_logger,
+      const Eigen::Tensor<TensorT, 4>& input,
+      const Eigen::Tensor<TensorT, 3>& time_steps,
+      const std::vector<std::string>& input_nodes);
+
 		static bool evalModel_(
-			Model<TensorT>* model,
-			ModelTrainer<TensorT, InterpreterT>* model_trainer, InterpreterT* model_interpreter,
-			ModelLogger<TensorT>* model_logger,
+			Model<TensorT>& model,
+			ModelTrainer<TensorT, InterpreterT>& model_trainer, InterpreterT& model_interpreter,
+			ModelLogger<TensorT>& model_logger,
 			const Eigen::Tensor<TensorT, 4>& input,
 			const Eigen::Tensor<TensorT, 3>& time_steps,
 			const std::vector<std::string>& input_nodes);
-
-		int getNextID(); ///< iterate and return the next id in the sequence
-		void setID(const int& id);  ///< unique_id setter
  
 		/**
 		@brief Train the population
 
-		@param[in, out] models The vector of models to copy
+		@param[in, out] models The vector of models to evolve
+    @param[in] population_name The name of the population (used for logging)
 		@param[in] model_trainer The trainer to use
+		@param[in] model_interpreters The interpreters to use for model building and training (each interpreter is given its own thread)
 		@param[in] model_replicator The replicator to use
 		@param[in] data_simulator The data simulate/generator to use
+		@param[in] population_logger The population logger to use
+		@param[in] input_nodes Vector of model input nodes
 		*/
 		std::vector<std::vector<std::tuple<int, std::string, TensorT>>> evolveModels(
 			std::vector<Model<TensorT>>& models,
+      const std::string& population_name,
 			ModelTrainer<TensorT, InterpreterT>& model_trainer,  std::vector<InterpreterT>& model_interpreters,
 			ModelReplicator<TensorT>& model_replicator,
 			DataSimulator<TensorT>& data_simulator,
@@ -227,13 +274,17 @@ public:
 		/**
 		@brief Evaluate the population
 
-		@param[in, out] models The vector of models to copy
-		@param[in] model_trainer The trainer to use
+		@param[in, out] models The vector of models to evaluate
+    @param[in] population_name The name of the population (used for logging)
+		@param[in] model_interpreters The interpreters to use for model building and training (each interpreter is given its own thread)
 		@param[in] model_replicator The replicator to use
 		@param[in] data_simulator The data simulate/generator to use
+		@param[in] population_logger The population logger to use
+		@param[in] input_nodes Vector of model input nodes
 		*/
 		void evaluateModels(
 			std::vector<Model<TensorT>>& models,
+      const std::string& population_name,
 			ModelTrainer<TensorT, InterpreterT>& model_trainer,  std::vector<InterpreterT>& model_interpreters,
 			ModelReplicator<TensorT>& model_replicator,
 			DataSimulator<TensorT>& data_simulator,
@@ -272,24 +323,27 @@ public:
     void setNEpochsTraining(const int& n_epochs); ///< n_epochs setter
     int getNEpochsTraining() const; ///< n_epochs setter
 
-private:
-		int unique_id_ = 0;
-
+protected:
 		// population dynamics
+    int population_size_ = 128; ///< The total number of models in the population
 		int n_top_ = 0; ///< The number models to select
 		int n_random_ = 0; ///< The number of random models to select from the pool of top models
-		int n_replicates_per_model_ = 0; ///< The number of replications per model
 		int n_generations_ = 0; ///< The number of generations to evolve the models
-    int n_epochs_training_ = -1; ///< The number of epochs to train the models
 
 		bool log_training_ = false;
-    bool select_models_ = true; ///< Whether to skip the selection step or not
 
     // model replicator settings
     bool remove_isolated_nodes_ = true;
     int prune_model_num_ = 10;
     bool check_complete_input_to_output_ = true;
     bool reset_model_copy_weights_ = false;
+    bool reset_model_template_weights_ = false;
+
+private:
+    bool select_models_ = true; ///< Whether to skip the selection step or not (set internally based on the replication scheme)
+    int n_epochs_training_ = -1; ///< The number of epochs to train the models (set internally based on the `ModelInterpreter::n_epochs_training_`)
+    int n_replicates_per_model_ = 0; ///< The number of replications per model (calculated internally based on the desired population size)
+
   };
 	template<typename TensorT, typename InterpreterT>
 	void PopulationTrainer<TensorT, InterpreterT>::setNTop(const int & n_top)
@@ -340,6 +394,11 @@ private:
   inline void PopulationTrainer<TensorT, InterpreterT>::setResetModelCopyWeights(const bool & reset_model_copy_weights)
   {
     reset_model_copy_weights_ = reset_model_copy_weights;
+  }
+  template<typename TensorT, typename InterpreterT>
+  inline void PopulationTrainer<TensorT, InterpreterT>::setResetModelTemplateWeights(const bool& reset_model_template_weights)
+  {
+    reset_model_template_weights_ = reset_model_template_weights;
   }
 	template<typename TensorT, typename InterpreterT>
 	int PopulationTrainer<TensorT, InterpreterT>::getNTop() const
@@ -398,6 +457,12 @@ private:
     return reset_model_copy_weights_;
   }
 
+  template<typename TensorT, typename InterpreterT>
+  inline bool PopulationTrainer<TensorT, InterpreterT>::getResetModelTemplateWeights() const
+  {
+    return reset_model_template_weights_;
+  }
+
 	template<typename TensorT, typename InterpreterT>
 	void PopulationTrainer<TensorT, InterpreterT>::removeDuplicateModels(std::vector<Model<TensorT>>& models)
 	{
@@ -413,17 +478,6 @@ private:
 				models.push_back(model.second);
 			}
 		}
-
-		// models.erase(std::unique(models.begin(), models.end(), 
-		//   [=](const Model<TensorT>& a, const Model<TensorT>& b)
-		//     {
-		//       printf("Modela %s Model*b %s are equal? ", a.getName().data(), b.getName().data());
-		//       bool areequal = a.getName() == b.getName();
-		//       std::cout<<areequal<<std::endl;
-		//       return a.getName() == b.getName();
-		//     }),
-		//   models.end()
-		// );
 	}
 
 	template<typename TensorT, typename InterpreterT>
@@ -436,77 +490,53 @@ private:
 		const Eigen::Tensor<TensorT, 3>& time_steps,
 		const std::vector<std::string>& input_nodes)
 	{
-		// printf("PopulationTrainer<TensorT, InterpreterT>::selectModels, Models size: %i\n", models.size());
 		// score the models
 		std::vector<std::tuple<int, std::string, TensorT>> models_validation_errors;
+    models_validation_errors.resize(models.size());
 
-		// models_validation_errors = validateModels_(
-		//   models, model_trainer, input, output, time_steps, input_nodes, output_nodes
-		// );
+    // launch the workers asynchronously
+    validate_models_iter_ = 0;
+    std::vector<std::future<bool>> task_results;
+    for (size_t i = 0; i < model_interpreters.size(); ++i) {
+      // make the packaged task and save the future
+      std::packaged_task<bool(std::vector<Model<TensorT>>&,
+        ModelTrainer<TensorT, InterpreterT>&, InterpreterT&, ModelLogger<TensorT>&,
+        const Eigen::Tensor<TensorT, 4>&, const Eigen::Tensor<TensorT, 4>&, const Eigen::Tensor<TensorT, 3>&,
+        const std::vector<std::string>&, std::vector<std::tuple<int, std::string, TensorT>>&
+        )> task(PopulationTrainer<TensorT, InterpreterT>::validateModels_);
+      task_results.push_back(task.get_future());
 
-		std::vector<std::future<std::tuple<int, std::string, TensorT>>> task_results;
-		int thread_cnt = 0;
-		for (int i = 0; i < models.size(); ++i)
-		{
-			std::packaged_task<std::tuple<int, std::string, TensorT> // encapsulate in a packaged_task
-				(Model<TensorT>*,
-					ModelTrainer<TensorT, InterpreterT>*, InterpreterT*,
-					ModelLogger<TensorT>*,
-					Eigen::Tensor<TensorT, 4>,
-					Eigen::Tensor<TensorT, 4>,
-					Eigen::Tensor<TensorT, 3>,
-					std::vector<std::string>
-					)> task(PopulationTrainer<TensorT, InterpreterT>::validateModel_);
+      // create a copy of the model logger
+      ModelLogger<TensorT> model_logger_copy = model_logger;
 
-			// create a copy of the model logger
-			ModelLogger<TensorT> model_logger_copy = model_logger;
+      // launch the interpreter
+      std::thread task_thread(std::move(task),
+        std::ref(models), std::ref(model_trainer), std::ref(model_interpreters[i]), std::ref(model_logger_copy),
+        std::ref(input), std::ref(output), std::ref(time_steps),
+        std::ref(input_nodes),
+        std::ref(models_validation_errors));
+      task_thread.detach();
+    }
 
-			// launch the thread
-			task_results.push_back(task.get_future());
-			std::thread task_thread(std::move(task),
-				&models[i], &model_trainer, &model_interpreters[thread_cnt], &model_logger_copy,
-				std::ref(input), std::ref(output), std::ref(time_steps),
-				std::ref(input_nodes));
-			task_thread.detach();
-
-			// retreive the results
-			if (thread_cnt == model_interpreters.size() - 1 || i == models.size() - 1)
-			{
-				for (auto& task_result : task_results)
-				{
-					if (task_result.valid())
-					{
-						try
-						{
-							models_validation_errors.push_back(task_result.get());
-						}
-						catch (std::exception& e)
-						{
-							printf("Exception: %s", e.what());
-						}
-					}
-				}
-				task_results.clear();
-				thread_cnt = 0;
-			}
-			else
-			{
-				++thread_cnt;
-			}
-		}
-		// printf("PopulationTrainer<TensorT, InterpreterT>::selectModels, models_validation_errors1 size: %i\n", models_validation_errors.size());
+    // Retrieve the results as they come
+    for (auto& task_result: task_results) {
+      try {
+        const bool result = task_result.get();
+      }
+      catch (std::exception & e) {
+        printf("Exception: %s", e.what());
+      }
+    }
 
 		// sort each model based on their scores in ascending order
 		models_validation_errors = getTopNModels_(
 			models_validation_errors, getNTop()
 		);
-		// printf("PopulationTrainer<TensorT, InterpreterT>::selectModels, models_validation_errors2 size: %i\n", models_validation_errors.size());
 
 		// select a random subset of the top N
 		models_validation_errors = getRandomNModels_(
 			models_validation_errors, getNRandom()
 		);
-		// printf("PopulationTrainer<TensorT, InterpreterT>::selectModels, models_validation_errors3 size: %i\n", models_validation_errors.size());
 
 		std::vector<int> selected_models;
 		for (const std::tuple<int, std::string, TensorT>& model_error : models_validation_errors)
@@ -515,42 +545,80 @@ private:
 		// purge non-selected models
 		if (selected_models.size() != models.size())
 		{
-			models.erase(
-				std::remove_if(models.begin(), models.end(),
-					[=](const Model<TensorT>& model)
-			{
-				return std::count(selected_models.begin(), selected_models.end(), model.getId()) == 0;
-			}
-				),
-				models.end()
-				);
-			// printf("PopulationTrainer<TensorT, InterpreterT>::selectModels, Models size: %i\n", models.size());
+			models.erase(std::remove_if(models.begin(), models.end(),
+					[=](const Model<TensorT>& model){return std::count(selected_models.begin(), selected_models.end(), model.getId()) == 0;}
+				),models.end());
 		}
 
 		if (models.size() > getNRandom())
 			removeDuplicateModels(models);
-		// printf("PopulationTrainer<TensorT, InterpreterT>::selectModels, Models size: %i\n", models.size());
 
 		return models_validation_errors;
 	}
 
-	template<typename TensorT, typename InterpreterT>
+  template<typename TensorT, typename InterpreterT>
+  inline bool PopulationTrainer<TensorT, InterpreterT>::validateModels_(std::vector<Model<TensorT>>& models, ModelTrainer<TensorT, InterpreterT>& model_trainer, InterpreterT& model_interpreter, ModelLogger<TensorT>& model_logger, const Eigen::Tensor<TensorT, 4>& input, const Eigen::Tensor<TensorT, 4>& output, const Eigen::Tensor<TensorT, 3>& time_steps, const std::vector<std::string>& input_nodes, std::vector<std::tuple<int, std::string, TensorT>>& model_validation_errors)
+  {
+    bool result = false;
+    while (true) {
+      // get the next available thread
+      const size_t validate_models_iter = validate_models_iter_.fetch_add(1);
+      if (validate_models_iter >= models.size()) {
+        break;
+      }
+
+      // create the task and the future
+      std::packaged_task<std::tuple<int, std::string, TensorT>
+        (Model<TensorT>&,
+          ModelTrainer<TensorT, InterpreterT>&, InterpreterT&,
+          ModelLogger<TensorT>&,
+          const Eigen::Tensor<TensorT, 4>&,
+          const Eigen::Tensor<TensorT, 4>&,
+          const Eigen::Tensor<TensorT, 3>&,
+          const std::vector<std::string>&
+          )> task(PopulationTrainer<TensorT, InterpreterT>::validateModel_);
+      std::future<std::tuple<int, std::string, TensorT>> task_result = task.get_future();
+
+      // launch the thread
+      std::thread task_thread(std::move(task),
+        std::ref(models[validate_models_iter]), std::ref(model_trainer), std::ref(model_interpreter), std::ref(model_logger),
+        std::ref(input), std::ref(output), std::ref(time_steps),
+        std::ref(input_nodes));
+      task_thread.detach();
+
+      // retreive the results
+      try {
+        model_validation_errors.at(validate_models_iter) = task_result.get();
+        result = true;
+      }
+      catch (std::exception & e) {
+        printf("Exception: %s", e.what());
+      }
+
+      // Clear the interpreter cache before moving to the next model
+      // TODO: add test case for this
+      model_interpreter.clear_cache();
+    }
+    return result;
+  }
+
+  template<typename TensorT, typename InterpreterT>
 	std::tuple<int, std::string, TensorT> PopulationTrainer<TensorT, InterpreterT>::validateModel_(
-		Model<TensorT>* model,
-		ModelTrainer<TensorT, InterpreterT>* model_trainer, InterpreterT* model_interpreter,
-		ModelLogger<TensorT>* model_logger,
+		Model<TensorT>& model,
+		ModelTrainer<TensorT, InterpreterT>& model_trainer, InterpreterT& model_interpreter,
+		ModelLogger<TensorT>& model_logger,
 		const Eigen::Tensor<TensorT, 4>& input,
 		const Eigen::Tensor<TensorT, 4>& output,
 		const Eigen::Tensor<TensorT, 3>& time_steps,
 		const std::vector<std::string>& input_nodes)
 	{
-		std::lock_guard<std::mutex> lock(validateModel_mutex);
+		//std::lock_guard<std::mutex> lock(validateModel_mutex);
 		// score the model
 		try
 		{
-			std::vector<TensorT> model_errors = model_trainer->validateModel(
-				*model, input, output, time_steps,
-				input_nodes, *model_logger, *model_interpreter);
+			std::vector<TensorT> model_errors = model_trainer.validateModel(
+				model, input, output, time_steps,
+				input_nodes, model_logger, model_interpreter);
 			TensorT model_ave_error = 1e6;
 			if (model_errors.size() > 0)
 				model_ave_error = std::accumulate(model_errors.begin(), model_errors.end(), 0.0) / model_errors.size();
@@ -559,16 +627,16 @@ private:
 
 			char cout_char[512];
 			sprintf(cout_char, "Model%s (Nodes: %d, Links: %d) error: %.6f\n",
-				model->getName().data(), model->getNodes().size(), model->getLinks().size(), model_ave_error);
+				model.getName().data(), model.getNodes().size(), model.getLinks().size(), model_ave_error);
 			std::cout << cout_char;
 
-			return std::make_tuple(model->getId(), model->getName(), model_ave_error);
+			return std::make_tuple(model.getId(), model.getName(), model_ave_error);
 		}
 		catch (std::exception& e)
 		{
-			printf("The model %s is broken.\n", model->getName().data());
+			printf("The model %s is broken.\n", model.getName().data());
 			printf("Error: %s.\n", e.what());
-			return std::make_tuple(model->getId(), model->getName(), 1e6f);
+			return std::make_tuple(model.getId(), model.getName(), TensorT(1e6));
 		}
 	}
 
@@ -620,82 +688,110 @@ private:
 	void PopulationTrainer<TensorT, InterpreterT>::replicateModels(
 		std::vector<Model<TensorT>>& models,
 		ModelReplicator<TensorT>& model_replicator,
-		std::string unique_str,
-		int n_threads)
+		const std::string& unique_str,
+		const int& n_threads)
 	{
-		// replicate and modify
-		std::vector<Model<TensorT>> models_copy = models;
-		int cnt = 0;
-		std::vector<std::future<std::pair<bool, Model<TensorT>>>> task_results;
-		int thread_cnt = 0;
-		for (Model<TensorT>& model : models_copy)
-		{
-			for (int i = 0; i < getNReplicatesPerModel(); ++i)
-			{
-				std::packaged_task<std::pair<bool, Model<TensorT>>// encapsulate in a packaged_task
-					(Model<TensorT>*, ModelReplicator<TensorT>*,
-						std::string, int, bool, int, bool, bool
-						)> task(PopulationTrainer<TensorT, InterpreterT>::replicateModel_);
+    // resize the models to the expected size
+    const int models_to_replicate = models.size();
+    models.resize(models.size() + models.size() * n_replicates_per_model_, Model<TensorT>());
 
-				// launch the thread
-				task_results.push_back(task.get_future());
-				std::thread task_thread(std::move(task),
-					&model, &model_replicator,
-					std::ref(unique_str), std::ref(cnt),
-          std::ref(remove_isolated_nodes_), std::ref(prune_model_num_), std::ref(check_complete_input_to_output_), std::ref(reset_model_copy_weights_));
-				task_thread.detach();
+		// launch the workers asynchronously
+    replicate_models_iter_ = 0;
+		std::vector<std::future<bool>> task_results;
+		for (int i=0;i<n_threads;++i) {
+      // encapsulate in a packaged_task
+      std::packaged_task<bool(std::vector<Model<TensorT>>&, ModelReplicator<TensorT>&, const std::string&,
+        const int&, const int&, const bool&, const int&, const bool&, const bool&
+        )> task(PopulationTrainer<TensorT, InterpreterT>::replicateModels_);
 
-				// retreive the results
-				if (thread_cnt == n_threads - 1 || cnt == models_copy.size()*getNReplicatesPerModel() - 1)
-				{
-					for (auto& task_result : task_results)
-					{
-						if (task_result.valid())
-						{
-							try
-							{
-								std::pair<bool, Model<TensorT>> model_task_result = task_result.get();
-								if (model_task_result.first) {
-									model_task_result.second.setId(getNextID());
-									models.push_back(model_task_result.second);
-								}
-								else
-									std::cout << "All models were broken." << std::endl;
-							}
-							catch (std::exception& e)
-							{
-								printf("Exception: %s", e.what());
-							}
-						}
-					}
-					task_results.clear();
-					thread_cnt = 0;
-				}
-				else
-				{
-					++thread_cnt;
-				}
+      // launch the thread
+      task_results.push_back(task.get_future());
+      std::thread task_thread(std::move(task),
+        std::ref(models), std::ref(model_replicator),
+        std::ref(unique_str), std::ref(models_to_replicate), std::ref(n_replicates_per_model_),
+        std::ref(remove_isolated_nodes_), std::ref(prune_model_num_), std::ref(check_complete_input_to_output_), std::ref(reset_model_copy_weights_));
+      task_thread.detach();
+    }
 
-				cnt += 1;
-			}
-		}
+    // Retrieve the results as they come
+    for (auto& task_result : task_results) {
+      try {
+        const bool result = task_result.get();
+      }
+      catch (std::exception & e) {
+        printf("Exception: %s", e.what());
+      }
+    }
+
+    // reset the template model weights
+    if (reset_model_template_weights_)
+      for (int i=0;i<models_to_replicate;++i)
+        for (auto& weight_map : models.at(i).getWeightsMap())
+          weight_map.second->setInitWeight(true);
 
 		// removeDuplicateModels(models);  // safer to use, but does hurt performance
 	}
 
+  template<typename TensorT, typename InterpreterT>
+  inline bool PopulationTrainer<TensorT, InterpreterT>::replicateModels_(std::vector<Model<TensorT>>& models, ModelReplicator<TensorT>& model_replicator, const std::string& unique_str, const int& models_to_replicate, const int& n_replicates_per_model, const bool& remove_isolated_nodes, const int& prune_model_num, const bool& check_complete_input_to_output, const bool& reset_model_copy_weights)
+  {
+    bool status = false;
+    while(true) {
+      const size_t replicate_models_iter = replicate_models_iter_.fetch_add(1);
+      const size_t models_id_iter = models_id_iter_.fetch_add(1);
+      if (replicate_models_iter >= n_replicates_per_model * models_to_replicate) {
+        break;
+      }
+
+      // determine the model to replicate and modify
+      const int model_index = replicate_models_iter / n_replicates_per_model;
+
+      // make the task
+      std::packaged_task<std::pair<bool, Model<TensorT>>// encapsulate in a packaged_task
+        (const Model<TensorT>&, ModelReplicator<TensorT>&,
+          const std::string&, const int&, const bool&, const int&, const bool&, const bool&
+          )> task(PopulationTrainer<TensorT, InterpreterT>::replicateModel_);
+
+      // launch the thread
+      std::future<std::pair<bool, Model<TensorT>>> task_result = task.get_future();
+      std::thread task_thread(std::move(task),
+        std::ref(models.at(model_index)), std::ref(model_replicator),
+        std::ref(unique_str), std::ref(replicate_models_iter),
+        std::ref(remove_isolated_nodes), std::ref(prune_model_num), std::ref(check_complete_input_to_output), std::ref(reset_model_copy_weights));
+      task_thread.detach();
+
+      // retrieve the results
+      try {
+        std::pair<bool, Model<TensorT>> model_task_result = task_result.get();
+        if (model_task_result.first) {
+          model_task_result.second.setId(models_id_iter);
+          models.at(models_to_replicate + replicate_models_iter) = model_task_result.second;
+        }
+        else {
+          std::cout << "All models were broken." << std::endl;
+        }
+      }
+      catch (std::exception & e) {
+        printf("Exception: %s", e.what());
+      }
+    }
+
+    return status;
+  }
+
 	template<typename TensorT, typename InterpreterT>
 	std::pair<bool, Model<TensorT>> PopulationTrainer<TensorT, InterpreterT>::replicateModel_(
-		Model<TensorT>* model,
-		ModelReplicator<TensorT>* model_replicator,
-		std::string unique_str, int cnt,
-    bool remove_isolated_nodes, int prune_model_num, bool check_complete_input_to_output, bool reset_model_copy_weights)
+		const Model<TensorT>& model,
+		ModelReplicator<TensorT>& model_replicator,
+		const std::string& unique_str, const int& cnt,
+    const bool& remove_isolated_nodes, const int& prune_model_num, const bool& check_complete_input_to_output, const bool& reset_model_copy_weights)
 	{
-		std::lock_guard<std::mutex> lock(replicateModel_mutex);
+		//std::lock_guard<std::mutex> lock(replicateModel_mutex);
 
 		// rename the model
 		std::regex re("@");
 		std::vector<std::string> str_tokens;
-		std::string model_name_new = model->getName();
+		std::string model_name_new = model.getName();
 		std::copy(
 			std::sregex_token_iterator(model_name_new.begin(), model_name_new.end(), re, -1),
 			std::sregex_token_iterator(),
@@ -705,16 +801,16 @@ private:
 
 		char model_name_char[512];
 		sprintf(model_name_char, "%s@replicateModel#%s", model_name_new.data(), unique_str.data());
-		std::string model_name = model_replicator->makeUniqueHash(model_name_char, std::to_string(cnt));
+		std::string model_name = model_replicator.makeUniqueHash(model_name_char, std::to_string(cnt));
 
     int max_iters = 8; // changed from 32
 		for (int iter = 0; iter < max_iters; ++iter)
 		{
-			Model<TensorT> model_copy(*model);
+			Model<TensorT> model_copy(model);
 			model_copy.setName(model_name);
 
-			model_replicator->makeRandomModifications();
-			model_replicator->modifyModel(model_copy, unique_str, prune_model_num);
+			model_replicator.makeRandomModifications();
+			model_replicator.modifyModel(model_copy, unique_str, prune_model_num);
 
 			// model checks
       // TODO: add unit test coverage for these cases
@@ -726,7 +822,7 @@ private:
       if (complete_model) {
         // reset the weights
         if (reset_model_copy_weights) {
-          for (auto& weight_map : model->getWeightsMap()) {
+          for (auto& weight_map : model_copy.getWeightsMap()) {
             weight_map.second->setInitWeight(true);
           }
         }
@@ -740,123 +836,118 @@ private:
 	template<typename TensorT, typename InterpreterT>
 	void PopulationTrainer<TensorT, InterpreterT>::trainModels(
 		std::vector<Model<TensorT>>& models,
-		ModelTrainer<TensorT, InterpreterT>& model_trainer,  std::vector<InterpreterT>& model_interpreters,
+		ModelTrainer<TensorT, InterpreterT>& model_trainer, std::vector<InterpreterT>& model_interpreters,
 		ModelLogger<TensorT>& model_logger,
 		const Eigen::Tensor<TensorT, 4>& input,
 		const Eigen::Tensor<TensorT, 4>& output,
 		const Eigen::Tensor<TensorT, 3>& time_steps,
 		const std::vector<std::string>& input_nodes)
 	{
-		// std::vector<std::string> broken_model_names;
-		std::vector<Model<TensorT>> trained_models;
-		std::vector<std::future<std::pair<bool, Model<TensorT>>>> task_results;
-		int thread_cnt = 0;
+    // Launch the workers asynchronously
+    train_models_iter_ = 0;
+    std::vector<std::future<bool>> task_results;
+    for (size_t i = 0; i < model_interpreters.size(); ++i) {
+      // make the packaged task and save the future
+      std::packaged_task<bool(std::vector<Model<TensorT>>&, ModelTrainer<TensorT, InterpreterT>&, InterpreterT&,
+          ModelLogger<TensorT>&, const Eigen::Tensor<TensorT, 4>&, const Eigen::Tensor<TensorT, 4>&,
+          const Eigen::Tensor<TensorT, 3>&, const std::vector<std::string>&
+          )> task(PopulationTrainer<TensorT, InterpreterT>::trainModels_);
+      task_results.push_back(task.get_future());
 
-		// train the models
-		for (int i = 0; i < models.size(); ++i)
-		{
-			std::packaged_task<std::pair<bool, Model<TensorT>> // encapsulate in a packaged_task
-				(Model<TensorT>*,
-					ModelTrainer<TensorT, InterpreterT>*, InterpreterT*,
-					ModelLogger<TensorT>*,
-					Eigen::Tensor<TensorT, 4>,
-					Eigen::Tensor<TensorT, 4>,
-					Eigen::Tensor<TensorT, 3>,
-					std::vector<std::string>
-					)> task(PopulationTrainer<TensorT, InterpreterT>::trainModel_);
+      // create a copy of the model logger
+      ModelLogger<TensorT> model_logger_copy = model_logger;
 
-			// create a copy of the model logger
-			ModelLogger<TensorT> model_logger_copy = model_logger;
-
-			// launch the thread
-			task_results.push_back(task.get_future());
-			std::thread task_thread(std::move(task),
-				&models[i], &model_trainer, &model_interpreters[thread_cnt], &model_logger_copy,
-				std::ref(input), std::ref(output), std::ref(time_steps),
-				std::ref(input_nodes));
-			task_thread.detach();
-
-			// retreive the results
-			if (thread_cnt == model_interpreters.size() - 1 || i == models.size() - 1)
-			{
-        int task_cnt = 0;
-				for (auto& task_result : task_results)
-					// for (int j=0; j<task_results.size(); ++j)
-				{
-					if (task_result.valid())
-					{
-						try
-						{
-							std::pair<bool, Model<TensorT>> status = task_result.get();        
-							if (status.first)
-							{
-								trained_models.push_back(status.second);
-							}
-						}
-						catch (std::exception& e)
-						{
-							printf("Exception: %s", e.what());
-						}
-					}
-          ++task_cnt;
-				}
-				task_results.clear();
-				thread_cnt = 0;
-        // Ensure all model_interpreter resources have been destroyed
-        for (auto& model_interpreter : model_interpreters) {
-          model_interpreter.clear_cache();
-        }
-			}
-			else
-			{
-				++thread_cnt;
-			}
-		}
-
-		// update models
-		models = trained_models;
-
-		// // purge broken models
-		// if (broken_model_names.size() > 0)
-		// {
-		//   models.erase(
-		//     std::remove_if(models.begin(), models.end(),
-		//       [=](const Model<TensorT>& model)
-		//       {
-		//         return std::count(broken_model_names.begin(), broken_model_names.end(), model.getName()) != 0;
-		//       }
-		//     ),
-		//     models.end()
-		//   );
-		// }
+      // launch the interpreter
+      std::thread task_thread(std::move(task),
+        std::ref(models), std::ref(model_trainer), std::ref(model_interpreters[i]), std::ref(model_logger_copy),
+        std::ref(input), std::ref(output), std::ref(time_steps),
+        std::ref(input_nodes));
+      task_thread.detach();
+    }
+    
+    // retrieve the results as they come in
+    for (auto& task_result: task_results) {
+      try {
+        const bool result = task_result.get();
+      }
+      catch (std::exception & e) {
+        printf("Exception: %s", e.what());
+      }
+    }
 	}
 
+  template<typename TensorT, typename InterpreterT>
+  inline bool PopulationTrainer<TensorT, InterpreterT>::trainModels_(std::vector<Model<TensorT>>& models, ModelTrainer<TensorT, InterpreterT>& model_trainer, InterpreterT& model_interpreter, ModelLogger<TensorT>& model_logger, const Eigen::Tensor<TensorT, 4>& input, const Eigen::Tensor<TensorT, 4>& output, const Eigen::Tensor<TensorT, 3>& time_steps, const std::vector<std::string>& input_nodes)
+  {
+    bool status = false;
+    while (true) {
+      // get the next available thread
+      const size_t train_models_iter = train_models_iter_.fetch_add(1);
+      if (train_models_iter >= models.size()) {
+        break;
+      }
+
+      // create the task and the future
+      std::packaged_task<bool
+        (Model<TensorT>&,
+          ModelTrainer<TensorT, InterpreterT>&, InterpreterT&,
+          ModelLogger<TensorT>&,
+          const Eigen::Tensor<TensorT, 4>&,
+          const Eigen::Tensor<TensorT, 4>&,
+          const Eigen::Tensor<TensorT, 3>&,
+          const std::vector<std::string>&
+          )> task(PopulationTrainer<TensorT, InterpreterT>::trainModel_);
+      std::future<bool> task_result = task.get_future();
+
+      // launch the thread
+      std::thread task_thread(std::move(task),
+        std::ref(models[train_models_iter]), std::ref(model_trainer), std::ref(model_interpreter), std::ref(model_logger),
+        std::ref(input), std::ref(output), std::ref(time_steps),
+        std::ref(input_nodes));
+      task_thread.detach();
+
+      // retreive the results
+      try {
+        status = task_result.get();
+      }
+      catch (std::exception & e) {
+        printf("Exception: %s", e.what());
+      }
+
+      // Clear the interpreter cache before moving to the next model
+      // TODO: add test case for this
+      model_interpreter.clear_cache();
+    }
+
+    return status;
+  }
+
 	template<typename TensorT, typename InterpreterT>
-	std::pair<bool, Model<TensorT>> PopulationTrainer<TensorT, InterpreterT>::trainModel_(
-		Model<TensorT>* model,
-		ModelTrainer<TensorT, InterpreterT>* model_trainer, InterpreterT* model_interpreter,
-		ModelLogger<TensorT>* model_logger,
+	bool PopulationTrainer<TensorT, InterpreterT>::trainModel_(
+		Model<TensorT>& model,
+		ModelTrainer<TensorT, InterpreterT>& model_trainer, InterpreterT& model_interpreter,
+		ModelLogger<TensorT>& model_logger,
 		const Eigen::Tensor<TensorT, 4>& input,
 		const Eigen::Tensor<TensorT, 4>& output,
 		const Eigen::Tensor<TensorT, 3>& time_steps,
 		const std::vector<std::string>& input_nodes)
 	{
-		std::lock_guard<std::mutex> lock(trainModel_mutex);
+		//std::lock_guard<std::mutex> lock(trainModel_mutex);
 
 		try
 		{
-			model_trainer->trainModel(
-				*model,
+			model_trainer.trainModel(
+				model,
 				input, output, time_steps,
-				input_nodes, *model_logger, *model_interpreter);
-			return std::make_pair(true, *model);
+				input_nodes, model_logger, model_interpreter);
+			return true;
 		}
 		catch (std::exception& e)
 		{
-			printf("The model %s is broken.\n", model->getName().data());
+			printf("The model %s is broken.\n", model.getName().data());
 			printf("Error: %s.\n", e.what());
-      ModelInterpreterFile<TensorT, InterpreterT>::storeModelInterpreterCsv(model->getName() + "_interpreterOps.csv", *model_interpreter);
-			return std::make_pair(false, *model);
+      ModelInterpreterFile<TensorT, InterpreterT>::storeModelInterpreterCsv(model.getName() + "_interpreterOps.csv", model_interpreter);
+			return false;
 		}
 	}
 
@@ -869,101 +960,115 @@ private:
 		const Eigen::Tensor<TensorT, 3>& time_steps,
 		const std::vector<std::string>& input_nodes)
 	{
-		// std::vector<std::string> broken_model_names;
+		// launch the workers asynchronously
+    eval_models_iter_ = 0;
 		std::vector<std::future<bool>> task_results;
-		int thread_cnt = 0;
-
-		// train the models
-		for (int i = 0; i < models.size(); ++i)
-		{
+    for (size_t i = 0; i < model_interpreters.size(); ++i) {
 			std::packaged_task<bool // encapsulate in a packaged_task
-			(Model<TensorT>*,
-				ModelTrainer<TensorT, InterpreterT>*, InterpreterT*,
-				ModelLogger<TensorT>*,
-				Eigen::Tensor<TensorT, 4>,
-				Eigen::Tensor<TensorT, 3>,
-				std::vector<std::string>
-				)> task(PopulationTrainer<TensorT, InterpreterT>::evalModel_); 
+			(std::vector<Model<TensorT>>&,
+				ModelTrainer<TensorT, InterpreterT>&, InterpreterT&,
+				ModelLogger<TensorT>&,
+				const Eigen::Tensor<TensorT, 4>&,
+				const Eigen::Tensor<TensorT, 3>&,
+				const std::vector<std::string>&
+				)> task(PopulationTrainer<TensorT, InterpreterT>::evalModels_); 
 			
 			// create a copy of the model trainer and logger
 			ModelLogger<TensorT> model_logger_copy = model_logger;
 
 			// launch the thread
 			task_results.push_back(task.get_future());
-			std::thread task_thread(std::move(task),
-				&models[i], &model_trainer, &model_interpreters[thread_cnt], &model_logger_copy,
+      std::thread task_thread(std::move(task),
+        std::ref(models), std::ref(model_trainer), std::ref(model_interpreters.at(i)), std::ref(model_logger_copy),
 				std::ref(input), std::ref(time_steps),
 				std::ref(input_nodes));
 			task_thread.detach();
-
-			// retreive the results
-			if (thread_cnt == model_interpreters.size() - 1 || i == models.size() - 1)
-			{
-				for (auto& task_result : task_results)
-				{
-					if (task_result.valid())
-					{
-						try
-						{
-							bool status = task_result.get();
-						}
-						catch (std::exception& e)
-						{
-							printf("Exception: %s", e.what());
-						}
-					}
-				}
-				task_results.clear();
-				thread_cnt = 0;
-			}
-			else
-			{
-				++thread_cnt;
-			}
 		}
+
+    // Retrieve the results as they come
+    for (auto& task_result : task_results) {
+      try {
+        const bool result = task_result.get();
+      }
+      catch (std::exception & e) {
+        printf("Exception: %s", e.what());
+      }
+    }
 	}
+
+  template<typename TensorT, typename InterpreterT>
+  inline bool PopulationTrainer<TensorT, InterpreterT>::evalModels_(std::vector<Model<TensorT>>& models, ModelTrainer<TensorT, InterpreterT>& model_trainer, InterpreterT& model_interpreter, ModelLogger<TensorT>& model_logger, const Eigen::Tensor<TensorT, 4>& input, const Eigen::Tensor<TensorT, 3>& time_steps, const std::vector<std::string>& input_nodes)
+  {
+    bool result = false;
+    while (true) {
+      // get the next available thread
+      const size_t eval_models_iter = eval_models_iter_.fetch_add(1);
+      if (eval_models_iter >= models.size()) {
+        break;
+      }
+
+      // create the task and the future
+      std::packaged_task<bool(Model<TensorT>&,
+        ModelTrainer<TensorT, InterpreterT>&, InterpreterT&,
+        ModelLogger<TensorT>&,
+        const Eigen::Tensor<TensorT, 4>&,
+        const Eigen::Tensor<TensorT, 3>&,
+        const std::vector<std::string>&
+        )> task(PopulationTrainer<TensorT, InterpreterT>::evalModel_);
+      std::future<bool> task_result = task.get_future();
+
+      // launch the thread
+      std::thread task_thread(std::move(task),
+        std::ref(models.at(eval_models_iter)), std::ref(model_trainer), std::ref(model_interpreter), std::ref(model_logger),
+        std::ref(input), std::ref(time_steps),
+        std::ref(input_nodes));
+      task_thread.detach();
+
+      // retreive the results
+      try {
+        result = task_result.get();
+      }
+      catch (std::exception & e) {
+        printf("Exception: %s", e.what());
+      }
+
+      // Clear the interpreter cache before moving to the next model
+      // TODO: add test case for this
+      model_interpreter.clear_cache();
+    }
+    return result;
+  }
 
 	template<typename TensorT, typename InterpreterT>
 	bool PopulationTrainer<TensorT, InterpreterT>::evalModel_(
-		Model<TensorT>* model,
-		ModelTrainer<TensorT, InterpreterT>* model_trainer, InterpreterT* model_interpreter,
-		ModelLogger<TensorT>* model_logger,
+		Model<TensorT>& model,
+		ModelTrainer<TensorT, InterpreterT>& model_trainer, InterpreterT& model_interpreter,
+		ModelLogger<TensorT>& model_logger,
 		const Eigen::Tensor<TensorT, 4>& input,
 		const Eigen::Tensor<TensorT, 3>& time_steps,
 		const std::vector<std::string>& input_nodes)
 	{
-		std::lock_guard<std::mutex> lock(evalModel_mutex);
+		//std::lock_guard<std::mutex> lock(evalModel_mutex);
 
 		try
 		{
-			model_trainer->evaluateModel(
-				*model, input, time_steps,
-				input_nodes, *model_logger, *model_interpreter);
+			model_trainer.evaluateModel(
+				model, input, time_steps,
+				input_nodes, model_logger, model_interpreter);
 			return true;
 		}
 		catch (std::exception& e)
 		{
-			printf("The model %s is broken.\n", model->getName().data());
+			printf("The model %s is broken.\n", model.getName().data());
 			printf("Error: %s.\n", e.what());
 			return false;
 		}
 	}
 
 	template<typename TensorT, typename InterpreterT>
-	int PopulationTrainer<TensorT, InterpreterT>::getNextID()
-	{
-		return ++unique_id_;
-	}
-
-	template<typename TensorT, typename InterpreterT>
-	void PopulationTrainer<TensorT, InterpreterT>::setID(const int & id)
-	{
-		unique_id_ = id;
-	}
-
-	template<typename TensorT, typename InterpreterT>
 	std::vector<std::vector<std::tuple<int, std::string, TensorT>>> PopulationTrainer<TensorT, InterpreterT>::evolveModels(
 		std::vector<Model<TensorT>>& models,
+    const std::string& population_name,
 		ModelTrainer<TensorT, InterpreterT>& model_trainer,  std::vector<InterpreterT>& model_interpreters,
 		ModelReplicator<TensorT>& model_replicator,
 		DataSimulator<TensorT> &data_simulator,
@@ -983,18 +1088,16 @@ private:
 		data_simulator.simulateValidationData(input_data_validation, output_data_validation, time_steps_validation);
 
 		// Population initial conditions
-		setID(models.size());
+    models_id_iter_ = models.size();
 
 		// Initialize the logger
 		if (this->getLogTraining())
-			population_logger.initLogs("Population");
+			population_logger.initLogs(population_name);
 
 		// Evolve the population
 		for (int iter = 0; iter < getNGenerations(); ++iter)
 		{
-			char iter_char[128];
-			sprintf(iter_char, "Iteration #: %d\n", iter);
-			std::cout << iter_char;
+      std::cout << "Iteration #: " + std::to_string(iter) << std::endl;
 
 			// update the population dynamics
 			adaptivePopulationScheduler(iter, models, models_validation_errors_per_generation);
@@ -1054,6 +1157,7 @@ private:
 	template<typename TensorT, typename InterpreterT>
 	void PopulationTrainer<TensorT, InterpreterT>::evaluateModels(
 		std::vector<Model<TensorT>>& models,
+    const std::string& population_name,
 		ModelTrainer<TensorT, InterpreterT>& model_trainer,  std::vector<InterpreterT>& model_interpreters,
 		ModelReplicator<TensorT>& model_replicator,
 		DataSimulator<TensorT>& data_simulator,
@@ -1065,9 +1169,6 @@ private:
 		Eigen::Tensor<TensorT, 4> input_data_evaluation(model_trainer.getBatchSize(), model_trainer.getMemorySize(), (int)input_nodes.size(), model_trainer.getNEpochsEvaluation());
 		Eigen::Tensor<TensorT, 3> time_steps_evaluation(model_trainer.getBatchSize(), model_trainer.getMemorySize(), model_trainer.getNEpochsEvaluation());
 		data_simulator.simulateEvaluationData(input_data_evaluation, time_steps_evaluation);
-
-		// Population initial conditions
-		setID(models.size());
 
 		// Evaluate the population
 		std::cout << "Evaluating the model..." << std::endl;

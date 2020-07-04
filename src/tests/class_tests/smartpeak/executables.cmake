@@ -14,6 +14,7 @@ set(io_executables_list
   ModelInterpreterFile_test
   ModelInterpreterFileGpu_test
   NodeFile_test
+  Parameters_test
   PopulationTrainerFile_test
   WeightFile_test
 )

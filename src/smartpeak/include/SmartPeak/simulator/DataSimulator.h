@@ -105,7 +105,7 @@ namespace SmartPeak
     @param[in, out] output Output Tensor for the model
     @param[in, out] time_steps Time step tensor for the model
     */
-    virtual void simulateEvaluationData(Eigen::Tensor<TensorT, 3>& input_data, Eigen::Tensor<TensorT, 2>& time_steps) {};
+    virtual void simulateEvaluationData(Eigen::Tensor<TensorT, 3>& input_data, Eigen::Tensor<TensorT, 3>& metric_output_data, Eigen::Tensor<TensorT, 2>& time_steps) {};
 	};
 }
 

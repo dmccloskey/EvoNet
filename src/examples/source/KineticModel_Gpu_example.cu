@@ -7,8 +7,8 @@
 #include <SmartPeak/ml/Model.h>
 #include <SmartPeak/io/PopulationTrainerFile.h>
 #include <SmartPeak/io/ModelInterpreterFileGpu.h>
-
-#include "Metabolomics_example.h"
+#include <SmartPeak/core/Preprocessing.h>
+#include <SmartPeak/io/Parameters.h>
 
 #include <unsupported/Eigen/CXX11/Tensor>
 
@@ -19,7 +19,7 @@ class DataSimulatorExt : public DataSimulator<TensorT>
 {
 public:
   void simulateData(Eigen::Tensor<TensorT, 4>& input_data, Eigen::Tensor<TensorT, 4>& output_data, Eigen::Tensor<TensorT, 3>& time_steps)
-  {
+  { //TODO: update based on `simluateData` below!!!
     // infer data dimensions based on the input tensors
     const int batch_size = input_data.dimension(0);
     const int memory_size = input_data.dimension(1);
@@ -98,21 +98,21 @@ public:
           for (int nodes_iter = 0; nodes_iter < n_output_nodes; ++nodes_iter) {
             if (simulation_type_ == "glucose_pulse") {
               if (memory_iter == 0)
-                output_data(batch_iter, memory_iter, nodes_iter, epochs_iter) = met_nodes_rand(nodes_iter, memory_iter, batch_iter * n_epochs + epochs_iter);
+                output_data(batch_iter, memory_iter, nodes_iter, epochs_iter) = met_nodes_rand(nodes_iter, memory_iter + 1, batch_iter * n_epochs + epochs_iter);
               else
                 output_data(batch_iter, memory_iter, nodes_iter, epochs_iter) = 0; // NOTE: TETT of 1
             }
             else if (simulation_type_ == "amp_sweep") {
               if (memory_iter == 0)
-                output_data(batch_iter, memory_iter, nodes_iter, epochs_iter) = met_nodes_rand(nodes_iter, memory_iter, batch_iter * n_epochs + epochs_iter);
+                output_data(batch_iter, memory_iter, nodes_iter, epochs_iter) = met_nodes_rand(nodes_iter, memory_iter + 1, batch_iter * n_epochs + epochs_iter);
               else
                 output_data(batch_iter, memory_iter, nodes_iter, epochs_iter) = 0; // NOTE: TETT of 1
             }
             else if (simulation_type_ == "steady_state") {
               if (nodes_iter >= 0 && nodes_iter < endo_met_nodes.size())
-                output_data(batch_iter, memory_iter, nodes_iter, epochs_iter) = met_data_stst_trunc(nodes_iter, memory_iter, batch_iter * n_epochs + epochs_iter);
+                output_data(batch_iter, memory_iter, nodes_iter, epochs_iter) = met_data_stst_trunc(nodes_iter, memory_iter + 1, batch_iter * n_epochs + epochs_iter);
               else if (nodes_iter >= endo_met_nodes.size() && nodes_iter < exo_met_nodes.size() + endo_met_nodes.size())
-                output_data(batch_iter, memory_iter, nodes_iter, epochs_iter) = exomet_data_stst_trunc(nodes_iter - endo_met_nodes.size(), memory_iter, batch_iter * n_epochs + epochs_iter);
+                output_data(batch_iter, memory_iter, nodes_iter, epochs_iter) = exomet_data_stst_trunc(nodes_iter - endo_met_nodes.size(), memory_iter + 1, batch_iter * n_epochs + epochs_iter);
             }
           }
         }
@@ -121,16 +121,149 @@ public:
 
     time_steps.setConstant(1.0f);
   }
+  void simulateData(Eigen::Tensor<TensorT, 3>& input_data, Eigen::Tensor<TensorT, 3>& output_data, Eigen::Tensor<TensorT, 3>& metric_output_data, Eigen::Tensor<TensorT, 2>& time_steps)
+  {
+    // infer data dimensions based on the input tensors
+    const int batch_size = input_data.dimension(0);
+    const int memory_size = input_data.dimension(1);
+    const int n_input_nodes = input_data.dimension(2);
+    const int n_output_nodes = output_data.dimension(2);
 
-  void simulateTrainingData(Eigen::Tensor<TensorT, 4>& input_data, Eigen::Tensor<TensorT, 4>& output_data, Eigen::Tensor<TensorT, 3>& time_steps)
-  {
+    // Node steady-state concentrations (N=20, mM ~ mmol*gDW-1)
+    std::vector<std::string> endo_met_nodes = { "13dpg","2pg","3pg","adp","amp","atp","dhap","f6p","fdp","g3p","g6p","glc__D","h","h2o","lac__L","nad","nadh","pep","pi","pyr" };
+    std::vector<TensorT> met_data_stst_vec = { 0.00024,0.0113,0.0773,0.29,0.0867,1.6,0.16,0.0198,0.0146,0.00728,0.0486,1,1.00e-03,1,1.36,0.0589,0.0301,0.017,2.5,0.0603 };
+    Eigen::TensorMap<Eigen::Tensor<TensorT, 3>> met_data_stst(met_data_stst_vec.data(), (int)met_data_stst_vec.size(), 1, 1);
+
+    // Node external steady-state concentrations (N=3, mmol*gDW-1) over 256 min
+    // calculated using a starting concentration of 5, 0, 0 mmol*gDW-1 for glc__D, lac__L, and pyr, respectively 
+    // with a rate of -1.12, 3.675593, 3.675599 mmol*gDW-1*hr-1 for for glc__D, lac__L, and pyr, respectively
+    std::vector<std::string> exo_met_nodes = { "glc__D","lac__L","pyr","h","h2o","amp" };
+    std::vector<TensorT> exomet_data_stst_vec{
+      0.22,0.24,0.26,0.28,0.3,0.31,0.33,0.35,0.37,0.39,0.41,0.43,0.45,0.46,0.48,0.5,0.52,0.54,0.56,0.58,0.59,0.61,0.63,0.65,0.67,0.69,0.71,0.73,0.74,0.76,0.78,0.8,0.82,0.84,0.86,0.87,0.89,0.91,0.93,0.95,0.97,0.99,1.01,1.02,1.04,1.06,1.08,1.1,1.12,1.14,1.15,1.17,1.19,1.21,1.23,1.25,1.27,1.29,1.3,1.32,1.34,1.36,1.38,1.4,1.42,1.43,1.45,1.47,1.49,1.51,1.53,1.55,1.57,1.58,1.6,1.62,1.64,1.66,1.68,1.7,1.71,1.73,1.75,1.77,1.79,1.81,1.83,1.85,1.86,1.88,1.9,1.92,1.94,1.96,1.98,1.99,2.01,2.03,2.05,2.07,2.09,2.11,2.13,2.14,2.16,2.18,2.2,2.22,2.24,2.26,2.27,2.29,2.31,2.33,2.35,2.37,2.39,2.41,2.42,2.44,2.46,2.48,2.5,2.52,2.54,2.55,2.57,2.59,2.61,2.63,2.65,2.67,2.69,2.7,2.72,2.74,2.76,2.78,2.8,2.82,2.83,2.85,2.87,2.89,2.91,2.93,2.95,2.97,2.98,3,3.02,3.04,3.06,3.08,3.1,3.11,3.13,3.15,3.17,3.19,3.21,3.23,3.25,3.26,3.28,3.3,3.32,3.34,3.36,3.38,3.39,3.41,3.43,3.45,3.47,3.49,3.51,3.53,3.54,3.56,3.58,3.6,3.62,3.64,3.66,3.67,3.69,3.71,3.73,3.75,3.77,3.79,3.81,3.82,3.84,3.86,3.88,3.9,3.92,3.94,3.95,3.97,3.99,4.01,4.03,4.05,4.07,4.09,4.1,4.12,4.14,4.16,4.18,4.2,4.22,4.23,4.25,4.27,4.29,4.31,4.33,4.35,4.37,4.38,4.4,4.42,4.44,4.46,4.48,4.5,4.51,4.53,4.55,4.57,4.59,4.61,4.63,4.65,4.66,4.68,4.7,4.72,4.74,4.76,4.78,4.79,4.81,4.83,4.85,4.87,4.89,4.91,4.93,4.94,4.96,4.98,5,
+      15.68,15.62,15.56,15.5,15.44,15.38,15.31,15.25,15.19,15.13,15.07,15.01,14.95,14.89,14.82,14.76,14.7,14.64,14.58,14.52,14.46,14.4,14.33,14.27,14.21,14.15,14.09,14.03,13.97,13.91,13.84,13.78,13.72,13.66,13.6,13.54,13.48,13.42,13.35,13.29,13.23,13.17,13.11,13.05,12.99,12.93,12.86,12.8,12.74,12.68,12.62,12.56,12.5,12.44,12.37,12.31,12.25,12.19,12.13,12.07,12.01,11.95,11.88,11.82,11.76,11.7,11.64,11.58,11.52,11.46,11.39,11.33,11.27,11.21,11.15,11.09,11.03,10.97,10.9,10.84,10.78,10.72,10.66,10.6,10.54,10.48,10.41,10.35,10.29,10.23,10.17,10.11,10.05,9.99,9.92,9.86,9.8,9.74,9.68,9.62,9.56,9.5,9.43,9.37,9.31,9.25,9.19,9.13,9.07,9.01,8.94,8.88,8.82,8.76,8.7,8.64,8.58,8.52,8.45,8.39,8.33,8.27,8.21,8.15,8.09,8.03,7.96,7.9,7.84,7.78,7.72,7.66,7.6,7.53,7.47,7.41,7.35,7.29,7.23,7.17,7.11,7.04,6.98,6.92,6.86,6.8,6.74,6.68,6.62,6.55,6.49,6.43,6.37,6.31,6.25,6.19,6.13,6.06,6,5.94,5.88,5.82,5.76,5.7,5.64,5.57,5.51,5.45,5.39,5.33,5.27,5.21,5.15,5.08,5.02,4.96,4.9,4.84,4.78,4.72,4.66,4.59,4.53,4.47,4.41,4.35,4.29,4.23,4.17,4.1,4.04,3.98,3.92,3.86,3.8,3.74,3.68,3.61,3.55,3.49,3.43,3.37,3.31,3.25,3.19,3.12,3.06,3,2.94,2.88,2.82,2.76,2.7,2.63,2.57,2.51,2.45,2.39,2.33,2.27,2.21,2.14,2.08,2.02,1.96,1.9,1.84,1.78,1.72,1.65,1.59,1.53,1.47,1.41,1.35,1.29,1.23,1.16,1.1,1.04,0.98,0.92,0.86,0.8,0.74,0.67,0.61,0.55,0.49,0.43,0.37,0.31,0.25,0.18,0.12,0.06,0,
+      15.68,15.62,15.56,15.5,15.44,15.38,15.31,15.25,15.19,15.13,15.07,15.01,14.95,14.89,14.82,14.76,14.7,14.64,14.58,14.52,14.46,14.4,14.33,14.27,14.21,14.15,14.09,14.03,13.97,13.91,13.84,13.78,13.72,13.66,13.6,13.54,13.48,13.42,13.35,13.29,13.23,13.17,13.11,13.05,12.99,12.93,12.86,12.8,12.74,12.68,12.62,12.56,12.5,12.44,12.37,12.31,12.25,12.19,12.13,12.07,12.01,11.95,11.88,11.82,11.76,11.7,11.64,11.58,11.52,11.46,11.39,11.33,11.27,11.21,11.15,11.09,11.03,10.97,10.9,10.84,10.78,10.72,10.66,10.6,10.54,10.48,10.41,10.35,10.29,10.23,10.17,10.11,10.05,9.99,9.92,9.86,9.8,9.74,9.68,9.62,9.56,9.5,9.43,9.37,9.31,9.25,9.19,9.13,9.07,9.01,8.94,8.88,8.82,8.76,8.7,8.64,8.58,8.52,8.45,8.39,8.33,8.27,8.21,8.15,8.09,8.03,7.96,7.9,7.84,7.78,7.72,7.66,7.6,7.53,7.47,7.41,7.35,7.29,7.23,7.17,7.11,7.04,6.98,6.92,6.86,6.8,6.74,6.68,6.62,6.55,6.49,6.43,6.37,6.31,6.25,6.19,6.13,6.06,6,5.94,5.88,5.82,5.76,5.7,5.64,5.57,5.51,5.45,5.39,5.33,5.27,5.21,5.15,5.08,5.02,4.96,4.9,4.84,4.78,4.72,4.66,4.59,4.53,4.47,4.41,4.35,4.29,4.23,4.17,4.1,4.04,3.98,3.92,3.86,3.8,3.74,3.68,3.61,3.55,3.49,3.43,3.37,3.31,3.25,3.19,3.12,3.06,3,2.94,2.88,2.82,2.76,2.7,2.63,2.57,2.51,2.45,2.39,2.33,2.27,2.21,2.14,2.08,2.02,1.96,1.9,1.84,1.78,1.72,1.65,1.59,1.53,1.47,1.41,1.35,1.29,1.23,1.16,1.1,1.04,0.98,0.92,0.86,0.8,0.74,0.67,0.61,0.55,0.49,0.43,0.37,0.31,0.25,0.18,0.12,0.06,0,
+      1.00e-3,1.00e-3,1.00e-3,1.00e-3,1.00e-3,1.00e-3,1.00e-3,1.00e-3,1.00e-3,1.00e-3,1.00e-3,1.00e-3,1.00e-3,1.00e-3,1.00e-3,1.00e-3,1.00e-3,1.00e-3,1.00e-3,1.00e-3,1.00e-3,1.00e-3,1.00e-3,1.00e-3,1.00e-3,1.00e-3,1.00e-3,1.00e-3,1.00e-3,1.00e-3,1.00e-3,1.00e-3,1.00e-3,1.00e-3,1.00e-3,1.00e-3,1.00e-3,1.00e-3,1.00e-3,1.00e-3,1.00e-3,1.00e-3,1.00e-3,1.00e-3,1.00e-3,1.00e-3,1.00e-3,1.00e-3,1.00e-3,1.00e-3,1.00e-3,1.00e-3,1.00e-3,1.00e-3,1.00e-3,1.00e-3,1.00e-3,1.00e-3,1.00e-3,1.00e-3,1.00e-3,1.00e-3,1.00e-3,1.00e-3,1.00e-3,1.00e-3,1.00e-3,1.00e-3,1.00e-3,1.00e-3,1.00e-3,1.00e-3,1.00e-3,1.00e-3,1.00e-3,1.00e-3,1.00e-3,1.00e-3,1.00e-3,1.00e-3,1.00e-3,1.00e-3,1.00e-3,1.00e-3,1.00e-3,1.00e-3,1.00e-3,1.00e-3,1.00e-3,1.00e-3,1.00e-3,1.00e-3,1.00e-3,1.00e-3,1.00e-3,1.00e-3,1.00e-3,1.00e-3,1.00e-3,1.00e-3,1.00e-3,1.00e-3,1.00e-3,1.00e-3,1.00e-3,1.00e-3,1.00e-3,1.00e-3,1.00e-3,1.00e-3,1.00e-3,1.00e-3,1.00e-3,1.00e-3,1.00e-3,1.00e-3,1.00e-3,1.00e-3,1.00e-3,1.00e-3,1.00e-3,1.00e-3,1.00e-3,1.00e-3,1.00e-3,1.00e-3,1.00e-3,1.00e-3,1.00e-3,1.00e-3,1.00e-3,1.00e-3,1.00e-3,1.00e-3,1.00e-3,1.00e-3,1.00e-3,1.00e-3,1.00e-3,1.00e-3,1.00e-3,1.00e-3,1.00e-3,1.00e-3,1.00e-3,1.00e-3,1.00e-3,1.00e-3,1.00e-3,1.00e-3,1.00e-3,1.00e-3,1.00e-3,1.00e-3,1.00e-3,1.00e-3,1.00e-3,1.00e-3,1.00e-3,1.00e-3,1.00e-3,1.00e-3,1.00e-3,1.00e-3,1.00e-3,1.00e-3,1.00e-3,1.00e-3,1.00e-3,1.00e-3,1.00e-3,1.00e-3,1.00e-3,1.00e-3,1.00e-3,1.00e-3,1.00e-3,1.00e-3,1.00e-3,1.00e-3,1.00e-3,1.00e-3,1.00e-3,1.00e-3,1.00e-3,1.00e-3,1.00e-3,1.00e-3,1.00e-3,1.00e-3,1.00e-3,1.00e-3,1.00e-3,1.00e-3,1.00e-3,1.00e-3,1.00e-3,1.00e-3,1.00e-3,1.00e-3,1.00e-3,1.00e-3,1.00e-3,1.00e-3,1.00e-3,1.00e-3,1.00e-3,1.00e-3,1.00e-3,1.00e-3,1.00e-3,1.00e-3,1.00e-3,1.00e-3,1.00e-3,1.00e-3,1.00e-3,1.00e-3,1.00e-3,1.00e-3,1.00e-3,1.00e-3,1.00e-3,1.00e-3,1.00e-3,1.00e-3,1.00e-3,1.00e-3,1.00e-3,1.00e-3,1.00e-3,1.00e-3,1.00e-3,1.00e-3,1.00e-3,1.00e-3,1.00e-3,1.00e-3,1.00e-3,1.00e-3,1.00e-3,1.00e-3,1.00e-3,1.00e-3,1.00e-3,1.00e-3,1.00e-3,1.00e-3,1.00e-3,1.00e-3,1.00e-3,1.00e-3,1.00e-3,1.00e-3,1.00e-3,1.00e-3,1.00e-3,
+      1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,
+      1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1
+    };
+    Eigen::TensorMap<Eigen::Tensor<TensorT, 3>> exomet_data_stst(exomet_data_stst_vec.data(), (int)exomet_data_stst_vec.size() / exo_met_nodes.size(), exo_met_nodes.size(), 1);
+
+    assert(n_input_nodes == endo_met_nodes.size() + exo_met_nodes.size());
+    assert(n_output_nodes == endo_met_nodes.size() + exo_met_nodes.size());
+    assert(memory_size + 1 < (int)exomet_data_stst_vec.size() / exo_met_nodes.size());
+
+    // Project the stst met data to 0 and 1
+    LinearScale<TensorT, 3> linearScaleEndoMet(met_data_stst, 0, 1);
+    Eigen::Tensor<TensorT, 3> met_data_stst_proj = linearScaleEndoMet(met_data_stst);
+
+    // Add random noise to the endo metabolomics data
+    auto met_data_stst_trunc = met_data_stst_proj.broadcast(Eigen::array<Eigen::Index, 3>({ 1, memory_size + 1, batch_size }));
+    auto met_nodes_rand_2d = GaussianSampler<TensorT>((int)met_data_stst_vec.size(), batch_size * (memory_size + 1));
+    auto met_nodes_rand_3d = met_nodes_rand_2d.reshape(Eigen::array<Eigen::Index, 3>({ (int)met_data_stst_vec.size(), memory_size + 1, batch_size }));
+    Eigen::Tensor<TensorT, 3> met_nodes_rand = (met_data_stst_trunc + met_nodes_rand_3d * met_data_stst_trunc * met_nodes_rand_3d.constant(TensorT(0.01))).clip(TensorT(0), TensorT(1));
+
+    // Project the stst exomet data to 0 and 1
+    LinearScale<TensorT, 3> linearScaleExoMet(exomet_data_stst, 0, 1);
+    Eigen::Tensor<TensorT, 3> exomet_data_stst_proj = linearScaleExoMet(exomet_data_stst);
+
+    const int n_batches_per_time_course = (32 < batch_size)? 32: batch_size; // The number of chunks each simulation time course is chopped into
+
+    // Add random noise to the exo metabolomics data
+    auto exomet_data_stst_trunc = exomet_data_stst_proj.shuffle(Eigen::array<Eigen::Index, 3>({ 1, 0, 2 })).broadcast(Eigen::array<Eigen::Index, 3>({ 1, 1, batch_size }));
+    auto exo_met_nodes_rand_2d = GaussianSampler<TensorT>(exo_met_nodes.size(), batch_size * (int)exomet_data_stst_vec.size() / exo_met_nodes.size());
+    auto exo_met_nodes_rand_3d = exo_met_nodes_rand_2d.reshape(Eigen::array<Eigen::Index, 3>({ (int)exo_met_nodes.size(), (int)exomet_data_stst_vec.size() / (int)exo_met_nodes.size(), batch_size }));
+    Eigen::Tensor<TensorT, 3> exo_met_nodes_rand = (exomet_data_stst_trunc + exo_met_nodes_rand_3d * exomet_data_stst_trunc * exo_met_nodes_rand_3d.constant(TensorT(0.01))).clip(TensorT(0), TensorT(1));
+
+    // Make glucose pulse and amp sweep data
+    const int n_data = batch_size;
+    Eigen::Tensor<TensorT, 2> glu__D_rand = GaussianSampler<TensorT>(1, n_data);
+    glu__D_rand = (glu__D_rand + glu__D_rand.constant(1)) * glu__D_rand.constant(10);
+    Eigen::Tensor<TensorT, 2> amp_rand = GaussianSampler<TensorT>(1, n_data);
+    amp_rand = (amp_rand + amp_rand.constant(1)) * amp_rand.constant(5);
+
+    // Generate the input and output data for training
+    int increment_multiple = 0;
+    for (int batch_iter = 0; batch_iter < batch_size; ++batch_iter) {
+
+      // Segment the entire exomet time-course based on the batch and memory size
+      if (increment_multiple >= n_batches_per_time_course - 1) increment_multiple = 0;
+      const int increment = ((int)exomet_data_stst_vec.size() / exo_met_nodes.size() - memory_size) / (n_batches_per_time_course - 1);
+      Eigen::array<Eigen::Index, 2> offset = { 0, increment* increment_multiple };
+      Eigen::array<Eigen::Index, 2> span = { (int)exo_met_nodes.size(), memory_size + 1 };
+      Eigen::Tensor<TensorT, 2> exo_met_nodes_rand_seg = exo_met_nodes_rand.chip(batch_iter, 2).slice(offset, span);
+      ++increment_multiple;
+
+      for (int memory_iter = 0; memory_iter < memory_size; ++memory_iter) {
+        for (int nodes_iter = 0; nodes_iter < n_input_nodes; ++nodes_iter) {
+          if (simulation_type_ == "glucose_pulse") {
+            if (nodes_iter != 11 && memory_iter == memory_size - 1)
+              input_data(batch_iter, memory_iter, nodes_iter) = met_nodes_rand(nodes_iter, memory_iter, batch_iter);
+            else if (nodes_iter == 11 && memory_iter == memory_size - 1)
+              input_data(batch_iter, memory_iter, nodes_iter) = glu__D_rand(0, batch_iter);
+            else
+              input_data(batch_iter, memory_iter, nodes_iter) = 0;
+          }
+          else if (simulation_type_ == "amp_sweep") {
+            if (nodes_iter != 4 && memory_iter == memory_size - 1)
+              input_data(batch_iter, memory_iter, nodes_iter) = met_nodes_rand(nodes_iter, memory_iter, batch_iter);
+            else if (nodes_iter == 4 && memory_iter == memory_size - 1)
+              input_data(batch_iter, memory_iter, nodes_iter) = amp_rand(0, batch_iter);
+            else
+              input_data(batch_iter, memory_iter, nodes_iter) = 0;
+          }
+          else if (simulation_type_ == "steady_state") {
+            if (nodes_iter >= 0 && nodes_iter < endo_met_nodes.size() && memory_iter == memory_size - 1)
+              input_data(batch_iter, memory_iter, nodes_iter) = met_nodes_rand(nodes_iter, memory_iter, batch_iter);
+            else if (nodes_iter >= endo_met_nodes.size() && nodes_iter < exo_met_nodes.size() + endo_met_nodes.size() && memory_iter == memory_size - 1)
+              input_data(batch_iter, memory_iter, nodes_iter) = exo_met_nodes_rand_seg(nodes_iter - endo_met_nodes.size(), memory_iter);
+            else
+              input_data(batch_iter, memory_iter, nodes_iter) = 0;
+          }
+        }
+        for (int nodes_iter = 0; nodes_iter < n_output_nodes; ++nodes_iter) {
+          if (simulation_type_ == "glucose_pulse") {
+            if (memory_iter == 0)
+              output_data(batch_iter, memory_iter, nodes_iter) = met_nodes_rand(nodes_iter, memory_iter + 1, batch_iter);
+            else
+              output_data(batch_iter, memory_iter, nodes_iter) = 0; // NOTE: TETT of 1
+          }
+          else if (simulation_type_ == "amp_sweep") {
+            if (memory_iter == 0)
+              output_data(batch_iter, memory_iter, nodes_iter) = met_nodes_rand(nodes_iter, memory_iter + 1, batch_iter);
+            else
+              output_data(batch_iter, memory_iter, nodes_iter) = 0; // NOTE: TETT of 1
+          }
+          else if (simulation_type_ == "steady_state") {
+            if (nodes_iter >= 0 && nodes_iter < endo_met_nodes.size())
+              output_data(batch_iter, memory_iter, nodes_iter) = met_nodes_rand(nodes_iter, memory_iter + 1, batch_iter);
+            else if (nodes_iter >= endo_met_nodes.size() && nodes_iter < exo_met_nodes.size() + endo_met_nodes.size())
+              output_data(batch_iter, memory_iter, nodes_iter) = exo_met_nodes_rand_seg(nodes_iter - endo_met_nodes.size(), memory_iter + 1);
+          }
+        }
+      }
+    }
+
+    time_steps.setConstant(1.0f);
+  }
+
+  void simulateTrainingData(Eigen::Tensor<TensorT, 4>& input_data, Eigen::Tensor<TensorT, 4>& output_data, Eigen::Tensor<TensorT, 3>& time_steps) {
     simulateData(input_data, output_data, time_steps);
   }
-  void simulateValidationData(Eigen::Tensor<TensorT, 4>& input_data, Eigen::Tensor<TensorT, 4>& output_data, Eigen::Tensor<TensorT, 3>& time_steps)
-  {
+  void simulateTrainingData(Eigen::Tensor<TensorT, 3>& input_data, Eigen::Tensor<TensorT, 3>& output_data, Eigen::Tensor<TensorT, 3>& metric_output_data, Eigen::Tensor<TensorT, 2>& time_steps) {
+    simulateData(input_data, output_data, metric_output_data, time_steps);
+  }
+  void simulateValidationData(Eigen::Tensor<TensorT, 4>& input_data, Eigen::Tensor<TensorT, 4>& output_data, Eigen::Tensor<TensorT, 3>& time_steps) {
     simulateData(input_data, output_data, time_steps);
   }
-  void simulateEvaluationData(Eigen::Tensor<TensorT, 4>& input_data, Eigen::Tensor<TensorT, 3>& time_steps) {};
+  void simulateValidationData(Eigen::Tensor<TensorT, 3>& input_data, Eigen::Tensor<TensorT, 3>& output_data, Eigen::Tensor<TensorT, 3>& metric_output_data, Eigen::Tensor<TensorT, 2>& time_steps) {
+    simulateData(input_data, output_data, metric_output_data, time_steps);
+  }
+  void simulateEvaluationData(Eigen::Tensor<TensorT, 4>& input_data, Eigen::Tensor<TensorT, 3>& time_steps) {
+    simulateData(input_data, Eigen::Tensor<TensorT, 4>(), time_steps);
+  };
+  void simulateEvaluationData(Eigen::Tensor<TensorT, 3>& input_data, Eigen::Tensor<TensorT, 3>& metric_output_data, Eigen::Tensor<TensorT, 2>& time_steps) {
+    simulateData(input_data, metric_output_data, metric_output_data, time_steps);
+  };
 
   // Custom parameters
   std::string simulation_type_ = "steady_state"; ///< simulation types of steady_state, glucose_pulse, or amp_sweep
@@ -152,33 +285,39 @@ public:
     // Convert the interaction graph to a network model
     ModelBuilderExperimental<TensorT> model_builder;
     model_builder.addBiochemicalReactionsMLP(model, biochemical_reaction_model.biochemicalReactions_, "RBC",
-      { 32, 32 },
+      { 128, 128, 128 },
       std::make_shared<ReLUOp<TensorT>>(ReLUOp<TensorT>()), std::make_shared<ReLUGradOp<TensorT>>(ReLUGradOp<TensorT>()),
       //std::make_shared<SigmoidOp<TensorT>>(SigmoidOp<TensorT>()), std::make_shared<SigmoidGradOp<TensorT>>(SigmoidGradOp<TensorT>()),
       std::make_shared<SumOp<TensorT>>(SumOp<TensorT>()), std::make_shared<SumErrorOp<TensorT>>(SumErrorOp<TensorT>()), std::make_shared<SumWeightGradOp<TensorT>>(SumWeightGradOp<TensorT>()),
       std::make_shared<RangeWeightInitOp<TensorT>>(RangeWeightInitOp<TensorT>(0.0, 2.0)),
-      std::make_shared<AdamOp<TensorT>>(AdamOp<TensorT>(5e-4, 0.9, 0.999, 1e-8, 10)), false, true, true);
+      std::make_shared<AdamOp<TensorT>>(AdamOp<TensorT>(1e-5, 0.9, 0.999, 1e-8, 10)), false, true, false);
 
     // define the internal metabolite nodes (20)
     auto add_c = [](std::string& met_id) { met_id += "_c"; };
     std::vector<std::string> metabolite_nodes = { "13dpg","2pg","3pg","adp","amp","atp","dhap","f6p","fdp","g3p","g6p","glc__D","h","h2o","lac__L","nad","nadh","pep","pi","pyr" };
     std::for_each(metabolite_nodes.begin(), metabolite_nodes.end(), add_c);
 
-    // define the exo metabolite nodes (3)
+    // define the exo metabolite nodes (6)
     auto add_e = [](std::string& met_id) { met_id += "_e"; };
-    std::vector<std::string> exo_met_nodes = { "glc__D","lac__L","pyr" };
+    std::vector<std::string> exo_met_nodes = { "glc__D","lac__L","pyr","h","h2o","amp" };
     std::for_each(exo_met_nodes.begin(), exo_met_nodes.end(), add_e);
+    metabolite_nodes.insert(metabolite_nodes.end(), exo_met_nodes.begin(), exo_met_nodes.end());
 
     // Add the input layer
-    metabolite_nodes.insert(metabolite_nodes.end(), exo_met_nodes.begin(), exo_met_nodes.end());
+    auto add_t0 = [](std::string& met_id) { met_id += "(t)"; };
+    std::vector<std::string> input_met_nodes = metabolite_nodes;
+    std::for_each(input_met_nodes.begin(), input_met_nodes.end(), add_t0);
     std::vector<std::string> node_names = model_builder.addInputNodes(model, "Input", "Input", metabolite_nodes.size(), true);
 
     // Connect the input layer to the metabolite nodes
-    model_builder.addSinglyConnected(model, "RBC", node_names, metabolite_nodes, std::make_shared<ConstWeightInitOp<TensorT>>(ConstWeightInitOp<TensorT>(1)),
+    model_builder.addSinglyConnected(model, "RBC", node_names, input_met_nodes, std::make_shared<ConstWeightInitOp<TensorT>>(ConstWeightInitOp<TensorT>(1)),
       std::make_shared<DummySolverOp<TensorT>>(DummySolverOp<TensorT>()), 0.0f, true);
 
     // Connect the input/output metabolite nodes to the output layer
-    node_names = model_builder.addSinglyConnected(model, "Output", "Output", metabolite_nodes, metabolite_nodes.size(),
+    auto add_t1 = [](std::string& met_id) { met_id += "(t+1)"; };
+    std::vector<std::string> output_met_nodes = metabolite_nodes;
+    std::for_each(output_met_nodes.begin(), output_met_nodes.end(), add_t1);
+    node_names = model_builder.addSinglyConnected(model, "Output", "Output", output_met_nodes, metabolite_nodes.size(),
       std::make_shared<LinearOp<TensorT>>(LinearOp<TensorT>()),
       std::make_shared<LinearGradOp<TensorT>>(LinearGradOp<TensorT>()),
       std::make_shared<SumOp<TensorT>>(SumOp<TensorT>()), std::make_shared<SumErrorOp<TensorT>>(SumErrorOp<TensorT>()), std::make_shared<SumWeightGradOp<TensorT>>(SumWeightGradOp<TensorT>()),
@@ -197,7 +336,7 @@ public:
     ModelInterpreterGpu<TensorT>& model_interpreter,
     const std::vector<float>& model_errors) {
     // Check point the model every 1000 epochs
-    if (n_epochs % 1000 == 0 && n_epochs != 0) {
+    if (n_epochs % 1000 == 0) {
       model_interpreter.getModelResults(model, false, true, false, false);
       ModelFile<TensorT> data;
       data.storeModelBinary(model.getName() + "_" + std::to_string(n_epochs) + "_model.binary", model);
@@ -211,10 +350,10 @@ public:
     //		model.getName() + "_" + std::to_string(n_epochs) + "_links.csv",
     //		model.getName() + "_" + std::to_string(n_epochs) + "_weights.csv", model, true, true, false);
     //}
-    // Record the interpreter layer allocation
-    if (n_epochs == 0) {
-      ModelInterpreterFileGpu<TensorT>::storeModelInterpreterCsv(model.getName() + "_interpreterOps.csv", model_interpreter);
-    }
+    //// Record the interpreter layer allocation
+    //if (n_epochs == 0) {
+    //  ModelInterpreterFileGpu<TensorT>::storeModelInterpreterCsv(model.getName() + "_interpreterOps.csv", model_interpreter);
+    //}
   }
   void trainingModelLogger(const int& n_epochs, Model<TensorT>& model, ModelInterpreterGpu<TensorT>& model_interpreter, ModelLogger<TensorT>& model_logger,
     const Eigen::Tensor<TensorT, 3>& expected_values, const std::vector<std::string>& output_nodes, const std::vector<std::string>& input_nodes, const TensorT& model_error_train, const TensorT& model_error_test,
@@ -224,11 +363,13 @@ public:
     model_logger.setLogTrainValMetricEpoch(true);
     model_logger.setLogExpectedEpoch(false);
     model_logger.setLogNodeInputsEpoch(false);
+    model_logger.setLogNodeOutputsEpoch(false);
 
     // initialize all logs
     if (n_epochs == 0) {
       model_logger.setLogExpectedEpoch(true);
       model_logger.setLogNodeInputsEpoch(true);
+      model_logger.setLogNodeOutputsEpoch(true);
       model_logger.initLogs(model);
     }
 
@@ -236,6 +377,7 @@ public:
     if (n_epochs % 1000 == 0) { // FIXME
       model_logger.setLogExpectedEpoch(true);
       model_logger.setLogNodeInputsEpoch(true);
+      model_logger.setLogNodeOutputsEpoch(true);
       model_interpreter.getModelResults(model, true, false, false, true);
     }
 
@@ -253,6 +395,43 @@ public:
       ++metric_iter;
     }
     model_logger.writeLogs(model, n_epochs, log_train_headers, log_test_headers, log_train_values, log_test_values, output_nodes, expected_values, {}, output_nodes, {}, input_nodes, {});
+  }
+  void evaluationModelLogger(const int& n_epochs, Model<TensorT>& model, ModelInterpreterGpu<TensorT>& model_interpreter, ModelLogger<TensorT>& model_logger,
+    const Eigen::Tensor<TensorT, 3>& expected_values, const std::vector<std::string>& output_nodes, const std::vector<std::string>& input_nodes, const Eigen::Tensor<TensorT, 1>& model_metrics) override
+  {
+    // Set the defaults
+    model_logger.setLogTimeEpoch(true);
+    model_logger.setLogTrainValMetricEpoch(true);
+    model_logger.setLogExpectedEpoch(false);
+    model_logger.setLogNodeInputsEpoch(false);
+    model_logger.setLogNodeOutputsEpoch(false);
+
+    // initialize all logs
+    if (n_epochs == 0) {
+      model_logger.setLogExpectedEpoch(true);
+      model_logger.setLogNodeInputsEpoch(true);
+      model_logger.setLogNodeOutputsEpoch(true);
+      model_logger.initLogs(model);
+    }
+
+    // Per n epoch logging
+    if (n_epochs % 1 == 0) { // FIXME
+      model_logger.setLogExpectedEpoch(true);
+      model_logger.setLogNodeInputsEpoch(true);
+      model_logger.setLogNodeOutputsEpoch(true);
+      model_interpreter.getModelResults(model, true, false, false, true);
+    }
+
+    // Create the metric headers and data arrays
+    std::vector<std::string> log_headers;
+    std::vector<TensorT> log_values;
+    int metric_iter = 0;
+    for (const std::string& metric_name : this->getMetricNamesLinearized()) {
+      log_headers.push_back(metric_name);
+      log_values.push_back(model_metrics(metric_iter));
+      ++metric_iter;
+    }
+    model_logger.writeLogs(model, n_epochs, log_headers, {}, log_values, {}, output_nodes, expected_values, {}, output_nodes, {}, input_nodes, {});
   }
 };
 
@@ -336,21 +515,25 @@ public:
   }
 };
 
-void main_KineticModel(const std::string& data_dir, const bool& make_model, const bool& train_model, const std::string& simulation_type) {
+template<class ...ParameterTypes>
+void main_KineticModel(const ParameterTypes& ...args) {
+  auto parameters = std::make_tuple(args...);
+
   // define the population trainer parameters
   PopulationTrainerExt<float> population_trainer;
-  population_trainer.setNGenerations(1);
+  population_trainer.setNGenerations(std::get<EvoNetParameters::PopulationTrainer::NGenerations>(parameters).get());
   population_trainer.setLogging(false);
+  population_trainer.setResetModelCopyWeights(true);
 
   // define the population logger
   PopulationLogger<float> population_logger(true, true);
 
   // define the multithreading parameters
   const int n_hard_threads = std::thread::hardware_concurrency();
-  const int n_threads = n_hard_threads; // the number of threads
+  const int n_threads = (std::get<EvoNetParameters::PopulationTrainer::NInterpreters>(parameters).get() > n_hard_threads) ? n_hard_threads : std::get<EvoNetParameters::PopulationTrainer::NInterpreters>(parameters).get(); // the number of threads
 
   // Make the input nodes
-  const int n_met_nodes = 23;
+  const int n_met_nodes = 26; // exo + endo mets
   std::vector<std::string> input_nodes;
   for (int i = 0; i < n_met_nodes; ++i) {
     char name_char[512];
@@ -370,30 +553,30 @@ void main_KineticModel(const std::string& data_dir, const bool& make_model, cons
 
   // define the data simulator
   DataSimulatorExt<float> data_simulator;
-  data_simulator.simulation_type_ = simulation_type;
+  data_simulator.simulation_type_ = std::get<EvoNetParameters::Main::SimulationType>(parameters).get();
 
   // define the model trainers and resources for the trainers
   std::vector<ModelInterpreterGpu<float>> model_interpreters;
   for (size_t i = 0; i < n_threads; ++i) {
-    ModelResources model_resources = { ModelDevice(0, 1) };
+    ModelResources model_resources = { ModelDevice(std::get<EvoNetParameters::Main::DeviceId>(parameters).get(), 0) };
     ModelInterpreterGpu<float> model_interpreter(model_resources);
     model_interpreters.push_back(model_interpreter);
   }
   ModelTrainerExt<float> model_trainer;
-  model_trainer.setBatchSize(32);
-  //model_trainer.setBatchSize(1);
-  model_trainer.setMemorySize(128);
-  model_trainer.setNEpochsTraining(10000);
-  model_trainer.setNEpochsValidation(25);
-  //model_trainer.setNTETTSteps(1);
-  model_trainer.setNTETTSteps(model_trainer.getMemorySize() - 3);
-  model_trainer.setNTBPTTSteps(model_trainer.getMemorySize() - 3);
-  model_trainer.setVerbosityLevel(1);
-  model_trainer.setLogging(true, false);
-  //model_trainer.setLogging(false, false);
-  model_trainer.setFindCycles(false);
-  model_trainer.setFastInterpreter(true);
-  model_trainer.setPreserveOoO(false);
+  model_trainer.setBatchSize(std::get<EvoNetParameters::ModelTrainer::BatchSize>(parameters).get());
+  model_trainer.setMemorySize(std::get<EvoNetParameters::ModelTrainer::MemorySize>(parameters).get());
+  model_trainer.setNEpochsTraining(std::get<EvoNetParameters::ModelTrainer::NEpochsTraining>(parameters).get());
+  model_trainer.setNEpochsValidation(std::get<EvoNetParameters::ModelTrainer::NEpochsValidation>(parameters).get());
+  model_trainer.setNEpochsEvaluation(std::get<EvoNetParameters::ModelTrainer::NEpochsEvaluation>(parameters).get());
+  model_trainer.setNTBPTTSteps(std::get<EvoNetParameters::ModelTrainer::NTBTTSteps>(parameters).get());
+  model_trainer.setNTETTSteps(std::get<EvoNetParameters::ModelTrainer::NTBTTSteps>(parameters).get());
+  model_trainer.setVerbosityLevel(std::get<EvoNetParameters::ModelTrainer::Verbosity>(parameters).get());
+  model_trainer.setLogging(std::get<EvoNetParameters::ModelTrainer::LoggingTraining>(parameters).get(), 
+    std::get<EvoNetParameters::ModelTrainer::LoggingValidation>(parameters).get(),
+    std::get<EvoNetParameters::ModelTrainer::LoggingEvaluation>(parameters).get());
+  model_trainer.setFindCycles(std::get<EvoNetParameters::ModelTrainer::FindCycles>(parameters).get());
+  model_trainer.setFastInterpreter(std::get<EvoNetParameters::ModelTrainer::FastInterpreter>(parameters).get());
+  model_trainer.setPreserveOoO(true);
 
   std::vector<LossFunctionHelper<float>> loss_function_helpers;
   LossFunctionHelper<float> loss_function_helper2;
@@ -402,6 +585,14 @@ void main_KineticModel(const std::string& data_dir, const bool& make_model, cons
   loss_function_helper2.loss_function_grads_ = { std::make_shared<MSELossGradOp<float>>(MSELossGradOp<float>(1e-24, 1.0)) };
   loss_function_helpers.push_back(loss_function_helper2);
   model_trainer.setLossFunctionHelpers(loss_function_helpers);
+
+  std::vector<MetricFunctionHelper<float>> metric_function_helpers;
+  MetricFunctionHelper<float> metric_function_helper1;
+  metric_function_helper1.output_nodes_ = output_nodes;
+  metric_function_helper1.metric_functions_ = { std::make_shared<EuclideanDistOp<float>>(EuclideanDistOp<float>("Mean")), std::make_shared<EuclideanDistOp<float>>(EuclideanDistOp<float>("Var")) };
+  metric_function_helper1.metric_names_ = { "EuclideanDist-Mean", "EuclideanDist-Var" };
+  metric_function_helpers.push_back(metric_function_helper1);
+  model_trainer.setMetricFunctionHelpers(metric_function_helpers);
 
   // define the model logger
   ModelLogger<float> model_logger(true, true, true, false, false, true, false, true);
@@ -413,63 +604,101 @@ void main_KineticModel(const std::string& data_dir, const bool& make_model, cons
     });
 
   // define the initial population
-  std::cout << "Initializing the population..." << std::endl;
   Model<float> model;
-  if (make_model) {
-    const std::string model_filename = data_dir + "RBCGlycolysis.csv";
-    ModelTrainerExt<float>().makeRBCGlycolysis(model, model_filename);
+  if (std::get<EvoNetParameters::Main::MakeModel>(parameters).get()) {
+    std::cout << "Making the model..." << std::endl;
+    ModelTrainerExt<float>().makeRBCGlycolysis(model, std::get<EvoNetParameters::Main::BiochemicalRxnsFilename>(parameters).get());
   }
   else {
     // read in the trained model
     std::cout << "Reading in the model..." << std::endl;
-    const std::string model_filename = data_dir + "0_RBCGlycolysis_model.binary";
-    const std::string interpreter_filename = data_dir + "0_RBCGlycolysis_interpreter.binary";
     ModelFile<float> model_file;
-    model_file.loadModelBinary(model_filename, model);
+    model_file.loadModelBinary(std::get<EvoNetParameters::General::DataDir>(parameters).get() + std::get<EvoNetParameters::Main::ModelName>(parameters).get() + "_model.binary", model);
     model.setId(1);
-    model.setName("RBCGlycolysis-1");
     ModelInterpreterFileGpu<float> model_interpreter_file;
-    model_interpreter_file.loadModelInterpreterBinary(interpreter_filename, model_interpreters[0]); // FIX ME!
+    model_interpreter_file.loadModelInterpreterBinary(std::get<EvoNetParameters::General::DataDir>(parameters).get() + std::get<EvoNetParameters::Main::ModelName>(parameters).get() + "_interpreter.binary", model_interpreters[0]); // FIX ME!
   }
-  std::vector<Model<float>> population = { model };
+  model.setName(std::get<EvoNetParameters::General::DataDir>(parameters).get() + std::get<EvoNetParameters::Main::ModelName>(parameters).get()); //So that all output will be written to a specific directory
 
-  if (train_model) {
+  if (std::get<EvoNetParameters::Main::TrainModel>(parameters).get()) {
+    // Train the model
+    model.setName(model.getName() + "_train");
+    std::pair<std::vector<float>, std::vector<float>> model_errors = model_trainer.trainModel(model, data_simulator,
+      input_nodes, model_logger, model_interpreters.front());
+  }
+  else if (std::get<EvoNetParameters::Main::EvolveModel>(parameters).get()) {
     // Evolve the population
+    std::vector<Model<float>> population = { model };
     std::vector<std::vector<std::tuple<int, std::string, float>>> models_validation_errors_per_generation = population_trainer.evolveModels(
-      population, model_trainer, model_interpreters, model_replicator, data_simulator, model_logger, population_logger, input_nodes);
+      population, std::get<EvoNetParameters::General::DataDir>(parameters).get() + std::get<EvoNetParameters::PopulationTrainer::PopulationName>(parameters).get(), //So that all output will be written to a specific directory
+      model_trainer, model_interpreters, model_replicator, data_simulator, model_logger, population_logger, input_nodes);
 
     PopulationTrainerFile<float> population_trainer_file;
     population_trainer_file.storeModels(population, "RBCGlycolysis");
     population_trainer_file.storeModelValidations("RBCGlycolysisErrors.csv", models_validation_errors_per_generation);
   }
-  else {
-    // Evaluate the population
-    population_trainer.evaluateModels(
-      population, model_trainer, model_interpreters, model_replicator, data_simulator, model_logger, input_nodes);
+  else if (std::get<EvoNetParameters::Main::EvaluateModel>(parameters).get()) {
+    //// Evaluate the population
+    //std::vector<Model<float>> population = { model };
+    //population_trainer.evaluateModels(
+    //  population, model_trainer, model_interpreters, model_replicator, data_simulator, model_logger, input_nodes);
+    // Evaluate the model
+    model.setName(model.getName() + "_evaluation");
+    Eigen::Tensor<float, 4> model_output = model_trainer.evaluateModel(model, data_simulator, input_nodes, model_logger, model_interpreters.front());
   }
 }
 
-// Main
+/*
+@brief Run the training/evolution/evaluation from the command line
+
+Example:
+./KineticModel_Gpu_example 0 "C:/Users/dmccloskey/Documents/GitHub/EvoNetData/MNIST_examples/KineticModel/Gpu1-0a"
+
+Simulation types:
+"steady_state" Constant glucose from T = 0 to N, SS metabolite levels at T = 0 (maintenance of SS metabolite levels)
+"glucose_pulse" Glucose pulse at T = 0, SS metabolite levels at T = 0 (maintenance of SS metabolite)
+"amp_sweep" AMP rise/fall at T = 0, SS metabolite levels at T = 0 (maintenance of SS metbolite levels)
+"TODO?" Glucose pulse at T = 0, SS metabolite levels at T = 0 (maintenance of SS pyr levels)
+"TODO?" AMP rise/fall at T = 0, SS metabolite levels at T = 0 (maintenance of SS ATP levels)
+*/
 int main(int argc, char** argv)
 {
   // Parse the user commands
-  //std::string data_dir = "C:/Users/dmccloskey/Dropbox (UCSD SBRG)/Project_EvoNet/";
-  //std::string data_dir = "C:/Users/domccl/Dropbox (UCSD SBRG)/Project_EvoNet/";
-  std::string data_dir = "C:/Users/dmccloskey/Documents/GitHub/mnist/";
-  bool make_model = true, train_model = true;
-  if (argc >= 2) {
-    data_dir = argv[1];
-  }
-  if (argc >= 3) {
-    make_model = (argv[2] == std::string("true")) ? true : false;
-  }
-  if (argc >= 4) {
-    train_model = (argv[3] == std::string("true")) ? true : false;
-  }
-  main_KineticModel(data_dir, true, true, "steady_state"); // Constant glucose from T = 0 to N, SS metabolite levels at T = 0 (maintenance of SS metabolite levels)
-  //main_KineticModel(data_dir, true, true, "glucose_pulse"); // Glucose pulse at T = 0, SS metabolite levels at T = 0 (maintenance of SS metabolite)
-  //main_KineticModel(data_dir, true, true, "amp_sweep"); // AMP rise/fall at T = 0, SS metabolite levels at T = 0 (maintenance of SS metbolite levels)
-  //main_KineticModel(data_dir, true, true, "TODO?"); // Glucose pulse at T = 0, SS metabolite levels at T = 0 (maintenance of SS pyr levels)
-  //main_KineticModel(data_dir, true, true, "TODO?"); // AMP rise/fall at T = 0, SS metabolite levels at T = 0 (maintenance of SS ATP levels)
+  int id_int = -1;
+  std::string parameters_filename = "";
+  parseCommandLineArguments(argc, argv, id_int, parameters_filename);
+
+  // Set the parameter names and defaults
+  EvoNetParameters::General::ID id("id", -1);
+  EvoNetParameters::General::DataDir data_dir("data_dir", std::string(""));
+  EvoNetParameters::PopulationTrainer::PopulationName population_name("population_name", "");
+  EvoNetParameters::PopulationTrainer::NInterpreters n_interpreters("n_interpreters", 1);
+  EvoNetParameters::PopulationTrainer::NGenerations n_generations("n_generations", 1);
+  EvoNetParameters::Examples::BiochemicalRxnsFilename biochemical_rxns_filename("biochemical_rxns_filename", "iJO1366.csv");
+  EvoNetParameters::Main::MakeModel make_model("make_model", true);
+  EvoNetParameters::Main::TrainModel train_model("train_model", true);
+  EvoNetParameters::Main::EvolveModel evolve_model("evolve_model", false);
+  EvoNetParameters::Main::EvaluateModel evaluate_model("evaluate_model", false);
+  EvoNetParameters::Examples::BiochemicalRxnsFilename biochemical_rxns_filename("biochemical_rxns_filename", "iJO1366.csv");
+  EvoNetParameters::Examples::SimulationType simulation_type("simulation_type", "steady_state");
+  EvoNetParameters::ModelTrainer::BatchSize batch_size("batch_size", 32);
+  EvoNetParameters::ModelTrainer::MemorySize memory_size("memory_size", 64);
+  EvoNetParameters::ModelTrainer::NEpochsTraining n_epochs_training("n_epochs_training", 100000);
+  EvoNetParameters::ModelTrainer::NEpochsValidation n_epochs_validation("n_epochs_validation", 25);
+  EvoNetParameters::ModelTrainer::NEpochsEvaluation n_epochs_evaluation("n_epochs_evaluation", 10);
+  EvoNetParameters::ModelTrainer::NTBTTSteps n_tbtt_steps("n_tbtt_steps", 64);
+  EvoNetParameters::ModelTrainer::FindCycles find_cycles("find_cycles", false);
+  EvoNetParameters::ModelTrainer::FastInterpreter fast_interpreter("fast_interpreter", true);
+  EvoNetParameters::Main::DeviceId device_id("device_id", 0);
+  EvoNetParameters::Main::ModelName model_name("model_name", "");
+  auto parameters = std::make_tuple(id, data_dir, population_name, n_interpreters, n_generations, biochemical_rxns_filename, make_model, train_model, evolve_model, evaluate_model,
+    simulation_type, batch_size, memory_size, n_epochs_training, n_epochs_validation, n_epochs_evaluation, n_tbtt_steps, find_cycles, fast_interpreter, device_id, model_name);
+
+  // Read in the parameters
+  LoadParametersFromCsv loadParametersFromCsv(id_int, parameters_filename);
+  parameters = SmartPeak::apply([&loadParametersFromCsv](auto&& ...args) { return loadParametersFromCsv(args...); }, parameters);
+
+  // Run the application
+  SmartPeak::apply([](auto&& ...args) { main_KineticModel(args ...); }, parameters);
   return 0;
 }

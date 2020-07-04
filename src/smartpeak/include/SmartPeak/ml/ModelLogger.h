@@ -189,7 +189,7 @@ public:
 	template<typename TensorT>
 	ModelLogger<TensorT>::ModelLogger(const bool& log_time_epoch, const bool& log_train_val_metric_epoch, const bool& log_expected_epoch, 
     const bool& log_weights_epoch, const bool& log_node_errors_epoch, const bool& log_node_outputs_epoch, const bool& log_node_derivatives_epoch,
-    const bool& log_node_inputs_epoch = false) :
+    const bool& log_node_inputs_epoch) :
 		log_time_epoch_(log_time_epoch), log_train_val_metric_epoch_(log_train_val_metric_epoch), log_expected_epoch_(log_expected_epoch),
 		log_weights_epoch_(log_weights_epoch), log_node_errors_epoch_(log_node_errors_epoch), log_node_outputs_epoch_(log_node_outputs_epoch),
 		log_node_derivatives_epoch_(log_node_derivatives_epoch),

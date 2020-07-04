@@ -22,7 +22,7 @@ namespace SmartPeak
     /*
     @brief Simulate the evaluation data for the next batch
     */
-    void simulateEvaluationData(Eigen::Tensor<TensorT, 3>& input_data, Eigen::Tensor<TensorT, 2>& time_steps) override;
+    void simulateEvaluationData(Eigen::Tensor<TensorT, 3>& input_data, Eigen::Tensor<TensorT, 3>& metric_output_data, Eigen::Tensor<TensorT, 2>& time_steps) override;
 
     /*
     @brief Simulate the training data for the next batch
@@ -120,7 +120,7 @@ namespace SmartPeak
     void getValidationDataFromCache_(Eigen::Tensor<TensorT, 3>& input_data, Eigen::Tensor<TensorT, 3>& loss_output_data, Eigen::Tensor<TensorT, 3>& metric_output_data, Eigen::Tensor<TensorT, 2>& time_steps);
 	};
   template<typename TensorT>
-  inline void BiochemicalDataSimulator<TensorT>::simulateEvaluationData(Eigen::Tensor<TensorT, 3>& input_data, Eigen::Tensor<TensorT, 2>& time_steps) {
+  inline void BiochemicalDataSimulator<TensorT>::simulateEvaluationData(Eigen::Tensor<TensorT, 3>& input_data, Eigen::Tensor<TensorT, 3>& metric_output_data, Eigen::Tensor<TensorT, 2>& time_steps) {
     // TODO: add logic to regenerate the cache when needed
     if (this->use_train_for_eval_) this->getTrainingDataFromCache_(input_data, Eigen::Tensor<TensorT, 3>(), Eigen::Tensor<TensorT, 3>(), time_steps);
     else this->getValidationDataFromCache_(input_data, Eigen::Tensor<TensorT, 3>(), Eigen::Tensor<TensorT, 3>(), time_steps);
