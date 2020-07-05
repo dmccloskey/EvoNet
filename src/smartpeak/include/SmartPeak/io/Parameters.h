@@ -133,6 +133,9 @@ namespace SmartPeak
       struct NHidden0 : Parameter<int> { using Parameter::Parameter; };
       struct NHidden1 : Parameter<int> { using Parameter::Parameter; };
       struct NHidden2 : Parameter<int> { using Parameter::Parameter; };
+      struct LossFncWeight0 : Parameter<float> { using Parameter::Parameter; };
+      struct LossFncWeight1 : Parameter<float> { using Parameter::Parameter; };
+      struct LossFncWeight2 : Parameter<float> { using Parameter::Parameter; };
       struct AddGaussian : Parameter<bool> { using Parameter::Parameter; };
       struct AddMixedGaussian : Parameter<bool> { using Parameter::Parameter; };
       struct AddCategorical : Parameter<bool> { using Parameter::Parameter; };

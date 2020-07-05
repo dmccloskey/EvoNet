@@ -337,7 +337,6 @@ public:
           }
           loss_output_data(batch_iter, memory_iter, nodes_iter + 2 * n_input_nodes) = isPeak;  //IsPeak
           metric_output_data(batch_iter, memory_iter, nodes_iter + 2 * n_input_nodes) = isPeak;  //IsPeak
-          //assert(chrom_intensity.at(nodes_iter) == chrom_intensity_test.at(nodes_iter));
         }
       }
     }
@@ -380,10 +379,10 @@ void main_(const ParameterTypes& ...args) {
     data_simulator.step_size_sigma_ = std::make_pair(0, 0);
     data_simulator.chrom_window_size_ = std::make_pair(input_size, input_size);
     data_simulator.noise_mu_ = std::make_pair(0, 0);
-    data_simulator.noise_sigma_ = std::make_pair(0, 5.0);
+    data_simulator.noise_sigma_ = std::make_pair(0, 0.2);
     data_simulator.baseline_height_ = std::make_pair(0, 0);
-    data_simulator.n_peaks_ = std::make_pair(10, 20);
-    data_simulator.emg_h_ = std::make_pair(10, 100);
+    data_simulator.n_peaks_ = std::make_pair(0, 10);
+    data_simulator.emg_h_ = std::make_pair(0.1, 1);
     data_simulator.emg_tau_ = std::make_pair(0, 1);
     data_simulator.emg_mu_offset_ = std::make_pair(-10, 10);
     data_simulator.emg_sigma_ = std::make_pair(10, 30);
@@ -467,16 +466,16 @@ void main_(const ParameterTypes& ...args) {
   std::vector<LossFunctionHelper<float>> loss_function_helpers;
   LossFunctionHelper<float> loss_function_helper1, loss_function_helper2, loss_function_helper3;
   loss_function_helper1.output_nodes_ = output_nodes_intensity;
-  loss_function_helper1.loss_functions_ = { std::make_shared<MSELossOp<float>>(MSELossOp<float>(1e-6, 1.0 / float(input_size))) };
-  loss_function_helper1.loss_function_grads_ = { std::make_shared<MSELossGradOp<float>>(MSELossGradOp<float>(1e-6, 1.0 / float(input_size))) };
+  loss_function_helper1.loss_functions_ = { std::make_shared<BCEWithLogitsLossOp<float>>(BCEWithLogitsLossOp<float>(1e-6, std::get<EvoNetParameters::ModelTrainer::LossFncWeight0>(parameters).get() / float(input_size))) };
+  loss_function_helper1.loss_function_grads_ = { std::make_shared<BCEWithLogitsLossGradOp<float>>(BCEWithLogitsLossGradOp<float>(1e-6, std::get<EvoNetParameters::ModelTrainer::LossFncWeight0>(parameters).get() / float(input_size))) };
   loss_function_helpers.push_back(loss_function_helper1);
   loss_function_helper2.output_nodes_ = output_nodes_isPeakApex;
-  loss_function_helper2.loss_functions_ = { std::make_shared<BCEWithLogitsLossOp<float>>(BCEWithLogitsLossOp<float>(1e-6, 1.0 / float(input_size))) };
-  loss_function_helper2.loss_function_grads_ = { std::make_shared<BCEWithLogitsLossGradOp<float>>(BCEWithLogitsLossGradOp<float>(1e-6, 1.0 / float(input_size))) };
+  loss_function_helper2.loss_functions_ = { std::make_shared<BCEWithLogitsLossOp<float>>(BCEWithLogitsLossOp<float>(1e-6, std::get<EvoNetParameters::ModelTrainer::LossFncWeight1>(parameters).get() / float(input_size))) };
+  loss_function_helper2.loss_function_grads_ = { std::make_shared<BCEWithLogitsLossGradOp<float>>(BCEWithLogitsLossGradOp<float>(1e-6, std::get<EvoNetParameters::ModelTrainer::LossFncWeight1>(parameters).get() / float(input_size))) };
   loss_function_helpers.push_back(loss_function_helper2);
   loss_function_helper3.output_nodes_ = output_nodes_isPeak;
-  loss_function_helper3.loss_functions_ = { std::make_shared<BCEWithLogitsLossOp<float>>(BCEWithLogitsLossOp<float>(1e-6, 1.0 / float(input_size))) };
-  loss_function_helper3.loss_function_grads_ = { std::make_shared<BCEWithLogitsLossGradOp<float>>(BCEWithLogitsLossGradOp<float>(1e-6, 1.0 / float(input_size))) };
+  loss_function_helper3.loss_functions_ = { std::make_shared<BCEWithLogitsLossOp<float>>(BCEWithLogitsLossOp<float>(1e-6, std::get<EvoNetParameters::ModelTrainer::LossFncWeight2>(parameters).get() / float(input_size))) };
+  loss_function_helper3.loss_function_grads_ = { std::make_shared<BCEWithLogitsLossGradOp<float>>(BCEWithLogitsLossGradOp<float>(1e-6, std::get<EvoNetParameters::ModelTrainer::LossFncWeight2>(parameters).get() / float(input_size))) };
   loss_function_helpers.push_back(loss_function_helper3);
   model_trainer.setLossFunctionHelpers(loss_function_helpers);
 
@@ -579,6 +578,9 @@ int main(int argc, char** argv)
   EvoNetParameters::ModelTrainer::NHidden0 n_hidden_0("n_hidden_0", 512);
   EvoNetParameters::ModelTrainer::NHidden1 n_hidden_1("n_hidden_1", 256);
   EvoNetParameters::ModelTrainer::NHidden2 n_hidden_2("n_hidden_2", 128);
+  EvoNetParameters::ModelTrainer::LossFncWeight0 loss_fnc_weight_0("loss_fnc_weight_0", 1);
+  EvoNetParameters::ModelTrainer::LossFncWeight1 loss_fnc_weight_1("loss_fnc_weight_1", 1e-6);
+  EvoNetParameters::ModelTrainer::LossFncWeight2 loss_fnc_weight_2("loss_fnc_weight_2", 1e-6);
   EvoNetParameters::ModelTrainer::ResetInterpreter reset_interpreter("reset_interpreter", true);
   EvoNetParameters::ModelReplicator::NNodeDownAdditionsLB n_node_down_additions_lb("n_node_down_additions_lb", 0);
   EvoNetParameters::ModelReplicator::NNodeRightAdditionsLB n_node_right_additions_lb("n_node_right_additions_lb", 0);
@@ -612,7 +614,7 @@ int main(int argc, char** argv)
     device_id, model_name, make_model, load_model_csv, load_model_binary, train_model, evolve_model, evaluate_model, evaluate_models,
     model_type, simulation_type,
     population_name, n_generations, n_interpreters, prune_model_num, remove_isolated_nodes, check_complete_model_input_to_output, population_size, n_top, n_random, n_replicates_per_model, reset_model_copy_weights, reset_model_template_weights, population_logging, set_population_size_fixed, set_population_size_doubling, set_training_steps_by_model_size,
-    batch_size, memory_size, n_epochs_training, n_epochs_validation, n_epochs_evaluation, n_tbtt_steps, n_tett_steps, verbosity, logging_training, logging_validation, logging_evaluation, find_cycles, fast_interpreter, preserve_ooo, interpret_model, reset_model, n_hidden_0, n_hidden_1, n_hidden_2, reset_interpreter,
+    batch_size, memory_size, n_epochs_training, n_epochs_validation, n_epochs_evaluation, n_tbtt_steps, n_tett_steps, verbosity, logging_training, logging_validation, logging_evaluation, find_cycles, fast_interpreter, preserve_ooo, interpret_model, reset_model, n_hidden_0, n_hidden_1, n_hidden_2, loss_fnc_weight_0, loss_fnc_weight_1, loss_fnc_weight_2, reset_interpreter,
     n_node_down_additions_lb, n_node_right_additions_lb, n_node_down_copies_lb, n_node_right_copies_lb, n_link_additons_lb, n_link_copies_lb, n_node_deletions_lb, n_link_deletions_lb, n_node_activation_changes_lb, n_node_integration_changes_lb, n_module_additions_lb, n_module_copies_lb, n_module_deletions_lb, n_node_down_additions_ub, n_node_right_additions_ub, n_node_down_copies_ub, n_node_right_copies_ub, n_link_additons_ub, n_link_copies_ub, n_node_deletions_ub, n_link_deletions_ub, n_node_activation_changes_ub, n_node_integration_changes_ub, n_module_additions_ub, n_module_copies_ub, n_module_deletions_ub, set_modification_rate_fixed, set_modification_rate_by_prev_error);
 
   // Read in the parameters

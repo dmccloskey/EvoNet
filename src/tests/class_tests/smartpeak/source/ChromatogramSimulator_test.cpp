@@ -425,8 +425,9 @@ BOOST_AUTO_TEST_CASE(simulateChromatogram)
 	std::vector<double> chrom_time, chrom_intensity, chrom_time_noise, chrom_intensity_noise, x_test, y_test;
 	std::vector<std::pair<double, double>> best_lr, best_lr_test;
   std::vector<double> peak_apices, peak_apices_test;
+  std::vector<EMGModel<double>> emgs;
 
-	chromsimulator.simulateChromatogram(chrom_time, chrom_intensity, chrom_time_noise, chrom_intensity_noise, best_lr, peak_apices,
+	chromsimulator.simulateChromatogram(chrom_time, chrom_intensity, chrom_time_noise, chrom_intensity_noise, best_lr, peak_apices, emgs,
 		std::make_pair(1.0, 1.0), std::make_pair(0.1, 0.2), std::make_pair(10.0, 10.0), 
 		std::make_pair(0.1, 0.2), std::make_pair(0.1, 0.2), std::make_pair(1.0, 1.0),
 		std::make_pair(1.0, 1.0), std::make_pair(10.0, 10.0), std::make_pair(0.0, 0.0), std::make_pair(0.0, 0.0), std::make_pair(1.0, 1.0)
@@ -449,9 +450,10 @@ BOOST_AUTO_TEST_CASE(simulateChromatogram)
   {
     BOOST_CHECK_CLOSE(peak_apices[i], peak_apices_test[i], 1e-3);
   }
+  BOOST_CHECK_EQUAL(emgs.size(), 1);
 
 	// Perfect gaussian peaks
-	chromsimulator.simulateChromatogram(chrom_time, chrom_intensity, chrom_time_noise, chrom_intensity_noise, best_lr, peak_apices,
+	chromsimulator.simulateChromatogram(chrom_time, chrom_intensity, chrom_time_noise, chrom_intensity_noise, best_lr, peak_apices, emgs,
 		std::make_pair(1.0, 1.0), std::make_pair(0.1, 0.2), std::make_pair(30.0, 30.0),
 		std::make_pair(0.1, 0.2), std::make_pair(0.1, 0.2), std::make_pair(1.0, 1.0),
 		std::make_pair(3.0, 3.0), std::make_pair(10.0, 10.0), std::make_pair(0.0, 0.0), std::make_pair(0.0, 0.0), std::make_pair(1.0, 1.0)
@@ -474,19 +476,21 @@ BOOST_AUTO_TEST_CASE(simulateChromatogram)
   {
     BOOST_CHECK_CLOSE(peak_apices[i], peak_apices_test[i], 1e-3);
   }
+  BOOST_CHECK_EQUAL(emgs.size(), 3);
 
 	// Random tailing
-	chromsimulator.simulateChromatogram(chrom_time, chrom_intensity, chrom_time_noise, chrom_intensity_noise, best_lr, peak_apices,
+	chromsimulator.simulateChromatogram(chrom_time, chrom_intensity, chrom_time_noise, chrom_intensity_noise, best_lr, peak_apices, emgs,
 		std::make_pair(1.0, 1.0), std::make_pair(0.1, 0.2), std::make_pair(30.0, 30.0),
 		std::make_pair(0.1, 0.2), std::make_pair(0.1, 0.2), std::make_pair(1.0, 1.0),
 		std::make_pair(3.0, 3.0), std::make_pair(10.0, 10.0), std::make_pair(0.0, 1.0), std::make_pair(0.0, 0.0), std::make_pair(1.0, 1.0)
 	);
 	BOOST_CHECK_EQUAL(chrom_time.size(), 33);
 	BOOST_CHECK_EQUAL(chrom_intensity.size(), 33);
-	BOOST_CHECK_EQUAL(best_lr.size(), 3);
+  BOOST_CHECK_EQUAL(best_lr.size(), 3);
+  BOOST_CHECK_EQUAL(emgs.size(), 3);
 
 	// Random peak offset
-	chromsimulator.simulateChromatogram(chrom_time, chrom_intensity, chrom_time_noise, chrom_intensity_noise, best_lr, peak_apices,
+	chromsimulator.simulateChromatogram(chrom_time, chrom_intensity, chrom_time_noise, chrom_intensity_noise, best_lr, peak_apices, emgs,
 		std::make_pair(1.0, 1.0), std::make_pair(0.1, 0.2), std::make_pair(30.0, 30.0),
 		std::make_pair(0.1, 0.2), std::make_pair(0.1, 0.2), std::make_pair(1.0, 1.0),
 		std::make_pair(3.0, 3.0), std::make_pair(10.0, 10.0), std::make_pair(0.0, 0.0), std::make_pair(0.0, 5.0), std::make_pair(1.0, 1.0)
@@ -494,6 +498,7 @@ BOOST_AUTO_TEST_CASE(simulateChromatogram)
 	BOOST_CHECK_EQUAL(chrom_time.size(), 33);
 	BOOST_CHECK_EQUAL(chrom_intensity.size(), 33);
 	BOOST_CHECK_EQUAL(best_lr.size(), 3);
+  BOOST_CHECK_EQUAL(emgs.size(), 3);
 }
 
 BOOST_AUTO_TEST_SUITE_END()
