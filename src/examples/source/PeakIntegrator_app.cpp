@@ -220,11 +220,11 @@ public:
     time_steps.setConstant(1.0f);
   }
   void simulateTrainingData(Eigen::Tensor<TensorT, 3>& input_data, Eigen::Tensor<TensorT, 3>& loss_output_data, Eigen::Tensor<TensorT, 3>& metric_output_data, Eigen::Tensor<TensorT, 2>& time_steps) override {
-    simulateData(input_data, loss_output_data, metric_output_data, time_steps);
+    simulateData_(input_data, loss_output_data, metric_output_data, time_steps);
   }
   void simulateValidationData(Eigen::Tensor<TensorT, 3>& input_data, Eigen::Tensor<TensorT, 3>& loss_output_data, Eigen::Tensor<TensorT, 3>& metric_output_data, Eigen::Tensor<TensorT, 2>& time_steps) override
   {
-    simulateData(input_data, loss_output_data, metric_output_data, time_steps);
+    simulateData_(input_data, loss_output_data, metric_output_data, time_steps);
   }
 
   /// public members that are passed to simulate methods
