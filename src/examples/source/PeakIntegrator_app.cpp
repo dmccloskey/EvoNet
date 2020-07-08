@@ -140,7 +140,7 @@ template<typename TensorT>
 class DataSimulatorExt : public ChromatogramSimulator<TensorT>
 {
 public:
-  void simulateData_(Eigen::Tensor<TensorT, 3>& input_data, Eigen::Tensor<TensorT, 3>& loss_output_data, Eigen::Tensor<TensorT, 3>& metric_output_data, Eigen::Tensor<TensorT, 2>& time_steps) 
+  void simulateChromData_(Eigen::Tensor<TensorT, 3>& input_data, Eigen::Tensor<TensorT, 3>& loss_output_data, Eigen::Tensor<TensorT, 3>& metric_output_data, Eigen::Tensor<TensorT, 2>& time_steps) 
   {
     // infer data dimensions based on the input tensors
     const int batch_size = input_data.dimension(0);
@@ -153,8 +153,8 @@ public:
     metric_output_data.setZero();
 
     if (this->output_data_type_ == "EMG") {
-      assert(n_output_nodes == 4 * n_emgs_);
-      assert(n_metric_nodes == 4 * n_emgs_);
+      assert(n_output_nodes == 4);
+      assert(n_metric_nodes == 4);
     }
     else {
       assert(n_output_nodes == n_input_nodes);
@@ -189,8 +189,8 @@ public:
                 isPeakApex = 1.0;
               }
             }
-            loss_output_data(batch_iter, memory_iter, nodes_iter + n_input_nodes) = isPeakApex;  //IsPeakApex
-            metric_output_data(batch_iter, memory_iter, nodes_iter + n_input_nodes) = isPeakApex;  //IsPeakApex
+            loss_output_data(batch_iter, memory_iter, nodes_iter) = isPeakApex;  //IsPeakApex
+            metric_output_data(batch_iter, memory_iter, nodes_iter) = isPeakApex;  //IsPeakApex
           }
           else if (this->output_data_type_ == "IsPeak") {
             TensorT isPeak = 0.0;
@@ -199,14 +199,14 @@ public:
                 isPeak = 1.0;
               }
             }
-            loss_output_data(batch_iter, memory_iter, nodes_iter + 2 * n_input_nodes) = isPeak;  //IsPeak
-            metric_output_data(batch_iter, memory_iter, nodes_iter + 2 * n_input_nodes) = isPeak;  //IsPeak
+            loss_output_data(batch_iter, memory_iter, nodes_iter) = isPeak;  //IsPeak
+            metric_output_data(batch_iter, memory_iter, nodes_iter) = isPeak;  //IsPeak
           }
         }
         if (this->output_data_type_ == "EMG") {
           for (int i = 0; i < emgs.size(); ++i) {
-            loss_output_data(batch_iter, memory_iter, i*4) = emgs.at(i).getH();
-            metric_output_data(batch_iter, memory_iter, i*4) = emgs.at(i).getH();
+            loss_output_data(batch_iter, memory_iter, i * 4) = emgs.at(i).getH();
+            metric_output_data(batch_iter, memory_iter, i * 4) = emgs.at(i).getH();
             loss_output_data(batch_iter, memory_iter, i * 4 + 1) = emgs.at(i).getTau();
             metric_output_data(batch_iter, memory_iter, i * 4 + 1) = emgs.at(i).getTau();
             loss_output_data(batch_iter, memory_iter, i * 4 + 2) = emgs.at(i).getMu() / chrom_window_size_.first;
@@ -220,11 +220,11 @@ public:
     time_steps.setConstant(1.0f);
   }
   void simulateTrainingData(Eigen::Tensor<TensorT, 3>& input_data, Eigen::Tensor<TensorT, 3>& loss_output_data, Eigen::Tensor<TensorT, 3>& metric_output_data, Eigen::Tensor<TensorT, 2>& time_steps) override {
-    simulateData_(input_data, loss_output_data, metric_output_data, time_steps);
+    simulateChromData_(input_data, loss_output_data, metric_output_data, time_steps);
   }
   void simulateValidationData(Eigen::Tensor<TensorT, 3>& input_data, Eigen::Tensor<TensorT, 3>& loss_output_data, Eigen::Tensor<TensorT, 3>& metric_output_data, Eigen::Tensor<TensorT, 2>& time_steps) override
   {
-    simulateData_(input_data, loss_output_data, metric_output_data, time_steps);
+    simulateChromData_(input_data, loss_output_data, metric_output_data, time_steps);
   }
 
   /// public members that are passed to simulate methods
@@ -240,7 +240,6 @@ public:
   std::pair<TensorT, TensorT> emg_mu_offset_ = std::make_pair(-10, 10);
   std::pair<TensorT, TensorT> emg_sigma_ = std::make_pair(0.1, 0.3);
   std::string output_data_type_ = "Points"; // "IsApex", "isPeak", "EMG"
-  int n_emgs_ = 10; // The number of EMGs 
   int encoding_size_ = 64;
 };
 
@@ -252,15 +251,26 @@ void main_(const ParameterTypes& ...args) {
   ModelLogger<float> model_logger(true, true, true, false, false, false, false);
 
   // define the data simulator
-  const std::size_t input_size = 512;
+  std::size_t input_size;
+  if (std::get<EvoNetParameters::Examples::SimulationType>(parameters).get().find("EMG") != std::string::npos) {
+    input_size = 64;
+  }
+  else {
+    input_size = 512;
+  }
   const std::size_t encoding_size = input_size / 8;
-  const std::size_t n_emgs = 10;
   DataSimulatorExt<float> data_simulator;
-  data_simulator.output_data_type_ = std::get<EvoNetParameters::Examples::SimulationType>(parameters).get();
+  if (std::get<EvoNetParameters::Examples::SimulationType>(parameters).get().find("Points") != std::string::npos)
+    data_simulator.output_data_type_ = "Points";
+  else if (std::get<EvoNetParameters::Examples::SimulationType>(parameters).get().find("IsPeak") != std::string::npos)
+    data_simulator.output_data_type_ = "IsPeak";
+  else if (std::get<EvoNetParameters::Examples::SimulationType>(parameters).get().find("IsApex") != std::string::npos)
+    data_simulator.output_data_type_ = "IsApex";
+  else if (std::get<EvoNetParameters::Examples::SimulationType>(parameters).get().find("EMG") != std::string::npos)
+    data_simulator.output_data_type_ = "EMG";
   data_simulator.encoding_size_ = encoding_size;
-  data_simulator.n_emgs_ = n_emgs;
 
-  if (std::get<EvoNetParameters::Examples::SimulationType>(parameters).get() == "Hard") {
+  if (std::get<EvoNetParameters::Examples::SimulationType>(parameters).get().find("Hard") != std::string::npos) {
     data_simulator.step_size_mu_ = std::make_pair(1, 1);
     data_simulator.step_size_sigma_ = std::make_pair(0, 0);
     data_simulator.chrom_window_size_ = std::make_pair(input_size, input_size);
@@ -273,7 +283,7 @@ void main_(const ParameterTypes& ...args) {
     data_simulator.emg_mu_offset_ = std::make_pair(-10, 10);
     data_simulator.emg_sigma_ = std::make_pair(10, 30);
   }
-  else if (std::get<EvoNetParameters::Examples::SimulationType>(parameters).get() == "Medium") {
+  else if (std::get<EvoNetParameters::Examples::SimulationType>(parameters).get().find("Medium") != std::string::npos) {
     // Some issues with the peak start/stop not touching the baseline
     data_simulator.step_size_mu_ = std::make_pair(1, 1);
     data_simulator.step_size_sigma_ = std::make_pair(0, 0);
@@ -287,7 +297,7 @@ void main_(const ParameterTypes& ...args) {
     data_simulator.emg_mu_offset_ = std::make_pair(0, 0);
     data_simulator.emg_sigma_ = std::make_pair(10, 30);
   }
-  else if (std::get<EvoNetParameters::Examples::SimulationType>(parameters).get() == "Easy") {
+  else if (std::get<EvoNetParameters::Examples::SimulationType>(parameters).get().find("Easy") != std::string::npos) {
     data_simulator.step_size_mu_ = std::make_pair(1, 1);
     data_simulator.step_size_sigma_ = std::make_pair(0, 0);
     data_simulator.chrom_window_size_ = std::make_pair(input_size, input_size);
@@ -313,8 +323,8 @@ void main_(const ParameterTypes& ...args) {
 
   // Make the output nodes
   std::vector<std::string> output_nodes;
-  if (std::get<EvoNetParameters::Examples::SimulationType>(parameters).get() == "EMG") {
-    for (int i = 0; i < n_emgs * 4; ++i) {
+  if (std::get<EvoNetParameters::Examples::SimulationType>(parameters).get().find("EMG") != std::string::npos) {
+    for (int i = 0; i < 4; ++i) {
       char name_char[512];
       sprintf(name_char, "Output_%012d", i);
       std::string name(name_char);
@@ -340,7 +350,7 @@ void main_(const ParameterTypes& ...args) {
 
   std::vector<LossFunctionHelper<float>> loss_function_helpers;
   LossFunctionHelper<float> loss_function_helper1;
-  if (std::get<EvoNetParameters::Examples::SimulationType>(parameters).get() == "EMG") {
+  if (std::get<EvoNetParameters::Examples::SimulationType>(parameters).get().find("EMG") != std::string::npos) {
     loss_function_helper1.output_nodes_ = output_nodes;
     loss_function_helper1.loss_functions_ = { std::make_shared<MSELossOp<float>>(MSELossOp<float>(1e-6, std::get<EvoNetParameters::ModelTrainer::LossFncWeight0>(parameters).get() / float(input_size))) };
     loss_function_helper1.loss_function_grads_ = { std::make_shared<MSELossGradOp<float>>(MSELossGradOp<float>(1e-6, std::get<EvoNetParameters::ModelTrainer::LossFncWeight0>(parameters).get() / float(input_size))) };
@@ -356,25 +366,25 @@ void main_(const ParameterTypes& ...args) {
 
   std::vector<MetricFunctionHelper<float>> metric_function_helpers;
   MetricFunctionHelper<float> metric_function_helper1;
-  if (std::get<EvoNetParameters::Examples::SimulationType>(parameters).get() == "Points") {
+  if (std::get<EvoNetParameters::Examples::SimulationType>(parameters).get().find("Points") != std::string::npos) {
     metric_function_helper1.output_nodes_ = output_nodes;
     metric_function_helper1.metric_functions_ = { std::make_shared<MAEOp<float>>(MAEOp<float>()) };
     metric_function_helper1.metric_names_ = { "Reconstruction-MAE" };
     metric_function_helpers.push_back(metric_function_helper1);
   }
-  else if (std::get<EvoNetParameters::Examples::SimulationType>(parameters).get() == "IsApex") {
+  else if (std::get<EvoNetParameters::Examples::SimulationType>(parameters).get().find("IsApex") != std::string::npos) {
     metric_function_helper1.output_nodes_ = output_nodes;
     metric_function_helper1.metric_functions_ = { std::make_shared<PrecisionBCOp<float>>(PrecisionBCOp<float>()) };
     metric_function_helper1.metric_names_ = { "IsPeakApex-PrecisionBC" };
     metric_function_helpers.push_back(metric_function_helper1);
   }
-  else if (std::get<EvoNetParameters::Examples::SimulationType>(parameters).get() == "IsPeak") {
+  else if (std::get<EvoNetParameters::Examples::SimulationType>(parameters).get().find("IsPeak") != std::string::npos) {
     metric_function_helper1.output_nodes_ = output_nodes;
     metric_function_helper1.metric_functions_ = { std::make_shared<PrecisionBCOp<float>>(PrecisionBCOp<float>()) };
     metric_function_helper1.metric_names_ = { "IsPeak-PrecisionBC" };
     metric_function_helpers.push_back(metric_function_helper1);
   }
-  else if (std::get<EvoNetParameters::Examples::SimulationType>(parameters).get() == "EMG") {
+  else if (std::get<EvoNetParameters::Examples::SimulationType>(parameters).get().find("EMG") != std::string::npos) {
     metric_function_helper1.output_nodes_ = output_nodes;
     metric_function_helper1.metric_functions_ = { std::make_shared<MAEOp<float>>(MAEOp<float>()) };
     metric_function_helper1.metric_names_ = { "EMGParam-MAE" };
@@ -392,6 +402,14 @@ void main_(const ParameterTypes& ...args) {
         std::get<EvoNetParameters::ModelTrainer::NHidden1>(parameters).get(),
         std::get<EvoNetParameters::ModelTrainer::NHidden2>(parameters).get(),
         true);
+    }
+    if (std::get<EvoNetParameters::Examples::ModelType>(parameters).get() == "VAE") {
+      // TODO
+      //model_trainer.makeVAE(model, input_size, encoding_size,
+      //  std::get<EvoNetParameters::ModelTrainer::NHidden0>(parameters).get(),
+      //  std::get<EvoNetParameters::ModelTrainer::NHidden1>(parameters).get(),
+      //  std::get<EvoNetParameters::ModelTrainer::NHidden2>(parameters).get(),
+      //  true);
     }
     else if (std::get<EvoNetParameters::Examples::ModelType>(parameters).get() == "EncoderEMG") {
       // TODO
