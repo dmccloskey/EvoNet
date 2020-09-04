@@ -218,58 +218,62 @@ public:
   bool KL_divergence_warmup_ = true;
 };
 
-/// Script to run the reconstruction network
-void main_reconstruction(const std::string& data_dir, const std::string& biochem_rxns_filename,
-  const std::string& metabo_data_filename_train, const std::string& meta_data_filename_train,
-  const std::string& metabo_data_filename_test, const std::string& meta_data_filename_test,
-  const bool& make_model, const bool& train_model,
-  const bool& use_concentrations, const bool& use_MARs,
-  const bool& sample_values, const bool& iter_values,
-  const bool& fill_sampling, const bool& fill_mean, const bool& fill_zero,
-  const bool& apply_fold_change, const std::string& fold_change_ref, const float& fold_change_log_base,
-  const bool& offline_linear_scale_input, const bool& offline_log_transform_input, const bool& offline_standardize_input,
-  const bool& online_linear_scale_input, const bool& online_log_transform_input, const bool& online_standardize_input,
-  const std::string& loss_function,
-  const int& device_id, const bool& KL_divergence_warmup)
-{
-  // global local variables
-  const int n_epochs = 20000;
-  const int batch_size = 64;
-  const int memory_size = 1;
-  //const int n_reps_per_sample = 10000;
-  const int n_encodings_continuous = 8;
+template<class ...ParameterTypes>
+void main_(const ParameterTypes& ...args) {
+  auto parameters = std::make_tuple(args...);
+
+  // define the model logger
+  ModelLogger<float> model_logger(true, true, true, false, false, false, false);
+
+  // define the data simulator
 
   // prior to using shuffle when making the data caches
   const int n_labels = 7; // IndustrialStrains0103
-  const int n_reps_per_sample = n_epochs * batch_size / n_labels;
-
-  //std::string model_name = "MetClass_" + std::to_string(use_concentrations) + "-" + std::to_string(use_MARs) + "-" + std::to_string(sample_values) + "-" + std::to_string(iter_values) + "-"
-  //  + std::to_string(fill_sampling) + "-" + std::to_string(fill_mean) + "-" + std::to_string(fill_zero) + "-" + std::to_string(apply_fold_change) + "-" + std::to_string(fold_change_log_base) + "-"
-  //  + std::to_string(offline_linear_scale_input) + "-" + std::to_string(offline_log_transform_input) + "-" + std::to_string(offline_standardize_input) + "-"
-  //  + std::to_string(online_linear_scale_input) + "-" + std::to_string(online_log_transform_input) + "-" + std::to_string(online_standardize_input);
-  std::string model_name = "VAE";
+  const int n_reps_per_sample = std::get<EvoNetParameters::ModelTrainer::BatchSize>(parameters).get()
+    * std::get<EvoNetParameters::ModelTrainer::NEpochsTraining>(parameters).get() / n_labels;
 
   // define the data simulator
   std::cout << "Making the training and validation data..." << std::endl;
-  MetabolomicsReconstructionDataSimulator<float> metabolomics_data;
-  metabolomics_data.n_encodings_continuous_ = n_encodings_continuous;
+  MetabolomicsReconstructionDataSimulator<float> data_simulator;
+  data_simulator.n_encodings_continuous_ = std::get<EvoNetParameters::ModelTrainer::NEncodingsContinuous>(parameters).get();
   int n_reaction_ids_training, n_labels_training, n_component_group_names_training;
   int n_reaction_ids_validation, n_labels_validation, n_component_group_names_validation;
-  metabolomics_data.readAndProcessMetabolomicsTrainingAndValidationData(
+  data_simulator.readAndProcessMetabolomicsTrainingAndValidationData(
     n_reaction_ids_training, n_labels_training, n_component_group_names_training, n_reaction_ids_validation, n_labels_validation, n_component_group_names_validation,
-    biochem_rxns_filename, metabo_data_filename_train, meta_data_filename_train, metabo_data_filename_test, meta_data_filename_test,
-    use_concentrations, use_MARs, sample_values, iter_values, fill_sampling, fill_mean, fill_zero, apply_fold_change, fold_change_ref, fold_change_log_base,
-    offline_linear_scale_input, offline_log_transform_input, offline_standardize_input, online_linear_scale_input, online_log_transform_input, online_standardize_input,
-    n_reps_per_sample, true, false, n_epochs, batch_size, memory_size);
+    std::get<EvoNetParameters::Examples::BiochemicalRxnsFilename>(parameters).get(),
+    std::get<EvoNetParameters::Examples::MetaboDataTrainFilename>(parameters).get(),
+    std::get<EvoNetParameters::Examples::MetaDataTrainFilename>(parameters).get(),
+    std::get<EvoNetParameters::Examples::MetaboDataTestFilename>(parameters).get(),
+    std::get<EvoNetParameters::Examples::MetaDataTestFilename>(parameters).get(),
+    std::get<EvoNetParameters::Examples::UseConcentrations>(parameters).get(),
+    std::get<EvoNetParameters::Examples::UseMARs>(parameters).get(),
+    std::get<EvoNetParameters::Examples::SampleValues>(parameters).get(),
+    std::get<EvoNetParameters::Examples::IterValues>(parameters).get(),
+    std::get<EvoNetParameters::Examples::FillSampling>(parameters).get(),
+    std::get<EvoNetParameters::Examples::FillMean>(parameters).get(),
+    std::get<EvoNetParameters::Examples::FillZero>(parameters).get(),
+    std::get<EvoNetParameters::Examples::ApplyFoldChange>(parameters).get(),
+    std::get<EvoNetParameters::Examples::FoldChangeRef>(parameters).get(),
+    std::get<EvoNetParameters::Examples::FoldChangeLogBase>(parameters).get(),
+    std::get<EvoNetParameters::Examples::OfflineLinearScaleInput>(parameters).get(),
+    std::get<EvoNetParameters::Examples::OfflineLogTransformInput>(parameters).get(),
+    std::get<EvoNetParameters::Examples::OfflineStandardizeInput>(parameters).get(),
+    std::get<EvoNetParameters::Examples::OnlineLinearScaleInput>(parameters).get(),
+    std::get<EvoNetParameters::Examples::OnlineLogTransformInput>(parameters).get(),
+    std::get<EvoNetParameters::Examples::OnlineStandardizeInput>(parameters).get(),
+    n_reps_per_sample, true, false,
+    std::get<EvoNetParameters::ModelTrainer::NEpochsTraining>(parameters).get(),
+    std::get<EvoNetParameters::ModelTrainer::BatchSize>(parameters).get(),
+    std::get<EvoNetParameters::ModelTrainer::MemorySize>(parameters).get());
 
   // define the model input/output nodes
   int n_input_nodes;
-  if (use_MARs) n_input_nodes = n_reaction_ids_training;
+  if (std::get<EvoNetParameters::Examples::UseMARs>(parameters).get()) n_input_nodes = n_reaction_ids_training;
   else n_input_nodes = n_component_group_names_training;
   const int n_output_nodes = n_input_nodes;
 
   //// Balance the sample group names
-  //metabolomics_data.model_training_.sample_group_names_ = {
+  //data_simulator.model_training_.sample_group_names_ = {
   //"Evo04", "Evo04", "Evo04", "Evo04", "Evo04", "Evo04",
   //"Evo04Evo01EP", "Evo04Evo01EP", "Evo04Evo01EP", "Evo04Evo01EP", "Evo04Evo01EP", "Evo04Evo01EP",
   //"Evo04gnd", "Evo04gnd", "Evo04gnd", "Evo04gnd", "Evo04gnd", "Evo04gnd", "Evo04gnd",
@@ -283,10 +287,10 @@ void main_reconstruction(const std::string& data_dir, const std::string& biochem
   //"Evo04tpiA", "Evo04tpiA", "Evo04tpiA", "Evo04tpiA", "Evo04tpiA", "Evo04tpiA",
   //"Evo04tpiAEvo01EP", "Evo04tpiAEvo02EP", "Evo04tpiAEvo03EP", "Evo04tpiAEvo01EP", "Evo04tpiAEvo02EP", "Evo04tpiAEvo03EP"
   //};
-  ////metabolomics_data.model_training_.sample_group_names_ = {
+  ////data_simulator.model_training_.sample_group_names_ = {
   ////"S01_D01_PLT_25C_22hr","S01_D01_PLT_25C_6.5hr","S01_D01_PLT_25C_0hr","S01_D02_PLT_25C_22hr","S01_D02_PLT_25C_6.5hr","S01_D02_PLT_25C_0hr","S01_D05_PLT_25C_0hr","S01_D05_PLT_25C_22hr","S01_D05_PLT_25C_6.5hr","S01_D01_PLT_37C_22hr","S01_D02_PLT_37C_22hr","S01_D05_PLT_37C_22hr"
   ////};
-  ////metabolomics_data.model_validation_.sample_group_names_ = {
+  ////data_simulator.model_validation_.sample_group_names_ = {
   ////"S02_D01_PLT_25C_22hr","S02_D01_PLT_25C_6.5hr","S02_D01_PLT_25C_0hr","S02_D02_PLT_25C_22hr","S02_D02_PLT_25C_6.5hr","S02_D02_PLT_25C_0hr","S02_D05_PLT_25C_0hr","S02_D05_PLT_25C_22hr","S02_D05_PLT_25C_6.5hr","S02_D01_PLT_37C_22hr","S02_D02_PLT_37C_22hr","S02_D05_PLT_37C_22hr"
   ////};
 
@@ -302,7 +306,7 @@ void main_reconstruction(const std::string& data_dir, const std::string& biochem
   }
 
   // Make the encoding nodes and add them to the input
-  for (int i = 0; i < n_encodings_continuous; ++i) {
+  for (int i = 0; i < std::get<EvoNetParameters::ModelTrainer::NEncodingsContinuous>(parameters).get(); ++i) {
     char name_char[512];
     sprintf(name_char, "Encoding_%012d-Sampler", i);
     std::string name(name_char);
@@ -320,7 +324,7 @@ void main_reconstruction(const std::string& data_dir, const std::string& biochem
 
   // Make the mu nodes
   std::vector<std::string> encoding_nodes_mu;
-  for (int i = 0; i < n_encodings_continuous; ++i) {
+  for (int i = 0; i < std::get<EvoNetParameters::ModelTrainer::NEncodingsContinuous>(parameters).get(); ++i) {
     char name_char[512];
     sprintf(name_char, "Mu_%012d", i);
     std::string name(name_char);
@@ -329,44 +333,41 @@ void main_reconstruction(const std::string& data_dir, const std::string& biochem
 
   // Make the encoding nodes
   std::vector<std::string> encoding_nodes_logvar;
-  for (int i = 0; i < n_encodings_continuous; ++i) {
+  for (int i = 0; i < std::get<EvoNetParameters::ModelTrainer::NEncodingsContinuous>(parameters).get(); ++i) {
     char name_char[512];
     sprintf(name_char, "LogVar_%012d", i);
     std::string name(name_char);
     encoding_nodes_logvar.push_back(name);
   }
 
-  // define the model trainers and resources for the trainers
-  ModelResources model_resources = { ModelDevice(device_id, 0) };
-  ModelInterpreterGpu<float> model_interpreter(model_resources);
+  // define the model interpreters
+  std::vector<ModelInterpreterGpu<float>> model_interpreters;
+  setModelInterpreterParameters(model_interpreters, args...);
+
+  // define the model trainer
   ModelTrainerExt<float> model_trainer;
-  model_trainer.setBatchSize(batch_size);
-  model_trainer.setMemorySize(memory_size);
-  model_trainer.setNEpochsTraining(n_epochs * 5); // Iterate through the stored data 5 times
-  model_trainer.setVerbosityLevel(1);
-  model_trainer.setLogging(true, false, false);
-  model_trainer.setFindCycles(false);
-  model_trainer.setFastInterpreter(true);
-  model_trainer.setPreserveOoO(true);
+  setModelTrainerParameters(model_trainer, args...);
+  model_trainer.setNEpochsTraining(std::get<EvoNetParameters::ModelTrainer::NEpochsTraining>(parameters).get() * 5); // iterate through the cache 5x
+
   std::shared_ptr<LossFunctionOp<float>> loss_function_op;
   std::shared_ptr<LossFunctionGradOp<float>> loss_function_grad_op;
-  if (loss_function == std::string("MSE")) {
+  if (std::get<EvoNetParameters::ModelTrainer::LossFunction>(parameters).get() == std::string("MSE")) {
     loss_function_op = std::make_shared<MSELossOp<float>>(MSELossOp<float>(1e-6, 1.0));
     loss_function_grad_op = std::make_shared<MSELossGradOp<float>>(MSELossGradOp<float>(1e-6, 1.0));
   }
-  else if (loss_function == std::string("MAE")) {
+  else if (std::get<EvoNetParameters::ModelTrainer::LossFunction>(parameters).get() == std::string("MAE")) {
     loss_function_op = std::make_shared<MAELossOp<float>>(MAELossOp<float>(1e-6, 1.0));
     loss_function_grad_op = std::make_shared<MAELossGradOp<float>>(MAELossGradOp<float>(1e-6, 1.0));
   }
-  else if (loss_function == std::string("MLE")) {
+  else if (std::get<EvoNetParameters::ModelTrainer::LossFunction>(parameters).get() == std::string("MLE")) {
     loss_function_op = std::make_shared<MLELossOp<float>>(MLELossOp<float>(1e-6, 1.0));
     loss_function_grad_op = std::make_shared<MLELossGradOp<float>>(MLELossGradOp<float>(1e-6, 1.0));
   }
-  else if (loss_function == std::string("MAPE")) {
+  else if (std::get<EvoNetParameters::ModelTrainer::LossFunction>(parameters).get() == std::string("MAPE")) {
     loss_function_op = std::make_shared<MAPELossOp<float>>(MAPELossOp<float>(1e-6, 1.0));
     loss_function_grad_op = std::make_shared<MAPELossGradOp<float>>(MAPELossGradOp<float>(1e-6, 1.0));
   }
-  else if (loss_function == std::string("BCEWithLogits")) {
+  else if (std::get<EvoNetParameters::ModelTrainer::LossFunction>(parameters).get() == std::string("BCEWithLogits")) {
     loss_function_op = std::make_shared<BCEWithLogitsLossOp<float>>(BCEWithLogitsLossOp<float>(1e-6, 1.0));
     loss_function_grad_op = std::make_shared<BCEWithLogitsLossGradOp<float>>(BCEWithLogitsLossGradOp<float>(1e-6, 1.0));
   }
@@ -386,7 +387,7 @@ void main_reconstruction(const std::string& data_dir, const std::string& biochem
   loss_function_helper3.loss_function_grads_ = { std::make_shared<KLDivergenceLogVarLossGradOp<float>>(KLDivergenceLogVarLossGradOp<float>(1e-6, 0.0, 0.0)) };
   loss_function_helpers.push_back(loss_function_helper3);
   model_trainer.setLossFunctionHelpers(loss_function_helpers);
-  model_trainer.KL_divergence_warmup_ = KL_divergence_warmup;
+  model_trainer.KL_divergence_warmup_ = std::get<EvoNetParameters::ModelTrainer::KLDivergenceWarmup>(parameters).get();
 
   std::vector<MetricFunctionHelper<float>> metric_function_helpers;
   MetricFunctionHelper<float> metric_function_helper1;
@@ -408,29 +409,21 @@ void main_reconstruction(const std::string& data_dir, const std::string& biochem
   metric_function_helpers.push_back(metric_function_helper1);
   model_trainer.setMetricFunctionHelpers(metric_function_helpers);
 
-  // define the model logger
-  ModelLogger<float> model_logger(true, true, false, false, false, false, false, false);
-
   Model<float> model;
-  if (make_model) {
+  if (std::get<EvoNetParameters::Main::MakeModel>(parameters).get()) {
     std::cout << "Making the model..." << std::endl;
-    model_trainer.makeVAEFullyConn(model, n_input_nodes, n_encodings_continuous, 16, 0, 0, false, true);
+    model_trainer.makeVAEFullyConn(model, n_input_nodes, std::get<EvoNetParameters::ModelTrainer::NEncodingsContinuous>(parameters).get(), 16, 0, 0, false, true);
   }
   else {
-    std::cout << "Reading in the model..." << std::endl;
-    const std::string model_filename = data_dir + model_name + "_model.binary";
-    const std::string interpreter_filename = data_dir + model_name + "_interpreter.binary";
     ModelFile<float> model_file;
-    model_file.loadModelBinary(model_filename, model);
     ModelInterpreterFileGpu<float> model_interpreter_file;
-    model_interpreter_file.loadModelInterpreterBinary(interpreter_filename, model_interpreter);
+    loadModelFromParameters(model, model_interpreters.at(0), model_file, model_interpreter_file, args...);
   }
-  model.setName(data_dir + model_name); //So that all output will be written to a specific directory
+  model.setName(std::get<EvoNetParameters::General::OutputDir>(parameters).get() + std::get<EvoNetParameters::Main::ModelName>(parameters).get()); //So that all output will be written to a specific directory
 
   // Train the model
-  std::cout << "Training the model..." << std::endl;
-  std::pair<std::vector<float>, std::vector<float>> model_errors = model_trainer.trainModel(model, metabolomics_data,
-    input_nodes, model_logger, model_interpreter);
+  std::pair<std::vector<float>, std::vector<float>> model_errors = model_trainer.trainModel(model, data_simulator,
+    input_nodes, model_logger, model_interpreters.front());
 }
 
 void main_loadBinaryModelAndStoreWeightsCsv(const std::string& model_filename) {
@@ -447,176 +440,130 @@ void main_loadBinaryModelAndStoreWeightsCsv(const std::string& model_filename) {
 // Main
 int main(int argc, char** argv)
 {
+  // Parse the user commands
+  int id_int = -1;
+  std::string parameters_filename = "";
+  parseCommandLineArguments(argc, argv, id_int, parameters_filename);
 
-  // Initialize the defaults
-  std::string data_dir = "";
-  std::string biochem_rxns_filename = data_dir + "iJO1366.csv";
-  std::string metabo_data_filename_train = data_dir + "ALEsKOs01_Metabolomics_train.csv"; // IndustrialStrains0103_
-  std::string meta_data_filename_train = data_dir + "ALEsKOs01_MetaData_train.csv";
-  std::string metabo_data_filename_test = data_dir + "ALEsKOs01_Metabolomics_test.csv";
-  std::string meta_data_filename_test = data_dir + "ALEsKOs01_MetaData_test.csv";
-  bool make_model = true;
-  bool train_model = true;
-  bool use_concentrations = true;
-  bool use_MARs = false;
-  bool sample_values = true;
-  bool iter_values = false;
-  bool fill_sampling = false;
-  bool fill_mean = false;
-  bool fill_zero = false;
-  bool apply_fold_change = false;
-  std::string fold_change_ref = "Evo04";
-  float fold_change_log_base = 10;
-  bool offline_linear_scale_input = true;
-  bool offline_log_transform_input = false;
-  bool offline_standardize_input = false;
-  bool online_linear_scale_input = false;
-  bool online_log_transform_input = false;
-  bool online_standardize_input = false;
-  int device_id = 0;
-  std::string loss_function = "MSE";
-  bool KL_divergence_warmup = true;
+  // Set the parameter names and defaults
+  EvoNetParameters::General::ID id("id", -1);
+  EvoNetParameters::General::DataDir data_dir("data_dir", std::string(""));
+  EvoNetParameters::General::OutputDir output_dir("output_dir", std::string(""));
+  EvoNetParameters::Main::DeviceId device_id("device_id", 0);
+  EvoNetParameters::Main::ModelName model_name("model_name", "");
+  EvoNetParameters::Main::MakeModel make_model("make_model", true);
+  EvoNetParameters::Main::LoadModelCsv load_model_csv("load_model_csv", false);
+  EvoNetParameters::Main::LoadModelBinary load_model_binary("load_model_binary", false);
+  EvoNetParameters::Main::TrainModel train_model("train_model", true);
+  EvoNetParameters::Main::EvolveModel evolve_model("evolve_model", false);
+  EvoNetParameters::Main::EvaluateModel evaluate_model("evaluate_model", false);
+  EvoNetParameters::Main::EvaluateModels evaluate_models("evaluate_models", false);
+  EvoNetParameters::Examples::ModelType model_type("model_type", "Solution");
+  EvoNetParameters::Examples::SimulationType simulation_type("simulation_type", "");
+  EvoNetParameters::Examples::BiochemicalRxnsFilename biochemical_rxns_filename("biochemical_rxns_filename", "");
+  EvoNetParameters::Examples::MetaboDataTrainFilename metabo_data_train_filename("metabo_data_train_filename", "");
+  EvoNetParameters::Examples::MetaboDataTestFilename metabo_data_test_filename("metabo_data_test_filename", "");
+  EvoNetParameters::Examples::MetaDataTrainFilename meta_data_train_filename("meta_data_train_filename", "");
+  EvoNetParameters::Examples::MetaDataTestFilename meta_data_test_filename("meta_data_test_filename", "");
+  EvoNetParameters::Examples::UseConcentrations use_concentrations("use_concentrations", true);
+  EvoNetParameters::Examples::UseMARs use_MARs("use_MARs", false);
+  EvoNetParameters::Examples::SampleValues sample_values("sample_values", true);
+  EvoNetParameters::Examples::IterValues iter_values("iter_values", false);
+  EvoNetParameters::Examples::FillSampling fill_sampling("fill_sampling", false);
+  EvoNetParameters::Examples::FillMean fill_mean("fill_mean", false);
+  EvoNetParameters::Examples::FillZero fill_zero("fill_zero", false);
+  EvoNetParameters::Examples::ApplyFoldChange apply_fold_change("apply_fold_change", false);
+  EvoNetParameters::Examples::FoldChangeRef fold_change_ref("fold_change_ref", std::string("Evo04"));
+  EvoNetParameters::Examples::FoldChangeLogBase fold_change_log_base("fold_change_log_base", 10);
+  EvoNetParameters::Examples::OfflineLinearScaleInput offline_linear_scale_input("offline_linear_scale_input", true);
+  EvoNetParameters::Examples::OfflineLogTransformInput offline_log_transform_input("offline_log_transform_input", false);
+  EvoNetParameters::Examples::OfflineStandardizeInput offline_standardize_input("offline_standardize_input", false);
+  EvoNetParameters::Examples::OnlineLinearScaleInput online_linear_scale_input("online_linear_scale_input", false);
+  EvoNetParameters::Examples::OnlineLogTransformInput online_log_transform_input("online_log_transform_input", false);
+  EvoNetParameters::Examples::OnlineStandardizeInput online_standardize_input("online_standardize_input", false);
+  EvoNetParameters::PopulationTrainer::PopulationName population_name("population_name", "");
+  EvoNetParameters::PopulationTrainer::NGenerations n_generations("n_generations", 1);
+  EvoNetParameters::PopulationTrainer::NInterpreters n_interpreters("n_interpreters", 1);
+  EvoNetParameters::PopulationTrainer::PruneModelNum prune_model_num("prune_model_num", 10);
+  EvoNetParameters::PopulationTrainer::RemoveIsolatedNodes remove_isolated_nodes("remove_isolated_nodes", true);
+  EvoNetParameters::PopulationTrainer::CheckCompleteModelInputToOutput check_complete_model_input_to_output("check_complete_model_input_to_output", true);
+  EvoNetParameters::PopulationTrainer::PopulationSize population_size("population_size", 128);
+  EvoNetParameters::PopulationTrainer::NTop n_top("n_top", 8);
+  EvoNetParameters::PopulationTrainer::NRandom n_random("n_random", 8);
+  EvoNetParameters::PopulationTrainer::NReplicatesPerModel n_replicates_per_model("n_replicates_per_model", 1);
+  EvoNetParameters::PopulationTrainer::ResetModelCopyWeights reset_model_copy_weights("reset_model_copy_weights", true);
+  EvoNetParameters::PopulationTrainer::ResetModelTemplateWeights reset_model_template_weights("reset_model_template_weights", true);
+  EvoNetParameters::PopulationTrainer::Logging population_logging("population_logging", true);
+  EvoNetParameters::PopulationTrainer::SetPopulationSizeFixed set_population_size_fixed("set_population_size_fixed", false);
+  EvoNetParameters::PopulationTrainer::SetPopulationSizeDoubling set_population_size_doubling("set_population_size_doubling", true);
+  EvoNetParameters::PopulationTrainer::SetTrainingStepsByModelSize set_training_steps_by_model_size("set_training_steps_by_model_size", false);
+  EvoNetParameters::ModelTrainer::BatchSize batch_size("batch_size", 32);
+  EvoNetParameters::ModelTrainer::MemorySize memory_size("memory_size", 64);
+  EvoNetParameters::ModelTrainer::NEpochsTraining n_epochs_training("n_epochs_training", 1000);
+  EvoNetParameters::ModelTrainer::NEpochsValidation n_epochs_validation("n_epochs_validation", 25);
+  EvoNetParameters::ModelTrainer::NEpochsEvaluation n_epochs_evaluation("n_epochs_evaluation", 10);
+  EvoNetParameters::ModelTrainer::NTBTTSteps n_tbtt_steps("n_tbtt_steps", 64);
+  EvoNetParameters::ModelTrainer::NTETTSteps n_tett_steps("n_tett_steps", 64);
+  EvoNetParameters::ModelTrainer::Verbosity verbosity("verbosity", 1);
+  EvoNetParameters::ModelTrainer::LoggingTraining logging_training("logging_training", true);
+  EvoNetParameters::ModelTrainer::LoggingValidation logging_validation("logging_validation", false);
+  EvoNetParameters::ModelTrainer::LoggingEvaluation logging_evaluation("logging_evaluation", true);
+  EvoNetParameters::ModelTrainer::FindCycles find_cycles("find_cycles", true);
+  EvoNetParameters::ModelTrainer::FastInterpreter fast_interpreter("fast_interpreter", true);
+  EvoNetParameters::ModelTrainer::PreserveOoO preserve_ooo("preserve_ooo", true);
+  EvoNetParameters::ModelTrainer::InterpretModel interpret_model("interpret_model", true);
+  EvoNetParameters::ModelTrainer::ResetModel reset_model("reset_model", false);
+  EvoNetParameters::ModelTrainer::NHidden0 n_hidden_0("n_hidden_0", 512);
+  EvoNetParameters::ModelTrainer::NHidden1 n_hidden_1("n_hidden_1", 256);
+  EvoNetParameters::ModelTrainer::NHidden2 n_hidden_2("n_hidden_2", 128);
+  EvoNetParameters::ModelTrainer::LossFncWeight0 loss_fnc_weight_0("loss_fnc_weight_0", 1);
+  EvoNetParameters::ModelTrainer::LossFncWeight1 loss_fnc_weight_1("loss_fnc_weight_1", 1e-6);
+  EvoNetParameters::ModelTrainer::LossFncWeight2 loss_fnc_weight_2("loss_fnc_weight_2", 1e-6);
+  EvoNetParameters::ModelTrainer::ResetInterpreter reset_interpreter("reset_interpreter", true);
+  EvoNetParameters::ModelTrainer::LossFunction loss_function("loss_function", std::string("MSE"));
+  EvoNetParameters::ModelTrainer::KLDivergenceWarmup KL_divergence_warmup("KL_divergence_warmup", true);
+  EvoNetParameters::ModelTrainer::NEncodingsContinuous n_encodings_continuous("n_encodings_continuous", 8);
+  EvoNetParameters::ModelTrainer::NEncodingsCategorical n_encodings_categorical("n_encodings_categorical", 8);
+  EvoNetParameters::ModelReplicator::NNodeDownAdditionsLB n_node_down_additions_lb("n_node_down_additions_lb", 0);
+  EvoNetParameters::ModelReplicator::NNodeRightAdditionsLB n_node_right_additions_lb("n_node_right_additions_lb", 0);
+  EvoNetParameters::ModelReplicator::NNodeDownCopiesLB n_node_down_copies_lb("n_node_down_copies_lb", 0);
+  EvoNetParameters::ModelReplicator::NNodeRightCopiesLB n_node_right_copies_lb("n_node_right_copies_lb", 0);
+  EvoNetParameters::ModelReplicator::NLinkAdditionsLB n_link_additons_lb("n_link_additons_lb", 0);
+  EvoNetParameters::ModelReplicator::NLinkCopiesLB n_link_copies_lb("n_link_copies_lb", 0);
+  EvoNetParameters::ModelReplicator::NNodeDeletionsLB n_node_deletions_lb("n_node_deletions_lb", 0);
+  EvoNetParameters::ModelReplicator::NLinkDeletionsLB n_link_deletions_lb("n_link_deletions_lb", 0);
+  EvoNetParameters::ModelReplicator::NNodeActivationChangesLB n_node_activation_changes_lb("n_node_activation_changes_lb", 0);
+  EvoNetParameters::ModelReplicator::NNodeIntegrationChangesLB n_node_integration_changes_lb("n_node_integration_changes_lb", 0);
+  EvoNetParameters::ModelReplicator::NModuleAdditionsLB n_module_additions_lb("n_module_additions_lb", 0);
+  EvoNetParameters::ModelReplicator::NModuleCopiesLB n_module_copies_lb("n_module_copies_lb", 0);
+  EvoNetParameters::ModelReplicator::NModuleDeletionsLB n_module_deletions_lb("n_module_deletions_lb", 0);
+  EvoNetParameters::ModelReplicator::NNodeDownAdditionsUB n_node_down_additions_ub("n_node_down_additions_ub", 0);
+  EvoNetParameters::ModelReplicator::NNodeRightAdditionsUB n_node_right_additions_ub("n_node_right_additions_ub", 0);
+  EvoNetParameters::ModelReplicator::NNodeDownCopiesUB n_node_down_copies_ub("n_node_down_copies_ub", 0);
+  EvoNetParameters::ModelReplicator::NNodeRightCopiesUB n_node_right_copies_ub("n_node_right_copies_ub", 0);
+  EvoNetParameters::ModelReplicator::NLinkAdditionsUB n_link_additons_ub("n_link_additons_ub", 0);
+  EvoNetParameters::ModelReplicator::NLinkCopiesUB n_link_copies_ub("n_link_copies_ub", 0);
+  EvoNetParameters::ModelReplicator::NNodeDeletionsUB n_node_deletions_ub("n_node_deletions_ub", 0);
+  EvoNetParameters::ModelReplicator::NLinkDeletionsUB n_link_deletions_ub("n_link_deletions_ub", 0);
+  EvoNetParameters::ModelReplicator::NNodeActivationChangesUB n_node_activation_changes_ub("n_node_activation_changes_ub", 0);
+  EvoNetParameters::ModelReplicator::NNodeIntegrationChangesUB n_node_integration_changes_ub("n_node_integration_changes_ub", 0);
+  EvoNetParameters::ModelReplicator::NModuleAdditionsUB n_module_additions_ub("n_module_additions_ub", 0);
+  EvoNetParameters::ModelReplicator::NModuleCopiesUB n_module_copies_ub("n_module_copies_ub", 0);
+  EvoNetParameters::ModelReplicator::NModuleDeletionsUB n_module_deletions_ub("n_module_deletions_ub", 0);
+  EvoNetParameters::ModelReplicator::SetModificationRateFixed set_modification_rate_fixed("set_modification_rate_fixed", false);
+  EvoNetParameters::ModelReplicator::SetModificationRateByPrevError set_modification_rate_by_prev_error("set_modification_rate_by_prev_error", false);
+  auto parameters = std::make_tuple(id, data_dir, output_dir,
+    device_id, model_name, make_model, load_model_csv, load_model_binary, train_model, evolve_model, evaluate_model, evaluate_models,
+    model_type, simulation_type, biochemical_rxns_filename, metabo_data_train_filename, metabo_data_test_filename, meta_data_train_filename, meta_data_test_filename, use_concentrations, use_MARs, sample_values, iter_values, fill_sampling, fill_mean, fill_zero, apply_fold_change, fold_change_ref, fold_change_log_base, offline_linear_scale_input, offline_log_transform_input, offline_standardize_input, online_linear_scale_input, online_log_transform_input, online_standardize_input,
+    population_name, n_generations, n_interpreters, /*prune_model_num, remove_isolated_nodes, check_complete_model_input_to_output, population_size, n_top, n_random, n_replicates_per_model, reset_model_copy_weights, reset_model_template_weights, population_logging, set_population_size_fixed, set_population_size_doubling, set_training_steps_by_model_size,*/
+    batch_size, memory_size, n_epochs_training, n_epochs_validation, n_epochs_evaluation, n_tbtt_steps, n_tett_steps, verbosity, logging_training, logging_validation, logging_evaluation, find_cycles, fast_interpreter, preserve_ooo, interpret_model, reset_model, n_hidden_0, n_hidden_1, n_hidden_2, reset_interpreter, loss_function, KL_divergence_warmup, n_encodings_continuous, n_encodings_categorical/*,
+    n_node_down_additions_lb, n_node_right_additions_lb, n_node_down_copies_lb, n_node_right_copies_lb, n_link_additons_lb, n_link_copies_lb, n_node_deletions_lb, n_link_deletions_lb, n_node_activation_changes_lb, n_node_integration_changes_lb, n_module_additions_lb, n_module_copies_lb, n_module_deletions_lb, n_node_down_additions_ub, n_node_right_additions_ub, n_node_down_copies_ub, n_node_right_copies_ub, n_link_additons_ub, n_link_copies_ub, n_node_deletions_ub, n_link_deletions_ub, n_node_activation_changes_ub, n_node_integration_changes_ub, n_module_additions_ub, n_module_copies_ub, n_module_deletions_ub, set_modification_rate_fixed, set_modification_rate_by_prev_error*/);
 
-  // Parse the input
-  std::cout << "Parsing the user input..." << std::endl;
-  if (argc >= 2) {
-    data_dir = argv[1];
-  }
-  if (argc >= 3) {
-    biochem_rxns_filename = argv[2];
-  }
-  if (argc >= 4) {
-    metabo_data_filename_train = argv[3];
-  }
-  if (argc >= 5) {
-    meta_data_filename_train = argv[4];
-  }
-  if (argc >= 6) {
-    metabo_data_filename_test = argv[5];
-  }
-  if (argc >= 7) {
-    meta_data_filename_test = argv[6];
-  }
-  if (argc >= 8) {
-    make_model = (argv[7] == std::string("true")) ? true : false;
-  }
-  if (argc >= 9) {
-    train_model = (argv[8] == std::string("true")) ? true : false;
-  }
-  if (argc >= 10) {
-    use_concentrations = (argv[9] == std::string("true")) ? true : false;
-  }
-  if (argc >= 11) {
-    use_MARs = (argv[10] == std::string("true")) ? true : false;
-  }
-  if (argc >= 12) {
-    sample_values = (argv[11] == std::string("true")) ? true : false;
-  }
-  if (argc >= 13) {
-    iter_values = (argv[12] == std::string("true")) ? true : false;
-  }
-  if (argc >= 14) {
-    fill_sampling = (argv[13] == std::string("true")) ? true : false;
-  }
-  if (argc >= 15) {
-    fill_mean = (argv[14] == std::string("true")) ? true : false;
-  }
-  if (argc >= 16) {
-    fill_zero = (argv[15] == std::string("true")) ? true : false;
-  }
-  if (argc >= 17) {
-    apply_fold_change = (argv[16] == std::string("true")) ? true : false;
-  }
-  if (argc >= 18) {
-    fold_change_ref = argv[17];
-  }
-  if (argc >= 19) {
-    try {
-      fold_change_log_base = std::stof(argv[18]);
-    }
-    catch (std::exception & e) {
-      std::cout << e.what() << std::endl;
-    }
-  }
-  if (argc >= 20) {
-    offline_linear_scale_input = (argv[19] == std::string("true")) ? true : false;
-  }
-  if (argc >= 21) {
-    offline_log_transform_input = (argv[20] == std::string("true")) ? true : false;
-  }
-  if (argc >= 22) {
-    offline_standardize_input = (argv[21] == std::string("true")) ? true : false;
-  }
-  if (argc >= 23) {
-    online_linear_scale_input = (argv[22] == std::string("true")) ? true : false;
-  }
-  if (argc >= 24) {
-    online_log_transform_input = (argv[23] == std::string("true")) ? true : false;
-  }
-  if (argc >= 25) {
-    online_standardize_input = (argv[24] == std::string("true")) ? true : false;
-  }
-  if (argc >= 26) {
-    if (argv[25] == std::string("MSE"))
-      loss_function = "MSE";
-    else if (argv[25] == std::string("MAE"))
-      loss_function = "MAE";
-    else if (argv[25] == std::string("MLE"))
-      loss_function = "MLE";
-    else if (argv[25] == std::string("MAPE"))
-      loss_function = "MAPE";
-    else if (argv[25] == std::string("BCEWithLogits"))
-      loss_function = "BCEWithLogits";
-  }
-  if (argc >= 27) {
-    try {
-      device_id = std::stoi(argv[26]);
-      device_id = (device_id >= 0 && device_id < 4) ? device_id : 0; // TODO: assumes only 4 devices are available
-    }
-    catch (std::exception & e) {
-      std::cout << e.what() << std::endl;
-    }
-  }
-  if (argc >= 28) {
-    KL_divergence_warmup = (argv[27] == std::string("true")) ? true : false;
-  }
+  // Read in the parameters
+  LoadParametersFromCsv loadParametersFromCsv(id_int, parameters_filename);
+  parameters = SmartPeak::apply([&loadParametersFromCsv](auto&& ...args) { return loadParametersFromCsv(args...); }, parameters);
 
-  // Cout the parsed input
-  std::cout << "data_dir: " << data_dir << std::endl;
-  std::cout << "biochem_rxns_filename: " << biochem_rxns_filename << std::endl;
-  std::cout << "metabo_data_filename_train: " << metabo_data_filename_train << std::endl;
-  std::cout << "meta_data_filename_train: " << meta_data_filename_train << std::endl;
-  std::cout << "metabo_data_filename_test: " << metabo_data_filename_test << std::endl;
-  std::cout << "meta_data_filename_test: " << meta_data_filename_test << std::endl;
-  std::cout << "make_model: " << make_model << std::endl;
-  std::cout << "train_model: " << train_model << std::endl;
-  std::cout << "use_concentrations: " << use_concentrations << std::endl;
-  std::cout << "use_MARs: " << use_MARs << std::endl;
-  std::cout << "sample_values: " << sample_values << std::endl;
-  std::cout << "iter_values: " << iter_values << std::endl;
-  std::cout << "fill_sampling: " << fill_sampling << std::endl;
-  std::cout << "fill_mean: " << fill_mean << std::endl;
-  std::cout << "fill_zero: " << fill_zero << std::endl;
-  std::cout << "apply_fold_change: " << apply_fold_change << std::endl;
-  std::cout << "fold_change_ref: " << fold_change_ref << std::endl;
-  std::cout << "fold_change_log_base: " << fold_change_log_base << std::endl;
-  std::cout << "offline_linear_scale_input: " << offline_linear_scale_input << std::endl;
-  std::cout << "offline_log_transform_input: " << offline_log_transform_input << std::endl;
-  std::cout << "offline_standardize_input: " << offline_standardize_input << std::endl;
-  std::cout << "online_linear_scale_input: " << online_linear_scale_input << std::endl;
-  std::cout << "online_log_transform_input: " << online_log_transform_input << std::endl;
-  std::cout << "online_standardize_input: " << online_standardize_input << std::endl;
-  std::cout << "loss_function: " << loss_function << std::endl;
-  std::cout << "device_id: " << device_id << std::endl;
-  std::cout << "KL_divergence_warmup: " << KL_divergence_warmup << std::endl;
-
-  // Run the classification
-  main_reconstruction(data_dir, biochem_rxns_filename, metabo_data_filename_train, meta_data_filename_train, metabo_data_filename_test, meta_data_filename_test,
-    make_model, train_model,
-    use_concentrations, use_MARs, sample_values, iter_values, fill_sampling, fill_mean, fill_zero,
-    apply_fold_change, fold_change_ref, fold_change_log_base,
-    offline_linear_scale_input, offline_log_transform_input, offline_standardize_input,
-    online_linear_scale_input, online_log_transform_input, online_standardize_input, loss_function, device_id, KL_divergence_warmup
-  );
+  // Run the application
+  SmartPeak::apply([](auto&& ...args) { main_(args ...); }, parameters);
   return 0;
 }

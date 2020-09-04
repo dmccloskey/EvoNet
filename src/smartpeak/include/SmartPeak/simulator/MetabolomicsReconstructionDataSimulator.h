@@ -5,9 +5,36 @@
 
 // .h
 #include <SmartPeak/simulator/BiochemicalDataSimulator.h>
+#include <SmartPeak/io/Parameters.h>
 
 namespace SmartPeak
 {
+  /// List of all available parameters and their types
+  namespace EvoNetParameters {
+    namespace Examples {
+      struct MetaboDataTrainFilename : Parameter<std::string> { using Parameter::Parameter; };
+      struct MetaboDataTestFilename : Parameter<std::string> { using Parameter::Parameter; };
+      struct MetaDataTrainFilename : Parameter<std::string> { using Parameter::Parameter; };
+      struct MetaDataTestFilename : Parameter<std::string> { using Parameter::Parameter; };
+      struct UseConcentrations : Parameter<bool> { using Parameter::Parameter; };
+      struct UseMARs : Parameter<bool> { using Parameter::Parameter; };
+      struct SampleValues : Parameter<bool> { using Parameter::Parameter; };
+      struct IterValues : Parameter<bool> { using Parameter::Parameter; };
+      struct FillSampling : Parameter<bool> { using Parameter::Parameter; };
+      struct FillMean : Parameter<bool> { using Parameter::Parameter; };
+      struct FillZero : Parameter<bool> { using Parameter::Parameter; };
+      struct ApplyFoldChange : Parameter<bool> { using Parameter::Parameter; };
+      struct FoldChangeRef : Parameter<std::string> { using Parameter::Parameter; };
+      struct FoldChangeLogBase : Parameter<float> { using Parameter::Parameter; };
+      struct OfflineLinearScaleInput : Parameter<bool> { using Parameter::Parameter; };
+      struct OfflineLogTransformInput : Parameter<bool> { using Parameter::Parameter; };
+      struct OfflineStandardizeInput : Parameter<bool> { using Parameter::Parameter; };
+      struct OnlineLinearScaleInput : Parameter<bool> { using Parameter::Parameter; };
+      struct OnlineLogTransformInput : Parameter<bool> { using Parameter::Parameter; };
+      struct OnlineStandardizeInput : Parameter<bool> { using Parameter::Parameter; };
+    }
+  }
+
   template<typename TensorT>
   class MetabolomicsReconstructionDataSimulator : public BiochemicalDataSimulator<TensorT>
   {

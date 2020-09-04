@@ -129,6 +129,7 @@ namespace SmartPeak
       struct InterpretModel : Parameter<bool> { using Parameter::Parameter; };
       struct ResetModel : Parameter<bool> { using Parameter::Parameter; };
       struct ResetInterpreter : Parameter<bool> { using Parameter::Parameter; };
+      struct LossFunction : Parameter<std::string> { using Parameter::Parameter; };
       /// Model building
       struct NHidden0 : Parameter<int> { using Parameter::Parameter; };
       struct NHidden1 : Parameter<int> { using Parameter::Parameter; };
@@ -141,6 +142,9 @@ namespace SmartPeak
       struct AddCategorical : Parameter<bool> { using Parameter::Parameter; };
       struct LearningRate : Parameter<float> { using Parameter::Parameter; };
       struct GradientClipping : Parameter<float> { using Parameter::Parameter; };
+      struct KLDivergenceWarmup : Parameter<bool> { using Parameter::Parameter; };
+      struct NEncodingsContinuous : Parameter<int> { using Parameter::Parameter; };
+      struct NEncodingsCategorical : Parameter<int> { using Parameter::Parameter; };
     }
 
     namespace Examples {
