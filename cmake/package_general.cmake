@@ -1,18 +1,18 @@
 
 # --------------------------------------------------------------------------
-# general definitions used for building SmartPeak packages
-set(CPACK_PACKAGE_NAME "SmartPeak")
-set(CPACK_PACKAGE_VENDOR "SmartPeak.com")
-set(CPACK_PACKAGE_DESCRIPTION_SUMMARY "SmartPeak - A framework for mass spectrometry")
+# general definitions used for building EvoNet packages
+set(CPACK_PACKAGE_NAME "EvoNet")
+set(CPACK_PACKAGE_VENDOR "EvoNet.com")
+set(CPACK_PACKAGE_DESCRIPTION_SUMMARY "EvoNet - A framework for mass spectrometry")
 set(CPACK_PACKAGE_VERSION "${OPENMS_PACKAGE_VERSION_MAJOR}.${OPENMS_PACKAGE_VERSION_MINOR}.${OPENMS_PACKAGE_VERSION_PATCH}")
 set(CPACK_PACKAGE_VERSION_MAJOR "${OPENMS_PACKAGE_VERSION_MAJOR}")
 set(CPACK_PACKAGE_VERSION_MINOR "${OPENMS_PACKAGE_VERSION_MINOR}")
 set(CPACK_PACKAGE_VERSION_PATCH "${OPENMS_PACKAGE_VERSION_PATCH}")
-set(CPACK_PACKAGE_INSTALL_DIRECTORY "SmartPeak-${CPACK_PACKAGE_VERSION}")
-set(CPACK_PACKAGE_DESCRIPTION_FILE ${PROJECT_SOURCE_DIR}/cmake/SmartPeakPackageDescriptionFile.cmake)
+set(CPACK_PACKAGE_INSTALL_DIRECTORY "EvoNet-${CPACK_PACKAGE_VERSION}")
+set(CPACK_PACKAGE_DESCRIPTION_FILE ${PROJECT_SOURCE_DIR}/cmake/EvoNetPackageDescriptionFile.cmake)
 set(CPACK_RESOURCE_FILE_LICENSE ${PROJECT_SOURCE_DIR}/License.txt)
-set(CPACK_RESOURCE_FILE_WELCOME ${PROJECT_SOURCE_DIR}/cmake/SmartPeakPackageResourceWelcomeFile.txt)
-set(CPACK_RESOURCE_FILE_README ${PROJECT_SOURCE_DIR}/cmake/SmartPeakPackageResourceReadme.txt)
+set(CPACK_RESOURCE_FILE_WELCOME ${PROJECT_SOURCE_DIR}/cmake/EvoNetPackageResourceWelcomeFile.txt)
+set(CPACK_RESOURCE_FILE_README ${PROJECT_SOURCE_DIR}/cmake/EvoNetPackageResourceReadme.txt)
 
 ########################################################### Fixing dynamic dependencies
 # Done on Windows via copying external and internal dlls to the install/bin/ folder

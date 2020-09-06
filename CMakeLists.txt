@@ -1,5 +1,5 @@
 # --------------------------------------------------------------------------
-# SmartPeak
+# EvoNet
 # --------------------------------------------------------------------------
 # TODO: license
 # --------------------------------------------------------------------------
@@ -22,7 +22,7 @@ if (USE_SUPERBUILD)
   include(external/cub.cmake)
   return() # stop processing this file further
 else()
-  project ("SmartPeak_host")
+  project ("EvoNet_host")
 endif()
  
 #------------------------------------------------------------------------------
@@ -71,40 +71,40 @@ list(APPEND CMAKE_MODULE_PATH "${PROJECT_SOURCE_DIR}/cmake/modules")
 list(APPEND CMAKE_MODULE_PATH "${PROJECT_SOURCE_DIR}/cmake/Windows")
 
 #------------------------------------------------------------------------------
-# SmartPeak Version Information
+# EvoNet Version Information
 #------------------------------------------------------------------------------
-set (smartPeak_VERSION_MAJOR 1)
-set (smartPeak_VERSION_MINOR 0)
-set (smartPeak_VERSION_PATCH 0)
+set (EvoNet_VERSION_MAJOR 1)
+set (EvoNet_VERSION_MINOR 0)
+set (EvoNet_VERSION_PATCH 0)
 
 #------------------------------------------------------------------------------
 # retrieve detailed informations on the working copy (git)
 include(GetGitRevisionDescription)
-option(GIT_TRACKING "Embedding of Git version control information into the SmartPeak library (and SmartPeakInfo tool). Note that if activated, every branch-switch or commit will trigger re-generation of the build system (MakeFiles, VS Solutions etc)." ON)
+option(GIT_TRACKING "Embedding of Git version control information into the EvoNet library (and EvoNetInfo tool). Note that if activated, every branch-switch or commit will trigger re-generation of the build system (MakeFiles, VS Solutions etc)." ON)
 if (GIT_TRACKING)
   ## will configure an include file
-  git_short_info(SMARTPEAK_GIT_SHORT_REFSPEC SMARTPEAK_GIT_SHORT_SHA1 SMARTPEAK_GIT_LC_DATE)
+  git_short_info(EVONET_GIT_SHORT_REFSPEC EVONET_GIT_SHORT_SHA1 EVONET_GIT_LC_DATE)
 endif()
 
-message(STATUS "Building SmartPeak ${SMARTPEAK_PACKAGE_VERSION_MAJOR}.${SMARTPEAK_PACKAGE_VERSION_MINOR}.${SMARTPEAK_PACKAGE_VERSION_PATCH}")
+message(STATUS "Building EvoNet ${EVONET_PACKAGE_VERSION_MAJOR}.${EVONET_PACKAGE_VERSION_MINOR}.${EVONET_PACKAGE_VERSION_PATCH}")
 if(NOT GIT_TRACKING)
-  set(SMARTPEAK_GIT_SHORT_SHA1 "disabled")
-  set(SMARTPEAK_GIT_SHORT_REFSPEC "disabled")
+  set(EVONET_GIT_SHORT_SHA1 "disabled")
+  set(EVONET_GIT_SHORT_REFSPEC "disabled")
   message(STATUS "  [CMake is not tracking Git commits and branching. To enable use '-D GIT_TRACKING=ON'.]")
-elseif(SMARTPEAK_GIT_SHORT_REFSPEC EQUAL "GIT-NOTFOUND" OR ${SMARTPEAK_GIT_SHORT_REFSPEC} EQUAL "HEAD-HASH-NOTFOUND")
-  set(SMARTPEAK_GIT_SHORT_SHA1 "exported")
-  set(SMARTPEAK_GIT_SHORT_REFSPEC "exported")
+elseif(EVONET_GIT_SHORT_REFSPEC EQUAL "GIT-NOTFOUND" OR ${EVONET_GIT_SHORT_REFSPEC} EQUAL "HEAD-HASH-NOTFOUND")
+  set(EVONET_GIT_SHORT_SHA1 "exported")
+  set(EVONET_GIT_SHORT_REFSPEC "exported")
   message(STATUS "  [CMake is not tracking Git commits and branching. Git not found.]")
 else()
   # everything found, print some status information
-  message(STATUS "  - Repository revision ${SMARTPEAK_GIT_SHORT_SHA1}")
-  message(STATUS "  - Repository branch ${SMARTPEAK_GIT_SHORT_REFSPEC}")
-  message(STATUS "  - Repository last change date ${SMARTPEAK_GIT_LC_DATE}")
+  message(STATUS "  - Repository revision ${EVONET_GIT_SHORT_SHA1}")
+  message(STATUS "  - Repository branch ${EVONET_GIT_SHORT_REFSPEC}")
+  message(STATUS "  - Repository last change date ${EVONET_GIT_LC_DATE}")
   message(STATUS "  [CMake is tracking Git commits and branching. To disable use '-D GIT_TRACKING=OFF'.]")
 endif()
 
 #------------------------------------------------------------------------------
-message(STATUS "Building SmartPeak ${SMARTPEAK_PACKAGE_VERSION_MAJOR}.${SMARTPEAK_PACKAGE_VERSION_MINOR}.${SMARTPEAK_PACKAGE_VERSION_PATCH}")
+message(STATUS "Building EvoNet ${EVONET_PACKAGE_VERSION_MAJOR}.${EVONET_PACKAGE_VERSION_MINOR}.${EVONET_PACKAGE_VERSION_PATCH}")
 
 #------------------------------------------------------------------------------
 # Unsupported systems and other nuances
@@ -133,11 +133,13 @@ if (EVONET_CUDA)
     message(STATUS "Found CUDA Toolkit version ${CUDA_VERSION_MAJOR}.${CUDA_VERSION_MINOR}" )
   endif()
   enable_language(CUDA)
+  if (EVONET_CUDA_ARCHITECTURES)
+	set(CMAKE_CUDA_ARCHITECTURES ${EVONET_CUDA_ARCHITECTURES})
+  endif()
   set(CUDA_NVCC_FLAGS "${CUDA_NVCC_FLAGS} --expt-relaxed-constexpr" )
   set(CUDA_NVCC_FLAGS "${CUDA_NVCC_FLAGS} --expt-extended-lambda" )
   if(WIN32)
-    #set(CUDA_NVCC_FLAGS "${CUDA_NVCC_FLAGS} --compiler-options;/bigobj") #see: https://cmake.org/pipermail/cmake/2017-June/065615.html
-	set(CMAKE_CUDA_FLAGS "${CMAKE_CUDA_FLAGS} -Xcompiler \"/bigobj\"")
+    set(CMAKE_CUDA_FLAGS "${CMAKE_CUDA_FLAGS} -Xcompiler \"/bigobj\"")
   endif()
   add_compile_definitions(COMPILE_WITH_CUDA=true)
 endif()
@@ -147,10 +149,10 @@ endif()
 #------------------------------------------------------------------------------
 
 if (CMAKE_SIZEOF_VOID_P MATCHES "8")
-	set(SMARTPEAK_64BIT_ARCHITECTURE 1 CACHE INTERNAL "Architecture-bits")
+	set(EVONET_64BIT_ARCHITECTURE 1 CACHE INTERNAL "Architecture-bits")
 	message(STATUS "Architecture: 64 bit")
 else()
-	set(SMARTPEAK_64BIT_ARCHITECTURE 0 CACHE INTERNAL "Architecture-bits")
+	set(EVONET_64BIT_ARCHITECTURE 0 CACHE INTERNAL "Architecture-bits")
 	message(STATUS "Architecture: 32 bit")
 endif()
 
@@ -191,13 +193,13 @@ endif()
 
 #------------------------------------------------------------------------------
 # Host directory for referencing from subprojects
-set(SMARTPEAK_HOST_DIRECTORY "${PROJECT_SOURCE_DIR}")
-set(SMARTPEAK_HOST_BINARY_DIRECTORY "${PROJECT_BINARY_DIR}")
+set(EVONET_HOST_DIRECTORY "${PROJECT_SOURCE_DIR}")
+set(EVONET_HOST_BINARY_DIRECTORY "${PROJECT_BINARY_DIR}")
 
 #------------------------------------------------------------------------------
 # CMake Utitlities
 #------------------------------------------------------------------------------
-# include some SmartPeak specific macros
+# include some EvoNet specific macros
 include (${PROJECT_SOURCE_DIR}/cmake/build_system_macros.cmake)
 # .. and some to ease the installation process
 include (${PROJECT_SOURCE_DIR}/cmake/install_macros.cmake)
@@ -210,11 +212,11 @@ include (${PROJECT_SOURCE_DIR}/cmake/export_macros.cmake)
 
 #------------------------------------------------------------------------------
 # Output directories
-set(CMAKE_LIBRARY_OUTPUT_DIRECTORY "${SMARTPEAK_HOST_BINARY_DIRECTORY}/lib")
-set(CMAKE_RUNTIME_OUTPUT_DIRECTORY "${SMARTPEAK_HOST_BINARY_DIRECTORY}/bin")
-set(CMAKE_ARCHIVE_OUTPUT_DIRECTORY "${SMARTPEAK_HOST_BINARY_DIRECTORY}/lib")
-set(SMARTPEAK_BINARY_DIR "${SMARTPEAK_HOST_BINARY_DIRECTORY}/bin")
-set(SMARTPEAK_WIN32_DLL_DIRECTORY ${CMAKE_RUNTIME_OUTPUT_DIRECTORY})
+set(CMAKE_LIBRARY_OUTPUT_DIRECTORY "${EVONET_HOST_BINARY_DIRECTORY}/lib")
+set(CMAKE_RUNTIME_OUTPUT_DIRECTORY "${EVONET_HOST_BINARY_DIRECTORY}/bin")
+set(CMAKE_ARCHIVE_OUTPUT_DIRECTORY "${EVONET_HOST_BINARY_DIRECTORY}/lib")
+set(EVONET_BINARY_DIR "${EVONET_HOST_BINARY_DIRECTORY}/bin")
+set(EVONET_WIN32_DLL_DIRECTORY ${CMAKE_RUNTIME_OUTPUT_DIRECTORY})
 
 #------------------------------------------------------------------------------
 # define installation subdirectories to allow for custom installations
@@ -222,13 +224,13 @@ set(SMARTPEAK_WIN32_DLL_DIRECTORY ${CMAKE_RUNTIME_OUTPUT_DIRECTORY})
 set(INSTALL_BIN_DIR bin CACHE PATH "Installation directory for executables")
 set(INSTALL_INCLUDE_DIR include CACHE PATH "Installation directory for header files")
 set(INSTALL_DOC_DIR share/doc CACHE PATH "Installation directory for documentation")
-set(INSTALL_SHARE_DIR share/SmartPeak CACHE PATH "Installation directory for shared data")
+set(INSTALL_SHARE_DIR share/EvoNet CACHE PATH "Installation directory for shared data")
 
 if(WIN32)
   set(DEF_INSTALL_CMAKE_DIR CMake)
   set(DEF_INSTALL_LIB_DIR bin)
 else()
-  set(DEF_INSTALL_CMAKE_DIR lib/cmake/SmartPeak)
+  set(DEF_INSTALL_CMAKE_DIR lib/cmake/EvoNet)
   set(DEF_INSTALL_LIB_DIR lib)
 endif()
 set(INSTALL_CMAKE_DIR ${DEF_INSTALL_CMAKE_DIR} CACHE PATH "Installation directory for CMake files")
@@ -243,7 +245,7 @@ SET(CMAKE_INSTALL_NAME_DIR "@executable_path/../${INSTALL_LIB_DIR}")
 #------------------------------------------------------------------------------
 # lib naming when building with msvc & convenience location of build.bat
 if (MSVC)
-	## use SmartPeakd.dll in debug mode
+	## use EvoNetd.dll in debug mode
 	SET(CMAKE_DEBUG_POSTFIX d)
 	## copy build.bat to root of binary dir to enable convenient invokation (instead of typing path to source dir all the time)
 	if(NOT ("${PROJECT_SOURCE_DIR}" STREQUAL "${PROJECT_BINARY_DIR}"))
@@ -252,7 +254,7 @@ if (MSVC)
 endif()
 
 #------------------------------------------------------------------------------
-# The actual SmartPeak code (headers and source files)
+# The actual EvoNet code (headers and source files)
 #------------------------------------------------------------------------------
 add_subdirectory(src)
 
@@ -263,7 +265,7 @@ add_subdirectory(src)
 
 #------------------------------------------------------------------------------
 # Handle export of targets and install them
-smartpeak_export_targets()
+evonet_export_targets()
 install_export_targets()
 
 #------------------------------------------------------------------------------

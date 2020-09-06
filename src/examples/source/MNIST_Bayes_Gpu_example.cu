@@ -1,17 +1,17 @@
 /**TODO:  Add copyright*/
 
-#include <SmartPeak/ml/PopulationTrainerExperimentalGpu.h>
-#include <SmartPeak/ml/ModelTrainerExperimentalGpu.h>
-#include <SmartPeak/ml/ModelReplicatorExperimental.h>
-#include <SmartPeak/ml/ModelBuilder.h>
-#include <SmartPeak/ml/Model.h>
-#include <SmartPeak/io/Parameters.h>
+#include <EvoNet/ml/PopulationTrainerExperimentalGpu.h>
+#include <EvoNet/ml/ModelTrainerExperimentalGpu.h>
+#include <EvoNet/ml/ModelReplicatorExperimental.h>
+#include <EvoNet/ml/ModelBuilder.h>
+#include <EvoNet/ml/Model.h>
+#include <EvoNet/io/Parameters.h>
 
-#include <SmartPeak/simulator/MNISTSimulator.h>
+#include <EvoNet/simulator/MNISTSimulator.h>
 
 #include <unsupported/Eigen/CXX11/Tensor>
 
-using namespace SmartPeak;
+using namespace EvoNet;
 
 // Extended classes
 template<typename TensorT>
@@ -702,9 +702,9 @@ int main(int argc, char** argv)
 
   // Read in the parameters
   LoadParametersFromCsv loadParametersFromCsv(id_int, parameters_filename);
-  parameters = SmartPeak::apply([&loadParametersFromCsv](auto&& ...args) { return loadParametersFromCsv(args...); }, parameters);
+  parameters = EvoNet::apply([&loadParametersFromCsv](auto&& ...args) { return loadParametersFromCsv(args...); }, parameters);
 
   // Run the application
-  SmartPeak::apply([](auto&& ...args) { main_MNIST(args ...); }, parameters);
+  EvoNet::apply([](auto&& ...args) { main_MNIST(args ...); }, parameters);
   return 0;
 }

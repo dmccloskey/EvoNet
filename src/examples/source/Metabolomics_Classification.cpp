@@ -1,15 +1,15 @@
 /**TODO:  Add copyright*/
 
-#include <SmartPeak/ml/PopulationTrainerDefaultDevice.h>
-#include <SmartPeak/ml/ModelTrainerDefaultDevice.h>
-#include <SmartPeak/ml/ModelReplicator.h>
-#include <SmartPeak/ml/ModelBuilder.h>
-#include <SmartPeak/io/PopulationTrainerFile.h>
-#include <SmartPeak/io/ModelInterpreterFileDefaultDevice.h>
-#include <SmartPeak/simulator/MetabolomicsClassificationDataSimulator.h>
+#include <EvoNet/ml/PopulationTrainerDefaultDevice.h>
+#include <EvoNet/ml/ModelTrainerDefaultDevice.h>
+#include <EvoNet/ml/ModelReplicator.h>
+#include <EvoNet/ml/ModelBuilder.h>
+#include <EvoNet/io/PopulationTrainerFile.h>
+#include <EvoNet/io/ModelInterpreterFileDefaultDevice.h>
+#include <EvoNet/simulator/MetabolomicsClassificationDataSimulator.h>
 #include <unsupported/Eigen/CXX11/Tensor>
 
-using namespace SmartPeak;
+using namespace EvoNet;
 
 // Other extended classes
 template<typename TensorT>

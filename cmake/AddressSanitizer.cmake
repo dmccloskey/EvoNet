@@ -1,7 +1,7 @@
 # --------------------------------------------------------------------------
-#                   SmartPeak -- Open-Source Mass Spectrometry
+#                   EvoNet -- Open-Source Mass Spectrometry
 # --------------------------------------------------------------------------
-# Copyright The SmartPeak Team -- Eberhard Karls University Tuebingen,
+# Copyright The EvoNet Team -- Eberhard Karls University Tuebingen,
 # ETH Zurich, and Freie Universitaet Berlin 2002-2017.
 #
 # This software is released under a three-clause BSD license:
@@ -52,6 +52,6 @@ if ("${CMAKE_BUILD_TYPE}" STREQUAL "Debug")
     set(CMAKE_STATIC_LINKER_FLAGS "${CMAKE_STATIC_LINKER_FLAGS} -fsanitize=address")
   endif()
 else()
-  message(WARNING "AddressSanitizer is supported for SmartPeak debug mode only")
+  message(WARNING "AddressSanitizer is supported for EvoNet debug mode only")
 endif()
 

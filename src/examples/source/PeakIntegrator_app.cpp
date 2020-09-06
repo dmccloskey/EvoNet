@@ -1,13 +1,13 @@
 /**TODO:  Add copyright*/
 
-#include <SmartPeak/ml/ModelTrainerExperimentalDefaultDevice.h>
-#include <SmartPeak/ml/ModelBuilder.h>
-#include <SmartPeak/io/Parameters.h>
-#include <SmartPeak/simulator/ChromatogramSimulator.h>
+#include <EvoNet/ml/ModelTrainerExperimentalDefaultDevice.h>
+#include <EvoNet/ml/ModelBuilder.h>
+#include <EvoNet/io/Parameters.h>
+#include <EvoNet/simulator/ChromatogramSimulator.h>
 
 #include <unsupported/Eigen/CXX11/Tensor>
 
-using namespace SmartPeak;
+using namespace EvoNet;
 
 /**
 Application designed to train a network to accurately integrate and identify peaks
@@ -533,9 +533,9 @@ int main(int argc, char** argv)
 
   // Read in the parameters
   LoadParametersFromCsv loadParametersFromCsv(id_int, parameters_filename);
-  parameters = SmartPeak::apply([&loadParametersFromCsv](auto&& ...args) { return loadParametersFromCsv(args...); }, parameters);
+  parameters = EvoNet::apply([&loadParametersFromCsv](auto&& ...args) { return loadParametersFromCsv(args...); }, parameters);
 
   // Run the application
-  SmartPeak::apply([](auto&& ...args) { main_(args ...); }, parameters);
+  EvoNet::apply([](auto&& ...args) { main_(args ...); }, parameters);
   return 0;
 }

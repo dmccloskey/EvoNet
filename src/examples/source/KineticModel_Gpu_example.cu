@@ -1,18 +1,18 @@
 /**TODO:  Add copyright*/
 
-#include <SmartPeak/ml/PopulationTrainerGpu.h>
-#include <SmartPeak/ml/ModelTrainerGpu.h>
-#include <SmartPeak/ml/ModelReplicator.h>
-#include <SmartPeak/ml/ModelBuilderExperimental.h>
-#include <SmartPeak/ml/Model.h>
-#include <SmartPeak/io/PopulationTrainerFile.h>
-#include <SmartPeak/io/ModelInterpreterFileGpu.h>
-#include <SmartPeak/core/Preprocessing.h>
-#include <SmartPeak/io/Parameters.h>
+#include <EvoNet/ml/PopulationTrainerGpu.h>
+#include <EvoNet/ml/ModelTrainerGpu.h>
+#include <EvoNet/ml/ModelReplicator.h>
+#include <EvoNet/ml/ModelBuilderExperimental.h>
+#include <EvoNet/ml/Model.h>
+#include <EvoNet/io/PopulationTrainerFile.h>
+#include <EvoNet/io/ModelInterpreterFileGpu.h>
+#include <EvoNet/core/Preprocessing.h>
+#include <EvoNet/io/Parameters.h>
 
 #include <unsupported/Eigen/CXX11/Tensor>
 
-using namespace SmartPeak;
+using namespace EvoNet;
 
 template<typename TensorT>
 class DataSimulatorExt : public DataSimulator<TensorT>
@@ -696,9 +696,9 @@ int main(int argc, char** argv)
 
   // Read in the parameters
   LoadParametersFromCsv loadParametersFromCsv(id_int, parameters_filename);
-  parameters = SmartPeak::apply([&loadParametersFromCsv](auto&& ...args) { return loadParametersFromCsv(args...); }, parameters);
+  parameters = EvoNet::apply([&loadParametersFromCsv](auto&& ...args) { return loadParametersFromCsv(args...); }, parameters);
 
   // Run the application
-  SmartPeak::apply([](auto&& ...args) { main_KineticModel(args ...); }, parameters);
+  EvoNet::apply([](auto&& ...args) { main_KineticModel(args ...); }, parameters);
   return 0;
 }

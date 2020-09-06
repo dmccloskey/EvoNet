@@ -1,19 +1,19 @@
 /**TODO:  Add copyright*/
 
-#include <SmartPeak/ml/PopulationTrainerDefaultDevice.h>
-#include <SmartPeak/ml/ModelTrainerDefaultDevice.h>
-#include <SmartPeak/ml/ModelReplicator.h>
-#include <SmartPeak/ml/ModelBuilder.h> // Input only
-#include <SmartPeak/ml/ModelBuilderExperimental.h>
-#include <SmartPeak/ml/Model.h>
-#include <SmartPeak/io/PopulationTrainerFile.h>
-#include <SmartPeak/io/ModelInterpreterFileDefaultDevice.h>
+#include <EvoNet/ml/PopulationTrainerDefaultDevice.h>
+#include <EvoNet/ml/ModelTrainerDefaultDevice.h>
+#include <EvoNet/ml/ModelReplicator.h>
+#include <EvoNet/ml/ModelBuilder.h> // Input only
+#include <EvoNet/ml/ModelBuilderExperimental.h>
+#include <EvoNet/ml/Model.h>
+#include <EvoNet/io/PopulationTrainerFile.h>
+#include <EvoNet/io/ModelInterpreterFileDefaultDevice.h>
 
-#include <SmartPeak/simulator/BiochemicalReaction.h>
+#include <EvoNet/simulator/BiochemicalReaction.h>
 
 #include <unsupported/Eigen/CXX11/Tensor>
 
-using namespace SmartPeak;
+using namespace EvoNet;
 
 template<typename TensorT>
 class DataSimulatorExt : public DataSimulator<TensorT>
@@ -398,7 +398,7 @@ void main_KineticModel(const bool& make_model, const bool& train_model, const st
   else {
     // read in the trained model
     std::cout << "Reading in the model..." << std::endl;
-    const std::string data_dir = "C:/Users/domccl/GitHub/smartPeak_cpp/build_win_cuda/bin/Debug/";
+    const std::string data_dir = "C:/Users/domccl/GitHub/EvoNet_cpp/build_win_cuda/bin/Debug/";
     const std::string model_filename = data_dir + "0_RBCGlycolysis_model.binary";
     const std::string interpreter_filename = data_dir + "0_RBCGlycolysis_interpreter.binary";
     ModelFile<float> model_file;

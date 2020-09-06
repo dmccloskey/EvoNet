@@ -1,7 +1,7 @@
 # --------------------------------------------------------------------------
-#                   SmartPeak -- Open-Source Mass Spectrometry
+#                   EvoNet -- Open-Source Mass Spectrometry
 # --------------------------------------------------------------------------
-# Copyright The SmartPeak Team -- Eberhard Karls University Tuebingen,
+# Copyright The EvoNet Team -- Eberhard Karls University Tuebingen,
 # ETH Zurich, and Freie Universitaet Berlin 2002-2017.
 #
 # This software is released under a three-clause BSD license:
@@ -33,9 +33,9 @@
 # --------------------------------------------------------------------------
 
 # a collection of wrapper for install functions that allows easier usage
-# throughout the SmartPeak build system
+# throughout the EvoNet build system
 
-set(SMARTPEAK_EXPORT_SET "SmartPeakTargets")
+set(EVONET_EXPORT_SET "EvoNetTargets")
 
 #------------------------------------------------------------------------------
 # Installs the library lib_target_name and all its headers set via
@@ -44,7 +44,7 @@ set(SMARTPEAK_EXPORT_SET "SmartPeakTargets")
 # @param lib_target_name The target name of the library that should be installed
 macro(install_library lib_target_name)
     install(TARGETS ${lib_target_name}
-      EXPORT ${SMARTPEAK_EXPORT_SET}
+      EXPORT ${EVONET_EXPORT_SET}
       LIBRARY DESTINATION ${INSTALL_LIB_DIR} COMPONENT library
       ARCHIVE DESTINATION ${INSTALL_LIB_DIR} COMPONENT library
       RUNTIME DESTINATION ${INSTALL_LIB_DIR} COMPONENT library
@@ -62,17 +62,17 @@ macro(install_headers header_list component)
     get_filename_component(_target_path ${_header} PATH)
     if ("${_target_path}" MATCHES "^${PROJECT_BINARY_DIR}.*")
       # is generated bin header
-      string(REPLACE "${PROJECT_BINARY_DIR}/include/SmartPeak" "" _relative_header_path "${_target_path}")
+      string(REPLACE "${PROJECT_BINARY_DIR}/include/EvoNet" "" _relative_header_path "${_target_path}")
     else()
-      # is source header -> strip include/SmartPeak
-      string(REPLACE "include/SmartPeak" "" _relative_header_path "${_target_path}")
+      # is source header -> strip include/EvoNet
+      string(REPLACE "include/EvoNet" "" _relative_header_path "${_target_path}")
     endif()
 
     # install the header
     install(FILES ${_header}
             # note the missing slash, we need this for file directly located in
-            # include/SmartPeak (e.g., config.h)
-            DESTINATION ${INSTALL_INCLUDE_DIR}/SmartPeak${_relative_header_path}
+            # include/EvoNet (e.g., config.h)
+            DESTINATION ${INSTALL_INCLUDE_DIR}/EvoNet${_relative_header_path}
             COMPONENT ${component}_headers)
   endforeach()
 endmacro()
@@ -130,7 +130,7 @@ endmacro()
 #------------------------------------------------------------------------------
 # Installs the exported target information
 macro(install_export_targets )
-    install(EXPORT ${SMARTPEAK_EXPORT_SET}
+    install(EXPORT ${EVONET_EXPORT_SET}
             DESTINATION ${INSTALL_SHARE_DIR}/cmake
             COMPONENT share)
 endmacro()

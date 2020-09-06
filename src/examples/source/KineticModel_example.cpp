@@ -1,17 +1,17 @@
 /**TODO:  Add copyright*/
 
-#include <SmartPeak/ml/PopulationTrainerDefaultDevice.h>
-#include <SmartPeak/ml/ModelTrainerDefaultDevice.h>
-#include <SmartPeak/ml/ModelReplicator.h>
-#include <SmartPeak/ml/ModelBuilderExperimental.h>
-#include <SmartPeak/ml/Model.h>
-#include <SmartPeak/io/PopulationTrainerFile.h>
-#include <SmartPeak/io/ModelInterpreterFileDefaultDevice.h>
-#include <SmartPeak/core/Preprocessing.h>
+#include <EvoNet/ml/PopulationTrainerDefaultDevice.h>
+#include <EvoNet/ml/ModelTrainerDefaultDevice.h>
+#include <EvoNet/ml/ModelReplicator.h>
+#include <EvoNet/ml/ModelBuilderExperimental.h>
+#include <EvoNet/ml/Model.h>
+#include <EvoNet/io/PopulationTrainerFile.h>
+#include <EvoNet/io/ModelInterpreterFileDefaultDevice.h>
+#include <EvoNet/core/Preprocessing.h>
 
 #include <unsupported/Eigen/CXX11/Tensor>
 
-using namespace SmartPeak;
+using namespace EvoNet;
 
 template<typename TensorT>
 class DataSimulatorExt : public DataSimulator<TensorT>

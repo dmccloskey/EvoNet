@@ -1,7 +1,7 @@
 # --------------------------------------------------------------------------
-#                   SmartPeak -- Open-Source Mass Spectrometry
+#                   EvoNet -- Open-Source Mass Spectrometry
 # --------------------------------------------------------------------------
-# Copyright The SmartPeak Team -- Eberhard Karls University Tuebingen,
+# Copyright The EvoNet Team -- Eberhard Karls University Tuebingen,
 # ETH Zurich, and Freie Universitaet Berlin 2002-2017.
 #
 # This software is released under a three-clause BSD license:

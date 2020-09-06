@@ -3,8 +3,8 @@ cpack_add_install_type(full DISPLAY_NAME "Full")
 cpack_add_install_type(minimal DISPLAY_NAME "Minimal")
 
 cpack_add_component(share
-                DISPLAY_NAME "SmartPeak shared files"
-                DESCRIPTION "SmartPeak shared files"
+                DISPLAY_NAME "EvoNet shared files"
+                DESCRIPTION "EvoNet shared files"
                 INSTALL_TYPES recommended full minimal
                 )
 cpack_add_component(library
@@ -13,8 +13,8 @@ cpack_add_component(library
                 INSTALL_TYPES recommended full minimal
                 )
 cpack_add_component(applications
-                DISPLAY_NAME "SmartPeak binaries"
-                DESCRIPTION "SmartPeak binaries."
+                DISPLAY_NAME "EvoNet binaries"
+                DESCRIPTION "EvoNet binaries."
                 INSTALL_TYPES recommended full minimal
                 )
 cpack_add_component(doc

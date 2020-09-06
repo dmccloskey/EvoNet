@@ -1,15 +1,15 @@
 /**TODO:  Add copyright*/
 
-#include <SmartPeak/ml/PopulationTrainerGpu.h>
-#include <SmartPeak/ml/ModelTrainerGpu.h>
-#include <SmartPeak/ml/ModelReplicator.h>
-#include <SmartPeak/ml/ModelBuilder.h>
-#include <SmartPeak/io/PopulationTrainerFile.h>
-#include <SmartPeak/io/ModelInterpreterFileGpu.h>
-#include <SmartPeak/simulator/MetabolomicsReconstructionDataSimulator.h>
+#include <EvoNet/ml/PopulationTrainerGpu.h>
+#include <EvoNet/ml/ModelTrainerGpu.h>
+#include <EvoNet/ml/ModelReplicator.h>
+#include <EvoNet/ml/ModelBuilder.h>
+#include <EvoNet/io/PopulationTrainerFile.h>
+#include <EvoNet/io/ModelInterpreterFileGpu.h>
+#include <EvoNet/simulator/MetabolomicsReconstructionDataSimulator.h>
 #include <unsupported/Eigen/CXX11/Tensor>
 
-using namespace SmartPeak;
+using namespace EvoNet;
 
 // Other extended classes
 template<typename TensorT>
@@ -561,9 +561,9 @@ int main(int argc, char** argv)
 
   // Read in the parameters
   LoadParametersFromCsv loadParametersFromCsv(id_int, parameters_filename);
-  parameters = SmartPeak::apply([&loadParametersFromCsv](auto&& ...args) { return loadParametersFromCsv(args...); }, parameters);
+  parameters = EvoNet::apply([&loadParametersFromCsv](auto&& ...args) { return loadParametersFromCsv(args...); }, parameters);
 
   // Run the application
-  SmartPeak::apply([](auto&& ...args) { main_(args ...); }, parameters);
+  EvoNet::apply([](auto&& ...args) { main_(args ...); }, parameters);
   return 0;
 }
