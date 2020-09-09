@@ -360,9 +360,15 @@ void main_(const ParameterTypes& ...args) {
     std::string name(name_char);
     input_nodes.push_back(name);
   }
-  for (int i = 0; i < std::get<EvoNetParameters::ModelTrainer::NEncodingsCategorical>(parameters).get(); ++i) {
+  for (int i = 0; i < data_simulator.n_encodings_discrete_ /* std::get<EvoNetParameters::ModelTrainer::NEncodingsCategorical>(parameters).get()*/; ++i) {
     char name_char[512];
-    sprintf(name_char, "Categorical_encoding%012d-Sampler", i);
+    sprintf(name_char, "Categorical_encoding_%012d-GumbelSampler", i);
+    std::string name(name_char);
+    input_nodes.push_back(name);
+  }
+  for (int i = 0; i < data_simulator.n_encodings_discrete_ /* std::get<EvoNetParameters::ModelTrainer::NEncodingsCategorical>(parameters).get()*/; ++i) {
+    char name_char[512];
+    sprintf(name_char, "Categorical_encoding_%012d-InverseTau", i);
     std::string name(name_char);
     input_nodes.push_back(name);
   }
@@ -396,7 +402,7 @@ void main_(const ParameterTypes& ...args) {
 
   // Make the alpha nodes
   std::vector<std::string> encoding_nodes_logalpha;
-  for (int i = 0; i < std::get<EvoNetParameters::ModelTrainer::NEncodingsCategorical>(parameters).get(); ++i) {
+  for (int i = 0; i < data_simulator.n_encodings_discrete_ /* std::get<EvoNetParameters::ModelTrainer::NEncodingsCategorical>(parameters).get()*/; ++i) {
     char name_char[512];
     sprintf(name_char, "LogAlpha_%012d", i);
     std::string name(name_char);
@@ -405,7 +411,7 @@ void main_(const ParameterTypes& ...args) {
 
   // Softmax nodes
   std::vector<std::string> categorical_softmax_nodes;
-  for (int i = 0; i < std::get<EvoNetParameters::ModelTrainer::NEncodingsCategorical>(parameters).get(); ++i) {
+  for (int i = 0; i < data_simulator.n_encodings_discrete_ /* std::get<EvoNetParameters::ModelTrainer::NEncodingsCategorical>(parameters).get()*/; ++i) {
     char name_char[512];
     sprintf(name_char, "Categorical_encoding-SoftMax-Out_%012d", i);
     std::string name(name_char);
@@ -497,7 +503,7 @@ void main_(const ParameterTypes& ...args) {
   if (std::get<EvoNetParameters::Main::MakeModel>(parameters).get()) {
     std::cout << "Making the model..." << std::endl;
     model_trainer.makeVAEFullyConn(model, n_input_nodes, std::get<EvoNetParameters::ModelTrainer::NEncodingsContinuous>(parameters).get(), 
-      std::get<EvoNetParameters::ModelTrainer::NEncodingsCategorical>(parameters).get(), 
+      data_simulator.n_encodings_discrete_ /* std::get<EvoNetParameters::ModelTrainer::NEncodingsCategorical>(parameters).get()*/,
       std::get<EvoNetParameters::ModelTrainer::NHidden0>(parameters).get(), 
       std::get<EvoNetParameters::ModelTrainer::NHidden1>(parameters).get(), 
       std::get<EvoNetParameters::ModelTrainer::NHidden2>(parameters).get(), false, true);
