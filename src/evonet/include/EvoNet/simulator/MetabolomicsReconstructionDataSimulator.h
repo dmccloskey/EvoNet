@@ -39,8 +39,8 @@ namespace EvoNet
   class MetabolomicsReconstructionDataSimulator : public BiochemicalDataSimulator<TensorT>
   {
   public:
-    int n_encodings_continuous_ = -1;
-    int n_encodings_discrete_ = -1;
+    int n_encodings_continuous_ = 0;
+    int n_encodings_discrete_ = 0;
     std::vector<std::string> labels_training_;
     std::vector<std::string> labels_validation_;
     void makeTrainingDataForCache(const std::vector<std::string>& features, const Eigen::Tensor<TensorT, 2>& data_training, const std::vector<std::string>& labels_training,
@@ -91,19 +91,26 @@ namespace EvoNet
   {
     // infer the input sizes
     const int input_nodes = data_training.dimension(0);
-    assert(n_input_nodes == input_nodes + this->n_encodings_continuous_);
-    assert(n_loss_output_nodes == input_nodes + 2*this->n_encodings_continuous_);
-    assert(n_metric_output_nodes == input_nodes); // accuracy and precision
+    assert(n_input_nodes == input_nodes + this->n_encodings_continuous_ + 2*this->n_encodings_discrete_);
+    assert(n_loss_output_nodes == input_nodes + 2*this->n_encodings_continuous_ + this->n_encodings_discrete_ + this->labels_training_.size());
+    assert(n_metric_output_nodes == input_nodes + this->labels_training_.size());
     assert(data_training.dimension(0) == features.size());
     assert(data_training.dimension(1) == labels_training.size());
     assert(this->n_encodings_continuous_ > 0);
+    assert(this->n_encodings_discrete_ > 0);
 
     // Gaussian Sampler
     Eigen::Tensor<TensorT, 4> gaussian_samples = GaussianSampler<TensorT>(batch_size, memory_size, this->n_encodings_continuous_, n_epochs);
 
+    // Concrete Sampler
+    Eigen::Tensor<TensorT, 4> categorical_samples = GumbelSampler<TensorT>(batch_size, memory_size, this->n_encodings_discrete_, n_epochs);
+    TensorT inverse_tau = 3.0 / 2.0; //1.0 / 0.5; // Madison 2017 recommended 2/3 for tau
+
     // Dummy data for the KL divergence losses
-    Eigen::Tensor<TensorT, 4> KL_losses(batch_size, memory_size, this->n_encodings_continuous_, n_epochs);
-    KL_losses.setZero();
+    Eigen::Tensor<TensorT, 4> KL_losses_continuous(batch_size, memory_size, this->n_encodings_continuous_, n_epochs);
+    KL_losses_continuous.setZero();
+    Eigen::Tensor<TensorT, 4> KL_losses_discrete(batch_size, memory_size, this->n_encodings_discrete_, n_epochs);
+    KL_losses_discrete.setZero();
 
     // initialize the Tensors
     this->input_data_training_.resize(batch_size, memory_size, n_input_nodes, n_epochs);
@@ -133,10 +140,16 @@ namespace EvoNet
       //labels_training_expanded.slice(offset2, span2) = labels_2d;
     }
 
+    // make the one-hot encodings       
+    Eigen::Tensor<TensorT, 2> one_hot_vec = OneHotEncoder<std::string, TensorT>(labels_training_expanded, this->labels_training_);
+    //Eigen::Tensor<TensorT, 2> one_hot_vec_smoothed = one_hot_vec.unaryExpr(LabelSmoother<TensorT>(0.01, 0.01));
+
     // optionally shuffle the data and labels
     if (shuffle_data_and_labels) {
       MakeShuffleMatrix<TensorT> shuffleMatrix(data_training.dimension(1) * expansion_factor, true);
       shuffleMatrix(data_training_expanded, true);
+      shuffleMatrix.setShuffleMatrix(false); // re-orient for column with the same random indices
+      shuffleMatrix(one_hot_vec, false);
     }
 
     // assign the input tensors
@@ -148,6 +161,10 @@ namespace EvoNet
       Eigen::array<Eigen::Index, 4>({ batch_size, memory_size, input_nodes, n_epochs })) = data_training_expanded_4d;
     this->input_data_training_.slice(Eigen::array<Eigen::Index, 4>({ 0, 0, input_nodes, 0 }),
       Eigen::array<Eigen::Index, 4>({ batch_size, memory_size, this->n_encodings_continuous_, n_epochs })) = gaussian_samples;
+    this->input_data_training_.slice(Eigen::array<Eigen::Index, 4>({ 0, 0, input_nodes + this->n_encodings_continuous_, 0 }),
+      Eigen::array<Eigen::Index, 4>({ batch_size, memory_size, this->n_encodings_discrete_, n_epochs })) = categorical_samples;
+    this->input_data_training_.slice(Eigen::array<Eigen::Index, 4>({ 0, 0, input_nodes + this->n_encodings_continuous_ + this->n_encodings_discrete_, 0 }),
+      Eigen::array<Eigen::Index, 4>({ batch_size, memory_size, this->n_encodings_discrete_, n_epochs })) = categorical_samples.constant(inverse_tau);
 
     //// Check that values of the data and input tensors are correctly aligned
     //Eigen::Tensor<TensorT, 1> data_training_head = data_training_expanded.slice(Eigen::array<Eigen::Index, 2>({ 0, 0 }),
@@ -172,31 +189,52 @@ namespace EvoNet
     //}
 
     // assign the loss tensors
+    auto one_hot_vec_4d = one_hot_vec.slice(Eigen::array<Eigen::Index, 2>({ 0, 0 }),
+      Eigen::array<Eigen::Index, 2>({ data_training.dimension(1) * expansion_factor - over_expanded, one_hot_vec.dimension(1) })
+    ).reshape(Eigen::array<Eigen::Index, 4>({ batch_size, memory_size, n_epochs, int(labels_training_.size()) })
+    ).shuffle(Eigen::array<Eigen::Index, 4>({ 0,1,3,2 }));
     this->loss_output_data_training_.slice(Eigen::array<Eigen::Index, 4>({ 0, 0, 0, 0 }),
       Eigen::array<Eigen::Index, 4>({ batch_size, memory_size, input_nodes, n_epochs })) = data_training_expanded_4d;
     this->loss_output_data_training_.slice(Eigen::array<Eigen::Index, 4>({ 0, 0, input_nodes, 0 }),
-      Eigen::array<Eigen::Index, 4>({ batch_size, memory_size, this->n_encodings_continuous_, n_epochs })) = KL_losses;
+      Eigen::array<Eigen::Index, 4>({ batch_size, memory_size, this->n_encodings_continuous_, n_epochs })) = KL_losses_continuous;
     this->loss_output_data_training_.slice(Eigen::array<Eigen::Index, 4>({ 0, 0, input_nodes + this->n_encodings_continuous_, 0 }),
-      Eigen::array<Eigen::Index, 4>({ batch_size, memory_size, this->n_encodings_continuous_, n_epochs })) = KL_losses;
+      Eigen::array<Eigen::Index, 4>({ batch_size, memory_size, this->n_encodings_continuous_, n_epochs })) = KL_losses_continuous;
+    this->loss_output_data_training_.slice(Eigen::array<Eigen::Index, 4>({ 0, 0, input_nodes + 2 * this->n_encodings_continuous_, 0 }),
+      Eigen::array<Eigen::Index, 4>({ batch_size, memory_size, this->n_encodings_discrete_, n_epochs })) = KL_losses_discrete;
+    this->loss_output_data_training_.slice(Eigen::array<Eigen::Index, 4>({ 0, 0, input_nodes + 2 * this->n_encodings_continuous_ + this->n_encodings_discrete_, 0 }),
+      Eigen::array<Eigen::Index, 4>({ batch_size, memory_size, int(labels_training_.size()), n_epochs })) = one_hot_vec_4d;
 
     // assign the metric tensors
-    this->metric_output_data_training_ = data_training_expanded_4d;
+    this->metric_output_data_training_.slice(Eigen::array<Eigen::Index, 4>({ 0, 0, 0, 0 }),
+      Eigen::array<Eigen::Index, 4>({ batch_size, memory_size, input_nodes, n_epochs })) = data_training_expanded_4d;
+    this->metric_output_data_training_.slice(Eigen::array<Eigen::Index, 4>({ 0, 0, input_nodes, 0 }),
+      Eigen::array<Eigen::Index, 4>({ batch_size, memory_size, int(labels_training_.size()), n_epochs })) = one_hot_vec_4d;
   }
   template<typename TensorT>
   inline void MetabolomicsReconstructionDataSimulator<TensorT>::makeValidationDataForCache(const std::vector<std::string>& features, const Eigen::Tensor<TensorT, 2>& data_validation, const std::vector<std::string>& labels_validation, const int & n_epochs, const int & batch_size, const int & memory_size, const int & n_input_nodes, const int & n_loss_output_nodes, const int & n_metric_output_nodes, const bool& shuffle_data_and_labels)
   {
     // infer the input sizes
     const int input_nodes = data_validation.dimension(0);
-    assert(n_input_nodes == input_nodes + this->n_encodings_continuous_);
-    assert(n_loss_output_nodes == input_nodes + 2 * this->n_encodings_continuous_);
-    assert(n_metric_output_nodes == input_nodes);
+    assert(n_input_nodes == input_nodes + this->n_encodings_continuous_ + 2 * this->n_encodings_discrete_);
+    assert(n_loss_output_nodes == input_nodes + 2 * this->n_encodings_continuous_ + this->n_encodings_discrete_ + this->labels_validation_.size());
+    assert(n_metric_output_nodes == input_nodes + this->labels_validation_.size());
     assert(data_validation.dimension(0) == features.size());
     assert(data_validation.dimension(1) == labels_validation.size());
     assert(this->n_encodings_continuous_ > 0);
+    assert(this->n_encodings_discrete_ > 0);
+
+    // Gaussian Sampler
+    Eigen::Tensor<TensorT, 4> gaussian_samples = GaussianSampler<TensorT>(batch_size, memory_size, this->n_encodings_continuous_, n_epochs);
+
+    // Concrete Sampler
+    Eigen::Tensor<TensorT, 4> categorical_samples = GumbelSampler<TensorT>(batch_size, memory_size, this->n_encodings_discrete_, n_epochs);
+    TensorT inverse_tau = 3.0 / 2.0; //1.0 / 0.5; // Madison 2017 recommended 2/3 for tau
 
     // Dummy data for the KL divergence losses
-    Eigen::Tensor<TensorT, 4> KL_losses(batch_size, memory_size, this->n_encodings_continuous_, n_epochs);
-    KL_losses.setZero();
+    Eigen::Tensor<TensorT, 4> KL_losses_continuous(batch_size, memory_size, this->n_encodings_continuous_, n_epochs);
+    KL_losses_continuous.setZero();
+    Eigen::Tensor<TensorT, 4> KL_losses_discrete(batch_size, memory_size, this->n_encodings_discrete_, n_epochs);
+    KL_losses_discrete.setZero();
 
     // initialize the Tensors
     this->input_data_validation_.resize(batch_size, memory_size, n_input_nodes, n_epochs);
@@ -226,10 +264,16 @@ namespace EvoNet
       //labels_validation_expanded.slice(offset2, span2) = labels_2d;
     }
 
+    // make the one-hot encodings       
+    Eigen::Tensor<TensorT, 2> one_hot_vec = OneHotEncoder<std::string, TensorT>(labels_validation_expanded, this->labels_validation_);
+    //Eigen::Tensor<TensorT, 2> one_hot_vec_smoothed = one_hot_vec.unaryExpr(LabelSmoother<TensorT>(0.01, 0.01));
+
     // optionally shuffle the data and labels
     if (shuffle_data_and_labels) {
       MakeShuffleMatrix<TensorT> shuffleMatrix(data_validation.dimension(1) * expansion_factor, true);
       shuffleMatrix(data_validation_expanded, true);
+      shuffleMatrix.setShuffleMatrix(false); // re-orient for column with the same random indices
+      shuffleMatrix(one_hot_vec, false);
     }
 
     // assign the input tensors
@@ -240,14 +284,18 @@ namespace EvoNet
     this->input_data_validation_.slice(Eigen::array<Eigen::Index, 4>({ 0, 0, 0, 0 }),
       Eigen::array<Eigen::Index, 4>({ batch_size, memory_size, input_nodes, n_epochs })) = data_validation_expanded_4d;
     this->input_data_validation_.slice(Eigen::array<Eigen::Index, 4>({ 0, 0, input_nodes, 0 }),
-      Eigen::array<Eigen::Index, 4>({ batch_size, memory_size, this->n_encodings_continuous_, n_epochs })) = KL_losses;
+      Eigen::array<Eigen::Index, 4>({ batch_size, memory_size, this->n_encodings_continuous_, n_epochs })) = gaussian_samples;
+    this->input_data_validation_.slice(Eigen::array<Eigen::Index, 4>({ 0, 0, input_nodes + this->n_encodings_continuous_, 0 }),
+      Eigen::array<Eigen::Index, 4>({ batch_size, memory_size, this->n_encodings_discrete_, n_epochs })) = categorical_samples;
+    this->input_data_validation_.slice(Eigen::array<Eigen::Index, 4>({ 0, 0, input_nodes + this->n_encodings_continuous_ + this->n_encodings_discrete_, 0 }),
+      Eigen::array<Eigen::Index, 4>({ batch_size, memory_size, this->n_encodings_discrete_, n_epochs })) = categorical_samples.constant(inverse_tau);
 
     //// Check that values of the data and input tensors are correctly aligned
     //Eigen::Tensor<TensorT, 1> data_validation_head = data_validation_expanded.slice(Eigen::array<Eigen::Index, 2>({ 0, 0 }),
     //  Eigen::array<Eigen::Index, 2>({ data_validation.dimension(0), 1 })
     //).reshape(Eigen::array<Eigen::Index, 1>({ data_validation.dimension(0) }));
     //Eigen::Tensor<TensorT, 1> data_validation_tail = data_validation_expanded.slice(Eigen::array<Eigen::Index, 2>({ 0, 0 }),
-    //  Eigen::array<Eigen::Index, 2>({ data_validation.dimension(0), data_validation.dimension(1) * expansion_factor - over_expanded })
+    //  Eigen::array<Eigen::Index, 2>({ data_validation.dimension(0), data_validation.dimension(1)*expansion_factor - over_expanded })
     //).slice(Eigen::array<Eigen::Index, 2>({ 0, batch_size * memory_size * n_epochs - 1 }),
     //  Eigen::array<Eigen::Index, 2>({ data_validation.dimension(0), 1 })
     //).reshape(Eigen::array<Eigen::Index, 1>({ data_validation.dimension(0) }));
@@ -265,15 +313,26 @@ namespace EvoNet
     //}
 
     // assign the loss tensors
+    auto one_hot_vec_4d = one_hot_vec.slice(Eigen::array<Eigen::Index, 2>({ 0, 0 }),
+      Eigen::array<Eigen::Index, 2>({ data_validation.dimension(1) * expansion_factor - over_expanded, one_hot_vec.dimension(1) })
+    ).reshape(Eigen::array<Eigen::Index, 4>({ batch_size, memory_size, n_epochs, int(labels_validation_.size()) })
+    ).shuffle(Eigen::array<Eigen::Index, 4>({ 0,1,3,2 }));
     this->loss_output_data_validation_.slice(Eigen::array<Eigen::Index, 4>({ 0, 0, 0, 0 }),
       Eigen::array<Eigen::Index, 4>({ batch_size, memory_size, input_nodes, n_epochs })) = data_validation_expanded_4d;
     this->loss_output_data_validation_.slice(Eigen::array<Eigen::Index, 4>({ 0, 0, input_nodes, 0 }),
-      Eigen::array<Eigen::Index, 4>({ batch_size, memory_size, this->n_encodings_continuous_, n_epochs })) = KL_losses;
+      Eigen::array<Eigen::Index, 4>({ batch_size, memory_size, this->n_encodings_continuous_, n_epochs })) = KL_losses_continuous;
     this->loss_output_data_validation_.slice(Eigen::array<Eigen::Index, 4>({ 0, 0, input_nodes + this->n_encodings_continuous_, 0 }),
-      Eigen::array<Eigen::Index, 4>({ batch_size, memory_size, this->n_encodings_continuous_, n_epochs })) = KL_losses;
+      Eigen::array<Eigen::Index, 4>({ batch_size, memory_size, this->n_encodings_continuous_, n_epochs })) = KL_losses_continuous;
+    this->loss_output_data_validation_.slice(Eigen::array<Eigen::Index, 4>({ 0, 0, input_nodes + 2 * this->n_encodings_continuous_, 0 }),
+      Eigen::array<Eigen::Index, 4>({ batch_size, memory_size, this->n_encodings_discrete_, n_epochs })) = KL_losses_discrete;
+    this->loss_output_data_validation_.slice(Eigen::array<Eigen::Index, 4>({ 0, 0, input_nodes + 2 * this->n_encodings_continuous_ + this->n_encodings_discrete_, 0 }),
+      Eigen::array<Eigen::Index, 4>({ batch_size, memory_size, int(labels_validation_.size()), n_epochs })) = one_hot_vec_4d;
 
     // assign the metric tensors
-    this->metric_output_data_validation_ = data_validation_expanded_4d;
+    this->metric_output_data_validation_.slice(Eigen::array<Eigen::Index, 4>({ 0, 0, 0, 0 }),
+      Eigen::array<Eigen::Index, 4>({ batch_size, memory_size, input_nodes, n_epochs })) = data_validation_expanded_4d;
+    this->metric_output_data_validation_.slice(Eigen::array<Eigen::Index, 4>({ 0, 0, input_nodes, 0 }),
+      Eigen::array<Eigen::Index, 4>({ batch_size, memory_size, int(labels_validation_.size()), n_epochs })) = one_hot_vec_4d;
   }
   template<typename TensorT>
   inline void MetabolomicsReconstructionDataSimulator<TensorT>::readAndProcessMetabolomicsTrainingAndValidationData(int & n_reaction_ids_training, int & n_labels_training, int & n_component_group_names_training, int & n_reaction_ids_validation, int & n_labels_validation, int & n_component_group_names_validation, const std::string & biochem_rxns_filename, const std::string & metabo_data_filename_train, const std::string & meta_data_filename_train, const std::string & metabo_data_filename_test, const std::string & meta_data_filename_test, 
@@ -309,6 +368,7 @@ namespace EvoNet
     n_labels_training = reaction_model.labels_.size();
     n_component_group_names_training = reaction_model.component_group_names_.size();
     this->labels_training_ = reaction_model.labels_;
+    this->n_encodings_discrete_ = reaction_model.labels_.size();
 
     // Make the training data
     std::vector<std::string> metabo_labels_training;
@@ -410,9 +470,9 @@ namespace EvoNet
 
       // Make the training data cache
       this->makeTrainingDataForCache(metabo_features_training, metabo_data_training, metabo_labels_training, n_epochs, batch_size, memory_size,
-        n_component_group_names_training + this->n_encodings_continuous_, n_component_group_names_training + 2 * this->n_encodings_continuous_, n_component_group_names_training, shuffle_data_and_labels);
+        n_component_group_names_training + this->n_encodings_continuous_ + 2*this->n_encodings_discrete_, n_component_group_names_training + 2 * this->n_encodings_continuous_ + this->n_encodings_discrete_ + this->labels_training_.size(), n_component_group_names_training + this->labels_training_.size(), shuffle_data_and_labels);
       this->makeValidationDataForCache(metabo_features_validation, metabo_data_validation, metabo_labels_validation, n_epochs, batch_size, memory_size,
-        n_component_group_names_training + this->n_encodings_continuous_, n_component_group_names_training + 2 * this->n_encodings_continuous_, n_component_group_names_training, shuffle_data_and_labels);
+        n_component_group_names_training + this->n_encodings_continuous_ + 2*this->n_encodings_discrete_, n_component_group_names_training + 2 * this->n_encodings_continuous_ + this->n_encodings_discrete_ + this->labels_validation_.size(), n_component_group_names_training + this->labels_validation_.size(), shuffle_data_and_labels);
     }
     else if (use_MARs) {
       // Apply offline transformations
@@ -431,9 +491,9 @@ namespace EvoNet
 
       // Make the training data cache
       this->makeTrainingDataForCache(metabo_features_training, metabo_data_training, metabo_labels_training, n_epochs, batch_size, memory_size,
-        n_reaction_ids_validation + this->n_encodings_continuous_, n_reaction_ids_validation + 2 * this->n_encodings_continuous_, n_reaction_ids_validation, shuffle_data_and_labels);
+        n_reaction_ids_validation + this->n_encodings_continuous_ + 2 * this->n_encodings_discrete_, n_reaction_ids_validation + 2 * this->n_encodings_continuous_ + this->n_encodings_discrete_ + this->labels_training_.size(), n_reaction_ids_validation + this->labels_training_.size(), shuffle_data_and_labels);
       this->makeValidationDataForCache(metabo_features_validation, metabo_data_validation, metabo_labels_validation, n_epochs, batch_size, memory_size,
-        n_reaction_ids_validation + this->n_encodings_continuous_, n_reaction_ids_validation + 2*this->n_encodings_continuous_, n_reaction_ids_validation, shuffle_data_and_labels);
+        n_reaction_ids_validation + this->n_encodings_continuous_ + 2 * this->n_encodings_discrete_, n_reaction_ids_validation + 2*this->n_encodings_continuous_ + this->n_encodings_discrete_ + this->labels_validation_.size(), n_reaction_ids_validation + this->labels_validation_.size(), shuffle_data_and_labels);
     }
 
     // Checks for the training and validation data

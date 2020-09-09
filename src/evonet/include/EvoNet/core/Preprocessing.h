@@ -460,6 +460,31 @@ namespace EvoNet
 	};
 
 	/*
+	@brief 1D Gumbel sampler
+
+	where the Gumbel(0; 1) distribution can be sampled using inverse transform sampling by drawing u 
+		Uniform(0; 1) and computing g = -log(-log(u)).
+
+  @param[in] batch_size
+  @param[in] memory_size
+  @param[in] encoding_size
+  @param[in] n_epochs
+
+	@returns a Tensor of Gumbel samples
+	*/
+	template<typename Ta>
+	Eigen::Tensor<Ta, 4> GumbelSampler(const int& batch_size, const int& memory_size, const int& encoding_size, const int& n_epochs) {
+		std::random_device rd{};
+		std::mt19937 gen{ rd() };
+		std::uniform_real_distribution<> dist{ 0, 1 };
+		Eigen::Tensor<Ta, 4> gumbel_dist(batch_size, memory_size, encoding_size, n_epochs);
+		gumbel_dist = -(-(gumbel_dist.unaryExpr([&gen, &dist](const Ta& elem) {
+			return Ta(dist(gen));
+		})).log()).log();
+		return gumbel_dist;
+	};
+
+	/*
 	@brief 1D Gaussian sampler
 
 	@param[in] n_dims the number of gaussian labels

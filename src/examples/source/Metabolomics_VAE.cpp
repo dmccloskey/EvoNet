@@ -86,15 +86,14 @@ public:
       integration_op, integration_error_op, integration_weight_grad_op,
       std::make_shared<RandWeightInitOp<TensorT>>(RandWeightInitOp<TensorT>((TensorT)(node_names.size() + n_encodings) / 2, 1)),
       solver_op, 0.0f, 0.0f, false, specify_layers);
-    node_names_logalpha = model_builder.addFullyConnected(model, "LogAlpha", "LogAlpha", node_names, n_categorical,
+    node_names_logalpha = model_builder.addFullyConnected(model, "LogAlphaEnc", "LogAlphaEnc", node_names, n_categorical,
       std::make_shared<LinearOp<TensorT>>(LinearOp<TensorT>()),
       std::make_shared<LinearGradOp<TensorT>>(LinearGradOp<TensorT>()),
       integration_op, integration_error_op, integration_weight_grad_op,
       std::make_shared<RandWeightInitOp<TensorT>>(RandWeightInitOp<TensorT>((TensorT)(node_names.size() + n_categorical) / 2, 1)),
-      solver_op, 0.0f, 0.0f, false, specify_layer);
+      solver_op, 0.0f, 0.0f, false, specify_layers);
 
     // Add the Encoding layers
-    node_names = model_builder.addGaussianEncoding(model, "Encoding", "Encoding", node_names_mu, node_names_logvar, specify_layers);
     std::vector<std::string> node_names_Gencoder = model_builder.addGaussianEncoding(model, "Gaussian_encoding", "Gaussian_encoding", node_names_mu, node_names_logvar, true);
     std::vector<std::string> node_names_Cencoder = model_builder.addCategoricalEncoding(model, "Categorical_encoding", "Categorical_encoding", node_names_logalpha, true);
 
@@ -106,7 +105,7 @@ public:
         solver_op, 0.0f, 0.0f, add_bias, specify_layers);
       model_builder.addFullyConnected(model, "DE2", node_names_Cencoder, node_names,
         std::make_shared<RandWeightInitOp<TensorT>>(RandWeightInitOp<TensorT>((TensorT)(node_names_Cencoder.size() + n_hidden_2) / 2, 1)),
-        solver_op, 0.0f, specify_layer);
+        solver_op, 0.0f, specify_layers);
     }
     if (n_hidden_1 > 0 && n_hidden_2 > 0) {
       node_names = model_builder.addFullyConnected(model, "DE1", "DE1", node_names, n_hidden_1,
@@ -121,13 +120,22 @@ public:
         solver_op, 0.0f, 0.0f, add_bias, specify_layers);
       model_builder.addFullyConnected(model, "DE1", node_names_Cencoder, node_names,
         std::make_shared<RandWeightInitOp<TensorT>>(RandWeightInitOp<TensorT>((TensorT)(node_names_Cencoder.size() + n_hidden_1) / 2, 1)),
-        solver_op, 0.0f, specify_layer);
+        solver_op, 0.0f, specify_layers);
     }
-    if (n_hidden_0 > 0) {
+    if (n_hidden_0 > 0 && n_hidden_1 > 0) {
       node_names = model_builder.addFullyConnected(model, "DE0", "DE0", node_names, n_hidden_0,
         activation, activation_grad, integration_op, integration_error_op, integration_weight_grad_op,
         std::make_shared<RandWeightInitOp<TensorT>>(RandWeightInitOp<TensorT>((TensorT)(node_names.size() + n_hidden_0) / 2, 1)),
         solver_op, 0.0f, 0.0f, add_bias, specify_layers);
+    }
+    else if (n_hidden_0 > 0) {
+      node_names = model_builder.addFullyConnected(model, "DE1", "DE1", node_names_Gencoder, n_hidden_0,
+        activation, activation_grad, integration_op, integration_error_op, integration_weight_grad_op,
+        std::make_shared<RandWeightInitOp<TensorT>>(RandWeightInitOp<TensorT>((TensorT)(node_names_Gencoder.size() + n_hidden_0) / 2, 1)),
+        solver_op, 0.0f, 0.0f, add_bias, specify_layers);
+      model_builder.addFullyConnected(model, "DE1", node_names_Cencoder, node_names,
+        std::make_shared<RandWeightInitOp<TensorT>>(RandWeightInitOp<TensorT>((TensorT)(node_names_Cencoder.size() + n_hidden_0) / 2, 1)),
+        solver_op, 0.0f, specify_layers);
     }
     node_names = model_builder.addFullyConnected(model, "DE-Output", "DE-Output", node_names, n_inputs,
       std::make_shared<LinearOp<TensorT>>(LinearOp<TensorT>()),
@@ -149,6 +157,12 @@ public:
       integration_op, integration_error_op, integration_weight_grad_op,
       std::make_shared<ConstWeightInitOp<TensorT>>(ConstWeightInitOp<TensorT>(1)),
       std::make_shared<DummySolverOp<TensorT>>(DummySolverOp<TensorT>()), 0.0f, 0.0f, false, true);
+    node_names_logalpha = model_builder.addSinglyConnected(model, "LogAlpha", "LogAlpha", node_names_logalpha, node_names_logalpha.size(),
+      std::make_shared<LinearOp<TensorT>>(LinearOp<TensorT>()),
+      std::make_shared<LinearGradOp<TensorT>>(LinearGradOp<TensorT>()),
+      integration_op, integration_error_op, integration_weight_grad_op,
+      std::make_shared<ConstWeightInitOp<TensorT>>(ConstWeightInitOp<TensorT>(1)),
+      std::make_shared<DummySolverOp<TensorT>>(DummySolverOp<TensorT>()), 0.0f, 0.0f, false, true);
     node_names = model_builder.addSinglyConnected(model, "Output", "Output", node_names, n_inputs,
       std::make_shared<LinearOp<TensorT>>(LinearOp<TensorT>()),
       std::make_shared<LinearGradOp<TensorT>>(LinearGradOp<TensorT>()),
@@ -160,6 +174,10 @@ public:
     for (const std::string& node_name : node_names_mu)
       model.nodes_.at(node_name)->setType(NodeType::output);
     for (const std::string& node_name : node_names_logvar)
+      model.nodes_.at(node_name)->setType(NodeType::output);
+    for (const std::string& node_name : node_names_logalpha)
+      model.nodes_.at(node_name)->setType(NodeType::output);
+    for (const std::string& node_name : node_names_Cencoder)
       model.nodes_.at(node_name)->setType(NodeType::output);
     for (const std::string& node_name : node_names)
       model.nodes_.at(node_name)->setType(NodeType::output);
