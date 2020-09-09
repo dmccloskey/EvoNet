@@ -254,6 +254,7 @@ void main_classification(const std::string& data_dir, const std::string& biochem
   loss_function_helper1.output_nodes_ = output_nodes;
   loss_function_helper1.loss_functions_ = { std::make_shared<CrossEntropyWithLogitsLossOp<float>>(CrossEntropyWithLogitsLossOp<float>(1e-8, 1)) };
   loss_function_helper1.loss_function_grads_ = { std::make_shared<CrossEntropyWithLogitsLossGradOp<float>>(CrossEntropyWithLogitsLossGradOp<float>(1e-8, 1)) };
+  loss_function_helpers.push_back(loss_function_helper1);
   model_trainer.setLossFunctionHelpers(loss_function_helpers);
 
   std::vector<MetricFunctionHelper<float>> metric_function_helpers;
