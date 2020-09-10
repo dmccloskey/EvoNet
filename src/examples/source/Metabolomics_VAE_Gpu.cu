@@ -284,6 +284,7 @@ void main_(const ParameterTypes& ...args) {
   std::cout << "Making the training and validation data..." << std::endl;
   MetabolomicsReconstructionDataSimulator<float> data_simulator;
   data_simulator.n_encodings_continuous_ = std::get<EvoNetParameters::ModelTrainer::NEncodingsContinuous>(parameters).get();
+  data_simulator.n_encodings_discrete_ = std::get<EvoNetParameters::ModelTrainer::NEncodingsCategorical>(parameters).get();
   int n_reaction_ids_training, n_labels_training, n_component_group_names_training;
   int n_reaction_ids_validation, n_labels_validation, n_component_group_names_validation;
   data_simulator.readAndProcessMetabolomicsTrainingAndValidationData(
@@ -313,6 +314,12 @@ void main_(const ParameterTypes& ...args) {
     std::get<EvoNetParameters::ModelTrainer::NEpochsTraining>(parameters).get(),
     std::get<EvoNetParameters::ModelTrainer::BatchSize>(parameters).get(),
     std::get<EvoNetParameters::ModelTrainer::MemorySize>(parameters).get());
+
+  // Update the number of discrete encodings if necessary
+  if (n_labels_training != std::get<EvoNetParameters::ModelTrainer::NEncodingsCategorical>(parameters).get()) {
+    std::cout << "Over-riding the number of labels " << n_labels_training << " does not match the number of discrete encodings " << std::get<EvoNetParameters::ModelTrainer::NEncodingsCategorical>(parameters).get() << std::endl;
+    std::cout << "Ensure that classification losses and metric weights are set to 0. " << std::endl;
+  }
 
   // define the model input/output nodes
   int n_input_nodes;
@@ -360,13 +367,13 @@ void main_(const ParameterTypes& ...args) {
     std::string name(name_char);
     input_nodes.push_back(name);
   }
-  for (int i = 0; i < data_simulator.n_encodings_discrete_ /* std::get<EvoNetParameters::ModelTrainer::NEncodingsCategorical>(parameters).get()*/; ++i) {
+  for (int i = 0; i < std::get<EvoNetParameters::ModelTrainer::NEncodingsCategorical>(parameters).get(); ++i) {
     char name_char[512];
     sprintf(name_char, "Categorical_encoding_%012d-GumbelSampler", i);
     std::string name(name_char);
     input_nodes.push_back(name);
   }
-  for (int i = 0; i < data_simulator.n_encodings_discrete_ /* std::get<EvoNetParameters::ModelTrainer::NEncodingsCategorical>(parameters).get()*/; ++i) {
+  for (int i = 0; i < std::get<EvoNetParameters::ModelTrainer::NEncodingsCategorical>(parameters).get(); ++i) {
     char name_char[512];
     sprintf(name_char, "Categorical_encoding_%012d-InverseTau", i);
     std::string name(name_char);
@@ -402,7 +409,7 @@ void main_(const ParameterTypes& ...args) {
 
   // Make the alpha nodes
   std::vector<std::string> encoding_nodes_logalpha;
-  for (int i = 0; i < data_simulator.n_encodings_discrete_ /* std::get<EvoNetParameters::ModelTrainer::NEncodingsCategorical>(parameters).get()*/; ++i) {
+  for (int i = 0; i < std::get<EvoNetParameters::ModelTrainer::NEncodingsCategorical>(parameters).get(); ++i) {
     char name_char[512];
     sprintf(name_char, "LogAlpha_%012d", i);
     std::string name(name_char);
@@ -411,7 +418,7 @@ void main_(const ParameterTypes& ...args) {
 
   // Softmax nodes
   std::vector<std::string> categorical_softmax_nodes;
-  for (int i = 0; i < data_simulator.n_encodings_discrete_ /* std::get<EvoNetParameters::ModelTrainer::NEncodingsCategorical>(parameters).get()*/; ++i) {
+  for (int i = 0; i < std::get<EvoNetParameters::ModelTrainer::NEncodingsCategorical>(parameters).get(); ++i) {
     char name_char[512];
     sprintf(name_char, "Categorical_encoding-SoftMax-Out_%012d", i);
     std::string name(name_char);
@@ -468,10 +475,12 @@ void main_(const ParameterTypes& ...args) {
   loss_function_helper4.loss_functions_ = { std::make_shared<KLDivergenceCatLossOp<float>>(KLDivergenceCatLossOp<float>(1e-6, 0.0, 0.0)) };
   loss_function_helper4.loss_function_grads_ = { std::make_shared<KLDivergenceCatLossGradOp<float>>(KLDivergenceCatLossGradOp<float>(1e-6, 0.0, 0.0)) };
   loss_function_helpers.push_back(loss_function_helper4);
-  loss_function_helper5.output_nodes_ = categorical_softmax_nodes;
-  loss_function_helper5.loss_functions_ = { std::make_shared<CrossEntropyWithLogitsLossOp<float>>(CrossEntropyWithLogitsLossOp<float>(1e-8, 1)) };
-  loss_function_helper5.loss_function_grads_ = { std::make_shared<CrossEntropyWithLogitsLossGradOp<float>>(CrossEntropyWithLogitsLossGradOp<float>(1e-8, 1)) };
-  loss_function_helpers.push_back(loss_function_helper5);
+  if (std::get<EvoNetParameters::ModelTrainer::LossFncWeight0>(parameters).get() > 0) {
+    loss_function_helper5.output_nodes_ = categorical_softmax_nodes;
+    loss_function_helper5.loss_functions_ = { std::make_shared<CrossEntropyWithLogitsLossOp<float>>(CrossEntropyWithLogitsLossOp<float>(1e-8, std::get<EvoNetParameters::ModelTrainer::LossFncWeight0>(parameters).get())) };
+    loss_function_helper5.loss_function_grads_ = { std::make_shared<CrossEntropyWithLogitsLossGradOp<float>>(CrossEntropyWithLogitsLossGradOp<float>(1e-8, std::get<EvoNetParameters::ModelTrainer::LossFncWeight0>(parameters).get())) };
+    loss_function_helpers.push_back(loss_function_helper5);
+  }
   model_trainer.setLossFunctionHelpers(loss_function_helpers);
   model_trainer.KL_divergence_warmup_ = std::get<EvoNetParameters::ModelTrainer::KLDivergenceWarmup>(parameters).get();
 
@@ -493,17 +502,20 @@ void main_(const ParameterTypes& ...args) {
     "LogarithmicDist-Mean", "LogarithmicDist-Var",
     "PercentDifference-Mean", "PercentDifference-Var" };
   metric_function_helpers.push_back(metric_function_helper1);
-  metric_function_helper2.output_nodes_ = categorical_softmax_nodes;
-  metric_function_helper2.metric_functions_ = { std::make_shared<AccuracyMCMicroOp<float>>(AccuracyMCMicroOp<float>()), std::make_shared<PrecisionMCMicroOp<float>>(PrecisionMCMicroOp<float>()) };
-  metric_function_helper2.metric_names_ = { "AccuracyMCMicro", "PrecisionMCMicro" };
-  metric_function_helpers.push_back(metric_function_helper2);
+  if (std::get<EvoNetParameters::ModelTrainer::LossFncWeight0>(parameters).get() > 0) {
+    metric_function_helper2.output_nodes_ = categorical_softmax_nodes;
+    metric_function_helper2.metric_functions_ = { std::make_shared<AccuracyMCMicroOp<float>>(AccuracyMCMicroOp<float>()), std::make_shared<PrecisionMCMicroOp<float>>(PrecisionMCMicroOp<float>()) };
+    metric_function_helper2.metric_names_ = { "AccuracyMCMicro", "PrecisionMCMicro" };
+    metric_function_helpers.push_back(metric_function_helper2);
+  }
   model_trainer.setMetricFunctionHelpers(metric_function_helpers);
 
   Model<float> model;
   if (std::get<EvoNetParameters::Main::MakeModel>(parameters).get()) {
     std::cout << "Making the model..." << std::endl;
-    model_trainer.makeVAEFullyConn(model, n_input_nodes, std::get<EvoNetParameters::ModelTrainer::NEncodingsContinuous>(parameters).get(),
-      data_simulator.n_encodings_discrete_ /* std::get<EvoNetParameters::ModelTrainer::NEncodingsCategorical>(parameters).get()*/,
+    model_trainer.makeVAEFullyConn(model, n_input_nodes, 
+      std::get<EvoNetParameters::ModelTrainer::NEncodingsContinuous>(parameters).get(),
+      std::get<EvoNetParameters::ModelTrainer::NEncodingsCategorical>(parameters).get(),
       std::get<EvoNetParameters::ModelTrainer::NHidden0>(parameters).get(),
       std::get<EvoNetParameters::ModelTrainer::NHidden1>(parameters).get(),
       std::get<EvoNetParameters::ModelTrainer::NHidden2>(parameters).get(), false, true);

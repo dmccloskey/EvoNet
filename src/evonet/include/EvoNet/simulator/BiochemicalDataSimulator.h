@@ -210,9 +210,12 @@ namespace EvoNet
       this->n_epochs_training_ = 0;
 
     // Copy over the training data
-    input_data = this->input_data_training_.chip(this->n_epochs_training_, 3);
-    loss_output_data = this->loss_output_data_training_.chip(this->n_epochs_training_, 3);
-    metric_output_data = this->metric_output_data_training_.chip(this->n_epochs_training_, 3);
+    input_data = this->input_data_training_.chip(this->n_epochs_training_, 3).slice(Eigen::array<Eigen::Index, 3>({ 0, 0, 0 }),
+      Eigen::array<Eigen::Index, 3>({ input_data.dimension(0), input_data.dimension(1), input_data.dimension(2) }));
+    loss_output_data = this->loss_output_data_training_.chip(this->n_epochs_training_, 3).slice(Eigen::array<Eigen::Index, 3>({ 0, 0, 0 }),
+      Eigen::array<Eigen::Index, 3>({ loss_output_data.dimension(0), loss_output_data.dimension(1), loss_output_data.dimension(2) }));
+    metric_output_data = this->metric_output_data_training_.chip(this->n_epochs_training_, 3).slice(Eigen::array<Eigen::Index, 3>({ 0, 0, 0 }),
+      Eigen::array<Eigen::Index, 3>({ metric_output_data.dimension(0), metric_output_data.dimension(1), metric_output_data.dimension(2) }));
     //time_steps = this->time_steps_training_.chip(this->n_epochs_training_, 2);
 
     // Increment the iterator
@@ -225,9 +228,12 @@ namespace EvoNet
       this->n_epochs_validation_ = 0;
 
     // Copy over the validation data
-    input_data = this->input_data_validation_.chip(this->n_epochs_validation_, 3);
-    loss_output_data = this->loss_output_data_validation_.chip(this->n_epochs_validation_, 3);
-    metric_output_data = this->metric_output_data_validation_.chip(this->n_epochs_validation_, 3);
+    input_data = this->input_data_validation_.chip(this->n_epochs_validation_, 3).slice(Eigen::array<Eigen::Index, 3>({ 0, 0, 0 }),
+      Eigen::array<Eigen::Index, 3>({ input_data.dimension(0), input_data.dimension(1), input_data.dimension(2) }));
+    loss_output_data = this->loss_output_data_validation_.chip(this->n_epochs_validation_, 3).slice(Eigen::array<Eigen::Index, 3>({ 0, 0, 0 }),
+      Eigen::array<Eigen::Index, 3>({ loss_output_data.dimension(0), loss_output_data.dimension(1), loss_output_data.dimension(2) }));
+    metric_output_data = this->metric_output_data_validation_.chip(this->n_epochs_validation_, 3).slice(Eigen::array<Eigen::Index, 3>({ 0, 0, 0 }),
+      Eigen::array<Eigen::Index, 3>({ metric_output_data.dimension(0), metric_output_data.dimension(1), metric_output_data.dimension(2) }));
     //time_steps = this->time_steps_validation_.chip(this->n_epochs_validation_, 2);
 
     // Increment the iterator

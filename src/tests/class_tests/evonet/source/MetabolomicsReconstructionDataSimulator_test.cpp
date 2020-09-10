@@ -47,6 +47,7 @@ BOOST_AUTO_TEST_CASE(readAndProcessMetabolomicsTrainingAndValidationData)
   // define the data simulator
   MetabolomicsReconstructionDataSimulator<float> metabolomics_data;
   metabolomics_data.n_encodings_continuous_ = 8;
+  metabolomics_data.n_encodings_discrete_ = 1;
   int n_reaction_ids_training, n_labels_training, n_component_group_names_training;
   int n_reaction_ids_validation, n_labels_validation, n_component_group_names_validation;
 

@@ -368,7 +368,6 @@ namespace EvoNet
     n_labels_training = reaction_model.labels_.size();
     n_component_group_names_training = reaction_model.component_group_names_.size();
     this->labels_training_ = reaction_model.labels_;
-    this->n_encodings_discrete_ = reaction_model.labels_.size();
 
     // Make the training data
     std::vector<std::string> metabo_labels_training;
