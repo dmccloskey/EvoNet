@@ -113,7 +113,7 @@ public:
         std::make_shared<RandWeightInitOp<TensorT>>(RandWeightInitOp<TensorT>((TensorT)(node_names.size() + n_hidden_1) / 2, 1)),
         solver_op, 0.0f, 0.0f, add_bias, specify_layers);
     }
-    else if (n_hidden_1 > 0){
+    else if (n_hidden_1 > 0) {
       node_names = model_builder.addFullyConnected(model, "DE1", "DE1", node_names_Gencoder, n_hidden_2,
         activation, activation_grad, integration_op, integration_error_op, integration_weight_grad_op,
         std::make_shared<RandWeightInitOp<TensorT>>(RandWeightInitOp<TensorT>((TensorT)(node_names_Gencoder.size() + n_hidden_1) / 2, 1)),
@@ -277,13 +277,14 @@ void main_(const ParameterTypes& ...args) {
 
   // prior to using shuffle when making the data caches
   const int n_labels = 7; // IndustrialStrains0103
-  const int n_reps_per_sample = std::get<EvoNetParameters::ModelTrainer::BatchSize>(parameters).get() 
+  const int n_reps_per_sample = std::get<EvoNetParameters::ModelTrainer::BatchSize>(parameters).get()
     * std::get<EvoNetParameters::ModelTrainer::NEpochsTraining>(parameters).get() / n_labels;
 
   // define the data simulator
   std::cout << "Making the training and validation data..." << std::endl;
   MetabolomicsReconstructionDataSimulator<float> data_simulator;
   data_simulator.n_encodings_continuous_ = std::get<EvoNetParameters::ModelTrainer::NEncodingsContinuous>(parameters).get();
+  data_simulator.n_encodings_discrete_ = std::get<EvoNetParameters::ModelTrainer::NEncodingsCategorical>(parameters).get();
   int n_reaction_ids_training, n_labels_training, n_component_group_names_training;
   int n_reaction_ids_validation, n_labels_validation, n_component_group_names_validation;
   data_simulator.readAndProcessMetabolomicsTrainingAndValidationData(
@@ -313,6 +314,12 @@ void main_(const ParameterTypes& ...args) {
     std::get<EvoNetParameters::ModelTrainer::NEpochsTraining>(parameters).get(),
     std::get<EvoNetParameters::ModelTrainer::BatchSize>(parameters).get(),
     std::get<EvoNetParameters::ModelTrainer::MemorySize>(parameters).get());
+
+  // Update the number of discrete encodings if necessary
+  if (n_labels_training != std::get<EvoNetParameters::ModelTrainer::NEncodingsCategorical>(parameters).get()) {
+    std::cout << "The number of labels " << n_labels_training << " does not match the number of discrete encodings " << std::get<EvoNetParameters::ModelTrainer::NEncodingsCategorical>(parameters).get() << std::endl;
+    std::cout << "Ensure that classification losses and metric weights are set to 0. " << std::endl;
+  }
 
   // define the model input/output nodes
   int n_input_nodes;
@@ -360,13 +367,13 @@ void main_(const ParameterTypes& ...args) {
     std::string name(name_char);
     input_nodes.push_back(name);
   }
-  for (int i = 0; i < data_simulator.n_encodings_discrete_ /* std::get<EvoNetParameters::ModelTrainer::NEncodingsCategorical>(parameters).get()*/; ++i) {
+  for (int i = 0; i < std::get<EvoNetParameters::ModelTrainer::NEncodingsCategorical>(parameters).get(); ++i) {
     char name_char[512];
     sprintf(name_char, "Categorical_encoding_%012d-GumbelSampler", i);
     std::string name(name_char);
     input_nodes.push_back(name);
   }
-  for (int i = 0; i < data_simulator.n_encodings_discrete_ /* std::get<EvoNetParameters::ModelTrainer::NEncodingsCategorical>(parameters).get()*/; ++i) {
+  for (int i = 0; i < std::get<EvoNetParameters::ModelTrainer::NEncodingsCategorical>(parameters).get(); ++i) {
     char name_char[512];
     sprintf(name_char, "Categorical_encoding_%012d-InverseTau", i);
     std::string name(name_char);
@@ -402,7 +409,7 @@ void main_(const ParameterTypes& ...args) {
 
   // Make the alpha nodes
   std::vector<std::string> encoding_nodes_logalpha;
-  for (int i = 0; i < data_simulator.n_encodings_discrete_ /* std::get<EvoNetParameters::ModelTrainer::NEncodingsCategorical>(parameters).get()*/; ++i) {
+  for (int i = 0; i < std::get<EvoNetParameters::ModelTrainer::NEncodingsCategorical>(parameters).get(); ++i) {
     char name_char[512];
     sprintf(name_char, "LogAlpha_%012d", i);
     std::string name(name_char);
@@ -411,7 +418,7 @@ void main_(const ParameterTypes& ...args) {
 
   // Softmax nodes
   std::vector<std::string> categorical_softmax_nodes;
-  for (int i = 0; i < data_simulator.n_encodings_discrete_ /* std::get<EvoNetParameters::ModelTrainer::NEncodingsCategorical>(parameters).get()*/; ++i) {
+  for (int i = 0; i < std::get<EvoNetParameters::ModelTrainer::NEncodingsCategorical>(parameters).get(); ++i) {
     char name_char[512];
     sprintf(name_char, "Categorical_encoding-SoftMax-Out_%012d", i);
     std::string name(name_char);
@@ -468,10 +475,12 @@ void main_(const ParameterTypes& ...args) {
   loss_function_helper4.loss_functions_ = { std::make_shared<KLDivergenceCatLossOp<float>>(KLDivergenceCatLossOp<float>(1e-6, 0.0, 0.0)) };
   loss_function_helper4.loss_function_grads_ = { std::make_shared<KLDivergenceCatLossGradOp<float>>(KLDivergenceCatLossGradOp<float>(1e-6, 0.0, 0.0)) };
   loss_function_helpers.push_back(loss_function_helper4);
-  loss_function_helper5.output_nodes_ = categorical_softmax_nodes;
-  loss_function_helper5.loss_functions_ = { std::make_shared<CrossEntropyWithLogitsLossOp<float>>(CrossEntropyWithLogitsLossOp<float>(1e-8, 1)) };
-  loss_function_helper5.loss_function_grads_ = { std::make_shared<CrossEntropyWithLogitsLossGradOp<float>>(CrossEntropyWithLogitsLossGradOp<float>(1e-8, 1)) };
-  loss_function_helpers.push_back(loss_function_helper5);
+  if (std::get<EvoNetParameters::ModelTrainer::LossFncWeight0>(parameters).get() > 0) {
+    loss_function_helper5.output_nodes_ = categorical_softmax_nodes;
+    loss_function_helper5.loss_functions_ = { std::make_shared<CrossEntropyWithLogitsLossOp<float>>(CrossEntropyWithLogitsLossOp<float>(1e-8, std::get<EvoNetParameters::ModelTrainer::LossFncWeight0>(parameters).get())) };
+    loss_function_helper5.loss_function_grads_ = { std::make_shared<CrossEntropyWithLogitsLossGradOp<float>>(CrossEntropyWithLogitsLossGradOp<float>(1e-8, std::get<EvoNetParameters::ModelTrainer::LossFncWeight0>(parameters).get())) };
+    loss_function_helpers.push_back(loss_function_helper5);
+  }
   model_trainer.setLossFunctionHelpers(loss_function_helpers);
   model_trainer.KL_divergence_warmup_ = std::get<EvoNetParameters::ModelTrainer::KLDivergenceWarmup>(parameters).get();
 
@@ -493,19 +502,22 @@ void main_(const ParameterTypes& ...args) {
     "LogarithmicDist-Mean", "LogarithmicDist-Var",
     "PercentDifference-Mean", "PercentDifference-Var" };
   metric_function_helpers.push_back(metric_function_helper1);
-  metric_function_helper2.output_nodes_ = categorical_softmax_nodes;
-  metric_function_helper2.metric_functions_ = { std::make_shared<AccuracyMCMicroOp<float>>(AccuracyMCMicroOp<float>()), std::make_shared<PrecisionMCMicroOp<float>>(PrecisionMCMicroOp<float>()) };
-  metric_function_helper2.metric_names_ = { "AccuracyMCMicro", "PrecisionMCMicro" };
-  metric_function_helpers.push_back(metric_function_helper2);
+  if (std::get<EvoNetParameters::ModelTrainer::LossFncWeight0>(parameters).get() > 0) {
+    metric_function_helper2.output_nodes_ = categorical_softmax_nodes;
+    metric_function_helper2.metric_functions_ = { std::make_shared<AccuracyMCMicroOp<float>>(AccuracyMCMicroOp<float>()), std::make_shared<PrecisionMCMicroOp<float>>(PrecisionMCMicroOp<float>()) };
+    metric_function_helper2.metric_names_ = { "AccuracyMCMicro", "PrecisionMCMicro" };
+    metric_function_helpers.push_back(metric_function_helper2);
+  }
   model_trainer.setMetricFunctionHelpers(metric_function_helpers);
 
   Model<float> model;
   if (std::get<EvoNetParameters::Main::MakeModel>(parameters).get()) {
     std::cout << "Making the model..." << std::endl;
-    model_trainer.makeVAEFullyConn(model, n_input_nodes, std::get<EvoNetParameters::ModelTrainer::NEncodingsContinuous>(parameters).get(), 
-      data_simulator.n_encodings_discrete_ /* std::get<EvoNetParameters::ModelTrainer::NEncodingsCategorical>(parameters).get()*/,
-      std::get<EvoNetParameters::ModelTrainer::NHidden0>(parameters).get(), 
-      std::get<EvoNetParameters::ModelTrainer::NHidden1>(parameters).get(), 
+    model_trainer.makeVAEFullyConn(model, n_input_nodes,
+      std::get<EvoNetParameters::ModelTrainer::NEncodingsContinuous>(parameters).get(),
+      std::get<EvoNetParameters::ModelTrainer::NEncodingsCategorical>(parameters).get(),
+      std::get<EvoNetParameters::ModelTrainer::NHidden0>(parameters).get(),
+      std::get<EvoNetParameters::ModelTrainer::NHidden1>(parameters).get(),
       std::get<EvoNetParameters::ModelTrainer::NHidden2>(parameters).get(), false, true);
   }
   else {
@@ -648,12 +660,12 @@ int main(int argc, char** argv)
   EvoNetParameters::ModelReplicator::SetModificationRateByPrevError set_modification_rate_by_prev_error("set_modification_rate_by_prev_error", false);
   auto parameters = std::make_tuple(id, data_dir, output_dir,
     device_id, model_name, make_model, load_model_csv, load_model_binary, train_model, evolve_model, evaluate_model, evaluate_models,
-    model_type, simulation_type, biochemical_rxns_filename, metabo_data_train_filename, metabo_data_test_filename, meta_data_train_filename, meta_data_test_filename, use_concentrations, use_MARs, sample_values, iter_values, fill_sampling, fill_mean, fill_zero, apply_fold_change, fold_change_ref, fold_change_log_base, offline_linear_scale_input, offline_log_transform_input, offline_standardize_input, online_linear_scale_input, online_log_transform_input, online_standardize_input, 
-    population_name, n_generations, n_interpreters, prune_model_num, remove_isolated_nodes, check_complete_model_input_to_output, population_size, n_top, n_random, n_replicates_per_model, reset_model_copy_weights, reset_model_template_weights, population_logging, set_population_size_fixed, set_population_size_doubling, set_training_steps_by_model_size,
-    batch_size, memory_size, n_epochs_training, n_epochs_validation, n_epochs_evaluation, n_tbtt_steps, n_tett_steps, verbosity, logging_training, logging_validation, logging_evaluation, find_cycles, fast_interpreter, preserve_ooo, interpret_model, reset_model, n_hidden_0, n_hidden_1, n_hidden_2, reset_interpreter, loss_function, KL_divergence_warmup, n_encodings_continuous, n_encodings_categorical,
-    n_node_down_additions_lb, n_node_right_additions_lb, n_node_down_copies_lb, n_node_right_copies_lb, n_link_additons_lb, n_link_copies_lb, n_node_deletions_lb, n_link_deletions_lb, n_node_activation_changes_lb, n_node_integration_changes_lb, n_module_additions_lb, n_module_copies_lb, n_module_deletions_lb, n_node_down_additions_ub, n_node_right_additions_ub, n_node_down_copies_ub, n_node_right_copies_ub, n_link_additons_ub, n_link_copies_ub, n_node_deletions_ub, n_link_deletions_ub, n_node_activation_changes_ub, n_node_integration_changes_ub, n_module_additions_ub, n_module_copies_ub, n_module_deletions_ub, set_modification_rate_fixed, set_modification_rate_by_prev_error);
+    model_type, simulation_type, biochemical_rxns_filename, metabo_data_train_filename, metabo_data_test_filename, meta_data_train_filename, meta_data_test_filename, use_concentrations, use_MARs, sample_values, iter_values, fill_sampling, fill_mean, fill_zero, apply_fold_change, fold_change_ref, fold_change_log_base, offline_linear_scale_input, offline_log_transform_input, offline_standardize_input, online_linear_scale_input, online_log_transform_input, online_standardize_input,
+    population_name, n_generations, n_interpreters, /*prune_model_num, remove_isolated_nodes, check_complete_model_input_to_output, population_size, n_top, n_random, n_replicates_per_model, reset_model_copy_weights, reset_model_template_weights, population_logging, set_population_size_fixed, set_population_size_doubling, set_training_steps_by_model_size,*/
+    batch_size, memory_size, n_epochs_training, n_epochs_validation, n_epochs_evaluation, n_tbtt_steps, n_tett_steps, verbosity, logging_training, logging_validation, logging_evaluation, find_cycles, fast_interpreter, preserve_ooo, interpret_model, reset_model, n_hidden_0, n_hidden_1, n_hidden_2, loss_fnc_weight_0, loss_fnc_weight_1, loss_fnc_weight_2, reset_interpreter, loss_function, KL_divergence_warmup, n_encodings_continuous, n_encodings_categorical/*,
+    n_node_down_additions_lb, n_node_right_additions_lb, n_node_down_copies_lb, n_node_right_copies_lb, n_link_additons_lb, n_link_copies_lb, n_node_deletions_lb, n_link_deletions_lb, n_node_activation_changes_lb, n_node_integration_changes_lb, n_module_additions_lb, n_module_copies_lb, n_module_deletions_lb, n_node_down_additions_ub, n_node_right_additions_ub, n_node_down_copies_ub, n_node_right_copies_ub, n_link_additons_ub, n_link_copies_ub, n_node_deletions_ub, n_link_deletions_ub, n_node_activation_changes_ub, n_node_integration_changes_ub, n_module_additions_ub, n_module_copies_ub, n_module_deletions_ub, set_modification_rate_fixed, set_modification_rate_by_prev_error*/);
 
-  // Read in the parameters
+    // Read in the parameters
   LoadParametersFromCsv loadParametersFromCsv(id_int, parameters_filename);
   parameters = EvoNet::apply([&loadParametersFromCsv](auto&& ...args) { return loadParametersFromCsv(args...); }, parameters);
 
