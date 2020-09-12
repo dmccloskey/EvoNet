@@ -19,7 +19,6 @@ if (USE_SUPERBUILD)
   #include(external/boost.cmake)
   include(external/eigen.cmake)
   include(external/cereal.cmake)
-  include(external/cub.cmake)
   return() # stop processing this file further
 else()
   project ("EvoNet_host")
