@@ -233,11 +233,13 @@ public:
     model_logger.setLogTrainValMetricEpoch(true);
     model_logger.setLogExpectedEpoch(false);
     model_logger.setLogNodeInputsEpoch(false);
+    model_logger.setLogNodeOutputsEpoch(false);
 
     // initialize all logs
     if (n_epochs == 0) {
       model_logger.setLogExpectedEpoch(true);
       model_logger.setLogNodeInputsEpoch(true);
+      model_logger.setLogNodeOutputsEpoch(true);
       model_logger.initLogs(model);
     }
 
@@ -245,6 +247,7 @@ public:
     if (n_epochs % 1000 == 0) { // FIXME
       model_logger.setLogExpectedEpoch(true);
       model_logger.setLogNodeInputsEpoch(true);
+      model_logger.setLogNodeOutputsEpoch(true);
       model_interpreter.getModelResults(model, true, false, false, true);
     }
 
@@ -432,7 +435,7 @@ void main_(const ParameterTypes& ...args) {
   // define the model trainer
   ModelTrainerExt<float> model_trainer;
   setModelTrainerParameters(model_trainer, args...);
-  model_trainer.setNEpochsTraining(std::get<EvoNetParameters::ModelTrainer::NEpochsTraining>(parameters).get() * 5); // iterate through the cache 5x
+  model_trainer.setNEpochsTraining(std::get<EvoNetParameters::ModelTrainer::NEpochsTraining>(parameters).get() * 5 + 1); // iterate through the cache 5x
 
   std::shared_ptr<LossFunctionOp<float>> loss_function_op;
   std::shared_ptr<LossFunctionGradOp<float>> loss_function_grad_op;
