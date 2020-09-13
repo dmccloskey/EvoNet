@@ -203,9 +203,9 @@ public:
       interpreter_data.storeModelInterpreterBinary(model.getName() + "_" + std::to_string(n_epochs) + "_interpreter.binary", model_interpreter);
 
       // Increase the KL divergence beta and capacity
-      TensorT beta = 1;
-      TensorT capacity_c = 0;
-      TensorT capacity_d = 0;
+      TensorT beta = 30;
+      TensorT capacity_c = 5;
+      TensorT capacity_d = 5;
       if (this->KL_divergence_warmup_) {
         TensorT scale_factor1 = (n_epochs - 100 > 0) ? n_epochs - 100 : 1;
         beta = 30 / 2.5e4 * scale_factor1;
@@ -435,7 +435,7 @@ void main_(const ParameterTypes& ...args) {
   // define the model trainer
   ModelTrainerExt<float> model_trainer;
   setModelTrainerParameters(model_trainer, args...);
-  model_trainer.setNEpochsTraining(std::get<EvoNetParameters::ModelTrainer::NEpochsTraining>(parameters).get() * 5 + 1); // iterate through the cache 5x
+  model_trainer.setNEpochsTraining(std::get<EvoNetParameters::ModelTrainer::NEpochsTraining>(parameters).get() * 10 + 1); // iterate through the cache 5x
 
   std::shared_ptr<LossFunctionOp<float>> loss_function_op;
   std::shared_ptr<LossFunctionGradOp<float>> loss_function_grad_op;
