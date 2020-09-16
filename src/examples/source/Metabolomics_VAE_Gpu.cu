@@ -203,18 +203,18 @@ public:
       interpreter_data.storeModelInterpreterBinary(model.getName() + "_" + std::to_string(n_epochs) + "_interpreter.binary", model_interpreter);
 
       // Increase the KL divergence beta and capacity
-      TensorT beta = 30;
-      TensorT capacity_c = 5;
-      TensorT capacity_d = 5;
+      TensorT beta = this->beta_;
+      TensorT capacity_c = this->capacity_c_;
+      TensorT capacity_d = this->capacity_d_;
       if (this->KL_divergence_warmup_) {
         TensorT scale_factor1 = (n_epochs - 100 > 0) ? n_epochs - 100 : 1;
-        beta = 30 / 2.5e4 * scale_factor1;
-        if (beta > 30) beta = 30;
+        beta /= 2.5e4 * scale_factor1;
+        if (beta > this->beta_) beta = 30;
         TensorT scale_factor2 = (n_epochs - 1.0e4 > 0) ? n_epochs - 1.0e4 : 1;
-        capacity_c = 5 / 1.5e4 * scale_factor2;
-        if (capacity_c > 5) capacity_c = 5;
-        capacity_d = 5 / 1.5e4 * scale_factor2;
-        if (capacity_d > 5) capacity_d = 5;
+        capacity_c /= 1.5e4 * scale_factor2;
+        if (capacity_c > this->capacity_c_) capacity_c = 5;
+        capacity_d /= 1.5e4 * scale_factor2;
+        if (capacity_d > this->capacity_d_) capacity_d = 5;
       }
       this->getLossFunctionHelpers().at(1).loss_functions_.at(0) = std::make_shared<KLDivergenceMuLossOp<float>>(KLDivergenceMuLossOp<float>(1e-6, beta, capacity_c));
       this->getLossFunctionHelpers().at(2).loss_functions_.at(0) = std::make_shared<KLDivergenceLogVarLossOp<float>>(KLDivergenceLogVarLossOp<float>(1e-6, beta, capacity_c));
@@ -267,6 +267,9 @@ public:
     model_logger.writeLogs(model, n_epochs, log_train_headers, log_test_headers, log_train_values, log_test_values, output_nodes, expected_values, {}, output_nodes, {}, input_nodes, {});
   }
   bool KL_divergence_warmup_ = true;
+  TensorT beta_ = 30;
+  TensorT capacity_c_ = 5;
+  TensorT capacity_d_ = 5;
 };
 
 template<class ...ParameterTypes>
@@ -435,7 +438,11 @@ void main_(const ParameterTypes& ...args) {
   // define the model trainer
   ModelTrainerExt<float> model_trainer;
   setModelTrainerParameters(model_trainer, args...);
-  model_trainer.setNEpochsTraining(std::get<EvoNetParameters::ModelTrainer::NEpochsTraining>(parameters).get() * 10 + 1); // iterate through the cache 5x
+  model_trainer.setNEpochsTraining(std::get<EvoNetParameters::ModelTrainer::NEpochsTraining>(parameters).get() * 10 + 1); // iterate through the cache 10x
+  model_trainer.KL_divergence_warmup_ = std::get<EvoNetParameters::ModelTrainer::KLDivergenceWarmup>(parameters).get();
+  model_trainer.beta_ = std::get<EvoNetParameters::ModelTrainer::Beta>(parameters).get();
+  model_trainer.capacity_c_ = std::get<EvoNetParameters::ModelTrainer::CapacityC>(parameters).get();
+  model_trainer.capacity_d_ = std::get<EvoNetParameters::ModelTrainer::CapacityD>(parameters).get();
 
   std::shared_ptr<LossFunctionOp<float>> loss_function_op;
   std::shared_ptr<LossFunctionGradOp<float>> loss_function_grad_op;
@@ -485,7 +492,6 @@ void main_(const ParameterTypes& ...args) {
     loss_function_helpers.push_back(loss_function_helper5);
   }
   model_trainer.setLossFunctionHelpers(loss_function_helpers);
-  model_trainer.KL_divergence_warmup_ = std::get<EvoNetParameters::ModelTrainer::KLDivergenceWarmup>(parameters).get();
 
   std::vector<MetricFunctionHelper<float>> metric_function_helpers;
   MetricFunctionHelper<float> metric_function_helper1, metric_function_helper2;
@@ -633,6 +639,9 @@ int main(int argc, char** argv)
   EvoNetParameters::ModelTrainer::KLDivergenceWarmup KL_divergence_warmup("KL_divergence_warmup", true);
   EvoNetParameters::ModelTrainer::NEncodingsContinuous n_encodings_continuous("n_encodings_continuous", 8);
   EvoNetParameters::ModelTrainer::NEncodingsCategorical n_encodings_categorical("n_encodings_categorical", 8);
+  EvoNetParameters::ModelTrainer::Beta beta("beta", 30);
+  EvoNetParameters::ModelTrainer::CapacityC capacity_c("capacity_c", 5);
+  EvoNetParameters::ModelTrainer::CapacityD capacity_d("capacity_d", 5);
   EvoNetParameters::ModelReplicator::NNodeDownAdditionsLB n_node_down_additions_lb("n_node_down_additions_lb", 0);
   EvoNetParameters::ModelReplicator::NNodeRightAdditionsLB n_node_right_additions_lb("n_node_right_additions_lb", 0);
   EvoNetParameters::ModelReplicator::NNodeDownCopiesLB n_node_down_copies_lb("n_node_down_copies_lb", 0);
@@ -665,7 +674,7 @@ int main(int argc, char** argv)
     device_id, model_name, make_model, load_model_csv, load_model_binary, train_model, evolve_model, evaluate_model, evaluate_models,
     model_type, simulation_type, biochemical_rxns_filename, metabo_data_train_filename, metabo_data_test_filename, meta_data_train_filename, meta_data_test_filename, use_concentrations, use_MARs, sample_values, iter_values, fill_sampling, fill_mean, fill_zero, apply_fold_change, fold_change_ref, fold_change_log_base, offline_linear_scale_input, offline_log_transform_input, offline_standardize_input, online_linear_scale_input, online_log_transform_input, online_standardize_input,
     population_name, n_generations, n_interpreters, /*prune_model_num, remove_isolated_nodes, check_complete_model_input_to_output, population_size, n_top, n_random, n_replicates_per_model, reset_model_copy_weights, reset_model_template_weights, population_logging, set_population_size_fixed, set_population_size_doubling, set_training_steps_by_model_size,*/
-    batch_size, memory_size, n_epochs_training, n_epochs_validation, n_epochs_evaluation, n_tbtt_steps, n_tett_steps, verbosity, logging_training, logging_validation, logging_evaluation, find_cycles, fast_interpreter, preserve_ooo, interpret_model, reset_model, n_hidden_0, n_hidden_1, n_hidden_2, loss_fnc_weight_0, loss_fnc_weight_1, loss_fnc_weight_2, reset_interpreter, loss_function, KL_divergence_warmup, n_encodings_continuous, n_encodings_categorical/*,
+    batch_size, memory_size, n_epochs_training, n_epochs_validation, n_epochs_evaluation, n_tbtt_steps, n_tett_steps, verbosity, logging_training, logging_validation, logging_evaluation, find_cycles, fast_interpreter, preserve_ooo, interpret_model, reset_model, n_hidden_0, n_hidden_1, n_hidden_2, loss_fnc_weight_0, loss_fnc_weight_1, loss_fnc_weight_2, reset_interpreter, loss_function, KL_divergence_warmup, n_encodings_continuous, n_encodings_categorical, beta, capacity_c, capacity_d/*,
     n_node_down_additions_lb, n_node_right_additions_lb, n_node_down_copies_lb, n_node_right_copies_lb, n_link_additons_lb, n_link_copies_lb, n_node_deletions_lb, n_link_deletions_lb, n_node_activation_changes_lb, n_node_integration_changes_lb, n_module_additions_lb, n_module_copies_lb, n_module_deletions_lb, n_node_down_additions_ub, n_node_right_additions_ub, n_node_down_copies_ub, n_node_right_copies_ub, n_link_additons_ub, n_link_copies_ub, n_node_deletions_ub, n_link_deletions_ub, n_node_activation_changes_ub, n_node_integration_changes_ub, n_module_additions_ub, n_module_copies_ub, n_module_deletions_ub, set_modification_rate_fixed, set_modification_rate_by_prev_error*/);
     
   // Read in the parameters
