@@ -447,24 +447,24 @@ void main_(const ParameterTypes& ...args) {
   std::shared_ptr<LossFunctionOp<float>> loss_function_op;
   std::shared_ptr<LossFunctionGradOp<float>> loss_function_grad_op;
   if (std::get<EvoNetParameters::ModelTrainer::LossFunction>(parameters).get() == std::string("MSE")) {
-    loss_function_op = std::make_shared<MSELossOp<float>>(MSELossOp<float>(1e-6, 1.0));
-    loss_function_grad_op = std::make_shared<MSELossGradOp<float>>(MSELossGradOp<float>(1e-6, 1.0));
+    loss_function_op = std::make_shared<MSELossOp<float>>(MSELossOp<float>(1e-6, std::get<EvoNetParameters::ModelTrainer::LossFncWeight1>(parameters).get()));
+    loss_function_grad_op = std::make_shared<MSELossGradOp<float>>(MSELossGradOp<float>(1e-6, std::get<EvoNetParameters::ModelTrainer::LossFncWeight1>(parameters).get()));
   }
   else if (std::get<EvoNetParameters::ModelTrainer::LossFunction>(parameters).get() == std::string("MAE")) {
-    loss_function_op = std::make_shared<MAELossOp<float>>(MAELossOp<float>(1e-6, 1.0));
-    loss_function_grad_op = std::make_shared<MAELossGradOp<float>>(MAELossGradOp<float>(1e-6, 1.0));
+    loss_function_op = std::make_shared<MAELossOp<float>>(MAELossOp<float>(1e-6, std::get<EvoNetParameters::ModelTrainer::LossFncWeight1>(parameters).get()));
+    loss_function_grad_op = std::make_shared<MAELossGradOp<float>>(MAELossGradOp<float>(1e-6, std::get<EvoNetParameters::ModelTrainer::LossFncWeight1>(parameters).get()));
   }
   else if (std::get<EvoNetParameters::ModelTrainer::LossFunction>(parameters).get() == std::string("MLE")) {
-    loss_function_op = std::make_shared<MLELossOp<float>>(MLELossOp<float>(1e-6, 1.0));
-    loss_function_grad_op = std::make_shared<MLELossGradOp<float>>(MLELossGradOp<float>(1e-6, 1.0));
+    loss_function_op = std::make_shared<MLELossOp<float>>(MLELossOp<float>(1e-6, std::get<EvoNetParameters::ModelTrainer::LossFncWeight1>(parameters).get()));
+    loss_function_grad_op = std::make_shared<MLELossGradOp<float>>(MLELossGradOp<float>(1e-6, std::get<EvoNetParameters::ModelTrainer::LossFncWeight1>(parameters).get()));
   }
   else if (std::get<EvoNetParameters::ModelTrainer::LossFunction>(parameters).get() == std::string("MAPE")) {
-    loss_function_op = std::make_shared<MAPELossOp<float>>(MAPELossOp<float>(1e-6, 1.0));
-    loss_function_grad_op = std::make_shared<MAPELossGradOp<float>>(MAPELossGradOp<float>(1e-6, 1.0));
+    loss_function_op = std::make_shared<MAPELossOp<float>>(MAPELossOp<float>(1e-6, std::get<EvoNetParameters::ModelTrainer::LossFncWeight1>(parameters).get()));
+    loss_function_grad_op = std::make_shared<MAPELossGradOp<float>>(MAPELossGradOp<float>(1e-6, std::get<EvoNetParameters::ModelTrainer::LossFncWeight1>(parameters).get()));
   }
   else if (std::get<EvoNetParameters::ModelTrainer::LossFunction>(parameters).get() == std::string("BCEWithLogits")) {
-    loss_function_op = std::make_shared<BCEWithLogitsLossOp<float>>(BCEWithLogitsLossOp<float>(1e-6, 1.0));
-    loss_function_grad_op = std::make_shared<BCEWithLogitsLossGradOp<float>>(BCEWithLogitsLossGradOp<float>(1e-6, 1.0));
+    loss_function_op = std::make_shared<BCEWithLogitsLossOp<float>>(BCEWithLogitsLossOp<float>(1e-6, std::get<EvoNetParameters::ModelTrainer::LossFncWeight1>(parameters).get()));
+    loss_function_grad_op = std::make_shared<BCEWithLogitsLossGradOp<float>>(BCEWithLogitsLossGradOp<float>(1e-6, std::get<EvoNetParameters::ModelTrainer::LossFncWeight1>(parameters).get()));
   }
 
   std::vector<LossFunctionHelper<float>> loss_function_helpers;
@@ -631,8 +631,8 @@ int main(int argc, char** argv)
   EvoNetParameters::ModelTrainer::NHidden0 n_hidden_0("n_hidden_0", 16);
   EvoNetParameters::ModelTrainer::NHidden1 n_hidden_1("n_hidden_1", 0);
   EvoNetParameters::ModelTrainer::NHidden2 n_hidden_2("n_hidden_2", 0);
-  EvoNetParameters::ModelTrainer::LossFncWeight0 loss_fnc_weight_0("loss_fnc_weight_0", 1);
-  EvoNetParameters::ModelTrainer::LossFncWeight1 loss_fnc_weight_1("loss_fnc_weight_1", 0);
+  EvoNetParameters::ModelTrainer::LossFncWeight0 loss_fnc_weight_0("loss_fnc_weight_0", 1); // Classification loss
+  EvoNetParameters::ModelTrainer::LossFncWeight1 loss_fnc_weight_1("loss_fnc_weight_1", 1); // Reconstruction loss
   EvoNetParameters::ModelTrainer::LossFncWeight2 loss_fnc_weight_2("loss_fnc_weight_2", 0);
   EvoNetParameters::ModelTrainer::ResetInterpreter reset_interpreter("reset_interpreter", true);
   EvoNetParameters::ModelTrainer::LossFunction loss_function("loss_function", "MSE");
