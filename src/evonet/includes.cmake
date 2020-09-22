@@ -11,6 +11,7 @@ set(EvoNet_sources_h  CACHE INTERNAL "This variable should hold all EvoNet sourc
 include(include/EvoNet/core/sources.cmake)
 include(include/EvoNet/graph/sources.cmake)
 include(include/EvoNet/ml/sources.cmake)
+include(include/EvoNet/models/sources.cmake)
 include(include/EvoNet/simulator/sources.cmake)
 include(include/EvoNet/io/sources.cmake)
 

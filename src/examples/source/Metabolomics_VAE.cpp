@@ -1,270 +1,14 @@
 /**TODO:  Add copyright*/
 
 #include <EvoNet/ml/PopulationTrainerDefaultDevice.h>
-#include <EvoNet/ml/ModelTrainerDefaultDevice.h>
 #include <EvoNet/ml/ModelReplicator.h>
 #include <EvoNet/ml/ModelBuilder.h>
 #include <EvoNet/io/PopulationTrainerFile.h>
-#include <EvoNet/io/ModelInterpreterFileDefaultDevice.h>
 #include <EvoNet/simulator/MetabolomicsReconstructionDataSimulator.h>
+#include <EvoNet/models/CVAEFullyConnDefaultDevice.h>
 #include <unsupported/Eigen/CXX11/Tensor>
 
 using namespace EvoNet;
-
-// Other extended classes
-template<typename TensorT>
-class ModelTrainerExt : public ModelTrainerDefaultDevice<TensorT>
-{
-public:
-  /*
-  @brief Variational autoencoder that encodes the labels using a concrete distribution
-    and style using a gaussian distribution
-
-  References:
-    arXiv:1804.00104
-    https://github.com/Schlumberger/joint-vae
-
-  @param[in, out] model The network model
-  @param[in] n_pixels The number of input/output pixels
-  @param[in] n_categorical The length of the categorical layer
-  @param[in] n_encodings The length of the encodings layer
-  @param[in] n_hidden The length of the hidden layers
-  @param[in] specify_layers Whether to give the `ModelInterpreter` "hints" as to the correct network structure during graph to tensor compilation
-  */
-  void makeVAEFullyConn(Model<TensorT>& model,
-    const int& n_inputs = 784, const int& n_encodings = 64, const int& n_categorical = 10, const int& n_hidden_0 = 512, const int& n_hidden_1 = 256, const int& n_hidden_2 = 64,
-    const bool& add_bias = true, const bool& specify_layers = false) {
-    model.setId(0);
-    model.setName("VAE");
-
-    ModelBuilder<TensorT> model_builder;
-
-    // Add the inputs
-    std::vector<std::string> node_names = model_builder.addInputNodes(model, "Input", "Input", n_inputs, specify_layers);
-
-    // Define the activation based on `add_norm`
-    auto activation = std::make_shared<LeakyReLUOp<TensorT>>(LeakyReLUOp<TensorT>());
-    auto activation_grad = std::make_shared<LeakyReLUGradOp<TensorT>>(LeakyReLUGradOp<TensorT>());
-
-    // Define the node integration
-    auto integration_op = std::make_shared<SumOp<TensorT>>(SumOp<TensorT>());
-    auto integration_error_op = std::make_shared<SumErrorOp<TensorT>>(SumErrorOp<TensorT>());
-    auto integration_weight_grad_op = std::make_shared<SumWeightGradOp<TensorT>>(SumWeightGradOp<TensorT>());
-
-    // Define the solver
-    auto solver_op = std::make_shared<AdamOp<TensorT>>(AdamOp<TensorT>(1e-5, 0.9, 0.999, 1e-8, 10));
-
-    // Add the Endocer FC layers
-    std::vector<std::string> node_names_mu, node_names_logvar, node_names_logalpha;
-    if (n_hidden_0 > 0) {
-      node_names = model_builder.addFullyConnected(model, "EN0", "EN0", node_names, n_hidden_0,
-        activation, activation_grad, integration_op, integration_error_op, integration_weight_grad_op,
-        std::make_shared<RandWeightInitOp<TensorT>>(RandWeightInitOp<TensorT>((TensorT)(node_names.size() + n_hidden_0) / 2, 1)),
-        solver_op, 0.0f, 0.0f, add_bias, specify_layers);
-    }
-    if (n_hidden_1 > 0) {
-      node_names = model_builder.addFullyConnected(model, "EN1", "EN1", node_names, n_hidden_1,
-        activation, activation_grad, integration_op, integration_error_op, integration_weight_grad_op,
-        std::make_shared<RandWeightInitOp<TensorT>>(RandWeightInitOp<TensorT>((TensorT)(node_names.size() + n_hidden_1) / 2, 1)),
-        solver_op, 0.0f, 0.0f, add_bias, specify_layers);
-    }
-    if (n_hidden_2 > 0) {
-      node_names = model_builder.addFullyConnected(model, "EN2", "EN2", node_names, n_hidden_2,
-        activation, activation_grad, integration_op, integration_error_op, integration_weight_grad_op,
-        std::make_shared<RandWeightInitOp<TensorT>>(RandWeightInitOp<TensorT>((TensorT)(node_names.size() + n_hidden_2) / 2, 1)),
-        solver_op, 0.0f, 0.0f, add_bias, specify_layers);
-    }
-    node_names_mu = model_builder.addFullyConnected(model, "MuEnc", "MuEnc", node_names, n_encodings,
-      std::make_shared<LinearOp<TensorT>>(LinearOp<TensorT>()),
-      std::make_shared<LinearGradOp<TensorT>>(LinearGradOp<TensorT>()),
-      integration_op, integration_error_op, integration_weight_grad_op,
-      std::make_shared<RandWeightInitOp<TensorT>>(RandWeightInitOp<TensorT>((TensorT)(node_names.size() + n_encodings) / 2, 1)),
-      solver_op, 0.0f, 0.0f, false, specify_layers);
-    node_names_logvar = model_builder.addFullyConnected(model, "LogVarEnc", "LogVarEnc", node_names, n_encodings,
-      std::make_shared<LinearOp<TensorT>>(LinearOp<TensorT>()),
-      std::make_shared<LinearGradOp<TensorT>>(LinearGradOp<TensorT>()),
-      integration_op, integration_error_op, integration_weight_grad_op,
-      std::make_shared<RandWeightInitOp<TensorT>>(RandWeightInitOp<TensorT>((TensorT)(node_names.size() + n_encodings) / 2, 1)),
-      solver_op, 0.0f, 0.0f, false, specify_layers);
-    node_names_logalpha = model_builder.addFullyConnected(model, "LogAlphaEnc", "LogAlphaEnc", node_names, n_categorical,
-      std::make_shared<LinearOp<TensorT>>(LinearOp<TensorT>()),
-      std::make_shared<LinearGradOp<TensorT>>(LinearGradOp<TensorT>()),
-      integration_op, integration_error_op, integration_weight_grad_op,
-      std::make_shared<RandWeightInitOp<TensorT>>(RandWeightInitOp<TensorT>((TensorT)(node_names.size() + n_categorical) / 2, 1)),
-      solver_op, 0.0f, 0.0f, false, specify_layers);
-
-    // Add the Encoding layers
-    std::vector<std::string> node_names_Gencoder = model_builder.addGaussianEncoding(model, "Gaussian_encoding", "Gaussian_encoding", node_names_mu, node_names_logvar, true);
-    std::vector<std::string> node_names_Cencoder = model_builder.addCategoricalEncoding(model, "Categorical_encoding", "Categorical_encoding", node_names_logalpha, true);
-
-    // Add the Decoder FC layers
-    if (n_hidden_2 > 0) {
-      node_names = model_builder.addFullyConnected(model, "DE2", "DE2", node_names_Gencoder, n_hidden_2,
-        activation, activation_grad, integration_op, integration_error_op, integration_weight_grad_op,
-        std::make_shared<RandWeightInitOp<TensorT>>(RandWeightInitOp<TensorT>((TensorT)(node_names_Gencoder.size() + n_hidden_2) / 2, 1)),
-        solver_op, 0.0f, 0.0f, add_bias, specify_layers);
-      model_builder.addFullyConnected(model, "DE2", node_names_Cencoder, node_names,
-        std::make_shared<RandWeightInitOp<TensorT>>(RandWeightInitOp<TensorT>((TensorT)(node_names_Cencoder.size() + n_hidden_2) / 2, 1)),
-        solver_op, 0.0f, specify_layers);
-    }
-    if (n_hidden_1 > 0 && n_hidden_2 > 0) {
-      node_names = model_builder.addFullyConnected(model, "DE1", "DE1", node_names, n_hidden_1,
-        activation, activation_grad, integration_op, integration_error_op, integration_weight_grad_op,
-        std::make_shared<RandWeightInitOp<TensorT>>(RandWeightInitOp<TensorT>((TensorT)(node_names.size() + n_hidden_1) / 2, 1)),
-        solver_op, 0.0f, 0.0f, add_bias, specify_layers);
-    }
-    else if (n_hidden_1 > 0) {
-      node_names = model_builder.addFullyConnected(model, "DE1", "DE1", node_names_Gencoder, n_hidden_2,
-        activation, activation_grad, integration_op, integration_error_op, integration_weight_grad_op,
-        std::make_shared<RandWeightInitOp<TensorT>>(RandWeightInitOp<TensorT>((TensorT)(node_names_Gencoder.size() + n_hidden_1) / 2, 1)),
-        solver_op, 0.0f, 0.0f, add_bias, specify_layers);
-      model_builder.addFullyConnected(model, "DE1", node_names_Cencoder, node_names,
-        std::make_shared<RandWeightInitOp<TensorT>>(RandWeightInitOp<TensorT>((TensorT)(node_names_Cencoder.size() + n_hidden_1) / 2, 1)),
-        solver_op, 0.0f, specify_layers);
-    }
-    if (n_hidden_0 > 0 && n_hidden_1 > 0) {
-      node_names = model_builder.addFullyConnected(model, "DE0", "DE0", node_names, n_hidden_0,
-        activation, activation_grad, integration_op, integration_error_op, integration_weight_grad_op,
-        std::make_shared<RandWeightInitOp<TensorT>>(RandWeightInitOp<TensorT>((TensorT)(node_names.size() + n_hidden_0) / 2, 1)),
-        solver_op, 0.0f, 0.0f, add_bias, specify_layers);
-    }
-    else if (n_hidden_0 > 0) {
-      node_names = model_builder.addFullyConnected(model, "DE1", "DE1", node_names_Gencoder, n_hidden_0,
-        activation, activation_grad, integration_op, integration_error_op, integration_weight_grad_op,
-        std::make_shared<RandWeightInitOp<TensorT>>(RandWeightInitOp<TensorT>((TensorT)(node_names_Gencoder.size() + n_hidden_0) / 2, 1)),
-        solver_op, 0.0f, 0.0f, add_bias, specify_layers);
-      model_builder.addFullyConnected(model, "DE1", node_names_Cencoder, node_names,
-        std::make_shared<RandWeightInitOp<TensorT>>(RandWeightInitOp<TensorT>((TensorT)(node_names_Cencoder.size() + n_hidden_0) / 2, 1)),
-        solver_op, 0.0f, specify_layers);
-    }
-    node_names = model_builder.addFullyConnected(model, "DE-Output", "DE-Output", node_names, n_inputs,
-      std::make_shared<LinearOp<TensorT>>(LinearOp<TensorT>()),
-      std::make_shared<LinearGradOp<TensorT>>(LinearGradOp<TensorT>()),
-      integration_op, integration_error_op, integration_weight_grad_op,
-      std::make_shared<RandWeightInitOp<TensorT>>(RandWeightInitOp<TensorT>(node_names.size(), 1)),
-      solver_op, 0.0f, 0.0f, add_bias, true);
-
-    // Add the actual output nodes
-    node_names_mu = model_builder.addSinglyConnected(model, "Mu", "Mu", node_names_mu, node_names_mu.size(),
-      std::make_shared<LinearOp<TensorT>>(LinearOp<TensorT>()),
-      std::make_shared<LinearGradOp<TensorT>>(LinearGradOp<TensorT>()),
-      integration_op, integration_error_op, integration_weight_grad_op,
-      std::make_shared<ConstWeightInitOp<TensorT>>(ConstWeightInitOp<TensorT>(1)),
-      std::make_shared<DummySolverOp<TensorT>>(DummySolverOp<TensorT>()), 0.0f, 0.0f, false, true);
-    node_names_logvar = model_builder.addSinglyConnected(model, "LogVar", "LogVar", node_names_logvar, node_names_logvar.size(),
-      std::make_shared<LinearOp<TensorT>>(LinearOp<TensorT>()),
-      std::make_shared<LinearGradOp<TensorT>>(LinearGradOp<TensorT>()),
-      integration_op, integration_error_op, integration_weight_grad_op,
-      std::make_shared<ConstWeightInitOp<TensorT>>(ConstWeightInitOp<TensorT>(1)),
-      std::make_shared<DummySolverOp<TensorT>>(DummySolverOp<TensorT>()), 0.0f, 0.0f, false, true);
-    node_names_logalpha = model_builder.addSinglyConnected(model, "LogAlpha", "LogAlpha", node_names_logalpha, node_names_logalpha.size(),
-      std::make_shared<LinearOp<TensorT>>(LinearOp<TensorT>()),
-      std::make_shared<LinearGradOp<TensorT>>(LinearGradOp<TensorT>()),
-      integration_op, integration_error_op, integration_weight_grad_op,
-      std::make_shared<ConstWeightInitOp<TensorT>>(ConstWeightInitOp<TensorT>(1)),
-      std::make_shared<DummySolverOp<TensorT>>(DummySolverOp<TensorT>()), 0.0f, 0.0f, false, true);
-    node_names = model_builder.addSinglyConnected(model, "Output", "Output", node_names, n_inputs,
-      std::make_shared<LinearOp<TensorT>>(LinearOp<TensorT>()),
-      std::make_shared<LinearGradOp<TensorT>>(LinearGradOp<TensorT>()),
-      integration_op, integration_error_op, integration_weight_grad_op,
-      std::make_shared<ConstWeightInitOp<TensorT>>(ConstWeightInitOp<TensorT>(1)),
-      std::make_shared<DummySolverOp<TensorT>>(DummySolverOp<TensorT>()), 0.0f, 0.0f, false, true);
-
-    // Specify the output node types manually
-    for (const std::string& node_name : node_names_mu)
-      model.nodes_.at(node_name)->setType(NodeType::output);
-    for (const std::string& node_name : node_names_logvar)
-      model.nodes_.at(node_name)->setType(NodeType::output);
-    for (const std::string& node_name : node_names_logalpha)
-      model.nodes_.at(node_name)->setType(NodeType::output);
-    for (const std::string& node_name : node_names_Cencoder)
-      model.nodes_.at(node_name)->setType(NodeType::output);
-    for (const std::string& node_name : node_names)
-      model.nodes_.at(node_name)->setType(NodeType::output);
-    model.setInputAndOutputNodes();
-  }
-  void adaptiveTrainerScheduler(
-    const int& n_generations,
-    const int& n_epochs,
-    Model<TensorT>& model,
-    ModelInterpreterDefaultDevice<TensorT>& model_interpreter,
-    const std::vector<float>& model_errors) override {
-    // Check point the model every 1000 epochs
-    if (n_epochs % 1000 == 0 && n_epochs != 0) {
-      model_interpreter.getModelResults(model, false, true, false, false);
-      // save the model weights (Not needed if binary is working fine)
-      //WeightFile<float> weight_data;
-      //weight_data.storeWeightValuesCsv(model.getName() + "_" + std::to_string(n_epochs) + "_weights.csv", model.weights_);
-
-      // save the model and tensors to binary
-      ModelFile<TensorT> data;
-      data.storeModelBinary(model.getName() + "_" + std::to_string(n_epochs) + "_model.binary", model);
-      ModelInterpreterFileDefaultDevice<TensorT> interpreter_data;
-      interpreter_data.storeModelInterpreterBinary(model.getName() + "_" + std::to_string(n_epochs) + "_interpreter.binary", model_interpreter);
-
-      // Increase the KL divergence beta and capacity
-      TensorT beta = 1;
-      TensorT capacity_c = 0;
-      TensorT capacity_d = 0;
-      if (this->KL_divergence_warmup_) {
-        TensorT scale_factor1 = (n_epochs - 100 > 0) ? n_epochs - 100 : 1;
-        beta = 30 / 2.5e4 * scale_factor1;
-        if (beta > 30) beta = 30;
-        TensorT scale_factor2 = (n_epochs - 1.0e4 > 0) ? n_epochs - 1.0e4 : 1;
-        capacity_c = 5 / 1.5e4 * scale_factor2;
-        if (capacity_c > 5) capacity_c = 5;
-        capacity_d = 5 / 1.5e4 * scale_factor2;
-        if (capacity_d > 5) capacity_d = 5;
-      }
-      this->getLossFunctionHelpers().at(1).loss_functions_.at(0) = std::make_shared<KLDivergenceMuLossOp<float>>(KLDivergenceMuLossOp<float>(1e-6, beta, capacity_c));
-      this->getLossFunctionHelpers().at(2).loss_functions_.at(0) = std::make_shared<KLDivergenceLogVarLossOp<float>>(KLDivergenceLogVarLossOp<float>(1e-6, beta, capacity_c));
-      this->getLossFunctionHelpers().at(3).loss_functions_.at(0) = std::make_shared<KLDivergenceCatLossOp<float>>(KLDivergenceCatLossOp<float>(1e-6, beta, capacity_d));
-      this->getLossFunctionHelpers().at(1).loss_function_grads_.at(0) = std::make_shared<KLDivergenceMuLossGradOp<float>>(KLDivergenceMuLossGradOp<float>(1e-6, beta, capacity_c));
-      this->getLossFunctionHelpers().at(2).loss_function_grads_.at(0) = std::make_shared<KLDivergenceLogVarLossGradOp<float>>(KLDivergenceLogVarLossGradOp<float>(1e-6, beta, capacity_c));
-      this->getLossFunctionHelpers().at(3).loss_function_grads_.at(0) = std::make_shared<KLDivergenceCatLossGradOp<float>>(KLDivergenceCatLossGradOp<float>(1e-6, beta, capacity_d));
-    }
-  }
-  void trainingModelLogger(const int& n_epochs, Model<TensorT>& model, ModelInterpreterDefaultDevice<TensorT>& model_interpreter, ModelLogger<TensorT>& model_logger,
-    const Eigen::Tensor<TensorT, 3>& expected_values, const std::vector<std::string>& output_nodes, const std::vector<std::string>& input_nodes, const TensorT& model_error_train, const TensorT& model_error_test,
-    const Eigen::Tensor<TensorT, 1>& model_metrics_train, const Eigen::Tensor<TensorT, 1>& model_metrics_test) override
-  {
-    // Set the defaults
-    model_logger.setLogTimeEpoch(true);
-    model_logger.setLogTrainValMetricEpoch(true);
-    model_logger.setLogExpectedEpoch(false);
-    model_logger.setLogNodeInputsEpoch(false);
-
-    // initialize all logs
-    if (n_epochs == 0) {
-      model_logger.setLogExpectedEpoch(true);
-      model_logger.setLogNodeInputsEpoch(true);
-      model_logger.initLogs(model);
-    }
-
-    // Per n epoch logging
-    if (n_epochs % 1000 == 0) { // FIXME
-      model_logger.setLogExpectedEpoch(true);
-      model_logger.setLogNodeInputsEpoch(true);
-      model_interpreter.getModelResults(model, true, false, false, true);
-    }
-
-    // Create the metric headers and data arrays
-    std::vector<std::string> log_train_headers = { "Train_Error" };
-    std::vector<std::string> log_test_headers = { "Test_Error" };
-    std::vector<TensorT> log_train_values = { model_error_train };
-    std::vector<TensorT> log_test_values = { model_error_test };
-    int metric_iter = 0;
-    for (const std::string& metric_name : this->getMetricNamesLinearized()) {
-      log_train_headers.push_back(metric_name);
-      log_test_headers.push_back(metric_name);
-      log_train_values.push_back(model_metrics_train(metric_iter));
-      log_test_values.push_back(model_metrics_test(metric_iter));
-      ++metric_iter;
-    }
-    model_logger.writeLogs(model, n_epochs, log_train_headers, log_test_headers, log_train_values, log_test_values, output_nodes, expected_values, {}, output_nodes, {}, input_nodes, {});
-  }
-  bool KL_divergence_warmup_ = true;
-};
 
 template<class ...ParameterTypes>
 void main_(const ParameterTypes& ...args) {
@@ -430,31 +174,37 @@ void main_(const ParameterTypes& ...args) {
   setModelInterpreterParameters(model_interpreters, args...);
 
   // define the model trainer
-  ModelTrainerExt<float> model_trainer;
+  CVAEFullyConnDefaultDevice<float> model_trainer;
   setModelTrainerParameters(model_trainer, args...);
-  model_trainer.setNEpochsTraining(std::get<EvoNetParameters::ModelTrainer::NEpochsTraining>(parameters).get() * 5); // iterate through the cache 5x
+  model_trainer.setNEpochsTraining(std::get<EvoNetParameters::ModelTrainer::NEpochsTraining>(parameters).get() * 10 + 1); // iterate through the cache 10x
+  model_trainer.KL_divergence_warmup_ = std::get<EvoNetParameters::ModelTrainer::KLDivergenceWarmup>(parameters).get();
+  model_trainer.beta_ = std::get<EvoNetParameters::ModelTrainer::Beta>(parameters).get();
+  model_trainer.capacity_c_ = std::get<EvoNetParameters::ModelTrainer::CapacityC>(parameters).get();
+  model_trainer.capacity_d_ = std::get<EvoNetParameters::ModelTrainer::CapacityD>(parameters).get();
+  model_trainer.learning_rate_ = std::get<EvoNetParameters::ModelTrainer::LearningRate>(parameters).get();
+  model_trainer.gradient_clipping_ = std::get<EvoNetParameters::ModelTrainer::GradientClipping>(parameters).get();
 
   std::shared_ptr<LossFunctionOp<float>> loss_function_op;
   std::shared_ptr<LossFunctionGradOp<float>> loss_function_grad_op;
   if (std::get<EvoNetParameters::ModelTrainer::LossFunction>(parameters).get() == std::string("MSE")) {
-    loss_function_op = std::make_shared<MSELossOp<float>>(MSELossOp<float>(1e-6, 1.0));
-    loss_function_grad_op = std::make_shared<MSELossGradOp<float>>(MSELossGradOp<float>(1e-6, 1.0));
+    loss_function_op = std::make_shared<MSELossOp<float>>(MSELossOp<float>(1e-6, std::get<EvoNetParameters::ModelTrainer::LossFncWeight1>(parameters).get()));
+    loss_function_grad_op = std::make_shared<MSELossGradOp<float>>(MSELossGradOp<float>(1e-6, std::get<EvoNetParameters::ModelTrainer::LossFncWeight1>(parameters).get()));
   }
   else if (std::get<EvoNetParameters::ModelTrainer::LossFunction>(parameters).get() == std::string("MAE")) {
-    loss_function_op = std::make_shared<MAELossOp<float>>(MAELossOp<float>(1e-6, 1.0));
-    loss_function_grad_op = std::make_shared<MAELossGradOp<float>>(MAELossGradOp<float>(1e-6, 1.0));
+    loss_function_op = std::make_shared<MAELossOp<float>>(MAELossOp<float>(1e-6, std::get<EvoNetParameters::ModelTrainer::LossFncWeight1>(parameters).get()));
+    loss_function_grad_op = std::make_shared<MAELossGradOp<float>>(MAELossGradOp<float>(1e-6, std::get<EvoNetParameters::ModelTrainer::LossFncWeight1>(parameters).get()));
   }
   else if (std::get<EvoNetParameters::ModelTrainer::LossFunction>(parameters).get() == std::string("MLE")) {
-    loss_function_op = std::make_shared<MLELossOp<float>>(MLELossOp<float>(1e-6, 1.0));
-    loss_function_grad_op = std::make_shared<MLELossGradOp<float>>(MLELossGradOp<float>(1e-6, 1.0));
+    loss_function_op = std::make_shared<MLELossOp<float>>(MLELossOp<float>(1e-6, std::get<EvoNetParameters::ModelTrainer::LossFncWeight1>(parameters).get()));
+    loss_function_grad_op = std::make_shared<MLELossGradOp<float>>(MLELossGradOp<float>(1e-6, std::get<EvoNetParameters::ModelTrainer::LossFncWeight1>(parameters).get()));
   }
   else if (std::get<EvoNetParameters::ModelTrainer::LossFunction>(parameters).get() == std::string("MAPE")) {
-    loss_function_op = std::make_shared<MAPELossOp<float>>(MAPELossOp<float>(1e-6, 1.0));
-    loss_function_grad_op = std::make_shared<MAPELossGradOp<float>>(MAPELossGradOp<float>(1e-6, 1.0));
+    loss_function_op = std::make_shared<MAPELossOp<float>>(MAPELossOp<float>(1e-6, std::get<EvoNetParameters::ModelTrainer::LossFncWeight1>(parameters).get()));
+    loss_function_grad_op = std::make_shared<MAPELossGradOp<float>>(MAPELossGradOp<float>(1e-6, std::get<EvoNetParameters::ModelTrainer::LossFncWeight1>(parameters).get()));
   }
   else if (std::get<EvoNetParameters::ModelTrainer::LossFunction>(parameters).get() == std::string("BCEWithLogits")) {
-    loss_function_op = std::make_shared<BCEWithLogitsLossOp<float>>(BCEWithLogitsLossOp<float>(1e-6, 1.0));
-    loss_function_grad_op = std::make_shared<BCEWithLogitsLossGradOp<float>>(BCEWithLogitsLossGradOp<float>(1e-6, 1.0));
+    loss_function_op = std::make_shared<BCEWithLogitsLossOp<float>>(BCEWithLogitsLossOp<float>(1e-6, std::get<EvoNetParameters::ModelTrainer::LossFncWeight1>(parameters).get()));
+    loss_function_grad_op = std::make_shared<BCEWithLogitsLossGradOp<float>>(BCEWithLogitsLossGradOp<float>(1e-6, std::get<EvoNetParameters::ModelTrainer::LossFncWeight1>(parameters).get()));
   }
 
   std::vector<LossFunctionHelper<float>> loss_function_helpers;
@@ -482,7 +232,6 @@ void main_(const ParameterTypes& ...args) {
     loss_function_helpers.push_back(loss_function_helper5);
   }
   model_trainer.setLossFunctionHelpers(loss_function_helpers);
-  model_trainer.KL_divergence_warmup_ = std::get<EvoNetParameters::ModelTrainer::KLDivergenceWarmup>(parameters).get();
 
   std::vector<MetricFunctionHelper<float>> metric_function_helpers;
   MetricFunctionHelper<float> metric_function_helper1, metric_function_helper2;
@@ -513,12 +262,54 @@ void main_(const ParameterTypes& ...args) {
   Model<float> model;
   if (std::get<EvoNetParameters::Main::MakeModel>(parameters).get()) {
     std::cout << "Making the model..." << std::endl;
-    model_trainer.makeVAEFullyConn(model, n_input_nodes,
-      std::get<EvoNetParameters::ModelTrainer::NEncodingsContinuous>(parameters).get(),
-      std::get<EvoNetParameters::ModelTrainer::NEncodingsCategorical>(parameters).get(),
-      std::get<EvoNetParameters::ModelTrainer::NHidden0>(parameters).get(),
-      std::get<EvoNetParameters::ModelTrainer::NHidden1>(parameters).get(),
-      std::get<EvoNetParameters::ModelTrainer::NHidden2>(parameters).get(), false, true);
+    if (std::get<EvoNetParameters::Examples::ModelType>(parameters).get() == "EncDec") {
+      model_trainer.makeCVAE(model, n_input_nodes,
+        std::get<EvoNetParameters::ModelTrainer::NEncodingsContinuous>(parameters).get(),
+        std::get<EvoNetParameters::ModelTrainer::NEncodingsCategorical>(parameters).get(),
+        std::get<EvoNetParameters::ModelTrainer::NHidden0>(parameters).get(),
+        std::get<EvoNetParameters::ModelTrainer::NHidden1>(parameters).get(),
+        std::get<EvoNetParameters::ModelTrainer::NHidden2>(parameters).get(), false, true);
+    }
+    else if (std::get<EvoNetParameters::Examples::ModelType>(parameters).get() == "Enc") {
+      // make the encoder only
+      model_trainer.makeCVAEEncoder(model, n_input_nodes,
+        std::get<EvoNetParameters::ModelTrainer::NEncodingsContinuous>(parameters).get(),
+        std::get<EvoNetParameters::ModelTrainer::NEncodingsCategorical>(parameters).get(),
+        std::get<EvoNetParameters::ModelTrainer::NHidden0>(parameters).get(),
+        std::get<EvoNetParameters::ModelTrainer::NHidden1>(parameters).get(),
+        std::get<EvoNetParameters::ModelTrainer::NHidden2>(parameters).get(), false, true);
+
+      // read in the weights
+      ModelFile<float> model_file;
+      model_file.loadWeightValuesBinary(std::get<EvoNetParameters::General::DataDir>(parameters).get() + std::get<EvoNetParameters::Main::ModelName>(parameters).get() + "_model.binary", model.weights_);
+
+      // check that all weights were read in correctly
+      for (auto& weight_map : model.getWeightsMap()) {
+        if (weight_map.second->getInitWeight()) {
+          std::cout << "Model " << model.getName() << " Weight " << weight_map.first << " has not be initialized." << std::endl;;
+        }
+      }
+    }
+    else if (std::get<EvoNetParameters::Examples::ModelType>(parameters).get() == "Dec") {
+      // make the decoder only
+      model_trainer.makeCVAEDecoder(model, n_input_nodes,
+        std::get<EvoNetParameters::ModelTrainer::NEncodingsContinuous>(parameters).get(),
+        std::get<EvoNetParameters::ModelTrainer::NEncodingsCategorical>(parameters).get(),
+        std::get<EvoNetParameters::ModelTrainer::NHidden0>(parameters).get(),
+        std::get<EvoNetParameters::ModelTrainer::NHidden1>(parameters).get(),
+        std::get<EvoNetParameters::ModelTrainer::NHidden2>(parameters).get(), false, true);
+
+      // read in the weights
+      ModelFile<float> model_file;
+      model_file.loadWeightValuesBinary(std::get<EvoNetParameters::General::DataDir>(parameters).get() + std::get<EvoNetParameters::Main::ModelName>(parameters).get() + "_model.binary", model.weights_);
+
+      // check that all weights were read in correctly
+      for (auto& weight_map : model.getWeightsMap()) {
+        if (weight_map.second->getInitWeight()) {
+          std::cout << "Model " << model.getName() << " Weight " << weight_map.first << " has not be initialized." << std::endl;;
+        }
+      }
+    }
   }
   else {
     ModelFile<float> model_file;
@@ -530,17 +321,6 @@ void main_(const ParameterTypes& ...args) {
   // Train the model
   std::pair<std::vector<float>, std::vector<float>> model_errors = model_trainer.trainModel(model, data_simulator,
     input_nodes, model_logger, model_interpreters.front());
-}
-
-void main_loadBinaryModelAndStoreWeightsCsv(const std::string& model_filename) {
-  // load the binarized model
-  Model<float> model;
-  ModelFile<float> model_file;
-  model_file.loadModelBinary(model_filename, model);
-
-  // save the model weights
-  WeightFile<float> data;
-  data.storeWeightValuesCsv(model.getName() + "_weights.csv", model.weights_);
 }
 
 // Main
@@ -564,7 +344,7 @@ int main(int argc, char** argv)
   EvoNetParameters::Main::EvolveModel evolve_model("evolve_model", false);
   EvoNetParameters::Main::EvaluateModel evaluate_model("evaluate_model", false);
   EvoNetParameters::Main::EvaluateModels evaluate_models("evaluate_models", false);
-  EvoNetParameters::Examples::ModelType model_type("model_type", "Solution");
+  EvoNetParameters::Examples::ModelType model_type("model_type", "EncDec"); // Options include EncDec, Enc, Dec
   EvoNetParameters::Examples::SimulationType simulation_type("simulation_type", "");
   EvoNetParameters::Examples::BiochemicalRxnsFilename biochemical_rxns_filename("biochemical_rxns_filename", "");
   EvoNetParameters::Examples::MetaboDataTrainFilename metabo_data_train_filename("metabo_data_train_filename", "");
@@ -622,14 +402,19 @@ int main(int argc, char** argv)
   EvoNetParameters::ModelTrainer::NHidden0 n_hidden_0("n_hidden_0", 16);
   EvoNetParameters::ModelTrainer::NHidden1 n_hidden_1("n_hidden_1", 0);
   EvoNetParameters::ModelTrainer::NHidden2 n_hidden_2("n_hidden_2", 0);
-  EvoNetParameters::ModelTrainer::LossFncWeight0 loss_fnc_weight_0("loss_fnc_weight_0", 1);
-  EvoNetParameters::ModelTrainer::LossFncWeight1 loss_fnc_weight_1("loss_fnc_weight_1", 0);
+  EvoNetParameters::ModelTrainer::LossFncWeight0 loss_fnc_weight_0("loss_fnc_weight_0", 1); // Classification loss
+  EvoNetParameters::ModelTrainer::LossFncWeight1 loss_fnc_weight_1("loss_fnc_weight_1", 1); // Reconstruction loss
   EvoNetParameters::ModelTrainer::LossFncWeight2 loss_fnc_weight_2("loss_fnc_weight_2", 0);
+  EvoNetParameters::ModelTrainer::LearningRate learning_rate("learning_rate", 1e-5);
+  EvoNetParameters::ModelTrainer::GradientClipping gradient_clipping("gradient_clipping", 10);
   EvoNetParameters::ModelTrainer::ResetInterpreter reset_interpreter("reset_interpreter", true);
   EvoNetParameters::ModelTrainer::LossFunction loss_function("loss_function", "MSE");
   EvoNetParameters::ModelTrainer::KLDivergenceWarmup KL_divergence_warmup("KL_divergence_warmup", true);
   EvoNetParameters::ModelTrainer::NEncodingsContinuous n_encodings_continuous("n_encodings_continuous", 8);
   EvoNetParameters::ModelTrainer::NEncodingsCategorical n_encodings_categorical("n_encodings_categorical", 8);
+  EvoNetParameters::ModelTrainer::Beta beta("beta", 30);
+  EvoNetParameters::ModelTrainer::CapacityC capacity_c("capacity_c", 5);
+  EvoNetParameters::ModelTrainer::CapacityD capacity_d("capacity_d", 5);
   EvoNetParameters::ModelReplicator::NNodeDownAdditionsLB n_node_down_additions_lb("n_node_down_additions_lb", 0);
   EvoNetParameters::ModelReplicator::NNodeRightAdditionsLB n_node_right_additions_lb("n_node_right_additions_lb", 0);
   EvoNetParameters::ModelReplicator::NNodeDownCopiesLB n_node_down_copies_lb("n_node_down_copies_lb", 0);
@@ -662,7 +447,7 @@ int main(int argc, char** argv)
     device_id, model_name, make_model, load_model_csv, load_model_binary, train_model, evolve_model, evaluate_model, evaluate_models,
     model_type, simulation_type, biochemical_rxns_filename, metabo_data_train_filename, metabo_data_test_filename, meta_data_train_filename, meta_data_test_filename, use_concentrations, use_MARs, sample_values, iter_values, fill_sampling, fill_mean, fill_zero, apply_fold_change, fold_change_ref, fold_change_log_base, offline_linear_scale_input, offline_log_transform_input, offline_standardize_input, online_linear_scale_input, online_log_transform_input, online_standardize_input,
     population_name, n_generations, n_interpreters, /*prune_model_num, remove_isolated_nodes, check_complete_model_input_to_output, population_size, n_top, n_random, n_replicates_per_model, reset_model_copy_weights, reset_model_template_weights, population_logging, set_population_size_fixed, set_population_size_doubling, set_training_steps_by_model_size,*/
-    batch_size, memory_size, n_epochs_training, n_epochs_validation, n_epochs_evaluation, n_tbtt_steps, n_tett_steps, verbosity, logging_training, logging_validation, logging_evaluation, find_cycles, fast_interpreter, preserve_ooo, interpret_model, reset_model, n_hidden_0, n_hidden_1, n_hidden_2, loss_fnc_weight_0, loss_fnc_weight_1, loss_fnc_weight_2, reset_interpreter, loss_function, KL_divergence_warmup, n_encodings_continuous, n_encodings_categorical/*,
+    batch_size, memory_size, n_epochs_training, n_epochs_validation, n_epochs_evaluation, n_tbtt_steps, n_tett_steps, verbosity, logging_training, logging_validation, logging_evaluation, find_cycles, fast_interpreter, preserve_ooo, interpret_model, reset_model, n_hidden_0, n_hidden_1, n_hidden_2, loss_fnc_weight_0, loss_fnc_weight_1, loss_fnc_weight_2, learning_rate, gradient_clipping, reset_interpreter, loss_function, KL_divergence_warmup, n_encodings_continuous, n_encodings_categorical, beta, capacity_c, capacity_d/*,
     n_node_down_additions_lb, n_node_right_additions_lb, n_node_down_copies_lb, n_node_right_copies_lb, n_link_additons_lb, n_link_copies_lb, n_node_deletions_lb, n_link_deletions_lb, n_node_activation_changes_lb, n_node_integration_changes_lb, n_module_additions_lb, n_module_copies_lb, n_module_deletions_lb, n_node_down_additions_ub, n_node_right_additions_ub, n_node_down_copies_ub, n_node_right_copies_ub, n_link_additons_ub, n_link_copies_ub, n_node_deletions_ub, n_link_deletions_ub, n_node_activation_changes_ub, n_node_integration_changes_ub, n_module_additions_ub, n_module_copies_ub, n_module_deletions_ub, set_modification_rate_fixed, set_modification_rate_by_prev_error*/);
 
     // Read in the parameters

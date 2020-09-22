@@ -229,14 +229,14 @@ BOOST_AUTO_TEST_CASE(SFcheckNan)
 	Eigen::Tensor<float, 1> test(2);
 
 	// control
-	test = values.unaryExpr(std::ptr_fun(checkNan<float>));
+  test = values.unaryExpr([](float c) { return checkNan<float>(c); });
 	BOOST_CHECK_CLOSE(test(0), 5.0, 1e-3);
 	BOOST_CHECK_CLOSE(test(1), 5.0, 1e-3);
 
 	// test
 	values(0) = NAN; //NaN
 	values(1) = INFINITY; //infinity
-	test = values.unaryExpr(std::ptr_fun(checkNan<float>));
+  test = values.unaryExpr([](float c) { return checkNan<float>(c); });
 	BOOST_CHECK_CLOSE(test(0), NAN, 1e-3);
 	BOOST_CHECK_CLOSE(test(1), INFINITY, 1e-3);
 }
@@ -248,7 +248,7 @@ BOOST_AUTO_TEST_CASE(SFsubstituteNanInf)
 	Eigen::Tensor<float, 1> test(3);
 
 	// control
-	test = values.unaryExpr(std::ptr_fun(substituteNanInf<float>));
+  test = values.unaryExpr([](float c) { return substituteNanInf<float>(c); });
 	BOOST_CHECK_CLOSE(test(0), 5.0, 1e-3);
 	BOOST_CHECK_CLOSE(test(1), 5.0, 1e-3);
 
@@ -256,7 +256,7 @@ BOOST_AUTO_TEST_CASE(SFsubstituteNanInf)
 	values(0) = NAN; //NaN
 	values(1) = INFINITY; //infinity
 	values(2) = -INFINITY; //infinity
-	test = values.unaryExpr(std::ptr_fun(substituteNanInf<float>));
+  test = values.unaryExpr([](float c) { return substituteNanInf<float>(c); });
 	BOOST_CHECK_CLOSE(test(0), 0.0, 1e-3);
 	BOOST_CHECK_CLOSE(test(1), 1e9, 1e-3);
 	BOOST_CHECK_CLOSE(test(2), -1e9, 1e-3);
