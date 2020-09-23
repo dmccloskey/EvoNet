@@ -36,7 +36,7 @@ BOOST_AUTO_TEST_CASE(readAndProcessMetabolomicsTrainingAndValidationData)
   const int n_epochs = 12;
   const int batch_size = 64;
   const int memory_size = 1;
-  const int n_reps_per_sample = n_epochs * batch_size / 4;
+  int n_reps_per_sample = n_epochs * batch_size / 4;
 
   // data structures needed for testing
   Eigen::Tensor<float, 1> metabo_data_expected;
@@ -57,6 +57,7 @@ BOOST_AUTO_TEST_CASE(readAndProcessMetabolomicsTrainingAndValidationData)
     biochem_rxns_filename, metabo_data_filename_train, meta_data_filename_train, metabo_data_filename_test, meta_data_filename_test,
     true, false, false, true, false, false, true, false, "S01_D01_PLT_25C_0hr", 10, false, false, false, false, false, false,
     n_reps_per_sample, false, false, n_epochs, batch_size, memory_size);
+  BOOST_CHECK_EQUAL(n_reps_per_sample, int(n_epochs * batch_size / 4));
   BOOST_CHECK_EQUAL(n_reaction_ids_training, 0);
   BOOST_CHECK_EQUAL(n_labels_training, 1);
   BOOST_CHECK_EQUAL(n_component_group_names_training, 81);

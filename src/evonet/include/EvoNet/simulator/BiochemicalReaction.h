@@ -16,6 +16,8 @@
 #include <EvoNet/core/StringParsing.h>
 #include <EvoNet/core/Statistics.h>
 
+#include <set>
+
 namespace EvoNet
 {
   // Data structures

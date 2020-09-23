@@ -17,116 +17,8 @@ using namespace EvoNet;
 template<typename TensorT>
 class LatentArithmetic {
 public:
-  LatentArithmetic(const int& encoding_size, const bool& simulate_MARs, const bool& sample_concs, const bool& use_fold_change, std::string& ref_fold_change) :
-    encoding_size_(encoding_size), simulate_MARs_(simulate_MARs), sample_concs_(sample_concs), use_fold_change_(use_fold_change), ref_fold_change_(ref_fold_change) {};
+  LatentArithmetic() {};
   ~LatentArithmetic() = default;
-  /*
-  @brief Read in and create the metabolomics data
-
-  @param[in] biochem_rxns_filename
-  @param[in] metabo_data_filename_train
-  @param[in] meta_data_filename_train
-  @param[in] metabo_data_filename_test
-  @param[in] meta_data_filename_test
-  */
-  void setMetabolomicsData(const std::string& biochem_rxns_filename,
-    const std::string& metabo_data_filename_train, const std::string& meta_data_filename_train,
-    const std::string& metabo_data_filename_test, const std::string& meta_data_filename_test) {
-    // Training data
-    reaction_model_.clear();
-    reaction_model_.readBiochemicalReactions(biochem_rxns_filename, true);
-    reaction_model_.readMetabolomicsData(metabo_data_filename_train);
-    reaction_model_.readMetaData(meta_data_filename_train);
-    reaction_model_.findComponentGroupNames();
-    if (simulate_MARs_) {
-      reaction_model_.findMARs();
-      reaction_model_.findMARs(true, false);
-      reaction_model_.findMARs(false, true);
-      reaction_model_.removeRedundantMARs();
-    }
-    reaction_model_.findLabels();
-    metabolomics_data_.model_training_ = reaction_model_;
-
-    // Validation data
-    reaction_model_.clear();
-    reaction_model_.readBiochemicalReactions(biochem_rxns_filename, true);
-    reaction_model_.readMetabolomicsData(metabo_data_filename_test);
-    reaction_model_.readMetaData(meta_data_filename_test);
-    reaction_model_.findComponentGroupNames();
-    if (simulate_MARs_) {
-      reaction_model_.findMARs();
-      reaction_model_.findMARs(true, false);
-      reaction_model_.findMARs(false, true);
-      reaction_model_.removeRedundantMARs();
-    }
-    reaction_model_.findLabels();
-    metabolomics_data_.model_validation_ = reaction_model_;
-    metabolomics_data_.simulate_MARs_ = simulate_MARs_;
-    metabolomics_data_.sample_concs_ = sample_concs_;
-    metabolomics_data_.use_train_ = true;
-    metabolomics_data_.use_fold_change_ = this->use_fold_change_;
-    metabolomics_data_.ref_fold_change_ = this->ref_fold_change_;
-
-    // Checks for the training and validation data
-    assert(metabolomics_data_.model_validation_.reaction_ids_.size() == metabolomics_data_.model_training_.reaction_ids_.size());
-    assert(metabolomics_data_.model_validation_.labels_.size() == metabolomics_data_.model_training_.labels_.size());
-    assert(metabolomics_data_.model_validation_.component_group_names_.size() == metabolomics_data_.model_training_.component_group_names_.size());
-
-    // Set the encoding size and define the input/output sizes
-    metabolomics_data_.n_encodings_ = encoding_size_;
-    if (simulate_MARs_) n_input_nodes_ = reaction_model_.reaction_ids_.size();
-    else n_input_nodes_ = reaction_model_.component_group_names_.size();
-    n_output_nodes_ = reaction_model_.labels_.size();
-  };
-
-  /*
-  @brief Make the encoder/decoder models
-
-  @param[in] model_encoder_weights_filename
-  @param[in] model_decoder_weights_filename
-  */
-  void setEncDecModels(ModelTrainerExt<TensorT>& model_trainer, const std::string& model_encoder_weights_filename, const std::string& model_decoder_weights_filename,
-    const int& n_en_hidden_0 = 64, const int& n_en_hidden_1 = 64, const int& n_en_hidden_2 = 0,
-    const int& n_de_hidden_0 = 64, const int& n_de_hidden_1 = 64, const int& n_de_hidden_2 = 0) {
-    // initialize the models
-    model_encoder_.clear();
-    model_decoder_.clear();
-
-    // define the encoder and decoders
-    model_trainer.makeModelFCVAE_Encoder(model_encoder_, n_input_nodes_, encoding_size_, true, false, false, false,
-      n_en_hidden_0, n_en_hidden_1, n_en_hidden_2, this->use_fold_change_); // normalization type 1
-    model_trainer.makeModelFCVAE_Decoder(model_decoder_, n_input_nodes_, encoding_size_, false,
-      n_de_hidden_0, n_de_hidden_1, n_de_hidden_2, this->use_fold_change_);
-
-    // read in the encoder and decoder weights
-    WeightFile<TensorT> data;
-    data.loadWeightValuesCsv(model_encoder_weights_filename, model_encoder_.getWeightsMap());
-    data.loadWeightValuesCsv(model_decoder_weights_filename, model_decoder_.getWeightsMap());
-
-    // check that all weights were read in correctly
-    for (auto& weight_map : model_encoder_.getWeightsMap()) {
-      if (weight_map.second->getInitWeight()) {
-        std::cout << "Model " << model_encoder_.getName() << " Weight " << weight_map.first << " has not be initialized." << std::endl;;
-      }
-    }
-    for (auto& weight_map : model_decoder_.getWeightsMap()) {
-      if (weight_map.second->getInitWeight()) {
-        std::cout << "Model " << model_decoder_.getName() << " Weight " << weight_map.first << " has not be initialized." << std::endl;;
-      }
-    }
-  };
-
-  /*
-  @brief Set the encoder and decoder model interpreters
-
-  @param[in] model_interpreter_encoder_
-  @param[in] model_interpreter_decoder_
-  */
-  void setEncDecModelInterpreters(const ModelInterpreterDefaultDevice<TensorT>& model_interpreter_encoder, const ModelInterpreterDefaultDevice<TensorT>& model_interpreter_decoder) {
-    model_interpreter_encoder_ = model_interpreter_encoder;
-    model_interpreter_decoder_ = model_interpreter_decoder;
-  };
-
   /*
   @brief Generate an encoded latent space
 
@@ -160,7 +52,7 @@ public:
     Eigen::Tensor<TensorT, 4> condition_1_input(model_trainer.getBatchSize(), model_trainer.getMemorySize(), (int)input_nodes.size(), model_trainer.getNEpochsEvaluation());
     Eigen::Tensor<TensorT, 3> time_steps_1_input(model_trainer.getBatchSize(), model_trainer.getMemorySize(), model_trainer.getNEpochsEvaluation());
     this->metabolomics_data_.sample_group_name_ = sample_group_name;
-    this->metabolomics_data_.simulateEvaluationData(condition_1_input, time_steps_1_input);;
+    this->metabolomics_data_.simulateEvaluationData(condition_1_input, time_steps_1_input);
 
     // evaluate the encoder for condition_1 and condition_2
     model_trainer.setLossOutputNodes({ encoding_nodes_mu });

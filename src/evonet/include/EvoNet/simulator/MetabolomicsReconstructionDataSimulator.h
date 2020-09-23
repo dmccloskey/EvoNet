@@ -64,7 +64,7 @@ namespace EvoNet
     @param[in] metabo_data_filename_test
     @param[in] meta_data_filename_test
     ...
-    @param[in] n_reps_per_sample The number of replicates per sample to use for sample values
+    @param[in,out] n_reps_per_sample The number of replicates per sample to use for sample values. If -1, the number of reps will be split evenly.
     @param[in] n_epochs
     @param[in] batch_size
     @param[in] memory_size
@@ -83,7 +83,7 @@ namespace EvoNet
       const bool& apply_fold_change, const std::string& fold_change_ref, const TensorT& fold_change_log_base,
       const bool& offline_linear_scale_input, const bool& offline_log_transform_input, const bool& offline_standardize_input,
       const bool& online_linear_scale_input, const bool& online_log_transform_input, const bool& online_standardize_input,
-      const int& n_reps_per_sample, const bool& randomize_sample_group_names, const bool& shuffle_data_and_labels,
+      int& n_reps_per_sample, const bool& randomize_sample_group_names, const bool& shuffle_data_and_labels,
       const int& n_epochs, const int& batch_size, const int& memory_size);
   };
   template<typename TensorT>
@@ -337,7 +337,7 @@ namespace EvoNet
   template<typename TensorT>
   inline void MetabolomicsReconstructionDataSimulator<TensorT>::readAndProcessMetabolomicsTrainingAndValidationData(int & n_reaction_ids_training, int & n_labels_training, int & n_component_group_names_training, int & n_reaction_ids_validation, int & n_labels_validation, int & n_component_group_names_validation, const std::string & biochem_rxns_filename, const std::string & metabo_data_filename_train, const std::string & meta_data_filename_train, const std::string & metabo_data_filename_test, const std::string & meta_data_filename_test, 
     const bool & use_concentrations, const bool & use_MARs, const bool & sample_values, const bool & iter_values, const bool & fill_sampling, const bool & fill_mean, const bool & fill_zero, const bool & apply_fold_change, const std::string & fold_change_ref, const TensorT & fold_change_log_base, const bool & offline_linear_scale_input, const bool & offline_log_transform_input, const bool & offline_standardize_input, const bool & online_linear_scale_input, const bool & online_log_transform_input, const bool & online_standardize_input, 
-    const int & n_reps_per_sample, const bool& randomize_sample_group_names, const bool& shuffle_data_and_labels, const int & n_epochs, const int & batch_size, const int & memory_size)
+    int & n_reps_per_sample, const bool& randomize_sample_group_names, const bool& shuffle_data_and_labels, const int & n_epochs, const int & batch_size, const int & memory_size)
   {
     // define the data simulator
     BiochemicalReactionModel<TensorT> reaction_model;
@@ -368,6 +368,10 @@ namespace EvoNet
     n_labels_training = reaction_model.labels_.size();
     n_component_group_names_training = reaction_model.component_group_names_.size();
     this->labels_training_ = reaction_model.labels_;
+
+    // define the n_reps_per_sample if not defined previously
+    if (n_reps_per_sample <= 0)
+      n_reps_per_sample = batch_size * n_epochs / reaction_model.labels_.size();
 
     // Make the training data
     std::vector<std::string> metabo_labels_training;
