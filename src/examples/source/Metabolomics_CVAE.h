@@ -343,7 +343,9 @@ namespace EvoNetMetabolomics
     std::vector<std::string> encoding_nodes_mu = makeMuEncodingNodes(args...);
     std::vector<std::string> encoding_nodes_logalpha = makeLogAlphaEncodingNodes(args...);
 
-    // Define the Model Trainer
+    // Define the Model Trainer based on the output nodes
+
+    // Generate the data?
 
     // generate the input for condition_1 and condition_2
     Eigen::Tensor<TensorT, 4> condition_1_input(model_trainer.getBatchSize(), model_trainer.getMemorySize(), (int)input_nodes.size(), model_trainer.getNEpochsEvaluation());
@@ -352,7 +354,6 @@ namespace EvoNetMetabolomics
     this->metabolomics_data_.simulateEvaluationData(condition_1_input, time_steps_1_input);
 
     // evaluate the encoder for condition_1 and condition_2
-    model_trainer.setLossOutputNodes({ encoding_nodes_mu });
     Eigen::Tensor<TensorT, 4> condition_1_output = model_trainer.evaluateModel(model, condition_1_input, time_steps_1_input, input_nodes, model_logger, model_interpreter);
 
     return condition_1_output;

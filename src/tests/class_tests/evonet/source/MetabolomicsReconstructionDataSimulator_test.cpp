@@ -36,7 +36,7 @@ BOOST_AUTO_TEST_CASE(readAndProcessMetabolomicsTrainingAndValidationData)
   const int n_epochs = 12;
   const int batch_size = 64;
   const int memory_size = 1;
-  int n_reps_per_sample = n_epochs * batch_size / 4;
+  int n_reps_per_sample = n_epochs* batch_size / 4;
 
   // data structures needed for testing
   Eigen::Tensor<float, 1> metabo_data_expected;
