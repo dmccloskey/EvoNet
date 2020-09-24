@@ -949,4 +949,81 @@ BOOST_AUTO_TEST_CASE(readAndProcessMetabolomicsTrainingAndValidationData)
   }
 }
 
+BOOST_AUTO_TEST_CASE(getNonRandomizedEncoderTrainingInputFromCacheByLabelDefaultDevice)
+{
+  // parameters for testing
+  std::string biochem_rxns_filename = EVONET_GET_TEST_DATA_PATH("RBCGlycolysis.csv");
+  std::string metabo_data_filename_train = EVONET_GET_TEST_DATA_PATH("PLT_timeCourse_Metabolomics_train.csv");
+  std::string meta_data_filename_train = EVONET_GET_TEST_DATA_PATH("PLT_timeCourse_MetaData_train.csv");
+  std::string metabo_data_filename_test = EVONET_GET_TEST_DATA_PATH("PLT_timeCourse_Metabolomics_test.csv");
+  std::string meta_data_filename_test = EVONET_GET_TEST_DATA_PATH("PLT_timeCourse_MetaData_test.csv");
+  const int n_epochs = 12;
+  const int batch_size = 64;
+  const int memory_size = 1;
+  int n_reps_per_sample = -1;
+
+  // data structures needed for testing
+  Eigen::Tensor<float, 1> expected;
+  Eigen::Tensor<float, 1> test;
+  Eigen::Tensor<float, 4> output_data;
+
+  // define the data simulator
+  MetabolomicsReconstructionDataSimulator<float> metabolomics_data;
+  metabolomics_data.n_encodings_continuous_ = 4;
+  metabolomics_data.n_encodings_discrete_ = 4;
+  int n_reaction_ids_training, n_labels_training, n_component_group_names_training;
+  int n_reaction_ids_validation, n_labels_validation, n_component_group_names_validation;
+
+  // Test with use_concentrations, sample_values, fill_zero, w/o fold change, w/o offline transformation, w/o online transformation
+  metabolomics_data.readAndProcessMetabolomicsTrainingAndValidationData(
+    n_reaction_ids_training, n_labels_training, n_component_group_names_training, n_reaction_ids_validation, n_labels_validation, n_component_group_names_validation,
+    biochem_rxns_filename, metabo_data_filename_train, meta_data_filename_train, metabo_data_filename_test, meta_data_filename_test,
+    true, false, false, true, false, false, true, false, "S01_D01_PLT_25C_0hr", 10, false, false, false, false, false, false,
+    n_reps_per_sample, false, false, n_epochs, batch_size, memory_size);
+
+  // Test the encoder input
+  metabolomics_data.getNonRandomizedEncoderTrainingInputFromCacheByLabel("D01", n_component_group_names_training, output_data);
+  expected.resize(n_component_group_names_training);
+  test.resize(n_component_group_names_training);
+
+  // Test the head of the training data
+  expected.setValues({ 0.926901639,0.926901639,0.528539419,0.160018548,1.12682271,1.2299757,0.019016927,0.450247049,13.7925978,0.002091408,0.340882331,10.1744833,23.9011002,2.14483714,4.50085735,168.859177,0.018285491,21.417078,1.06530595,0.081952632,0.340459317,0.643784583,0.111616887,0.00248486,0.012133205,17.8359642,0.00217249,0.025904134,7.11653328,0.290878832,3.44138575,1.57565355,0.961544573,3.38212514,0.100865304,13.1691704,50.2542191,130.872864,2.07785845,19.1110916,1.53861248,1.19124889,13.8566017,0.049036197,13.8037643,11.4393988,4.06357288,0.235487431,8.97540665,0.071652547,0.352367282,3.36851764,358.106354,1.6389221,1.92487311,0.182817936,4.86589575,0.346883208,0.025852302,10.3064785,18.0953236,0.218173593,2.96288562,0.000862999,2.56501603,0.371797085,0.903805673,0.7589885,4.299963,3.66499805,6.52140999,2.26217175,2.51020002,1.05417228,1.39990556,0.644586563,0.53649193,0.030080222,46.5646591,1.00420606,2.60011339 });
+  test = output_data.slice(Eigen::array<Eigen::Index, 4>({ 0, 0, 0, 0 }),
+    Eigen::array<Eigen::Index, 4>({ 1, 1, n_component_group_names_training, 1 })
+  ).reshape(Eigen::array<Eigen::Index, 1>({ n_component_group_names_training }));
+  for (int i = 0; i < n_component_group_names_training; ++i) {
+    BOOST_CHECK_CLOSE(test(i), expected(i), 1e-3);
+  }
+
+  // Test the tail of the training data
+  expected.setValues({ 0.265555769,0.265555769,0.791721046,0.47225073,0.432786793,2.23509574,0.009446479,0.247812942,12.4180145,0.001413481,0.550530076,16.8186836,36.9833221,2.13487792,5.49174261,179.438583,0.015360066,28.1836491,1.26303649,0.057933375,0.290531427,0.768753469,0.102007583,0.003865581,0.006890827,8.13605213,0.001152028,0.001515318,5.04462624,0,0.679527938,0.831631303,0.880627573,2.99608111,0.023637423,4.88753319,51.9047432,45.177166,1.48238754,12.7094393,1.05688798,1.85817993,22.8212738,0.033468466,6.07156467,7.07805252,3.22018003,0.086570263,10.3169909,0.020496339,2.79231906,4.65322256,171.598175,0.956340253,1.76563656,0.100188546,2.95790911,0.189656079,0.008943177,15.2019215,21.990057,0.069057748,3.59602952,0.002074435,7.39085865,0.152055874,0.299171269,1.11869287,5.06563044,5.21785927,8.57754803,2.12757039,2.8793776,0.667492807,0.930508494,0.51120007,0.283961296,0.005647976,101.788551,0.762530565,2.10564113 });
+  test = output_data.slice(Eigen::array<Eigen::Index, 4>({ batch_size - 1, memory_size - 1, 0, n_epochs - 1 }),
+    Eigen::array<Eigen::Index, 4>({ 1, 1, n_component_group_names_training, 1 })
+  ).reshape(Eigen::array<Eigen::Index, 1>({ n_component_group_names_training }));
+  for (int i = 0; i < n_component_group_names_training; ++i) {
+    BOOST_CHECK_CLOSE(test(i), expected(i), 1e-3);
+  }
+
+  // Test the decoder output
+  metabolomics_data.getNonRandomizedDecoderTrainingOutputFromCacheByLabel("D01", n_component_group_names_training, output_data);
+
+  // Test the head of the training data
+  expected.setValues({ 0.926901639,0.926901639,0.528539419,0.160018548,1.12682271,1.2299757,0.019016927,0.450247049,13.7925978,0.002091408,0.340882331,10.1744833,23.9011002,2.14483714,4.50085735,168.859177,0.018285491,21.417078,1.06530595,0.081952632,0.340459317,0.643784583,0.111616887,0.00248486,0.012133205,17.8359642,0.00217249,0.025904134,7.11653328,0.290878832,3.44138575,1.57565355,0.961544573,3.38212514,0.100865304,13.1691704,50.2542191,130.872864,2.07785845,19.1110916,1.53861248,1.19124889,13.8566017,0.049036197,13.8037643,11.4393988,4.06357288,0.235487431,8.97540665,0.071652547,0.352367282,3.36851764,358.106354,1.6389221,1.92487311,0.182817936,4.86589575,0.346883208,0.025852302,10.3064785,18.0953236,0.218173593,2.96288562,0.000862999,2.56501603,0.371797085,0.903805673,0.7589885,4.299963,3.66499805,6.52140999,2.26217175,2.51020002,1.05417228,1.39990556,0.644586563,0.53649193,0.030080222,46.5646591,1.00420606,2.60011339 });
+  test = output_data.slice(Eigen::array<Eigen::Index, 4>({ 0, 0, 0, 0 }),
+    Eigen::array<Eigen::Index, 4>({ 1, 1, n_component_group_names_training, 1 })
+  ).reshape(Eigen::array<Eigen::Index, 1>({ n_component_group_names_training }));
+  for (int i = 0; i < n_component_group_names_training; ++i) {
+    BOOST_CHECK_CLOSE(test(i), expected(i), 1e-3);
+  }
+
+  // Test the tail of the training data
+  expected.setValues({ 0.265555769,0.265555769,0.791721046,0.47225073,0.432786793,2.23509574,0.009446479,0.247812942,12.4180145,0.001413481,0.550530076,16.8186836,36.9833221,2.13487792,5.49174261,179.438583,0.015360066,28.1836491,1.26303649,0.057933375,0.290531427,0.768753469,0.102007583,0.003865581,0.006890827,8.13605213,0.001152028,0.001515318,5.04462624,0,0.679527938,0.831631303,0.880627573,2.99608111,0.023637423,4.88753319,51.9047432,45.177166,1.48238754,12.7094393,1.05688798,1.85817993,22.8212738,0.033468466,6.07156467,7.07805252,3.22018003,0.086570263,10.3169909,0.020496339,2.79231906,4.65322256,171.598175,0.956340253,1.76563656,0.100188546,2.95790911,0.189656079,0.008943177,15.2019215,21.990057,0.069057748,3.59602952,0.002074435,7.39085865,0.152055874,0.299171269,1.11869287,5.06563044,5.21785927,8.57754803,2.12757039,2.8793776,0.667492807,0.930508494,0.51120007,0.283961296,0.005647976,101.788551,0.762530565,2.10564113 });
+  test = output_data.slice(Eigen::array<Eigen::Index, 4>({ batch_size - 1, memory_size - 1, 0, n_epochs - 1 }),
+    Eigen::array<Eigen::Index, 4>({ 1, 1, n_component_group_names_training, 1 })
+  ).reshape(Eigen::array<Eigen::Index, 1>({ n_component_group_names_training }));
+  for (int i = 0; i < n_component_group_names_training; ++i) {
+    BOOST_CHECK_CLOSE(test(i), expected(i), 1e-3);
+  }
+}
+
 BOOST_AUTO_TEST_SUITE_END()

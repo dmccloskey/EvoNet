@@ -508,11 +508,11 @@ namespace EvoNet
     // Assign the output data based on the offset
     if (l != std::end(this->labels_training_)) {
       int index = std::distance(this->labels_training_.begin(), l);
-      int n_reps_per_sample = this->input_data_training_.dimensions(0) * this->input_data_training_.dimensions(3) / this->labels_training_.size();
-      int n_epochs_span = n_reps_per_sample / this->input_data_training_.dimensions(0);
-      input_data.resize(this->input_data_training_.dimensions(0), this->input_data_training_.dimensions(1), n_features, n_epochs_span);
+      int n_reps_per_sample = this->input_data_training_.dimension(0) * this->input_data_training_.dimension(3) / this->labels_training_.size();
+      int n_epochs_span = n_reps_per_sample / this->input_data_training_.dimension(0);
+      input_data.resize(this->input_data_training_.dimension(0), this->input_data_training_.dimension(1), n_features, n_epochs_span);
       input_data = this->input_data_training_.slice(Eigen::array<Eigen::Index, 4>({ 0, 0, 0, n_epochs_span * index }),
-        Eigen::array<Eigen::Index, 4>({ this->input_data_training_.dimensions(0), this->input_data_training_.dimensions(1), n_features, n_epochs_span }));
+        Eigen::array<Eigen::Index, 4>({ this->input_data_training_.dimension(0), this->input_data_training_.dimension(1), n_features, n_epochs_span }));
     }
   }
   template<typename TensorT>
@@ -524,11 +524,11 @@ namespace EvoNet
     // Assign the output data based on the offset
     if (l != std::end(this->labels_training_)) {
       int index = std::distance(this->labels_training_.begin(), l);
-      int n_reps_per_sample = this->loss_output_data_training_.dimensions(0) * this->loss_output_data_training_.dimensions(3) / this->labels_training_.size();
-      int n_epochs_span = n_reps_per_sample / this->loss_output_data_training_.dimensions(0);
-      output_data.resize(this->loss_output_data_training_.dimensions(0), this->loss_output_data_training_.dimensions(1), n_features, n_epochs_span);
+      int n_reps_per_sample = this->loss_output_data_training_.dimension(0) * this->loss_output_data_training_.dimension(3) / this->labels_training_.size();
+      int n_epochs_span = n_reps_per_sample / this->loss_output_data_training_.dimension(0);
+      output_data.resize(this->loss_output_data_training_.dimension(0), this->loss_output_data_training_.dimension(1), n_features, n_epochs_span);
       output_data = this->loss_output_data_training_.slice(Eigen::array<Eigen::Index, 4>({ 0, 0, 0, n_epochs_span * index }),
-        Eigen::array<Eigen::Index, 4>({ this->loss_output_data_training_.dimensions(0), this->loss_output_data_training_.dimensions(1), n_features, n_epochs_span }));
+        Eigen::array<Eigen::Index, 4>({ this->loss_output_data_training_.dimension(0), this->loss_output_data_training_.dimension(1), n_features, n_epochs_span }));
     }
   }
 }

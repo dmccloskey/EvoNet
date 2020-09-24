@@ -346,7 +346,7 @@ namespace EvoNet
     // Define the solver
     auto solver_op = std::make_shared<AdamOp<TensorT>>(AdamOp<TensorT>(this->learning_rate_, 0.9, 0.999, 1e-8, this->gradient_clipping_));
 
-    // Add the Endocer FC layers
+    // Add the Encoder FC layers
     std::vector<std::string> node_names_mu, node_names_logvar, node_names_logalpha;
     if (n_hidden_0 > 0) {
       node_names = model_builder.addFullyConnected(model, "EN0", "EN0", node_names, n_hidden_0,
