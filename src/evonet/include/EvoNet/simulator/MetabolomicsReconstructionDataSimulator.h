@@ -58,6 +58,28 @@ namespace EvoNet
       const bool& online_linear_scale_input, const bool& online_log_transform_input, const bool& online_standardize_input,
       int& n_reps_per_sample, const bool& randomize_sample_group_names, const bool& shuffle_data_and_labels,
       const int& n_epochs, const int& batch_size, const int& memory_size);
+
+    /* Get the non randomized training data from the cache corresponding to a single label
+    
+    Assumes that the data has not been randomized nor shuffled.
+      i.e., randomize_sample_group_names = false and shuffle_data_and_labels = false
+    Assumes that the expansion factor was 0
+      i.e., n_reps_per_sample = -1
+
+    @param[in] label The label to get data for
+    */
+    void getNonRandomizedEncoderTrainingInputFromCacheByLabel(const std::string& label, const int& n_features, Eigen::Tensor<TensorT, 4>& input_data);
+
+    /* Get the non randomized training data from the cache corresponding to a single label
+    
+    Assumes that the data has not been randomized nor shuffled.
+      i.e., randomize_sample_group_names = false and shuffle_data_and_labels = false
+    Assumes that the expansion factor was 0
+      i.e., n_reps_per_sample = -1
+
+    @param[in] label The label to get data for
+    */
+    void getNonRandomizedDecoderTrainingOutputFromCacheByLabel(const std::string& label, const int& n_features, Eigen::Tensor<TensorT, 4>& output_data);
   };
   template<typename TensorT>
   inline void MetabolomicsReconstructionDataSimulator<TensorT>::makeTrainingDataForCache(const std::vector<std::string>& features, const Eigen::Tensor<TensorT, 2>& data_training, const std::vector<std::string>& labels_training, const int & n_epochs, const int & batch_size, const int & memory_size, const int & n_input_nodes, const int & n_loss_output_nodes, const int & n_metric_output_nodes, const bool& shuffle_data_and_labels)
@@ -476,6 +498,38 @@ namespace EvoNet
     assert(n_reaction_ids_training == n_reaction_ids_validation);
     assert(n_labels_training == n_labels_validation);
     assert(n_component_group_names_training == n_component_group_names_validation);
+  }
+  template<typename TensorT>
+  inline void MetabolomicsReconstructionDataSimulator<TensorT>::getNonRandomizedEncoderTrainingInputFromCacheByLabel(const std::string& label, const int& n_features, Eigen::Tensor<TensorT, 4>& input_data)
+  {
+    // Determine the offset of the label
+    auto l = std::find(this->labels_training_.begin(), this->labels_training_.end(), label);
+
+    // Assign the output data based on the offset
+    if (l != std::end(this->labels_training_)) {
+      int index = std::distance(this->labels_training_.begin(), l);
+      int n_reps_per_sample = this->input_data_training_.dimensions(0) * this->input_data_training_.dimensions(3) / this->labels_training_.size();
+      int n_epochs_span = n_reps_per_sample / this->input_data_training_.dimensions(0);
+      input_data.resize(this->input_data_training_.dimensions(0), this->input_data_training_.dimensions(1), n_features, n_epochs_span);
+      input_data = this->input_data_training_.slice(Eigen::array<Eigen::Index, 4>({ 0, 0, 0, n_epochs_span * index }),
+        Eigen::array<Eigen::Index, 4>({ this->input_data_training_.dimensions(0), this->input_data_training_.dimensions(1), n_features, n_epochs_span }));
+    }
+  }
+  template<typename TensorT>
+  inline void MetabolomicsReconstructionDataSimulator<TensorT>::getNonRandomizedDecoderTrainingOutputFromCacheByLabel(const std::string& label, const int& n_features, Eigen::Tensor<TensorT, 4>& output_data)
+  {
+    // Determine the offset of the label
+    auto l = std::find(this->labels_training_.begin(), this->labels_training_.end(), label);
+
+    // Assign the output data based on the offset
+    if (l != std::end(this->labels_training_)) {
+      int index = std::distance(this->labels_training_.begin(), l);
+      int n_reps_per_sample = this->loss_output_data_training_.dimensions(0) * this->loss_output_data_training_.dimensions(3) / this->labels_training_.size();
+      int n_epochs_span = n_reps_per_sample / this->loss_output_data_training_.dimensions(0);
+      output_data.resize(this->loss_output_data_training_.dimensions(0), this->loss_output_data_training_.dimensions(1), n_features, n_epochs_span);
+      output_data = this->loss_output_data_training_.slice(Eigen::array<Eigen::Index, 4>({ 0, 0, 0, n_epochs_span * index }),
+        Eigen::array<Eigen::Index, 4>({ this->loss_output_data_training_.dimensions(0), this->loss_output_data_training_.dimensions(1), n_features, n_epochs_span }));
+    }
   }
 }
 
