@@ -12,6 +12,7 @@ set(sources_list_h
 	HarmonicOscillatorSimulator.h
 	MetabolomicsClassificationDataSimulator.h
 	MetabolomicsLatentTraversalDataSimulator.h
+	MetabolomicsLatentUnsClassDataSimulator.h
 	MetabolomicsReconstructionDataSimulator.h
 	MNISTSimulator.h
 	PeakSimulator.h

@@ -76,6 +76,7 @@ set(simulator_executables_list
   PeakSimulator_test
   MetabolomicsClassificationDataSimulator_test
   MetabolomicsLatentTraversalDataSimulator_test
+  MetabolomicsLatentUnsClassDataSimulator_test
   MetabolomicsReconstructionDataSimulator_test
   MNISTSimulator_test
 )
