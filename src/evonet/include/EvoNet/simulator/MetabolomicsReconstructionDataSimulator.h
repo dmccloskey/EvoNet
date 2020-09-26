@@ -14,37 +14,12 @@ namespace EvoNet
   public:
     int n_encodings_continuous_ = 0;
     int n_encodings_discrete_ = 0;
-    std::vector<std::string> labels_training_;
-    std::vector<std::string> labels_validation_;
     void makeTrainingDataForCache(const std::vector<std::string>& features, const Eigen::Tensor<TensorT, 2>& data_training, const std::vector<std::string>& labels_training,
       const int& n_epochs, const int& batch_size, const int& memory_size,
       const int& n_input_nodes, const int& n_loss_output_nodes, const int& n_metric_output_nodes, const bool& shuffle_data_and_labels) override;
     void makeValidationDataForCache(const std::vector<std::string>& features, const Eigen::Tensor<TensorT, 2>& data_validation, const std::vector<std::string>& labels_validation,
       const int& n_epochs, const int& batch_size, const int& memory_size,
       const int& n_input_nodes, const int& n_loss_output_nodes, const int& n_metric_output_nodes, const bool& shuffle_data_and_labels) override;
-
-    /* Read and process the training and validation data for metabolomics analysis
-
-    @param[out] n_reaction_ids_training
-    @param[out] n_labels_training
-    @param[out] n_component_group_names_training
-    @param[out] n_reaction_ids_validation
-    @param[out] n_labels_validation
-    @param[out] n_component_group_names_validation
-    @param[in] biochem_rxns_filename
-    @param[in] metabo_data_filename_train
-    @param[in] meta_data_filename_train
-    @param[in] metabo_data_filename_test
-    @param[in] meta_data_filename_test
-    ...
-    @param[in,out] n_reps_per_sample The number of replicates per sample to use for sample values. If -1, the number of reps will be split evenly.
-    @param[in] n_epochs
-    @param[in] batch_size
-    @param[in] memory_size
-    @param[in] n_input_nodes
-    @param[in] n_loss_output_nodes
-    @param[in] n_metric_output_nodes
-    */
     void readAndProcessMetabolomicsTrainingAndValidationData(int& n_reaction_ids_training, int& n_labels_training, int& n_component_group_names_training,
       int& n_reaction_ids_validation, int& n_labels_validation, int& n_component_group_names_validation,
       const std::string& biochem_rxns_filename,
@@ -57,7 +32,7 @@ namespace EvoNet
       const bool& offline_linear_scale_input, const bool& offline_log_transform_input, const bool& offline_standardize_input,
       const bool& online_linear_scale_input, const bool& online_log_transform_input, const bool& online_standardize_input,
       int& n_reps_per_sample, const bool& randomize_sample_group_names, const bool& shuffle_data_and_labels,
-      const int& n_epochs, const int& batch_size, const int& memory_size);
+      const int& n_epochs, const int& batch_size, const int& memory_size) override;
 
     /* Get the non randomized training data from the cache corresponding to a single label
     
@@ -334,142 +309,41 @@ namespace EvoNet
     const bool & use_concentrations, const bool & use_MARs, const bool & sample_values, const bool & iter_values, const bool & fill_sampling, const bool & fill_mean, const bool & fill_zero, const bool & apply_fold_change, const std::string & fold_change_ref, const TensorT & fold_change_log_base, const bool & offline_linear_scale_input, const bool & offline_log_transform_input, const bool & offline_standardize_input, const bool & online_linear_scale_input, const bool & online_log_transform_input, const bool & online_standardize_input, 
     int & n_reps_per_sample, const bool& randomize_sample_group_names, const bool& shuffle_data_and_labels, const int & n_epochs, const int & batch_size, const int & memory_size)
   {
-    // define the data simulator
-    BiochemicalReactionModel<TensorT> reaction_model;
-
-    // clear the input data
-    n_reaction_ids_training = -1;
-    n_labels_training = -1;
-    n_component_group_names_training = -1;
-    n_reaction_ids_validation = -1;
-    n_labels_validation = -1;
-    n_component_group_names_validation = -1;
-    this->labels_training_.clear();
-    this->labels_validation_.clear();
-
-    // Read in the training data
-    reaction_model.readBiochemicalReactions(biochem_rxns_filename, true);
-    reaction_model.readMetabolomicsData(metabo_data_filename_train);
-    reaction_model.readMetaData(meta_data_filename_train);
-    reaction_model.findComponentGroupNames();
-    if (use_MARs) {
-      reaction_model.findMARs();
-      reaction_model.findMARs(true, false);
-      reaction_model.findMARs(false, true);
-      reaction_model.removeRedundantMARs();
-    }
-    reaction_model.findLabels();
-    n_reaction_ids_training = reaction_model.reaction_ids_.size();
-    n_labels_training = reaction_model.labels_.size();
-    n_component_group_names_training = reaction_model.component_group_names_.size();
-    this->labels_training_ = reaction_model.labels_;
-
-    // define the n_reps_per_sample if not defined previously
-    if (n_reps_per_sample <= 0)
-      n_reps_per_sample = batch_size * n_epochs / reaction_model.labels_.size();
-
-    // Make the training data
-    std::vector<std::string> metabo_labels_training;
-    std::vector<std::string> metabo_features_training;
-    Eigen::Tensor<TensorT, 2> metabo_data_training;
-    std::map<std::string, int> sample_group_name_to_reps;
-    std::pair<int, int> max_reps_n_labels = reaction_model.getMaxReplicatesAndNLabels(sample_group_name_to_reps, reaction_model.sample_group_names_, reaction_model.component_group_names_);
-    if (use_concentrations) {
-      // Adjust the number of replicates per sample group
-      if (sample_values) for (auto& sample_group_name_to_rep : sample_group_name_to_reps) sample_group_name_to_rep.second = n_reps_per_sample;
-
-      // Initialize the input labels and data
-      if (sample_values) metabo_data_training.resize(int(reaction_model.component_group_names_.size()), n_reps_per_sample * int(sample_group_name_to_reps.size()));
-      else metabo_data_training.resize(int(reaction_model.component_group_names_.size()), max_reps_n_labels.second);
-      metabo_features_training = reaction_model.component_group_names_;
-
-      // Create the data matrix
-      reaction_model.getMetDataAsTensors(metabo_data_training, metabo_labels_training,
-        reaction_model.sample_group_names_, reaction_model.component_group_names_, reaction_model.sample_group_name_to_label_, sample_group_name_to_reps,
-        use_concentrations, use_MARs, sample_values, iter_values, fill_sampling, fill_mean, fill_zero, apply_fold_change, fold_change_ref, fold_change_log_base, randomize_sample_group_names);
-    }
-    else if (use_MARs) {
-      // Adjust the number of replicates per sample group
-      for (auto& sample_group_name_to_rep : sample_group_name_to_reps) sample_group_name_to_rep.second = n_reps_per_sample;
-
-      // Initialize the input labels and data
-      metabo_labels_training.reserve(n_reps_per_sample * sample_group_name_to_reps.size());
-      metabo_data_training.resize(int(reaction_model.reaction_ids_.size()), n_reps_per_sample * int(sample_group_name_to_reps.size()));
-      metabo_features_training = reaction_model.reaction_ids_;
-
-      // Create the data matrix
-      reaction_model.getMetDataAsTensors(metabo_data_training, metabo_labels_training,
-        reaction_model.sample_group_names_, reaction_model.reaction_ids_, reaction_model.sample_group_name_to_label_, sample_group_name_to_reps,
-        use_concentrations, use_MARs, sample_values, iter_values, fill_sampling, fill_mean, fill_zero, apply_fold_change, fold_change_ref, fold_change_log_base, randomize_sample_group_names);
-    }
-
-    // Read in the validation data
-    reaction_model.clear();
-    reaction_model.readBiochemicalReactions(biochem_rxns_filename, true);
-    reaction_model.readMetabolomicsData(metabo_data_filename_test);
-    reaction_model.readMetaData(meta_data_filename_test);
-    reaction_model.findComponentGroupNames();
-    if (use_MARs) {
-      reaction_model.findMARs();
-      reaction_model.findMARs(true, false);
-      reaction_model.findMARs(false, true);
-      reaction_model.removeRedundantMARs();
-    }
-    reaction_model.findLabels();
-    n_reaction_ids_validation = reaction_model.reaction_ids_.size();
-    n_labels_validation = reaction_model.labels_.size();
-    n_component_group_names_validation = reaction_model.component_group_names_.size();
-    this->labels_validation_ = reaction_model.labels_;
-
-    // Make the validation data caches
-    std::vector<std::string> metabo_labels_validation;
-    std::vector<std::string> metabo_features_validation;
-    Eigen::Tensor<TensorT, 2> metabo_data_validation;
-    sample_group_name_to_reps.clear();
-    max_reps_n_labels = reaction_model.getMaxReplicatesAndNLabels(sample_group_name_to_reps, reaction_model.sample_group_names_, reaction_model.component_group_names_);
-    if (use_concentrations) {
-      // Adjust the number of replicates per sample group
-      if (sample_values) for (auto& sample_group_name_to_rep : sample_group_name_to_reps) sample_group_name_to_rep.second = n_reps_per_sample;
-
-      // Initialize the input labels and data
-      if (sample_values) metabo_data_validation.resize(int(reaction_model.component_group_names_.size()), n_reps_per_sample * int(sample_group_name_to_reps.size()));
-      else metabo_data_validation.resize(int(reaction_model.component_group_names_.size()), max_reps_n_labels.second);
-      metabo_features_validation = reaction_model.component_group_names_;
-
-      // Create the data matrix
-      reaction_model.getMetDataAsTensors(metabo_data_validation, metabo_labels_validation,
-        reaction_model.sample_group_names_, reaction_model.component_group_names_, reaction_model.sample_group_name_to_label_, sample_group_name_to_reps,
-        use_concentrations, use_MARs, sample_values, iter_values, fill_sampling, fill_mean, fill_zero, apply_fold_change, fold_change_ref, fold_change_log_base, randomize_sample_group_names);
-    }
-    else if (use_MARs) {
-      // Adjust the number of replicates per sample group
-      for (auto& sample_group_name_to_rep : sample_group_name_to_reps) sample_group_name_to_rep.second = n_reps_per_sample;
-
-      // Initialize the input labels and data
-      metabo_labels_validation.reserve(n_reps_per_sample * sample_group_name_to_reps.size());
-      metabo_data_validation.resize(int(reaction_model.reaction_ids_.size()), n_reps_per_sample * int(sample_group_name_to_reps.size()));
-      metabo_features_validation = reaction_model.reaction_ids_;
-
-      // Create the data matrix
-      reaction_model.getMetDataAsTensors(metabo_data_validation, metabo_labels_validation,
-        reaction_model.sample_group_names_, reaction_model.reaction_ids_, reaction_model.sample_group_name_to_label_, sample_group_name_to_reps,
-        use_concentrations, use_MARs, sample_values, iter_values, fill_sampling, fill_mean, fill_zero, apply_fold_change, fold_change_ref, fold_change_log_base, randomize_sample_group_names);
-    }
+    // Read in the data and make the data matrices
+    std::vector<std::string> labels_training;
+    std::vector<std::string> features_training;
+    Eigen::Tensor<TensorT, 2> data_training;
+    std::vector<std::string> labels_validation;
+    std::vector<std::string> features_validation;
+    Eigen::Tensor<TensorT, 2> data_validation;
+    this->readAndMakeMetabolomicsTrainingAndValidationDataMatrices(n_reaction_ids_training, n_labels_training, n_component_group_names_training,
+      n_reaction_ids_validation, n_labels_validation, n_component_group_names_validation,
+      features_training, data_training, labels_training,
+      features_validation, data_validation, labels_validation,
+      biochem_rxns_filename,
+      metabo_data_filename_train, meta_data_filename_train,
+      metabo_data_filename_test, meta_data_filename_test,
+      use_concentrations, use_MARs,
+      sample_values, iter_values,
+      fill_sampling, fill_mean, fill_zero,
+      apply_fold_change, fold_change_ref, fold_change_log_base,
+      n_reps_per_sample, randomize_sample_group_names,
+      n_epochs, batch_size, memory_size);
 
     // Make the training and validation data caches after an optional transformation step
     if (use_concentrations) {
       // Apply offline transformations
-      this->transformTrainingAndValidationDataOffline(metabo_data_training, metabo_data_validation,
+      this->transformTrainingAndValidationDataOffline(data_training, data_validation,
         offline_linear_scale_input, offline_log_transform_input, offline_standardize_input, false, -1, -1, false, -1, -1);
 
       // Apply online transformations
-      this->transformTrainingAndValidationDataOnline(metabo_data_training, metabo_data_validation,
+      this->transformTrainingAndValidationDataOnline(data_training, data_validation,
         online_linear_scale_input, online_log_transform_input, online_standardize_input);
 
       // Make the training data cache
-      this->makeTrainingDataForCache(metabo_features_training, metabo_data_training, metabo_labels_training, n_epochs, batch_size, memory_size,
+      this->makeTrainingDataForCache(features_training, data_training, labels_training, n_epochs, batch_size, memory_size,
         n_component_group_names_training + this->n_encodings_continuous_ + 2*this->n_encodings_discrete_, n_component_group_names_training + 2 * this->n_encodings_continuous_ + this->n_encodings_discrete_ + this->labels_training_.size(), n_component_group_names_training + this->labels_training_.size(), shuffle_data_and_labels);
-      this->makeValidationDataForCache(metabo_features_validation, metabo_data_validation, metabo_labels_validation, n_epochs, batch_size, memory_size,
+      this->makeValidationDataForCache(features_validation, data_validation, labels_validation, n_epochs, batch_size, memory_size,
         n_component_group_names_training + this->n_encodings_continuous_ + 2*this->n_encodings_discrete_, n_component_group_names_training + 2 * this->n_encodings_continuous_ + this->n_encodings_discrete_ + this->labels_validation_.size(), n_component_group_names_training + this->labels_validation_.size(), shuffle_data_and_labels);
     }
     else if (use_MARs) {
@@ -480,24 +354,19 @@ namespace EvoNet
         min_value = std::log(min_value);
         max_value = std::log(max_value);
       }
-      this->transformTrainingAndValidationDataOffline(metabo_data_training, metabo_data_validation,
+      this->transformTrainingAndValidationDataOffline(data_training, data_validation,
         offline_linear_scale_input, offline_log_transform_input, offline_standardize_input, true, min_value, max_value, false, -1, -1);
 
       // Apply online transformations
-      this->transformTrainingAndValidationDataOnline(metabo_data_training, metabo_data_validation,
+      this->transformTrainingAndValidationDataOnline(data_training, data_validation,
         online_linear_scale_input, online_log_transform_input, online_standardize_input);
 
       // Make the training data cache
-      this->makeTrainingDataForCache(metabo_features_training, metabo_data_training, metabo_labels_training, n_epochs, batch_size, memory_size,
+      this->makeTrainingDataForCache(features_training, data_training, labels_training, n_epochs, batch_size, memory_size,
         n_reaction_ids_validation + this->n_encodings_continuous_ + 2 * this->n_encodings_discrete_, n_reaction_ids_validation + 2 * this->n_encodings_continuous_ + this->n_encodings_discrete_ + this->labels_training_.size(), n_reaction_ids_validation + this->labels_training_.size(), shuffle_data_and_labels);
-      this->makeValidationDataForCache(metabo_features_validation, metabo_data_validation, metabo_labels_validation, n_epochs, batch_size, memory_size,
+      this->makeValidationDataForCache(features_validation, data_validation, labels_validation, n_epochs, batch_size, memory_size,
         n_reaction_ids_validation + this->n_encodings_continuous_ + 2 * this->n_encodings_discrete_, n_reaction_ids_validation + 2*this->n_encodings_continuous_ + this->n_encodings_discrete_ + this->labels_validation_.size(), n_reaction_ids_validation + this->labels_validation_.size(), shuffle_data_and_labels);
     }
-
-    // Checks for the training and validation data
-    assert(n_reaction_ids_training == n_reaction_ids_validation);
-    assert(n_labels_training == n_labels_validation);
-    assert(n_component_group_names_training == n_component_group_names_validation);
   }
   template<typename TensorT>
   inline void MetabolomicsReconstructionDataSimulator<TensorT>::getNonRandomizedEncoderTrainingInputFromCacheByLabel(const std::string& label, const int& n_features, Eigen::Tensor<TensorT, 4>& input_data)
