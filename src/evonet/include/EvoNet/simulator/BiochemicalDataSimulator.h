@@ -366,7 +366,7 @@ namespace EvoNet
 
     // define the n_reps_per_sample if not defined previously
     if (n_reps_per_sample <= 0)
-      n_reps_per_sample = batch_size * n_epochs / reaction_model.labels_.size();
+      n_reps_per_sample = batch_size * n_epochs / reaction_model.sample_group_names_.size();
 
     // Make the training data
     labels_training.clear();
