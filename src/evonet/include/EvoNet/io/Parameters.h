@@ -336,9 +336,9 @@ namespace EvoNet
     // read in the trained model
     if (std::get<EvoNetParameters::Main::LoadModelBinary>(parameters).get()) {
       std::cout << "Reading in the model from binary..." << std::endl;
-      model_file.loadModelBinary(std::get<EvoNetParameters::General::DataDir>(parameters).get() + std::get<EvoNetParameters::Main::ModelName>(parameters).get() + "_model.binary", model);
+      model_file.loadModelBinary(std::get<EvoNetParameters::General::OutputDir>(parameters).get() + std::get<EvoNetParameters::Main::ModelName>(parameters).get() + "_model.binary", model);
       model.setId(1);
-      interpreter_file.loadModelInterpreterBinary(std::get<EvoNetParameters::General::DataDir>(parameters).get() + std::get<EvoNetParameters::Main::ModelName>(parameters).get() + "_interpreter.binary", interpreter);
+      interpreter_file.loadModelInterpreterBinary(std::get<EvoNetParameters::General::OutputDir>(parameters).get() + std::get<EvoNetParameters::Main::ModelName>(parameters).get() + "_interpreter.binary", interpreter);
     }
     else if (std::get<EvoNetParameters::Main::LoadModelCsv>(parameters).get()) {
       // read in the trained model

@@ -37,8 +37,8 @@ namespace EvoNet
   {
     // infer the input sizes
     assert(n_input_nodes == data_training.dimension(0));
-    assert(n_loss_output_nodes == this->n_encodings_continuous_ + this->n_encodings_discrete_);
-    assert(n_metric_output_nodes == this->n_encodings_continuous_ + this->n_encodings_discrete_);
+    assert(n_loss_output_nodes == 2*this->n_encodings_continuous_ + this->n_encodings_discrete_);
+    assert(n_metric_output_nodes == 2*this->n_encodings_continuous_ + this->n_encodings_discrete_);
     assert(data_training.dimension(0) == features.size());
     assert(data_training.dimension(1) == labels_training.size());
     assert(this->n_encodings_continuous_ > 0);
@@ -71,11 +71,16 @@ namespace EvoNet
       Eigen::array<Eigen::Index, 2> span1 = { data_training.dimension(0), data_training.dimension(1) };
       data_training_expanded.slice(offset1, span1) = data_training;
 
-      // Slices for the labels with a reorder
-      int step = 0, stride = this->labels_training_.size(), iter = 0;
+      // Slices for the labels with a reorder to partition a unique label into each batch
+      int step = 0, stride = labels_training.size()/this->labels_training_.size(), batch_iter = 0, iter = 0;
       for (int j = 0; j < data_training.dimension(1); ++j) {
         labels_training_expanded(i * data_training.dimension(1) + j, 0) = labels_training.at(iter);
-        iter += stride;
+        ++batch_iter;
+        ++iter;
+        if (batch_iter >= batch_size) {
+          batch_iter = 0;
+          iter += stride;
+        }
         if (iter >= data_training.dimension(1)) {
           ++step;
           iter = step;
@@ -102,12 +107,16 @@ namespace EvoNet
     this->loss_output_data_training_.slice(Eigen::array<Eigen::Index, 4>({ 0, 0, 0, 0 }),
       Eigen::array<Eigen::Index, 4>({ batch_size, memory_size, this->n_encodings_continuous_, n_epochs })) = KL_losses_continuous;
     this->loss_output_data_training_.slice(Eigen::array<Eigen::Index, 4>({ 0, 0, this->n_encodings_continuous_, 0 }),
+      Eigen::array<Eigen::Index, 4>({ batch_size, memory_size, this->n_encodings_continuous_, n_epochs })) = KL_losses_continuous;
+    this->loss_output_data_training_.slice(Eigen::array<Eigen::Index, 4>({ 0, 0, 2 * this->n_encodings_continuous_, 0 }),
       Eigen::array<Eigen::Index, 4>({ batch_size, memory_size, this->n_encodings_discrete_, n_epochs })) = one_hot_vec_4d;
 
     // assign the metric tensors
     this->metric_output_data_training_.slice(Eigen::array<Eigen::Index, 4>({ 0, 0, 0, 0 }),
       Eigen::array<Eigen::Index, 4>({ batch_size, memory_size, this->n_encodings_continuous_, n_epochs })) = KL_losses_continuous;
     this->metric_output_data_training_.slice(Eigen::array<Eigen::Index, 4>({ 0, 0, this->n_encodings_continuous_, 0 }),
+      Eigen::array<Eigen::Index, 4>({ batch_size, memory_size, this->n_encodings_continuous_, n_epochs })) = KL_losses_continuous;
+    this->metric_output_data_training_.slice(Eigen::array<Eigen::Index, 4>({ 0, 0, 2 * this->n_encodings_continuous_, 0 }),
       Eigen::array<Eigen::Index, 4>({ batch_size, memory_size, this->n_encodings_discrete_, n_epochs })) = one_hot_vec_4d;
   }
   template<typename TensorT>
@@ -115,8 +124,8 @@ namespace EvoNet
   {
     // infer the input sizes
     assert(n_input_nodes == data_validation.dimension(0));
-    assert(n_loss_output_nodes == this->n_encodings_continuous_ + this->n_encodings_discrete_);
-    assert(n_metric_output_nodes == this->n_encodings_continuous_ + this->n_encodings_discrete_);
+    assert(n_loss_output_nodes == 2 * this->n_encodings_continuous_ + this->n_encodings_discrete_);
+    assert(n_metric_output_nodes == 2 * this->n_encodings_continuous_ + this->n_encodings_discrete_);
     assert(data_validation.dimension(0) == features.size());
     assert(data_validation.dimension(1) == labels_validation.size());
     assert(this->n_encodings_continuous_ > 0);
@@ -150,7 +159,7 @@ namespace EvoNet
       data_validation_expanded.slice(offset1, span1) = data_validation;
 
       // Slices for the labels with a reorder
-      int step = 0, stride = this->labels_validation_.size(), iter = 0;
+      int step = 0, stride = labels_validation.size()/this->labels_validation_.size(), iter = 0;
       for (int j = 0; j < data_validation.dimension(1); ++j) {
         labels_validation_expanded(i * data_validation.dimension(1) + j, 0) = labels_validation.at(iter);
         iter += stride;
@@ -180,12 +189,16 @@ namespace EvoNet
     this->loss_output_data_validation_.slice(Eigen::array<Eigen::Index, 4>({ 0, 0, 0, 0 }),
       Eigen::array<Eigen::Index, 4>({ batch_size, memory_size, this->n_encodings_continuous_, n_epochs })) = KL_losses_continuous;
     this->loss_output_data_validation_.slice(Eigen::array<Eigen::Index, 4>({ 0, 0, this->n_encodings_continuous_, 0 }),
+      Eigen::array<Eigen::Index, 4>({ batch_size, memory_size, this->n_encodings_continuous_, n_epochs })) = KL_losses_continuous;
+    this->loss_output_data_validation_.slice(Eigen::array<Eigen::Index, 4>({ 0, 0, 2 * this->n_encodings_continuous_, 0 }),
       Eigen::array<Eigen::Index, 4>({ batch_size, memory_size, this->n_encodings_discrete_, n_epochs })) = one_hot_vec_4d;
 
     // assign the metric tensors
     this->metric_output_data_validation_.slice(Eigen::array<Eigen::Index, 4>({ 0, 0, 0, 0 }),
       Eigen::array<Eigen::Index, 4>({ batch_size, memory_size, this->n_encodings_continuous_, n_epochs })) = KL_losses_continuous;
     this->metric_output_data_validation_.slice(Eigen::array<Eigen::Index, 4>({ 0, 0, this->n_encodings_continuous_, 0 }),
+      Eigen::array<Eigen::Index, 4>({ batch_size, memory_size, this->n_encodings_continuous_, n_epochs })) = KL_losses_continuous;
+    this->metric_output_data_validation_.slice(Eigen::array<Eigen::Index, 4>({ 0, 0, 2 * this->n_encodings_continuous_, 0 }),
       Eigen::array<Eigen::Index, 4>({ batch_size, memory_size, this->n_encodings_discrete_, n_epochs })) = one_hot_vec_4d;
   }
   template<typename TensorT>
@@ -211,7 +224,7 @@ namespace EvoNet
       sample_values, iter_values,
       fill_sampling, fill_mean, fill_zero,
       apply_fold_change, fold_change_ref, fold_change_log_base,
-      n_reps_per_sample, randomize_sample_group_names,
+      n_reps_per_sample, false, //randomize_sample_group_names,
       n_epochs, batch_size, memory_size);
 
     // Make the training and validation data caches after an optional transformation step
@@ -226,9 +239,9 @@ namespace EvoNet
 
       // Make the training data cache
       this->makeTrainingDataForCache(features_training, data_training, labels_training, n_epochs, batch_size, memory_size,
-        n_component_group_names_training, this->n_encodings_continuous_ + this->n_encodings_discrete_, this->n_encodings_continuous_ + this->n_encodings_discrete_, shuffle_data_and_labels);
+        n_component_group_names_training, 2 * this->n_encodings_continuous_ + this->n_encodings_discrete_, 2 * this->n_encodings_continuous_ + this->n_encodings_discrete_, shuffle_data_and_labels);
       this->makeValidationDataForCache(features_validation, data_validation, labels_validation, n_epochs, batch_size, memory_size,
-        n_component_group_names_training, this->n_encodings_continuous_ + this->n_encodings_discrete_, this->n_encodings_continuous_ + this->n_encodings_discrete_, shuffle_data_and_labels);
+        n_component_group_names_training, 2 * this->n_encodings_continuous_ + this->n_encodings_discrete_, 2 * this->n_encodings_continuous_ + this->n_encodings_discrete_, shuffle_data_and_labels);
     }
     else if (use_MARs) {
       // Apply offline transformations
@@ -247,9 +260,9 @@ namespace EvoNet
 
       // Make the training data cache
       this->makeTrainingDataForCache(features_training, data_training, labels_training, n_epochs, batch_size, memory_size,
-        n_reaction_ids_validation, this->n_encodings_continuous_ + this->n_encodings_discrete_, this->n_encodings_continuous_ + this->n_encodings_discrete_, shuffle_data_and_labels);
+        n_reaction_ids_validation, 2 * this->n_encodings_continuous_ + this->n_encodings_discrete_, 2 * this->n_encodings_continuous_ + this->n_encodings_discrete_, shuffle_data_and_labels);
       this->makeValidationDataForCache(features_validation, data_validation, labels_validation, n_epochs, batch_size, memory_size,
-        n_reaction_ids_validation, this->n_encodings_continuous_ + this->n_encodings_discrete_, this->n_encodings_continuous_ + this->n_encodings_discrete_, shuffle_data_and_labels);
+        n_reaction_ids_validation, 2 * this->n_encodings_continuous_ + this->n_encodings_discrete_, 2 * this->n_encodings_continuous_ + this->n_encodings_discrete_, shuffle_data_and_labels);
     }
   }
 }

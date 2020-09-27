@@ -156,7 +156,7 @@ namespace EvoNetMetabolomics
 
         // read in the weights
         ModelFile<TensorT> model_file;
-        model_file.loadWeightValuesBinary(std::get<EvoNetParameters::General::DataDir>(parameters).get() + std::get<EvoNetParameters::Main::ModelName>(parameters).get() + "_model.binary", model.weights_);
+        model_file.loadWeightValuesBinary(std::get<EvoNetParameters::General::OutputDir>(parameters).get() + std::get<EvoNetParameters::Main::ModelName>(parameters).get() + "_model.binary", model.weights_);
 
         // check that all weights were read in correctly
         for (auto& weight_map : model.getWeightsMap()) {
@@ -176,7 +176,7 @@ namespace EvoNetMetabolomics
 
         // read in the weights
         ModelFile<TensorT> model_file;
-        model_file.loadWeightValuesBinary(std::get<EvoNetParameters::General::DataDir>(parameters).get() + std::get<EvoNetParameters::Main::ModelName>(parameters).get() + "_model.binary", model.weights_);
+        model_file.loadWeightValuesBinary(std::get<EvoNetParameters::General::OutputDir>(parameters).get() + std::get<EvoNetParameters::Main::ModelName>(parameters).get() + "_model.binary", model.weights_);
 
         // check that all weights were read in correctly
         for (auto& weight_map : model.getWeightsMap()) {
@@ -198,7 +198,13 @@ namespace EvoNetMetabolomics
     setModelTrainerParameters(model_trainer, args...);
 
     // CVAE specific parameters and adjustments
-    model_trainer.setNEpochsTraining(std::get<EvoNetParameters::ModelTrainer::NEpochsTraining>(parameters).get() * 10 + 1); // iterate through the cache 10x
+    if (std::get<EvoNetParameters::Examples::SimulationType>(parameters).get() == "Train10x") {
+      model_trainer.setNEpochsTraining(std::get<EvoNetParameters::ModelTrainer::NEpochsTraining>(parameters).get() * 10 + 1); // iterate through the cache 10x
+      model_trainer.setLogging(true, false, false);
+    }
+    else if (std::get<EvoNetParameters::Examples::SimulationType>(parameters).get() == "LatentTraversal" || std::get<EvoNetParameters::Examples::SimulationType>(parameters).get() == "LatentUnsClass") {
+      model_trainer.setLogging(false, true, false);
+    }
     model_trainer.KL_divergence_warmup_ = std::get<EvoNetParameters::ModelTrainer::KLDivergenceWarmup>(parameters).get();
     model_trainer.beta_ = std::get<EvoNetParameters::ModelTrainer::Beta>(parameters).get();
     model_trainer.capacity_c_ = std::get<EvoNetParameters::ModelTrainer::CapacityC>(parameters).get();
@@ -344,40 +350,5 @@ namespace EvoNetMetabolomics
     else n_features = n_component_group_names_training;
     return n_features;
   }
-
-  /*
-  @brief Generate an encoded latent space
-
-  @param[in] sample_group_name
-
-  @returns 4D Tensor of the encoded latent space
-  */
-  template<typename TensorT, typename TrainerT, typename InterpreterT, class ...ParameterTypes>
-  Eigen::Tensor<TensorT, 4> generateEncoding(const std::string& sample_group_name, Model<TensorT>& model, TrainerT& model_trainer, InterpreterT& model_interpreter, ModelLogger<TensorT>& model_logger, const ParameterTypes& ...args)
-  {
-    // Make the input nodes
-    std::vector<std::string> input_nodes;
-    makeInputNodes(input_nodes, n_features);
-
-    // Make the mu nodes
-    std::vector<std::string> encoding_nodes_mu = makeMuEncodingNodes(args...);
-    std::vector<std::string> encoding_nodes_logalpha = makeLogAlphaEncodingNodes(args...);
-
-    // Define the Model Trainer based on the output nodes
-
-    // Generate the data?
-
-    // generate the input for condition_1 and condition_2
-    Eigen::Tensor<TensorT, 4> condition_1_input(model_trainer.getBatchSize(), model_trainer.getMemorySize(), (int)input_nodes.size(), model_trainer.getNEpochsEvaluation());
-    Eigen::Tensor<TensorT, 3> time_steps_1_input(model_trainer.getBatchSize(), model_trainer.getMemorySize(), model_trainer.getNEpochsEvaluation());
-    this->metabolomics_data_.sample_group_name_ = sample_group_name;
-    this->metabolomics_data_.simulateEvaluationData(condition_1_input, time_steps_1_input);
-
-    // evaluate the encoder for condition_1 and condition_2
-    Eigen::Tensor<TensorT, 4> condition_1_output = model_trainer.evaluateModel(model, condition_1_input, time_steps_1_input, input_nodes, model_logger, model_interpreter);
-
-    return condition_1_output;
-  }
-
 }
 #endif //EVONET_METABOLOMICSCVAE_H

@@ -12,6 +12,7 @@ namespace EvoNet
   class MetabolomicsLatentTraversalDataSimulator : public BiochemicalDataSimulator<TensorT>
   {
   public:
+    int n_continuous_steps_ = 16;
     void makeTrainingDataForCache(const std::vector<std::string>& features, const Eigen::Tensor<TensorT, 2>& data_training, const std::vector<std::string>& labels_training,
       const int& n_epochs, const int& batch_size, const int& memory_size,
       const int& n_input_nodes, const int& n_loss_output_nodes, const int& n_metric_output_nodes, const bool& shuffle_data_and_labels) override;
@@ -45,10 +46,10 @@ namespace EvoNet
     assert(this->n_encodings_discrete_ > 0);
     assert(batch_size > 0);
     assert(memory_size == 1);
-    assert(n_epochs == (this->n_encodings_continuous_* this->n_encodings_discrete_) * this->labels_training_.size());
+    assert(n_epochs == this->n_continuous_steps_ * this->n_encodings_continuous_* this->n_encodings_discrete_ * this->labels_training_.size());
 
     // Gaussian sampler traversal:
-    const TensorT step_size = (0.95 - 0.05) / (batch_size - 1);
+    const TensorT step_size = (0.95 - 0.05) / (this->n_continuous_steps_ - 1);
     // Assign the encoding values by sampling the 95% confidence limits of the inverse normal distribution
     Eigen::Tensor<TensorT, 4> gaussian_samples(batch_size, memory_size, this->n_encodings_continuous_, n_epochs);
     gaussian_samples.setZero();
@@ -57,14 +58,21 @@ namespace EvoNet
     Eigen::Tensor<TensorT, 4> categorical_samples(batch_size, memory_size, this->n_encodings_discrete_, n_epochs);
     categorical_samples.setZero();
 
+    int continuous_steps_iter = 0;
     int encodings_continuous_iter = 0;
     int encodings_discrete_iter = 0;
-    for (int e = 0; e < n_epochs; ++e) {
+    for (int e = 0; e < n_epochs; e += this->n_continuous_steps_) {
+      // Slices for the epoch
+      Eigen::array<Eigen::Index, 4> offset1 = { 0, 0, 0, e };
+      Eigen::array<Eigen::Index, 4> span1 = { batch_size, memory_size, this->n_encodings_continuous_, this->n_continuous_steps_ };
+      Eigen::array<Eigen::Index, 4> span2 = { batch_size, memory_size, this->n_encodings_discrete_, this->n_continuous_steps_ };
+
       // for each epoch, sample the confidence intervals of the next encoding node...
-      gaussian_samples.chip(e, 3).chip(encodings_continuous_iter, 2) = (gaussian_samples.chip(e, 3).chip(encodings_continuous_iter, 2).constant(step_size).cumsum(0) + 
-        gaussian_samples.chip(e, 3).chip(encodings_continuous_iter, 2).constant(TensorT(0.05) - step_size)).ndtri();
+      gaussian_samples.slice(offset1, span1).chip(encodings_continuous_iter, 2) = (gaussian_samples.slice(offset1, span1).chip(encodings_continuous_iter, 2).constant(step_size).cumsum(2) +
+        gaussian_samples.slice(offset1, span1).chip(encodings_continuous_iter, 2).constant(TensorT(0.05) - step_size)).ndtri();
+
       // for each epoch, iterate the next label of the next categorical node...
-      categorical_samples.chip(e, 3).chip(encodings_discrete_iter, 2) = categorical_samples.chip(e, 3).chip(encodings_discrete_iter, 2).constant(TensorT(1));
+      categorical_samples.slice(offset1, span2).chip(encodings_discrete_iter, 2) = categorical_samples.slice(offset1, span2).chip(encodings_discrete_iter, 2).constant(TensorT(1));
       ++encodings_continuous_iter;
       if (encodings_continuous_iter >= this->n_encodings_continuous_) {
         encodings_continuous_iter = 0;
@@ -127,10 +135,10 @@ namespace EvoNet
     assert(this->n_encodings_discrete_ > 0);
     assert(batch_size > 0);
     assert(memory_size == 1);
-    assert(n_epochs == (this->n_encodings_continuous_*this->n_encodings_discrete_) * this->labels_validation_.size());
+    assert(n_epochs == this->n_continuous_steps_ * this->n_encodings_continuous_ * this->n_encodings_discrete_ * this->labels_training_.size());
 
     // Gaussian sampler traversal:
-    const TensorT step_size = (0.95 - 0.05) / (batch_size - 1);
+    const TensorT step_size = (0.95 - 0.05) / (this->n_continuous_steps_ - 1);
     // Assign the encoding values by sampling the 95% confidence limits of the inverse normal distribution
     Eigen::Tensor<TensorT, 4> gaussian_samples(batch_size, memory_size, this->n_encodings_continuous_, n_epochs);
     gaussian_samples.setZero();
@@ -141,12 +149,18 @@ namespace EvoNet
 
     int encodings_continuous_iter = 0;
     int encodings_discrete_iter = 0;
-    for (int e = 0; e < n_epochs; ++e) {
+    for (int e = 0; e < n_epochs; e += this->n_continuous_steps_) {
+      // Slices for the epoch
+      Eigen::array<Eigen::Index, 4> offset1 = { 0, 0, 0, e };
+      Eigen::array<Eigen::Index, 4> span1 = { batch_size, memory_size, this->n_encodings_continuous_, this->n_continuous_steps_ };
+      Eigen::array<Eigen::Index, 4> span2 = { batch_size, memory_size, this->n_encodings_discrete_, this->n_continuous_steps_ };
+
       // for each epoch, sample the confidence intervals of the next encoding node...
-      gaussian_samples.chip(e, 3).chip(encodings_continuous_iter, 2) = (gaussian_samples.chip(e, 3).chip(encodings_continuous_iter, 2).constant(step_size).cumsum(0) +
-        gaussian_samples.chip(e, 3).chip(encodings_continuous_iter, 2).constant(TensorT(0.05) - step_size)).ndtri();
+      gaussian_samples.slice(offset1, span1).chip(encodings_continuous_iter, 2) = (gaussian_samples.slice(offset1, span1).chip(encodings_continuous_iter, 2).constant(step_size).cumsum(2) +
+        gaussian_samples.slice(offset1, span1).chip(encodings_continuous_iter, 2).constant(TensorT(0.05) - step_size)).ndtri();
+
       // for each epoch, iterate the next label of the next categorical node...
-      categorical_samples.chip(e, 3).chip(encodings_discrete_iter, 2) = categorical_samples.chip(e, 3).chip(encodings_discrete_iter, 2).constant(TensorT(1));
+      categorical_samples.slice(offset1, span2).chip(encodings_discrete_iter, 2) = categorical_samples.slice(offset1, span2).chip(encodings_discrete_iter, 2).constant(TensorT(1));
       ++encodings_continuous_iter;
       if (encodings_continuous_iter >= this->n_encodings_continuous_) {
         encodings_continuous_iter = 0;
@@ -219,7 +233,7 @@ namespace EvoNet
       sample_values, iter_values,
       fill_sampling, fill_mean, fill_zero,
       apply_fold_change, fold_change_ref, fold_change_log_base,
-      n_reps_per_sample, randomize_sample_group_names,
+      n_reps_per_sample, false, //randomize_sample_group_names,
       n_epochs, batch_size, memory_size);
 
     // Make the training and validation data caches after an optional transformation step

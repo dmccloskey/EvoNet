@@ -1,9 +1,11 @@
 /**TODO:  Add copyright*/
 
-#include "Metabolomics_CVAE.h"
+#include <EvoNet/ml/ModelInterpreterGpu.h>
+#include <EvoNet/io/ModelInterpreterFileGpu.h>
 #include <EvoNet/simulator/MetabolomicsReconstructionDataSimulator.h>
 #include <EvoNet/models/CVAEFullyConnGpu.h>
 #include <unsupported/Eigen/CXX11/Tensor>
+#include "Metabolomics_CVAE.h"
 
 using namespace EvoNet;
 using namespace EvoNetMetabolomics;

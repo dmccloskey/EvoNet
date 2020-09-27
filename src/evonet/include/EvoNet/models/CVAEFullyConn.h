@@ -244,10 +244,10 @@ namespace EvoNet
 
     // Add the inputs
     std::vector<std::string> node_names_Gencoder = model_builder.addInputNodes(model, "Gaussian_encoding", "Gaussian_encoding", n_encodings, specify_layers); // just Mu
-    std::vector<std::string> node_names_logalpha = model_builder.addInputNodes(model, "LogAlpha", "LogAlpha", n_encodings, specify_layers);
+    std::vector<std::string> node_names_logalpha = model_builder.addInputNodes(model, "LogAlpha", "LogAlpha", n_categorical, specify_layers);
 
     // Make the softmax layer
-    std::vector<std::string> node_names_Cencoder = model_builder.addStableSoftMax(model, "Categorical_encoding-SoftMax-Out", "Categorical_encoding-SoftMax-Out", node_names_logalpha, specify_layers);
+    std::vector<std::string> node_names_Cencoder = model_builder.addStableSoftMax(model, "Categorical_encoding-SoftMax", "Categorical_encoding-SoftMax", node_names_logalpha, specify_layers);
 
     // Define the activation based on `add_feature_norm`
     std::shared_ptr<ActivationOp<TensorT>> activation = std::make_shared<LeakyReLUOp<TensorT>>(LeakyReLUOp<TensorT>());
@@ -385,6 +385,9 @@ namespace EvoNet
       std::make_shared<RandWeightInitOp<TensorT>>(RandWeightInitOp<TensorT>((TensorT)(node_names.size() + n_categorical) / 2, 1)),
       solver_op, 0.0f, 0.0f, false, specify_layers);
 
+    // Make the softmax layer
+    std::vector<std::string> node_names_Cencoder = model_builder.addStableSoftMax(model, "Categorical_encoding-SoftMax", "Categorical_encoding-SoftMax", node_names_logalpha, specify_layers);
+
     // Add the actual output nodes
     node_names_mu = model_builder.addSinglyConnected(model, "Mu", "Mu", node_names_mu, node_names_mu.size(),
       std::make_shared<LinearOp<TensorT>>(LinearOp<TensorT>()),
@@ -412,6 +415,9 @@ namespace EvoNet
       model.nodes_.at(node_name)->setType(NodeType::output);
     for (const std::string& node_name : node_names_logalpha)
       model.nodes_.at(node_name)->setType(NodeType::output);
+    for (const std::string& node_name : node_names_Cencoder)
+      model.nodes_.at(node_name)->setType(NodeType::output);
+    model.setInputAndOutputNodes();
   }
 }
 #endif //EVONET_CVAEFULLYCONN_H

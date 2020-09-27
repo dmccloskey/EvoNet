@@ -36,7 +36,8 @@ BOOST_AUTO_TEST_CASE(readAndProcessMetabolomicsTrainingAndValidationData)
   const int n_continuous = 4;
   const int n_discrete = 2;
   const int n_labels = 1;
-  const int n_epochs = (n_continuous * n_discrete) * n_labels;
+  const int n_continuous_steps = 16;
+  const int n_epochs = n_continuous_steps * n_continuous * n_discrete * n_labels;
   const int batch_size = 64;
   const int memory_size = 1;
   int n_reps_per_sample = -1;
@@ -51,6 +52,7 @@ BOOST_AUTO_TEST_CASE(readAndProcessMetabolomicsTrainingAndValidationData)
   MetabolomicsLatentTraversalDataSimulator<float> metabolomics_data;
   metabolomics_data.n_encodings_continuous_ = n_continuous;
   metabolomics_data.n_encodings_discrete_ = n_discrete;
+  metabolomics_data.n_continuous_steps_ = n_continuous_steps;
   int n_reaction_ids_training, n_labels_training, n_component_group_names_training;
   int n_reaction_ids_validation, n_labels_validation, n_component_group_names_validation;
 

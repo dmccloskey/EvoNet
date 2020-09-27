@@ -1,9 +1,11 @@
 /**TODO:  Add copyright*/
 
-#include "Metabolomics_CVAE.h"
+#include <EvoNet/ml/ModelInterpreterGpu.h>
+#include <EvoNet/io/ModelInterpreterFileGpu.h>
 #include <EvoNet/simulator/MetabolomicsLatentTraversalDataSimulator.h>
 #include <EvoNet/models/CVAEFullyConnGpu.h>
 #include <unsupported/Eigen/CXX11/Tensor>
+#include "Metabolomics_CVAE.h"
 
 using namespace EvoNet;
 using namespace EvoNetMetabolomics;
@@ -16,6 +18,7 @@ void main_(const ParameterTypes& ...args) {
   std::cout << "Making the training and validation data..." << std::endl;
   MetabolomicsLatentTraversalDataSimulator<float> data_simulator;
   const int n_features = makeDataSimulator(data_simulator, args...);
+  data_simulator.n_continuous_steps_ = 16; // default
 
   // Make the input nodes
   std::vector<std::string> input_nodes;

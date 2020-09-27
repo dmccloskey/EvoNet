@@ -1,9 +1,11 @@
 /**TODO:  Add copyright*/
 
-#include "Metabolomics_CVAE.h"
-#include <EvoNet/simulator/MetabolomicsLatentTraversalDataSimulator.h>
+#include <EvoNet/ml/ModelInterpreterGpu.h>
+#include <EvoNet/io/ModelInterpreterFileGpu.h>
+#include <EvoNet/simulator/MetabolomicsLatentUnsClassDataSimulator.h>
 #include <EvoNet/models/CVAEFullyConnGpu.h>
 #include <unsupported/Eigen/CXX11/Tensor>
+#include "Metabolomics_CVAE.h"
 
 using namespace EvoNet;
 using namespace EvoNetMetabolomics;
@@ -14,20 +16,22 @@ void main_(const ParameterTypes& ...args) {
 
   // define the data simulator
   std::cout << "Making the training and validation data..." << std::endl;
-  MetabolomicsLatentTraversalDataSimulator<float> data_simulator;
+  MetabolomicsLatentUnsClassDataSimulator<float> data_simulator;
   const int n_features = makeDataSimulator(data_simulator, args...);
 
   // Make the input nodes
   std::vector<std::string> input_nodes;
-  makeMuEncodingNodes(input_nodes, args...);
-  makeLogAlphaEncodingNodes(input_nodes, args...);
+  makeInputNodes(input_nodes, n_features);
 
   // Make the output nodes
-  std::vector<std::string> output_nodes = makeOutputNodes(n_features);
+  std::vector<std::string> encoding_nodes_mu = makeMuEncodingNodes(args...);
+  std::vector<std::string> encoding_nodes_logvar = makeLogVarEncodingNodes(args...);
+  std::vector<std::string> encoding_nodes_logalpha = makeLogAlphaEncodingNodes(args...);
+  std::vector<std::string> categorical_softmax_nodes = makeCategoricalSoftmaxNodes(args...);
 
   // define the model trainer
   CVAEFullyConnGpu<float> model_trainer;
-  makeModelTrainer<float>(model_trainer, output_nodes, std::vector<std::string>(), std::vector<std::string>(), std::vector<std::string>(), std::vector<std::string>(), args...);
+  makeModelTrainer<float>(model_trainer, std::vector<std::string>(), encoding_nodes_mu, encoding_nodes_logvar, encoding_nodes_logvar, categorical_softmax_nodes, args...);
 
   // define the model and resources
   Model<float> model;
@@ -36,7 +40,7 @@ void main_(const ParameterTypes& ...args) {
   makeModelAndInterpreters(model, model_trainer, model_interpreters, model_interpreter_file, n_features, args...);
 
   // define the model logger
-  ModelLogger<float> model_logger(true, true, true, false, false, false, false);
+  ModelLogger<float> model_logger(true, true, true, false, false, true, false, true);
 
   // Validate the model
   std::pair<std::vector<float>, std::vector<float>> model_errors = model_trainer.validateModel(model, data_simulator,
