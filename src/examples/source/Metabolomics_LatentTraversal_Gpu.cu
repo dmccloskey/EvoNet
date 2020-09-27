@@ -1,8 +1,8 @@
 /**TODO:  Add copyright*/
 
 #include "Metabolomics_CVAE.h"
-#include <EvoNet/simulator/MetabolomicsReconstructionDataSimulator.h>
-#include <EvoNet/models/CVAEFullyConnDefaultDevice.h>
+#include <EvoNet/simulator/MetabolomicsLatentTraversalDataSimulator.h>
+#include <EvoNet/models/CVAEFullyConnGpu.h>
 #include <unsupported/Eigen/CXX11/Tensor>
 
 using namespace EvoNet;
@@ -14,62 +14,32 @@ void main_(const ParameterTypes& ...args) {
 
   // define the data simulator
   std::cout << "Making the training and validation data..." << std::endl;
-  MetabolomicsReconstructionDataSimulator<float> data_simulator;
+  MetabolomicsLatentTraversalDataSimulator<float> data_simulator;
   const int n_features = makeDataSimulator(data_simulator, args...);
-
-  //// Balance the sample group names
-  //data_simulator.model_training_.sample_group_names_ = {
-  //"Evo04", "Evo04", "Evo04", "Evo04", "Evo04", "Evo04",
-  //"Evo04Evo01EP", "Evo04Evo01EP", "Evo04Evo01EP", "Evo04Evo01EP", "Evo04Evo01EP", "Evo04Evo01EP",
-  //"Evo04gnd", "Evo04gnd", "Evo04gnd", "Evo04gnd", "Evo04gnd", "Evo04gnd", "Evo04gnd",
-  //"Evo04gndEvo01EP", "Evo04gndEvo01EP", "Evo04gndEvo01EP", "Evo04gndEvo02EP", "Evo04gndEvo02EP", "Evo04gndEvo02EP",
-  //"Evo04sdhCB", "Evo04sdhCB", "Evo04sdhCB", "Evo04sdhCB", "Evo04sdhCB", "Evo04sdhCB",
-  //"Evo04sdhCBEvo01EP", "Evo04sdhCBEvo01EP", "Evo04sdhCBEvo01EP", "Evo04sdhCBEvo02EP", "Evo04sdhCBEvo02EP", "Evo04sdhCBEvo02EP",
-  //"Evo04pgi", "Evo04pgi", "Evo04pgi", "Evo04pgi", "Evo04pgi", "Evo04pgi",
-  //"Evo04pgiEvo01EP", "Evo04pgiEvo02EP", "Evo04pgiEvo03EP", "Evo04pgiEvo04EP", "Evo04pgiEvo05EP", "Evo04pgiEvo06EP",
-  //"Evo04ptsHIcrr", "Evo04ptsHIcrr", "Evo04ptsHIcrr", "Evo04ptsHIcrr", "Evo04ptsHIcrr", "Evo04ptsHIcrr",
-  //"Evo04ptsHIcrrEvo01EP", "Evo04ptsHIcrrEvo02EP", "Evo04ptsHIcrrEvo03EP", "Evo04ptsHIcrrEvo01EP", "Evo04ptsHIcrrEvo02EP", "Evo04ptsHIcrrEvo03EP",
-  //"Evo04tpiA", "Evo04tpiA", "Evo04tpiA", "Evo04tpiA", "Evo04tpiA", "Evo04tpiA",
-  //"Evo04tpiAEvo01EP", "Evo04tpiAEvo02EP", "Evo04tpiAEvo03EP", "Evo04tpiAEvo01EP", "Evo04tpiAEvo02EP", "Evo04tpiAEvo03EP"
-  //};
-  ////data_simulator.model_training_.sample_group_names_ = {
-  ////"S01_D01_PLT_25C_22hr","S01_D01_PLT_25C_6.5hr","S01_D01_PLT_25C_0hr","S01_D02_PLT_25C_22hr","S01_D02_PLT_25C_6.5hr","S01_D02_PLT_25C_0hr","S01_D05_PLT_25C_0hr","S01_D05_PLT_25C_22hr","S01_D05_PLT_25C_6.5hr","S01_D01_PLT_37C_22hr","S01_D02_PLT_37C_22hr","S01_D05_PLT_37C_22hr"
-  ////};
-  ////data_simulator.model_validation_.sample_group_names_ = {
-  ////"S02_D01_PLT_25C_22hr","S02_D01_PLT_25C_6.5hr","S02_D01_PLT_25C_0hr","S02_D02_PLT_25C_22hr","S02_D02_PLT_25C_6.5hr","S02_D02_PLT_25C_0hr","S02_D05_PLT_25C_0hr","S02_D05_PLT_25C_22hr","S02_D05_PLT_25C_6.5hr","S02_D01_PLT_37C_22hr","S02_D02_PLT_37C_22hr","S02_D05_PLT_37C_22hr"
-  ////};
 
   // Make the input nodes
   std::vector<std::string> input_nodes;
-  makeInputNodes(input_nodes, n_features);
-
-  // Make the encoding nodes and add them to the input
-  makeGaussianEncodingSamplerNodes(input_nodes, args...);
-  makeCategoricalEncodingSamplerNodes(input_nodes, args...);
-  makeCategoricalEncodingTauNodes(input_nodes, args...);
+  makeMuEncodingNodes(input_nodes, args...);
+  makeLogAlphaEncodingNodes(input_nodes, args...);
 
   // Make the output nodes
   std::vector<std::string> output_nodes = makeOutputNodes(n_features);
-  std::vector<std::string> encoding_nodes_mu = makeMuEncodingNodes(args...);
-  std::vector<std::string> encoding_nodes_logvar = makeLogVarEncodingNodes(args...);
-  std::vector<std::string> encoding_nodes_logalpha = makeLogAlphaEncodingNodes(args...);
-  std::vector<std::string> categorical_softmax_nodes = makeCategoricalSoftmaxNodes(args...);
 
   // define the model trainer
-  CVAEFullyConnDefaultDevice<float> model_trainer;
-  makeModelTrainer<float>(model_trainer, output_nodes, encoding_nodes_mu, encoding_nodes_logvar, encoding_nodes_logalpha, categorical_softmax_nodes, args...);
+  CVAEFullyConnGpu<float> model_trainer;
+  makeModelTrainer<float>(model_trainer, output_nodes, std::vector<std::string>(), std::vector<std::string>(), std::vector<std::string>(), std::vector<std::string>(), args...);
 
   // define the model and resources
   Model<float> model;
-  std::vector<ModelInterpreterDefaultDevice<float>> model_interpreters;
-  ModelInterpreterFileDefaultDevice<float> model_interpreter_file;
+  std::vector<ModelInterpreterGpu<float>> model_interpreters;
+  ModelInterpreterFileGpu<float> model_interpreter_file;
   makeModelAndInterpreters(model, model_trainer, model_interpreters, model_interpreter_file, n_features, args...);
 
   // define the model logger
   ModelLogger<float> model_logger(true, true, true, false, false, false, false);
 
-  // Train the model
-  std::pair<std::vector<float>, std::vector<float>> model_errors = model_trainer.trainModel(model, data_simulator,
+  // Validate the model
+  std::pair<std::vector<float>, std::vector<float>> model_errors = model_trainer.validateModel(model, data_simulator,
     input_nodes, model_logger, model_interpreters.front());
 }
 

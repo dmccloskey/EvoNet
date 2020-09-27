@@ -244,7 +244,7 @@ namespace EvoNet
 
     // Add the inputs
     std::vector<std::string> node_names_Gencoder = model_builder.addInputNodes(model, "Gaussian_encoding", "Gaussian_encoding", n_encodings, specify_layers); // just Mu
-    std::vector<std::string> node_names_logalpha = model_builder.addInputNodes(model, "LogAlphaEnc", "LogAlphaEnc", n_encodings, specify_layers);
+    std::vector<std::string> node_names_logalpha = model_builder.addInputNodes(model, "LogAlpha", "LogAlpha", n_encodings, specify_layers);
 
     // Make the softmax layer
     std::vector<std::string> node_names_Cencoder = model_builder.addStableSoftMax(model, "Categorical_encoding-SoftMax-Out", "Categorical_encoding-SoftMax-Out", node_names_logalpha, specify_layers);

@@ -12,8 +12,6 @@ namespace EvoNet
   class MetabolomicsLatentUnsClassDataSimulator : public BiochemicalDataSimulator<TensorT>
   {
   public:
-    int n_encodings_continuous_ = 0;
-    int n_encodings_discrete_ = 0;
     void makeTrainingDataForCache(const std::vector<std::string>& features, const Eigen::Tensor<TensorT, 2>& data_training, const std::vector<std::string>& labels_training,
       const int& n_epochs, const int& batch_size, const int& memory_size,
       const int& n_input_nodes, const int& n_loss_output_nodes, const int& n_metric_output_nodes, const bool& shuffle_data_and_labels) override;

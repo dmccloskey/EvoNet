@@ -241,6 +241,8 @@ namespace EvoNet
     Eigen::Tensor<TensorT, 3> time_steps_validation_;
     int n_epochs_training_ = 0;
     int n_epochs_validation_ = 0;
+    int n_encodings_continuous_ = 0;
+    int n_encodings_discrete_ = 0;
     std::vector<std::string> labels_training_;
     std::vector<std::string> labels_validation_;
   protected:

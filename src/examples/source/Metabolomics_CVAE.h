@@ -4,8 +4,8 @@
 #define EVONET_METABOLOMICSCVAE_H
 
 // .h
-#include <EvoNet/simulator/MetabolomicsReconstructionDataSimulator.h>
-#include <EvoNet/models/CVAEFullyConnDefaultDevice.h>
+#include <EvoNet/simulator/BiochemicalDataSimulator.h>
+#include <EvoNet/models/CVAEFullyConn.h>
 
 using namespace EvoNet;
 
@@ -45,6 +45,26 @@ namespace EvoNetMetabolomics
     for (int i = 0; i < std::get<EvoNetParameters::ModelTrainer::NEncodingsCategorical>(parameters).get(); ++i) {
       char name_char[512];
       sprintf(name_char, "Categorical_encoding_%012d-InverseTau", i);
+      std::string name(name_char);
+      input_nodes.push_back(name);
+    }
+  }
+  template<class ...ParameterTypes>
+  static void makeLogAlphaEncodingNodes(std::vector<std::string>& input_nodes, const ParameterTypes& ...args) {
+    auto parameters = std::make_tuple(args...);
+    for (int i = 0; i < std::get<EvoNetParameters::ModelTrainer::NEncodingsCategorical>(parameters).get(); ++i) {
+      char name_char[512];
+      sprintf(name_char, "LogAlpha_%012d", i);
+      std::string name(name_char);
+      input_nodes.push_back(name);
+    }
+  }
+  template<class ...ParameterTypes>
+  static void makeMuEncodingNodes(std::vector<std::string>& input_nodes, const ParameterTypes& ...args) {
+    auto parameters = std::make_tuple(args...);
+    for (int i = 0; i < std::get<EvoNetParameters::ModelTrainer::NEncodingsContinuous>(parameters).get(); ++i) {
+      char name_char[512];
+      sprintf(name_char, "Gaussian_encoding_%012d", i);
       std::string name(name_char);
       input_nodes.push_back(name);
     }
@@ -275,7 +295,7 @@ namespace EvoNetMetabolomics
     model_trainer.setMetricFunctionHelpers(metric_function_helpers);
   }
   template<typename TensorT, class ...ParameterTypes>
-  static int makeDataSimulator(MetabolomicsReconstructionDataSimulator<TensorT>& data_simulator, const ParameterTypes& ...args) {
+  static int makeDataSimulator(BiochemicalDataSimulator<TensorT>& data_simulator, const ParameterTypes& ...args) {
     auto parameters = std::make_tuple(args...);
 
     // define the data simulator
