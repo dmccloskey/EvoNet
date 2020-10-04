@@ -10,6 +10,7 @@ set(sources_list_h
 	DataSimulator.h
 	EMGModel.h
 	HarmonicOscillatorSimulator.h
+	MetabolomicsLatentArithmeticDataSimulator.h
 	MetabolomicsClassificationDataSimulator.h
 	MetabolomicsLatentTraversalDataSimulator.h
 	MetabolomicsLatentUnsClassDataSimulator.h
