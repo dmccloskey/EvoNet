@@ -504,7 +504,7 @@ namespace EvoNet
       solver_op, 0.0f, 0.0f, false, specify_layers);
 
     // Make the Gaussian layer
-    std::vector<std::string> node_names_Gencoder_L = model_builder.addSinglyConnected(model, "Gaussian_encoding@L@R", "Gaussian_encoding@L", node_names_mu, node_names_mu.size(),
+    std::vector<std::string> node_names_Gencoder_L = model_builder.addSinglyConnected(model, "Gaussian_encoding_LR", "Gaussian_encoding_L", node_names_mu, node_names_mu.size(),
       std::make_shared<LinearOp<TensorT>>(LinearOp<TensorT>()),
       std::make_shared<LinearGradOp<TensorT>>(LinearGradOp<TensorT>()),
       integration_op, integration_error_op, integration_weight_grad_op,
@@ -512,7 +512,7 @@ namespace EvoNet
       std::make_shared<DummySolverOp<TensorT>>(DummySolverOp<TensorT>()), 0.0f, 0.0f, false, specify_layers);
 
     // Make the softmax layer
-    std::vector<std::string> node_names_Cencoder_L = model_builder.addStableSoftMax(model, "Categorical_encoding-SoftMax@L@R", "Categorical_encoding-SoftMax@L", node_names_logalpha, specify_layers);
+    std::vector<std::string> node_names_Cencoder_L = model_builder.addStableSoftMax(model, "Categorical_encoding-SoftMax_LR", "Categorical_encoding-SoftMax_L", node_names_logalpha, specify_layers);
 
     // Add the inputs (Right hand side)
     node_names = model_builder.addInputNodes(model, "Input@R", "Input@R", n_inputs, specify_layers);
@@ -557,7 +557,7 @@ namespace EvoNet
       solver_op, 0.0f, 0.0f, false, specify_layers);
 
     // Make the Gaussian layer
-    std::vector<std::string> node_names_Gencoder_R = model_builder.addSinglyConnected(model, "Gaussian_encoding@L@R", "Gaussian_encoding@R", node_names_mu, node_names_mu.size(),
+    std::vector<std::string> node_names_Gencoder_R = model_builder.addSinglyConnected(model, "Gaussian_encoding_LR", "Gaussian_encoding_R", node_names_mu, node_names_mu.size(),
       std::make_shared<LinearOp<TensorT>>(LinearOp<TensorT>()),
       std::make_shared<LinearGradOp<TensorT>>(LinearGradOp<TensorT>()),
       integration_op, integration_error_op, integration_weight_grad_op,
@@ -565,7 +565,28 @@ namespace EvoNet
       std::make_shared<DummySolverOp<TensorT>>(DummySolverOp<TensorT>()), 0.0f, 0.0f, false, specify_layers);
 
     // Make the softmax layer
-    std::vector<std::string> node_names_Cencoder_R = model_builder.addStableSoftMax(model, "Categorical_encoding-SoftMax@L@R", "Categorical_encoding-SoftMax@R", node_names_logalpha, specify_layers);
+    std::vector<std::string> node_names_Cencoder_R = model_builder.addStableSoftMax(model, "Categorical_encoding-SoftMax_LR", "Categorical_encoding-SoftMax_R", node_names_logalpha, specify_layers);
+
+    // Rename the input nodes
+    std::vector<std::vector<std::string>> tokens_vec = { {"Input@L"}, {"Input@R"} };
+    std::vector<std::string> replacement_vec = { "Input_L", "Input_R" };
+    for (auto& node_map : model.nodes_) {
+      for (int i = 0; i < replacement_vec.size(); ++i) {
+        if (node_map.first == tokens_vec.at(i).front()) {
+          std::string new_node_name = ReplaceTokens(node_map.first, tokens_vec.at(i), replacement_vec.at(i));
+          node_map.first = new_node_name;
+          node_map.second->setName(new_node_name);
+        }
+      }
+    }
+    for (auto& link_map : model.links_) {
+      for (int i = 0; i < replacement_vec.size(); ++i) {
+        if (link_map.second->getSourceNodeName() == tokens_vec.at(i).front()) {
+          std::string new_source_name = ReplaceTokens(link_map.second->getSourceNodeName(), tokens_vec.at(i), replacement_vec.at(i));
+          link_map.second->setSourceNodeName(new_source_name);
+        }
+      }
+    }
 
     // Rename all of the weights
     std::vector<std::string> tokens = { "@L", "@R" };
@@ -597,12 +618,11 @@ namespace EvoNet
       std::make_shared<LinearOp<TensorT>>(LinearOp<TensorT>()),
       std::make_shared<LinearGradOp<TensorT>>(LinearGradOp<TensorT>()),
       integration_op, integration_error_op, integration_weight_grad_op,
-      std::make_shared<ConstWeightInitOp<TensorT>>(ConstWeightInitOp<TensorT>(1)),
+      weight_average,
       std::make_shared<DummySolverOp<TensorT>>(DummySolverOp<TensorT>()), 0.0f, 0.0f, false, specify_layers);
     model_builder.addSinglyConnected(model, "Categorical_encoding-SoftMax", node_names_Cencoder_R, node_names_Cencoder,
-      weight_sign,
+      weight_average,
       std::make_shared<DummySolverOp<TensorT>>(DummySolverOp<TensorT>()), 0.0f, specify_layers);
-
 
     // Add the Decoder FC layers
     if (n_hidden_2 > 0) {
@@ -672,9 +692,7 @@ namespace EvoNet
       std::make_shared<DummySolverOp<TensorT>>(DummySolverOp<TensorT>()), 0.0f, 0.0f, false, true);
 
     // Specify the output node types manually
-    for (const std::string& node_name : node_names_mu)
-      model.nodes_.at(node_name)->setType(NodeType::output);
-    for (const std::string& node_name : node_names_logvar)
+    for (const std::string& node_name : node_names_Gencoder)
       model.nodes_.at(node_name)->setType(NodeType::output);
     for (const std::string& node_name : node_names_Cencoder)
       model.nodes_.at(node_name)->setType(NodeType::output);
