@@ -37,8 +37,8 @@ namespace EvoNet
   {
     // infer the input sizes
     assert(n_input_nodes == data_training.dimension(0));
-    assert(n_loss_output_nodes == 2*this->n_encodings_continuous_ + this->n_encodings_discrete_);
-    assert(n_metric_output_nodes == 2*this->n_encodings_continuous_ + this->n_encodings_discrete_);
+    assert(n_loss_output_nodes == /*2*this->n_encodings_continuous_ + */this->n_encodings_discrete_);
+    assert(n_metric_output_nodes == /*2*this->n_encodings_continuous_ + */this->n_encodings_discrete_);
     assert(data_training.dimension(0) == features.size());
     assert(data_training.dimension(1) == labels_training.size());
     assert(this->n_encodings_continuous_ > 0);
@@ -128,8 +128,8 @@ namespace EvoNet
   {
     // infer the input sizes
     assert(n_input_nodes == data_validation.dimension(0));
-    assert(n_loss_output_nodes == 2 * this->n_encodings_continuous_ + this->n_encodings_discrete_);
-    assert(n_metric_output_nodes == 2 * this->n_encodings_continuous_ + this->n_encodings_discrete_);
+    assert(n_loss_output_nodes == /*2 * this->n_encodings_continuous_ + */this->n_encodings_discrete_);
+    assert(n_metric_output_nodes == /*2 * this->n_encodings_continuous_ + */this->n_encodings_discrete_);
     assert(data_validation.dimension(0) == features.size());
     assert(data_validation.dimension(1) == labels_validation.size());
     assert(this->n_encodings_continuous_ > 0);
@@ -247,9 +247,9 @@ namespace EvoNet
 
       // Make the training data cache
       this->makeTrainingDataForCache(features_training, data_training, labels_training, n_epochs, batch_size, memory_size,
-        n_component_group_names_training, 2 * this->n_encodings_continuous_ + this->n_encodings_discrete_, 2 * this->n_encodings_continuous_ + this->n_encodings_discrete_, shuffle_data_and_labels);
+        n_component_group_names_training, /*2 * this->n_encodings_continuous_ + */this->n_encodings_discrete_, /*2 * this->n_encodings_continuous_ + */this->n_encodings_discrete_, shuffle_data_and_labels);
       this->makeValidationDataForCache(features_validation, data_validation, labels_validation, n_epochs, batch_size, memory_size,
-        n_component_group_names_training, 2 * this->n_encodings_continuous_ + this->n_encodings_discrete_, 2 * this->n_encodings_continuous_ + this->n_encodings_discrete_, shuffle_data_and_labels);
+        n_component_group_names_training, /*2 * this->n_encodings_continuous_ + */this->n_encodings_discrete_, /*2 * this->n_encodings_continuous_ + */this->n_encodings_discrete_, shuffle_data_and_labels);
     }
     else if (use_MARs) {
       // Apply offline transformations
@@ -268,9 +268,9 @@ namespace EvoNet
 
       // Make the training data cache
       this->makeTrainingDataForCache(features_training, data_training, labels_training, n_epochs, batch_size, memory_size,
-        n_reaction_ids_validation, 2 * this->n_encodings_continuous_ + this->n_encodings_discrete_, 2 * this->n_encodings_continuous_ + this->n_encodings_discrete_, shuffle_data_and_labels);
+        n_reaction_ids_validation, /*2 * this->n_encodings_continuous_ + */this->n_encodings_discrete_, /*2 * this->n_encodings_continuous_ + */this->n_encodings_discrete_, shuffle_data_and_labels);
       this->makeValidationDataForCache(features_validation, data_validation, labels_validation, n_epochs, batch_size, memory_size,
-        n_reaction_ids_validation, 2 * this->n_encodings_continuous_ + this->n_encodings_discrete_, 2 * this->n_encodings_continuous_ + this->n_encodings_discrete_, shuffle_data_and_labels);
+        n_reaction_ids_validation, /*2 * this->n_encodings_continuous_ + */this->n_encodings_discrete_, /*2 * this->n_encodings_continuous_ + */this->n_encodings_discrete_, shuffle_data_and_labels);
     }
   }
 }
