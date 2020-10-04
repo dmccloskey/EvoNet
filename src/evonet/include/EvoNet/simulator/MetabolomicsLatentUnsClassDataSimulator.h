@@ -104,19 +104,23 @@ namespace EvoNet
       Eigen::array<Eigen::Index, 2>({ data_training.dimension(1) * expansion_factor - over_expanded, one_hot_vec.dimension(1) })
     ).reshape(Eigen::array<Eigen::Index, 4>({ batch_size, memory_size, n_epochs, int(labels_training_.size()) })
     ).shuffle(Eigen::array<Eigen::Index, 4>({ 0,1,3,2 }));
+    //this->loss_output_data_training_.slice(Eigen::array<Eigen::Index, 4>({ 0, 0, 0, 0 }),
+    //  Eigen::array<Eigen::Index, 4>({ batch_size, memory_size, this->n_encodings_continuous_, n_epochs })) = KL_losses_continuous;
+    //this->loss_output_data_training_.slice(Eigen::array<Eigen::Index, 4>({ 0, 0, this->n_encodings_continuous_, 0 }),
+    //  Eigen::array<Eigen::Index, 4>({ batch_size, memory_size, this->n_encodings_continuous_, n_epochs })) = KL_losses_continuous;
+    //this->loss_output_data_training_.slice(Eigen::array<Eigen::Index, 4>({ 0, 0, 2 * this->n_encodings_continuous_, 0 }),
+    //  Eigen::array<Eigen::Index, 4>({ batch_size, memory_size, this->n_encodings_discrete_, n_epochs })) = one_hot_vec_4d;
     this->loss_output_data_training_.slice(Eigen::array<Eigen::Index, 4>({ 0, 0, 0, 0 }),
-      Eigen::array<Eigen::Index, 4>({ batch_size, memory_size, this->n_encodings_continuous_, n_epochs })) = KL_losses_continuous;
-    this->loss_output_data_training_.slice(Eigen::array<Eigen::Index, 4>({ 0, 0, this->n_encodings_continuous_, 0 }),
-      Eigen::array<Eigen::Index, 4>({ batch_size, memory_size, this->n_encodings_continuous_, n_epochs })) = KL_losses_continuous;
-    this->loss_output_data_training_.slice(Eigen::array<Eigen::Index, 4>({ 0, 0, 2 * this->n_encodings_continuous_, 0 }),
       Eigen::array<Eigen::Index, 4>({ batch_size, memory_size, this->n_encodings_discrete_, n_epochs })) = one_hot_vec_4d;
 
     // assign the metric tensors
+    //this->metric_output_data_training_.slice(Eigen::array<Eigen::Index, 4>({ 0, 0, 0, 0 }),
+    //  Eigen::array<Eigen::Index, 4>({ batch_size, memory_size, this->n_encodings_continuous_, n_epochs })) = KL_losses_continuous;
+    //this->metric_output_data_training_.slice(Eigen::array<Eigen::Index, 4>({ 0, 0, this->n_encodings_continuous_, 0 }),
+    //  Eigen::array<Eigen::Index, 4>({ batch_size, memory_size, this->n_encodings_continuous_, n_epochs })) = KL_losses_continuous;
+    //this->metric_output_data_training_.slice(Eigen::array<Eigen::Index, 4>({ 0, 0, 2 * this->n_encodings_continuous_, 0 }),
+    //  Eigen::array<Eigen::Index, 4>({ batch_size, memory_size, this->n_encodings_discrete_, n_epochs })) = one_hot_vec_4d;
     this->metric_output_data_training_.slice(Eigen::array<Eigen::Index, 4>({ 0, 0, 0, 0 }),
-      Eigen::array<Eigen::Index, 4>({ batch_size, memory_size, this->n_encodings_continuous_, n_epochs })) = KL_losses_continuous;
-    this->metric_output_data_training_.slice(Eigen::array<Eigen::Index, 4>({ 0, 0, this->n_encodings_continuous_, 0 }),
-      Eigen::array<Eigen::Index, 4>({ batch_size, memory_size, this->n_encodings_continuous_, n_epochs })) = KL_losses_continuous;
-    this->metric_output_data_training_.slice(Eigen::array<Eigen::Index, 4>({ 0, 0, 2 * this->n_encodings_continuous_, 0 }),
       Eigen::array<Eigen::Index, 4>({ batch_size, memory_size, this->n_encodings_discrete_, n_epochs })) = one_hot_vec_4d;
   }
   template<typename TensorT>
@@ -186,19 +190,23 @@ namespace EvoNet
       Eigen::array<Eigen::Index, 2>({ data_validation.dimension(1) * expansion_factor - over_expanded, one_hot_vec.dimension(1) })
     ).reshape(Eigen::array<Eigen::Index, 4>({ batch_size, memory_size, n_epochs, int(labels_validation_.size()) })
     ).shuffle(Eigen::array<Eigen::Index, 4>({ 0,1,3,2 }));
+    //this->loss_output_data_validation_.slice(Eigen::array<Eigen::Index, 4>({ 0, 0, 0, 0 }),
+    //  Eigen::array<Eigen::Index, 4>({ batch_size, memory_size, this->n_encodings_continuous_, n_epochs })) = KL_losses_continuous;
+    //this->loss_output_data_validation_.slice(Eigen::array<Eigen::Index, 4>({ 0, 0, this->n_encodings_continuous_, 0 }),
+    //  Eigen::array<Eigen::Index, 4>({ batch_size, memory_size, this->n_encodings_continuous_, n_epochs })) = KL_losses_continuous;
+    //this->loss_output_data_validation_.slice(Eigen::array<Eigen::Index, 4>({ 0, 0, 2 * this->n_encodings_continuous_, 0 }),
+    //  Eigen::array<Eigen::Index, 4>({ batch_size, memory_size, this->n_encodings_discrete_, n_epochs })) = one_hot_vec_4d;
     this->loss_output_data_validation_.slice(Eigen::array<Eigen::Index, 4>({ 0, 0, 0, 0 }),
-      Eigen::array<Eigen::Index, 4>({ batch_size, memory_size, this->n_encodings_continuous_, n_epochs })) = KL_losses_continuous;
-    this->loss_output_data_validation_.slice(Eigen::array<Eigen::Index, 4>({ 0, 0, this->n_encodings_continuous_, 0 }),
-      Eigen::array<Eigen::Index, 4>({ batch_size, memory_size, this->n_encodings_continuous_, n_epochs })) = KL_losses_continuous;
-    this->loss_output_data_validation_.slice(Eigen::array<Eigen::Index, 4>({ 0, 0, 2 * this->n_encodings_continuous_, 0 }),
       Eigen::array<Eigen::Index, 4>({ batch_size, memory_size, this->n_encodings_discrete_, n_epochs })) = one_hot_vec_4d;
 
     // assign the metric tensors
+    //this->metric_output_data_validation_.slice(Eigen::array<Eigen::Index, 4>({ 0, 0, 0, 0 }),
+    //  Eigen::array<Eigen::Index, 4>({ batch_size, memory_size, this->n_encodings_continuous_, n_epochs })) = KL_losses_continuous;
+    //this->metric_output_data_validation_.slice(Eigen::array<Eigen::Index, 4>({ 0, 0, this->n_encodings_continuous_, 0 }),
+    //  Eigen::array<Eigen::Index, 4>({ batch_size, memory_size, this->n_encodings_continuous_, n_epochs })) = KL_losses_continuous;
+    //this->metric_output_data_validation_.slice(Eigen::array<Eigen::Index, 4>({ 0, 0, 2 * this->n_encodings_continuous_, 0 }),
+    //  Eigen::array<Eigen::Index, 4>({ batch_size, memory_size, this->n_encodings_discrete_, n_epochs })) = one_hot_vec_4d;
     this->metric_output_data_validation_.slice(Eigen::array<Eigen::Index, 4>({ 0, 0, 0, 0 }),
-      Eigen::array<Eigen::Index, 4>({ batch_size, memory_size, this->n_encodings_continuous_, n_epochs })) = KL_losses_continuous;
-    this->metric_output_data_validation_.slice(Eigen::array<Eigen::Index, 4>({ 0, 0, this->n_encodings_continuous_, 0 }),
-      Eigen::array<Eigen::Index, 4>({ batch_size, memory_size, this->n_encodings_continuous_, n_epochs })) = KL_losses_continuous;
-    this->metric_output_data_validation_.slice(Eigen::array<Eigen::Index, 4>({ 0, 0, 2 * this->n_encodings_continuous_, 0 }),
       Eigen::array<Eigen::Index, 4>({ batch_size, memory_size, this->n_encodings_discrete_, n_epochs })) = one_hot_vec_4d;
   }
   template<typename TensorT>
