@@ -180,9 +180,13 @@ namespace EvoNet
 
     // expand the validation data to fit into the requested input size
     const int expansion_factor = maxFunc(std::ceil(TensorT(batch_size * n_epochs) / TensorT(data_validation.dimension(1))), 1);
-    assert(expansion_factor == 1);
+    if (expansion_factor != 1) {
+      std::cout << "validation expansion_factor = " << expansion_factor << "." << std::endl;
+    };
     const int over_expanded = data_validation.dimension(1) * expansion_factor - batch_size * n_epochs;
-    assert(over_expanded == 0);
+    if (over_expanded != 0) {
+      std::cout << "validation over_expanded = " << over_expanded << "." << std::endl;
+    }
     assert(batch_size * memory_size * n_epochs == data_validation.dimension(1) * expansion_factor - over_expanded);
     Eigen::Tensor<TensorT, 2> data_validation_expanded(data_validation.dimension(0), data_validation.dimension(1) * expansion_factor);
     for (int i = 0; i < expansion_factor; ++i) {
