@@ -57,12 +57,12 @@ namespace EvoNet
       if (this->KL_divergence_warmup_) {
         TensorT scale_factor1 = (n_epochs - 100 > 0) ? n_epochs - 100 : 1;
         beta /= 2.5e4 * scale_factor1;
-        if (beta > this->beta_) beta = 30;
+        if (beta > this->beta_) beta = this->beta_;
         TensorT scale_factor2 = (n_epochs - 1.0e4 > 0) ? n_epochs - 1.0e4 : 1;
         capacity_c /= 1.5e4 * scale_factor2;
-        if (capacity_c > this->capacity_c_) capacity_c = 5;
+        if (capacity_c > this->capacity_c_) capacity_c = this->capacity_c_;
         capacity_d /= 1.5e4 * scale_factor2;
-        if (capacity_d > this->capacity_d_) capacity_d = 5;
+        if (capacity_d > this->capacity_d_) capacity_d = this->capacity_d_;
       }
       this->getLossFunctionHelpers().at(1).loss_functions_.at(0) = std::make_shared<KLDivergenceMuLossOp<float>>(KLDivergenceMuLossOp<float>(1e-6, beta, capacity_c));
       this->getLossFunctionHelpers().at(2).loss_functions_.at(0) = std::make_shared<KLDivergenceLogVarLossOp<float>>(KLDivergenceLogVarLossOp<float>(1e-6, beta, capacity_c));

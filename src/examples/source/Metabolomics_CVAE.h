@@ -276,19 +276,21 @@ namespace EvoNetMetabolomics
     MetricFunctionHelper<TensorT> metric_function_helper1, metric_function_helper2;
     if (output_nodes.size()) {
       metric_function_helper1.output_nodes_ = output_nodes;
-      metric_function_helper1.metric_functions_ = { std::make_shared<CosineSimilarityOp<TensorT>>(CosineSimilarityOp<TensorT>("Mean")), std::make_shared<CosineSimilarityOp<TensorT>>(CosineSimilarityOp<TensorT>("Var")),
-        std::make_shared<PearsonROp<TensorT>>(PearsonROp<TensorT>("Mean")), std::make_shared<PearsonROp<TensorT>>(PearsonROp<TensorT>("Var")),
+      metric_function_helper1.metric_functions_ = { 
+        //std::make_shared<CosineSimilarityOp<TensorT>>(CosineSimilarityOp<TensorT>("Mean")), std::make_shared<CosineSimilarityOp<TensorT>>(CosineSimilarityOp<TensorT>("Var")),
+        //std::make_shared<PearsonROp<TensorT>>(PearsonROp<TensorT>("Mean")), std::make_shared<PearsonROp<TensorT>>(PearsonROp<TensorT>("Var")),
         std::make_shared<EuclideanDistOp<TensorT>>(EuclideanDistOp<TensorT>("Mean")), std::make_shared<EuclideanDistOp<TensorT>>(EuclideanDistOp<TensorT>("Var")),
-        std::make_shared<ManhattanDistOp<TensorT>>(ManhattanDistOp<TensorT>("Mean")), std::make_shared<ManhattanDistOp<TensorT>>(ManhattanDistOp<TensorT>("Var")),
-        std::make_shared<JeffreysAndMatusitaDistOp<TensorT>>(JeffreysAndMatusitaDistOp<TensorT>("Mean")), std::make_shared<JeffreysAndMatusitaDistOp<TensorT>>(JeffreysAndMatusitaDistOp<TensorT>("Var")),
-        std::make_shared<LogarithmicDistOp<TensorT>>(LogarithmicDistOp<TensorT>("Mean")), std::make_shared<LogarithmicDistOp<TensorT>>(LogarithmicDistOp<TensorT>("Var")),
+        //std::make_shared<ManhattanDistOp<TensorT>>(ManhattanDistOp<TensorT>("Mean")), std::make_shared<ManhattanDistOp<TensorT>>(ManhattanDistOp<TensorT>("Var")),
+        //std::make_shared<JeffreysAndMatusitaDistOp<TensorT>>(JeffreysAndMatusitaDistOp<TensorT>("Mean")), std::make_shared<JeffreysAndMatusitaDistOp<TensorT>>(JeffreysAndMatusitaDistOp<TensorT>("Var")),
+        //std::make_shared<LogarithmicDistOp<TensorT>>(LogarithmicDistOp<TensorT>("Mean")), std::make_shared<LogarithmicDistOp<TensorT>>(LogarithmicDistOp<TensorT>("Var")),
         std::make_shared<PercentDifferenceOp<TensorT>>(PercentDifferenceOp<TensorT>("Mean")), std::make_shared<PercentDifferenceOp<TensorT>>(PercentDifferenceOp<TensorT>("Var")) };
-      metric_function_helper1.metric_names_ = { "CosineSimilarity-Mean", "CosineSimilarity-Var",
-        "PearsonR-Mean", "PearsonR-Var",
+      metric_function_helper1.metric_names_ = { 
+        //"CosineSimilarity-Mean", "CosineSimilarity-Var",
+        //"PearsonR-Mean", "PearsonR-Var",
         "EuclideanDist-Mean", "EuclideanDist-Var",
-        "ManhattanDist-Mean", "ManhattanDist-Var",
-        "JeffreysAndMatusitaDist-Mean", "JeffreysAndMatusitaDist-Var",
-        "LogarithmicDist-Mean", "LogarithmicDist-Var",
+        //"ManhattanDist-Mean", "ManhattanDist-Var",
+        //"JeffreysAndMatusitaDist-Mean", "JeffreysAndMatusitaDist-Var",
+        //"LogarithmicDist-Mean", "LogarithmicDist-Var",
         "PercentDifference-Mean", "PercentDifference-Var" };
       metric_function_helpers.push_back(metric_function_helper1);
     }

@@ -303,12 +303,12 @@ public:
 
     // Increase the KL divergence beta after [...] number of iterations
     TensorT scale_factor1 = (n_epochs - 100 > 0) ? n_epochs - 100 : 1;
-    TensorT beta = 30 / 1.0e4 * scale_factor1;
+    TensorT beta = 30 / 2.5e4 * scale_factor1;
     if (beta > 30) beta = 30;
     TensorT scale_factor2 = (n_epochs - 1.0e4 > 0) ? n_epochs - 1.0e4 : 1;
-    TensorT capacity_c = 5 / 1.0e4 * scale_factor2;
+    TensorT capacity_c = 5 / 1.5e4 * scale_factor2;
     if (capacity_c > 5) capacity_c = 5;
-    TensorT capacity_d = 5 / 1.0e4 * scale_factor2;
+    TensorT capacity_d = 5 / 1.5e4 * scale_factor2;
     if (capacity_d > 5) capacity_d = 5;
     this->getLossFunctionHelpers().at(1).loss_functions_.at(0) = std::make_shared<KLDivergenceMuLossOp<float>>(KLDivergenceMuLossOp<float>(1e-6, beta, capacity_c));
     this->getLossFunctionHelpers().at(2).loss_functions_.at(0) = std::make_shared<KLDivergenceLogVarLossOp<float>>(KLDivergenceLogVarLossOp<float>(1e-6, beta, capacity_c));
@@ -625,7 +625,7 @@ void trainModel(const std::string& data_dir, const bool& make_model) {
 
   // define the model trainers and resources for the trainers
   std::vector<ModelInterpreterGpu<float>> model_interpreters;
-  ModelResources model_resources = { ModelDevice(0, 1) };
+  ModelResources model_resources = { ModelDevice(1, 1) };
   ModelInterpreterGpu<float> model_interpreter(model_resources);
   model_interpreters.push_back(model_interpreter);
 
@@ -643,8 +643,10 @@ void trainModel(const std::string& data_dir, const bool& make_model) {
   std::vector<LossFunctionHelper<float>> loss_function_helpers;
   LossFunctionHelper<float> loss_function_helper1, loss_function_helper2, loss_function_helper3, loss_function_helper4;
   loss_function_helper1.output_nodes_ = output_nodes;
-  loss_function_helper1.loss_functions_ = { std::make_shared<MSELossOp<float>>(MSELossOp<float>(1e-6, 1.0)) };
-  loss_function_helper1.loss_function_grads_ = { std::make_shared<MSELossGradOp<float>>(MSELossGradOp<float>(1e-6, 1.0)) };
+  //loss_function_helper1.loss_functions_ = { std::make_shared<MSELossOp<float>>(MSELossOp<float>(1e-6, 1.0)) };
+  //loss_function_helper1.loss_function_grads_ = { std::make_shared<MSELossGradOp<float>>(MSELossGradOp<float>(1e-6, 1.0)) };
+  loss_function_helper1.loss_functions_ = { std::make_shared<MAPELossOp<float>>(MAPELossOp<float>(1e-6, 1e-5)) };
+  loss_function_helper1.loss_function_grads_ = { std::make_shared<MAPELossGradOp<float>>(MAPELossGradOp<float>(1e-6, 1e-5)) };
   loss_function_helpers.push_back(loss_function_helper1);
   loss_function_helper2.output_nodes_ = encoding_nodes_mu;
   loss_function_helper2.loss_functions_ = { std::make_shared<KLDivergenceMuLossOp<float>>(KLDivergenceMuLossOp<float>(1e-6, 0.0, 0.0)) };
