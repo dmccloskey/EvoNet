@@ -367,8 +367,10 @@ namespace EvoNet
     this->labels_training_ = reaction_model.labels_;
 
     // define the n_reps_per_sample if not defined previously
-    if (n_reps_per_sample <= 0)
-      n_reps_per_sample = batch_size * n_epochs / reaction_model.sample_group_names_.size();
+    int n_reps_per_sample_training = n_reps_per_sample;
+    if (n_reps_per_sample <= 0) {
+      n_reps_per_sample_training = std::ceil(batch_size * n_epochs / reaction_model.sample_group_names_.size());
+    }
 
     // Make the training data
     labels_training.clear();
@@ -377,10 +379,10 @@ namespace EvoNet
     std::pair<int, int> max_reps_n_labels = reaction_model.getMaxReplicatesAndNLabels(sample_group_name_to_reps, reaction_model.sample_group_names_, reaction_model.component_group_names_);
     if (use_concentrations) {
       // Adjust the number of replicates per sample group
-      if (sample_values) for (auto& sample_group_name_to_rep : sample_group_name_to_reps) sample_group_name_to_rep.second = n_reps_per_sample;
+      if (sample_values) for (auto& sample_group_name_to_rep : sample_group_name_to_reps) sample_group_name_to_rep.second = n_reps_per_sample_training;
 
       // Initialize the input labels and data
-      if (sample_values) data_training.resize(int(reaction_model.component_group_names_.size()), n_reps_per_sample * int(sample_group_name_to_reps.size()));
+      if (sample_values) data_training.resize(int(reaction_model.component_group_names_.size()), n_reps_per_sample_training * int(sample_group_name_to_reps.size()));
       else data_training.resize(int(reaction_model.component_group_names_.size()), max_reps_n_labels.second);
       features_training = reaction_model.component_group_names_;
 
@@ -391,11 +393,11 @@ namespace EvoNet
     }
     else if (use_MARs) {
       // Adjust the number of replicates per sample group
-      for (auto& sample_group_name_to_rep : sample_group_name_to_reps) sample_group_name_to_rep.second = n_reps_per_sample;
+      for (auto& sample_group_name_to_rep : sample_group_name_to_reps) sample_group_name_to_rep.second = n_reps_per_sample_training;
 
       // Initialize the input labels and data
-      labels_training.reserve(n_reps_per_sample * sample_group_name_to_reps.size());
-      data_training.resize(int(reaction_model.reaction_ids_.size()), n_reps_per_sample * int(sample_group_name_to_reps.size()));
+      labels_training.reserve(n_reps_per_sample_training * sample_group_name_to_reps.size());
+      data_training.resize(int(reaction_model.reaction_ids_.size()), n_reps_per_sample_training * int(sample_group_name_to_reps.size()));
       features_training = reaction_model.reaction_ids_;
 
       // Create the data matrix
@@ -422,6 +424,13 @@ namespace EvoNet
     n_component_group_names_validation = reaction_model.component_group_names_.size();
     this->labels_validation_ = reaction_model.labels_;
 
+    // define the n_reps_per_sample if not defined previously
+    int n_reps_per_sample_validation = n_reps_per_sample;
+    if (n_reps_per_sample <= 0) {
+      n_reps_per_sample_validation = std::ceil(batch_size * n_epochs / reaction_model.sample_group_names_.size());
+    }
+    n_reps_per_sample = n_reps_per_sample_training; // update the n_reps_per_sample based on the training
+
     // Make the validation data caches
     labels_validation.clear();
     features_validation.clear();
@@ -429,10 +438,10 @@ namespace EvoNet
     max_reps_n_labels = reaction_model.getMaxReplicatesAndNLabels(sample_group_name_to_reps, reaction_model.sample_group_names_, reaction_model.component_group_names_);
     if (use_concentrations) {
       // Adjust the number of replicates per sample group
-      if (sample_values) for (auto& sample_group_name_to_rep : sample_group_name_to_reps) sample_group_name_to_rep.second = n_reps_per_sample;
+      if (sample_values) for (auto& sample_group_name_to_rep : sample_group_name_to_reps) sample_group_name_to_rep.second = n_reps_per_sample_validation;
 
       // Initialize the input labels and data
-      if (sample_values) data_validation.resize(int(reaction_model.component_group_names_.size()), n_reps_per_sample * int(sample_group_name_to_reps.size()));
+      if (sample_values) data_validation.resize(int(reaction_model.component_group_names_.size()), n_reps_per_sample_validation * int(sample_group_name_to_reps.size()));
       else data_validation.resize(int(reaction_model.component_group_names_.size()), max_reps_n_labels.second);
       features_validation = reaction_model.component_group_names_;
 
@@ -443,11 +452,11 @@ namespace EvoNet
     }
     else if (use_MARs) {
       // Adjust the number of replicates per sample group
-      for (auto& sample_group_name_to_rep : sample_group_name_to_reps) sample_group_name_to_rep.second = n_reps_per_sample;
+      for (auto& sample_group_name_to_rep : sample_group_name_to_reps) sample_group_name_to_rep.second = n_reps_per_sample_validation;
 
       // Initialize the input labels and data
-      labels_validation.reserve(n_reps_per_sample * sample_group_name_to_reps.size());
-      data_validation.resize(int(reaction_model.reaction_ids_.size()), n_reps_per_sample * int(sample_group_name_to_reps.size()));
+      labels_validation.reserve(n_reps_per_sample_validation * sample_group_name_to_reps.size());
+      data_validation.resize(int(reaction_model.reaction_ids_.size()), n_reps_per_sample_validation * int(sample_group_name_to_reps.size()));
       features_validation = reaction_model.reaction_ids_;
 
       // Create the data matrix
