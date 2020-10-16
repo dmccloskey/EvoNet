@@ -43,28 +43,47 @@ namespace EvoNet
       data.storeModelBinary(model.getName() + "_" + std::to_string(n_epochs) + "_model.binary", model);
       ModelInterpreterFileDefaultDevice<TensorT> interpreter_data;
       interpreter_data.storeModelInterpreterBinary(model.getName() + "_" + std::to_string(n_epochs) + "_interpreter.binary", model_interpreter);
-
-      // Increase the KL divergence beta and capacity
-      TensorT beta = this->beta_;
-      TensorT capacity_c = this->capacity_c_;
-      TensorT capacity_d = this->capacity_d_;
-      if (this->KL_divergence_warmup_) {
-        TensorT scale_factor1 = (n_epochs - 100 > 0) ? n_epochs - 100 : 1;
-        beta /= 2.5e4 * scale_factor1;
-        if (beta > this->beta_) beta = this->beta_;
-        TensorT scale_factor2 = (n_epochs - 1.0e4 > 0) ? n_epochs - 1.0e4 : 1;
-        capacity_c /= 1.5e4 * scale_factor2;
-        if (capacity_c > this->capacity_c_) capacity_c = this->capacity_c_;
-        capacity_d /= 1.5e4 * scale_factor2;
-        if (capacity_d > this->capacity_d_) capacity_d = this->capacity_d_;
-      }
-      this->getLossFunctionHelpers().at(1).loss_functions_.at(0) = std::make_shared<KLDivergenceMuLossOp<float>>(KLDivergenceMuLossOp<float>(1e-6, beta, capacity_c));
-      this->getLossFunctionHelpers().at(2).loss_functions_.at(0) = std::make_shared<KLDivergenceLogVarLossOp<float>>(KLDivergenceLogVarLossOp<float>(1e-6, beta, capacity_c));
-      this->getLossFunctionHelpers().at(3).loss_functions_.at(0) = std::make_shared<KLDivergenceCatLossOp<float>>(KLDivergenceCatLossOp<float>(1e-6, beta, capacity_d));
-      this->getLossFunctionHelpers().at(1).loss_function_grads_.at(0) = std::make_shared<KLDivergenceMuLossGradOp<float>>(KLDivergenceMuLossGradOp<float>(1e-6, beta, capacity_c));
-      this->getLossFunctionHelpers().at(2).loss_function_grads_.at(0) = std::make_shared<KLDivergenceLogVarLossGradOp<float>>(KLDivergenceLogVarLossGradOp<float>(1e-6, beta, capacity_c));
-      this->getLossFunctionHelpers().at(3).loss_function_grads_.at(0) = std::make_shared<KLDivergenceCatLossGradOp<float>>(KLDivergenceCatLossGradOp<float>(1e-6, beta, capacity_d));
     }
+
+    // copy the loss function helpers
+    auto lossFunctionHelpers = this->getLossFunctionHelpers();
+
+    // Increase the KL divergence beta and capacity
+    TensorT beta = this->beta_;
+    TensorT capacity_c = this->capacity_c_;
+    TensorT capacity_d = this->capacity_d_;
+    if (this->KL_divergence_warmup_) {
+      TensorT scale_factor1 = (n_epochs - 100 > 0) ? n_epochs - 100 : 1;
+      beta /= (2.5e4 / scale_factor1);
+      if (beta > this->beta_) beta = this->beta_;
+      TensorT scale_factor2 = (n_epochs - 1.0e4 > 0) ? n_epochs - 1.0e4 : 1;
+      capacity_c /= (1.5e4 / scale_factor2);
+      if (capacity_c > this->capacity_c_) capacity_c = this->capacity_c_;
+      capacity_d /= (1.5e4 * scale_factor2);
+      if (capacity_d > this->capacity_d_) capacity_d = this->capacity_d_;
+    }
+    lossFunctionHelpers.at(1).loss_functions_.at(0) = std::make_shared<KLDivergenceMuLossOp<float>>(KLDivergenceMuLossOp<float>(1e-6, beta, capacity_c));
+    lossFunctionHelpers.at(2).loss_functions_.at(0) = std::make_shared<KLDivergenceLogVarLossOp<float>>(KLDivergenceLogVarLossOp<float>(1e-6, beta, capacity_c));
+    lossFunctionHelpers.at(3).loss_functions_.at(0) = std::make_shared<KLDivergenceCatLossOp<float>>(KLDivergenceCatLossOp<float>(1e-6, beta, capacity_d));
+    lossFunctionHelpers.at(1).loss_function_grads_.at(0) = std::make_shared<KLDivergenceMuLossGradOp<float>>(KLDivergenceMuLossGradOp<float>(1e-6, beta, capacity_c));
+    lossFunctionHelpers.at(2).loss_function_grads_.at(0) = std::make_shared<KLDivergenceLogVarLossGradOp<float>>(KLDivergenceLogVarLossGradOp<float>(1e-6, beta, capacity_c));
+    lossFunctionHelpers.at(3).loss_function_grads_.at(0) = std::make_shared<KLDivergenceCatLossGradOp<float>>(KLDivergenceCatLossGradOp<float>(1e-6, beta, capacity_d));
+
+    // Modulate the level of supervision
+    if (this->getLossFunctionHelpers().size() >= 5) {
+      std::random_device rd;
+      std::uniform_int_distribution<int> distribution(1, 100);
+      std::mt19937 engine(rd());
+      int value = distribution(engine);
+      TensorT supervision = 1.0;
+      if (value > this->supervision_percent_) supervision = 0.0;
+      if (this->supervision_warmup_) supervision = (n_epochs - 2.5e4 > 0) ? supervision : 1.0;
+      lossFunctionHelpers.at(4).loss_functions_.at(0) = std::make_shared<CrossEntropyWithLogitsLossOp<float>>(CrossEntropyWithLogitsLossOp<float>(1e-6, supervision * this->classification_loss_weight_));
+      lossFunctionHelpers.at(4).loss_function_grads_.at(0) = std::make_shared<CrossEntropyWithLogitsLossGradOp<float>>(CrossEntropyWithLogitsLossGradOp<float>(1e-6, supervision * this->classification_loss_weight_));
+    }
+
+    // Update the loss function helpers
+    this->setLossFunctionHelpers(lossFunctionHelpers);
   }
   template <typename TensorT>
   inline void CVAEFullyConnDefaultDevice<TensorT>::trainingModelLogger(const int& n_epochs, Model<TensorT>& model, ModelInterpreterDefaultDevice<TensorT>& model_interpreter, ModelLogger<TensorT>& model_logger, const Eigen::Tensor<TensorT, 3>& expected_values, const std::vector<std::string>& output_nodes, const std::vector<std::string>& input_nodes, const TensorT& model_error_train, const TensorT& model_error_test, const Eigen::Tensor<TensorT, 1>& model_metrics_train, const Eigen::Tensor<TensorT, 1>& model_metrics_test) {

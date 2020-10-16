@@ -95,6 +95,9 @@ namespace EvoNet
 
     /// Members
     bool KL_divergence_warmup_ = true;
+    bool supervision_warmup_ = true;
+    int supervision_percent_ = 100;
+    TensorT classification_loss_weight_ = 1.0;
     TensorT beta_ = 30;
     TensorT capacity_c_ = 5;
     TensorT capacity_d_ = 5;

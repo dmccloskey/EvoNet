@@ -20,6 +20,10 @@ template<typename TensorT>
 class ModelTrainerExt : public ModelTrainerGpu<TensorT>
 {
 public:
+  bool KL_divergence_warmup_ = true;
+  TensorT beta_ = 1;
+  TensorT capacity_c_ = 0;
+  TensorT capacity_d_ = 0;
   /*
   @brief Variational autoencoder that encodes the labels using a concrete distribution
     and style using a gaussian distribution
@@ -301,21 +305,32 @@ public:
     ModelInterpreterGpu<TensorT>& model_interpreter,
     const std::vector<float>& model_errors) {
 
-    // Increase the KL divergence beta after [...] number of iterations
-    TensorT scale_factor1 = (n_epochs - 100 > 0) ? n_epochs - 100 : 1;
-    TensorT beta = 30 / 2.5e4 * scale_factor1;
-    if (beta > 30) beta = 30;
-    TensorT scale_factor2 = (n_epochs - 1.0e4 > 0) ? n_epochs - 1.0e4 : 1;
-    TensorT capacity_c = 5 / 1.5e4 * scale_factor2;
-    if (capacity_c > 5) capacity_c = 5;
-    TensorT capacity_d = 5 / 1.5e4 * scale_factor2;
-    if (capacity_d > 5) capacity_d = 5;
-    this->getLossFunctionHelpers().at(1).loss_functions_.at(0) = std::make_shared<KLDivergenceMuLossOp<float>>(KLDivergenceMuLossOp<float>(1e-6, beta, capacity_c));
-    this->getLossFunctionHelpers().at(2).loss_functions_.at(0) = std::make_shared<KLDivergenceLogVarLossOp<float>>(KLDivergenceLogVarLossOp<float>(1e-6, beta, capacity_c));
-    this->getLossFunctionHelpers().at(3).loss_functions_.at(0) = std::make_shared<KLDivergenceCatLossOp<float>>(KLDivergenceCatLossOp<float>(1e-6, beta, capacity_d));
-    this->getLossFunctionHelpers().at(1).loss_function_grads_.at(0) = std::make_shared<KLDivergenceMuLossGradOp<float>>(KLDivergenceMuLossGradOp<float>(1e-6, beta, capacity_c));
-    this->getLossFunctionHelpers().at(2).loss_function_grads_.at(0) = std::make_shared<KLDivergenceLogVarLossGradOp<float>>(KLDivergenceLogVarLossGradOp<float>(1e-6, beta, capacity_c));
-    this->getLossFunctionHelpers().at(3).loss_function_grads_.at(0) = std::make_shared<KLDivergenceCatLossGradOp<float>>(KLDivergenceCatLossGradOp<float>(1e-6, beta, capacity_d));
+    // copy the loss function helpers
+    auto lossFunctionHelpers = this->getLossFunctionHelpers();
+
+    // Increase the KL divergence beta and capacity
+    TensorT beta = this->beta_;
+    TensorT capacity_c = this->capacity_c_;
+    TensorT capacity_d = this->capacity_d_;
+    if (this->KL_divergence_warmup_) {
+      TensorT scale_factor1 = (n_epochs - 100 > 0) ? n_epochs - 100 : 1;
+      beta /= (2.5e4 / scale_factor1);
+      if (beta > this->beta_) beta = this->beta_;
+      TensorT scale_factor2 = (n_epochs - 1.0e4 > 0) ? n_epochs - 1.0e4 : 1;
+      capacity_c /= (1.5e4 / scale_factor2);
+      if (capacity_c > this->capacity_c_) capacity_c = this->capacity_c_;
+      capacity_d /= (1.5e4 * scale_factor2);
+      if (capacity_d > this->capacity_d_) capacity_d = this->capacity_d_;
+    }
+    lossFunctionHelpers.at(1).loss_functions_.at(0) = std::make_shared<KLDivergenceMuLossOp<float>>(KLDivergenceMuLossOp<float>(1e-6, beta, capacity_c));
+    lossFunctionHelpers.at(2).loss_functions_.at(0) = std::make_shared<KLDivergenceLogVarLossOp<float>>(KLDivergenceLogVarLossOp<float>(1e-6, beta, capacity_c));
+    lossFunctionHelpers.at(3).loss_functions_.at(0) = std::make_shared<KLDivergenceCatLossOp<float>>(KLDivergenceCatLossOp<float>(1e-6, beta, capacity_d));
+    lossFunctionHelpers.at(1).loss_function_grads_.at(0) = std::make_shared<KLDivergenceMuLossGradOp<float>>(KLDivergenceMuLossGradOp<float>(1e-6, beta, capacity_c));
+    lossFunctionHelpers.at(2).loss_function_grads_.at(0) = std::make_shared<KLDivergenceLogVarLossGradOp<float>>(KLDivergenceLogVarLossGradOp<float>(1e-6, beta, capacity_c));
+    lossFunctionHelpers.at(3).loss_function_grads_.at(0) = std::make_shared<KLDivergenceCatLossGradOp<float>>(KLDivergenceCatLossGradOp<float>(1e-6, beta, capacity_d));
+
+    // Update the loss function helpers
+    this->setLossFunctionHelpers(lossFunctionHelpers);
 
     if (n_epochs % 1000 == 0 && n_epochs != 0) {
       // save the model every 1000 epochs
@@ -625,7 +640,7 @@ void trainModel(const std::string& data_dir, const bool& make_model) {
 
   // define the model trainers and resources for the trainers
   std::vector<ModelInterpreterGpu<float>> model_interpreters;
-  ModelResources model_resources = { ModelDevice(1, 1) };
+  ModelResources model_resources = { ModelDevice(2, 1) };
   ModelInterpreterGpu<float> model_interpreter(model_resources);
   model_interpreters.push_back(model_interpreter);
 

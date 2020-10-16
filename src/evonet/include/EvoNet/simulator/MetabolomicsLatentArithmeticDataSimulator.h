@@ -44,6 +44,9 @@ namespace EvoNet
     assert(data_training.dimension(1) == labels_training.size());
     assert(this->n_encodings_continuous_ > 0);
     assert(this->n_encodings_discrete_ > 0);
+    assert(batch_size > 0);
+    assert(memory_size == 1);
+    assert(n_epochs == this->labels_training_.size() * this->labels_training_.size()); // (addition or subtraction) * labels**2
 
     // initialize the Tensors
     this->input_data_training_.resize(batch_size, memory_size, n_input_nodes, n_epochs);
@@ -53,7 +56,9 @@ namespace EvoNet
 
     // expand the training data to fit into the requested input size
     const int expansion_factor = maxFunc(std::ceil(TensorT(batch_size * n_epochs) / TensorT(data_training.dimension(1))), 1);
+    assert(expansion_factor == this->labels_training_.size());
     const int over_expanded = data_training.dimension(1)*expansion_factor - batch_size * n_epochs;
+    assert(over_expanded == 0);
     assert(batch_size * memory_size * n_epochs == data_training.dimension(1)*expansion_factor - over_expanded);
     Eigen::Tensor<TensorT, 2> data_training_expanded(data_training.dimension(0), data_training.dimension(1)*expansion_factor);
     Eigen::Tensor<std::string, 2> labels_training_expanded(data_training.dimension(1)*expansion_factor, 1);
@@ -166,6 +171,7 @@ namespace EvoNet
     std::vector<std::string> labels_validation;
     std::vector<std::string> features_validation;
     Eigen::Tensor<TensorT, 2> data_validation;
+    int n_epochs_ = std::sqrt(n_epochs); // We will iteratively expand the data when generating the caches
     this->readAndMakeMetabolomicsTrainingAndValidationDataMatrices(n_reaction_ids_training, n_labels_training, n_component_group_names_training,
       n_reaction_ids_validation, n_labels_validation, n_component_group_names_validation,
       features_training, data_training, labels_training,
@@ -177,8 +183,8 @@ namespace EvoNet
       sample_values, iter_values,
       fill_sampling, fill_mean, fill_zero,
       apply_fold_change, fold_change_ref, fold_change_log_base,
-      n_reps_per_sample, randomize_sample_group_names,
-      n_epochs, batch_size, memory_size);
+      n_reps_per_sample, false, //randomize_sample_group_names,
+      n_epochs_, batch_size, memory_size);
 
     // Make the training and validation data caches after an optional transformation step
     if (use_concentrations) {
