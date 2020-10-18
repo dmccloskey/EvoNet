@@ -11,6 +11,126 @@
 
 namespace EvoNet
 {
+  /// Helper methods
+  static void makeInputNodes(std::vector<std::string>& input_nodes, const int& n_features) {
+    for (int i = 0; i < n_features; ++i) {
+      char name_char[512];
+      sprintf(name_char, "Input_%012d", i);
+      std::string name(name_char);
+      input_nodes.push_back(name);
+    }
+  }
+  template<class ...ParameterTypes>
+  static void makeGaussianEncodingSamplerNodes(std::vector<std::string>& input_nodes, const ParameterTypes& ...args) {
+    auto parameters = std::make_tuple(args...);
+    for (int i = 0; i < std::get<EvoNetParameters::ModelTrainer::NEncodingsContinuous>(parameters).get(); ++i) {
+      char name_char[512];
+      sprintf(name_char, "Gaussian_encoding_%012d-Sampler", i);
+      std::string name(name_char);
+      input_nodes.push_back(name);
+    }
+  }
+  template<class ...ParameterTypes>
+  static void makeCategoricalEncodingSamplerNodes(std::vector<std::string>& input_nodes, const ParameterTypes& ...args) {
+    auto parameters = std::make_tuple(args...);
+    for (int i = 0; i < std::get<EvoNetParameters::ModelTrainer::NEncodingsCategorical>(parameters).get(); ++i) {
+      char name_char[512];
+      sprintf(name_char, "Categorical_encoding_%012d-GumbelSampler", i);
+      std::string name(name_char);
+      input_nodes.push_back(name);
+    }
+  }
+  template<class ...ParameterTypes>
+  static void makeCategoricalEncodingTauNodes(std::vector<std::string>& input_nodes, const ParameterTypes& ...args) {
+    auto parameters = std::make_tuple(args...);
+    for (int i = 0; i < std::get<EvoNetParameters::ModelTrainer::NEncodingsCategorical>(parameters).get(); ++i) {
+      char name_char[512];
+      sprintf(name_char, "Categorical_encoding_%012d-InverseTau", i);
+      std::string name(name_char);
+      input_nodes.push_back(name);
+    }
+  }
+  template<class ...ParameterTypes>
+  static void makeAlphaEncodingNodes(std::vector<std::string>& input_nodes, const ParameterTypes& ...args) {
+    auto parameters = std::make_tuple(args...);
+    for (int i = 0; i < std::get<EvoNetParameters::ModelTrainer::NEncodingsCategorical>(parameters).get(); ++i) {
+      char name_char[512];
+      //sprintf(name_char, "Alpha_%012d", i);
+      sprintf(name_char, "Categorical_encoding-SoftMax-Out_%012d", i);
+      std::string name(name_char);
+      input_nodes.push_back(name);
+    }
+  }
+  template<class ...ParameterTypes>
+  static void makeMuEncodingNodes(std::vector<std::string>& input_nodes, const ParameterTypes& ...args) {
+    auto parameters = std::make_tuple(args...);
+    for (int i = 0; i < std::get<EvoNetParameters::ModelTrainer::NEncodingsContinuous>(parameters).get(); ++i) {
+      char name_char[512];
+      sprintf(name_char, "Gaussian_encoding_%012d", i);
+      std::string name(name_char);
+      input_nodes.push_back(name);
+    }
+  }
+  static std::vector<std::string> makeOutputNodes(const int& n_features) {
+    std::vector<std::string> output_nodes;
+    for (int i = 0; i < n_features; ++i) {
+      char name_char[512];
+      sprintf(name_char, "Output_%012d", i);
+      std::string name(name_char);
+      output_nodes.push_back(name);
+    }
+    return output_nodes;
+  }
+  template<class ...ParameterTypes>
+  static std::vector<std::string> makeMuEncodingNodes(const ParameterTypes& ...args) {
+    auto parameters = std::make_tuple(args...);
+    std::vector<std::string> output_nodes;
+    for (int i = 0; i < std::get<EvoNetParameters::ModelTrainer::NEncodingsContinuous>(parameters).get(); ++i) {
+      char name_char[512];
+      sprintf(name_char, "Mu_%012d", i);
+      std::string name(name_char);
+      output_nodes.push_back(name);
+    }
+    return output_nodes;
+  }
+  template<class ...ParameterTypes>
+  static std::vector<std::string> makeLogVarEncodingNodes(const ParameterTypes& ...args) {
+    auto parameters = std::make_tuple(args...);
+    std::vector<std::string> output_nodes;
+    for (int i = 0; i < std::get<EvoNetParameters::ModelTrainer::NEncodingsContinuous>(parameters).get(); ++i) {
+      char name_char[512];
+      sprintf(name_char, "LogVar_%012d", i);
+      std::string name(name_char);
+      output_nodes.push_back(name);
+    }
+    return output_nodes;
+  }
+  template<class ...ParameterTypes>
+  static std::vector<std::string> makeAlphaEncodingNodes(const ParameterTypes& ...args) {
+    auto parameters = std::make_tuple(args...);
+    std::vector<std::string> output_nodes;
+    for (int i = 0; i < std::get<EvoNetParameters::ModelTrainer::NEncodingsCategorical>(parameters).get(); ++i) {
+      char name_char[512];
+      sprintf(name_char, "Alpha_%012d", i);
+      std::string name(name_char);
+      output_nodes.push_back(name);
+    }
+    return output_nodes;
+  }
+  template<class ...ParameterTypes>
+  static std::vector<std::string> makeCategoricalSoftmaxNodes(const ParameterTypes& ...args) {
+    auto parameters = std::make_tuple(args...);
+    std::vector<std::string> output_nodes;
+    for (int i = 0; i < std::get<EvoNetParameters::ModelTrainer::NEncodingsCategorical>(parameters).get(); ++i) {
+      char name_char[512];
+      sprintf(name_char, "Categorical_encoding-SoftMax-Out_%012d", i);
+      std::string name(name_char);
+      output_nodes.push_back(name);
+    }
+    return output_nodes;
+  }
+
+
   template<typename TensorT, typename InterpreterT>
   class CVAEFullyConn : public ModelTrainer<TensorT, InterpreterT>
   {
@@ -129,7 +249,7 @@ namespace EvoNet
     auto solver_op = std::make_shared<AdamOp<TensorT>>(AdamOp<TensorT>(this->learning_rate_, 0.9, 0.999, 1e-8, this->gradient_clipping_));
 
     // Add the Endocer FC layers
-    std::vector<std::string> node_names_mu, node_names_logvar, node_names_logalpha;
+    std::vector<std::string> node_names_mu, node_names_logvar, node_names_alpha;
     if (n_hidden_0 > 0) {
       node_names = model_builder.addFullyConnected(model, "EN0", "EN0", node_names, n_hidden_0,
         activation, activation_grad, integration_op, integration_error_op, integration_weight_grad_op,
@@ -160,16 +280,17 @@ namespace EvoNet
       integration_op, integration_error_op, integration_weight_grad_op,
       std::make_shared<RandWeightInitOp<TensorT>>(RandWeightInitOp<TensorT>((TensorT)(node_names.size() + n_encodings) / 2, 1)),
       solver_op, 0.0f, 0.0f, false, specify_layers);
-    node_names_logalpha = model_builder.addFullyConnected(model, "LogAlphaEnc", "LogAlphaEnc", node_names, n_categorical,
+    node_names_alpha = model_builder.addFullyConnected(model, "AlphaEncNonProp", "AlphaEncNonProp", node_names, n_categorical,
       std::make_shared<LinearOp<TensorT>>(LinearOp<TensorT>()),
       std::make_shared<LinearGradOp<TensorT>>(LinearGradOp<TensorT>()),
       integration_op, integration_error_op, integration_weight_grad_op,
       std::make_shared<RandWeightInitOp<TensorT>>(RandWeightInitOp<TensorT>((TensorT)(node_names.size() + n_categorical) / 2, 1)),
       solver_op, 0.0f, 0.0f, false, specify_layers);
+    node_names_alpha = model_builder.addStableSoftMax(model, "AlphaEnc", "AlphaEnc", node_names_alpha, specify_layers);
 
     // Add the Encoding layers
     std::vector<std::string> node_names_Gencoder = model_builder.addGaussianEncoding(model, "Gaussian_encoding", "Gaussian_encoding", node_names_mu, node_names_logvar, true);
-    std::vector<std::string> node_names_Cencoder = model_builder.addCategoricalEncoding(model, "Categorical_encoding", "Categorical_encoding", node_names_logalpha, true);
+    std::vector<std::string> node_names_Cencoder = model_builder.addCategoricalEncoding(model, "Categorical_encoding", "Categorical_encoding", node_names_alpha, true);
 
     // Add the Decoder FC layers
     if (n_hidden_2 > 0) {
@@ -231,7 +352,7 @@ namespace EvoNet
       integration_op, integration_error_op, integration_weight_grad_op,
       std::make_shared<ConstWeightInitOp<TensorT>>(ConstWeightInitOp<TensorT>(1)),
       std::make_shared<DummySolverOp<TensorT>>(DummySolverOp<TensorT>()), 0.0f, 0.0f, false, true);
-    node_names_logalpha = model_builder.addSinglyConnected(model, "LogAlpha", "LogAlpha", node_names_logalpha, node_names_logalpha.size(),
+    node_names_alpha = model_builder.addSinglyConnected(model, "Alpha", "Alpha", node_names_alpha, node_names_alpha.size(),
       std::make_shared<LinearOp<TensorT>>(LinearOp<TensorT>()),
       std::make_shared<LinearGradOp<TensorT>>(LinearGradOp<TensorT>()),
       integration_op, integration_error_op, integration_weight_grad_op,
@@ -249,7 +370,7 @@ namespace EvoNet
       model.nodes_.at(node_name)->setType(NodeType::output);
     for (const std::string& node_name : node_names_logvar)
       model.nodes_.at(node_name)->setType(NodeType::output);
-    for (const std::string& node_name : node_names_logalpha)
+    for (const std::string& node_name : node_names_alpha)
       model.nodes_.at(node_name)->setType(NodeType::output);
     for (const std::string& node_name : node_names_Cencoder)
       model.nodes_.at(node_name)->setType(NodeType::output);
@@ -268,10 +389,7 @@ namespace EvoNet
 
     // Add the inputs
     std::vector<std::string> node_names_Gencoder = model_builder.addInputNodes(model, "Gaussian_encoding", "Gaussian_encoding", n_encodings, specify_layers); // just Mu
-    std::vector<std::string> node_names_logalpha = model_builder.addInputNodes(model, "LogAlpha", "LogAlpha", n_categorical, specify_layers);
-
-    // Make the softmax layer
-    std::vector<std::string> node_names_Cencoder = model_builder.addStableSoftMax(model, "Categorical_encoding-SoftMax", "Categorical_encoding-SoftMax", node_names_logalpha, specify_layers);
+    std::vector<std::string> node_names_Cencoder = model_builder.addInputNodes(model, "Categorical_encoding-SoftMax-Out", "Categorical_encoding-SoftMax-Out", n_categorical, specify_layers);
 
     // Define the activation based on `add_feature_norm`
     std::shared_ptr<ActivationOp<TensorT>> activation = std::make_shared<LeakyReLUOp<TensorT>>(LeakyReLUOp<TensorT>());
@@ -371,7 +489,7 @@ namespace EvoNet
     auto solver_op = std::make_shared<AdamOp<TensorT>>(AdamOp<TensorT>(this->learning_rate_, 0.9, 0.999, 1e-8, this->gradient_clipping_));
 
     // Add the Encoder FC layers
-    std::vector<std::string> node_names_mu, node_names_logvar, node_names_logalpha;
+    std::vector<std::string> node_names_mu, node_names_logvar, node_names_alpha;
     if (n_hidden_0 > 0) {
       node_names = model_builder.addFullyConnected(model, "EN0", "EN0", node_names, n_hidden_0,
         activation, activation_grad, integration_op, integration_error_op, integration_weight_grad_op,
@@ -402,7 +520,7 @@ namespace EvoNet
       integration_op, integration_error_op, integration_weight_grad_op,
       std::make_shared<RandWeightInitOp<TensorT>>(RandWeightInitOp<TensorT>((TensorT)(node_names.size() + n_encodings) / 2, 1)),
       solver_op, 0.0f, 0.0f, false, specify_layers);
-    node_names_logalpha = model_builder.addFullyConnected(model, "LogAlphaEnc", "LogAlphaEnc", node_names, n_categorical,
+    node_names_alpha = model_builder.addFullyConnected(model, "AlphaEncNonProb", "AlphaEncNonProb", node_names, n_categorical,
       std::make_shared<LinearOp<TensorT>>(LinearOp<TensorT>()),
       std::make_shared<LinearGradOp<TensorT>>(LinearGradOp<TensorT>()),
       integration_op, integration_error_op, integration_weight_grad_op,
@@ -410,7 +528,7 @@ namespace EvoNet
       solver_op, 0.0f, 0.0f, false, specify_layers);
 
     // Make the softmax layer
-    std::vector<std::string> node_names_Cencoder = model_builder.addStableSoftMax(model, "Categorical_encoding-SoftMax", "Categorical_encoding-SoftMax", node_names_logalpha, specify_layers);
+    std::vector<std::string> node_names_Cencoder = model_builder.addStableSoftMax(model, "Categorical_encoding-SoftMax", "Categorical_encoding-SoftMax", node_names_alpha, specify_layers);
 
     // Add the actual output nodes
     node_names_mu = model_builder.addSinglyConnected(model, "Mu", "Mu", node_names_mu, node_names_mu.size(),
@@ -425,7 +543,7 @@ namespace EvoNet
       integration_op, integration_error_op, integration_weight_grad_op,
       std::make_shared<ConstWeightInitOp<TensorT>>(ConstWeightInitOp<TensorT>(1)),
       std::make_shared<DummySolverOp<TensorT>>(DummySolverOp<TensorT>()), 0.0f, 0.0f, false, true);
-    node_names_logalpha = model_builder.addSinglyConnected(model, "LogAlpha", "LogAlpha", node_names_logalpha, node_names_logalpha.size(),
+    node_names_alpha = model_builder.addSinglyConnected(model, "Alpha", "Alpha", node_names_alpha, node_names_alpha.size(),
       std::make_shared<LinearOp<TensorT>>(LinearOp<TensorT>()),
       std::make_shared<LinearGradOp<TensorT>>(LinearGradOp<TensorT>()),
       integration_op, integration_error_op, integration_weight_grad_op,
@@ -437,7 +555,7 @@ namespace EvoNet
       model.nodes_.at(node_name)->setType(NodeType::output);
     for (const std::string& node_name : node_names_logvar)
       model.nodes_.at(node_name)->setType(NodeType::output);
-    for (const std::string& node_name : node_names_logalpha)
+    for (const std::string& node_name : node_names_alpha)
       model.nodes_.at(node_name)->setType(NodeType::output);
     for (const std::string& node_name : node_names_Cencoder)
       model.nodes_.at(node_name)->setType(NodeType::output);
@@ -467,7 +585,7 @@ namespace EvoNet
     std::vector<std::string> node_names = model_builder.addInputNodes(model, "Input@L", "Input@L", n_inputs, specify_layers);
 
     // Add the Endocer FC layers
-    std::vector<std::string> node_names_mu, node_names_logvar, node_names_logalpha;
+    std::vector<std::string> node_names_mu, node_names_logvar, node_names_alpha;
     if (n_hidden_0 > 0) {
       node_names = model_builder.addFullyConnected(model, "EN0", "EN0@L", node_names, n_hidden_0,
         activation, activation_grad, integration_op, integration_error_op, integration_weight_grad_op,
@@ -499,7 +617,7 @@ namespace EvoNet
       integration_op, integration_error_op, integration_weight_grad_op,
       std::make_shared<RandWeightInitOp<TensorT>>(RandWeightInitOp<TensorT>((TensorT)(node_names.size() + n_encodings) / 2, 1)),
       solver_op, 0.0f, 0.0f, false, specify_layers);
-    node_names_logalpha = model_builder.addFullyConnected(model, "LogAlphaEnc", "LogAlphaEnc@L", node_names, n_categorical,
+    node_names_alpha = model_builder.addFullyConnected(model, "AlphaEnc", "AlphaEnc@L", node_names, n_categorical,
       std::make_shared<LinearOp<TensorT>>(LinearOp<TensorT>()),
       std::make_shared<LinearGradOp<TensorT>>(LinearGradOp<TensorT>()),
       integration_op, integration_error_op, integration_weight_grad_op,
@@ -515,7 +633,7 @@ namespace EvoNet
       std::make_shared<DummySolverOp<TensorT>>(DummySolverOp<TensorT>()), 0.0f, 0.0f, false, specify_layers);
 
     // Make the softmax layer
-    std::vector<std::string> node_names_Cencoder_L = model_builder.addStableSoftMax(model, "Categorical_encoding-SoftMax_LR", "Categorical_encoding-SoftMax_L", node_names_logalpha, specify_layers);
+    std::vector<std::string> node_names_Cencoder_L = model_builder.addStableSoftMax(model, "Categorical_encoding-SoftMax_LR", "Categorical_encoding-SoftMax_L", node_names_alpha, specify_layers);
 
     // Add the inputs (Right hand side)
     node_names = model_builder.addInputNodes(model, "Input@R", "Input@R", n_inputs, specify_layers);
@@ -552,7 +670,7 @@ namespace EvoNet
       integration_op, integration_error_op, integration_weight_grad_op,
       std::make_shared<RandWeightInitOp<TensorT>>(RandWeightInitOp<TensorT>((TensorT)(node_names.size() + n_encodings) / 2, 1)),
       solver_op, 0.0f, 0.0f, false, specify_layers);
-    node_names_logalpha = model_builder.addFullyConnected(model, "LogAlphaEnc", "LogAlphaEnc@R", node_names, n_categorical,
+    node_names_alpha = model_builder.addFullyConnected(model, "AlphaEnc", "AlphaEnc@R", node_names, n_categorical,
       std::make_shared<LinearOp<TensorT>>(LinearOp<TensorT>()),
       std::make_shared<LinearGradOp<TensorT>>(LinearGradOp<TensorT>()),
       integration_op, integration_error_op, integration_weight_grad_op,
@@ -568,7 +686,7 @@ namespace EvoNet
       std::make_shared<DummySolverOp<TensorT>>(DummySolverOp<TensorT>()), 0.0f, 0.0f, false, specify_layers);
 
     // Make the softmax layer
-    std::vector<std::string> node_names_Cencoder_R = model_builder.addStableSoftMax(model, "Categorical_encoding-SoftMax_LR", "Categorical_encoding-SoftMax_R", node_names_logalpha, specify_layers);
+    std::vector<std::string> node_names_Cencoder_R = model_builder.addStableSoftMax(model, "Categorical_encoding-SoftMax_LR", "Categorical_encoding-SoftMax_R", node_names_alpha, specify_layers);
 
     // Rename the input nodes
     std::vector<std::vector<std::string>> tokens_vec = { {"Input@L"}, {"Input@R"} };

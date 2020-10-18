@@ -313,39 +313,39 @@ public:
     TensorT capacity_c = this->capacity_c_;
     TensorT capacity_d = this->capacity_d_;
     if (this->KL_divergence_warmup_) {
-      TensorT scale_factor1 = (n_epochs - 100 > 0) ? n_epochs - 100 : 1;
+      TensorT scale_factor1 = (n_epochs - 1.0e3 > 0) ? n_epochs - 1.0e3 : 1;
       beta /= (2.5e4 / scale_factor1);
       if (beta > this->beta_) beta = this->beta_;
-      TensorT scale_factor2 = (n_epochs - 1.0e4 > 0) ? n_epochs - 1.0e4 : 1;
-      capacity_c /= (1.5e4 / scale_factor2);
+      TensorT scale_factor2 = (n_epochs - 1.0e3 > 0) ? n_epochs - 1.0e3 : 1;
+      capacity_c /= (2.5e4 / scale_factor2);
       if (capacity_c > this->capacity_c_) capacity_c = this->capacity_c_;
-      capacity_d /= (1.5e4 * scale_factor2);
+      capacity_d /= (2.5e4 * scale_factor2);
       if (capacity_d > this->capacity_d_) capacity_d = this->capacity_d_;
     }
     lossFunctionHelpers.at(1).loss_functions_.at(0) = std::make_shared<KLDivergenceMuLossOp<float>>(KLDivergenceMuLossOp<float>(1e-6, beta, capacity_c));
     lossFunctionHelpers.at(2).loss_functions_.at(0) = std::make_shared<KLDivergenceLogVarLossOp<float>>(KLDivergenceLogVarLossOp<float>(1e-6, beta, capacity_c));
-    lossFunctionHelpers.at(3).loss_functions_.at(0) = std::make_shared<KLDivergenceCatLossOp<float>>(KLDivergenceCatLossOp<float>(1e-6, beta, capacity_d));
+    lossFunctionHelpers.at(3).loss_functions_.at(0) = std::make_shared<KLDivergenceCatLossOp<float>>(KLDivergenceCatLossOp<float>(1e-6, 0.0, capacity_d));
     lossFunctionHelpers.at(1).loss_function_grads_.at(0) = std::make_shared<KLDivergenceMuLossGradOp<float>>(KLDivergenceMuLossGradOp<float>(1e-6, beta, capacity_c));
     lossFunctionHelpers.at(2).loss_function_grads_.at(0) = std::make_shared<KLDivergenceLogVarLossGradOp<float>>(KLDivergenceLogVarLossGradOp<float>(1e-6, beta, capacity_c));
-    lossFunctionHelpers.at(3).loss_function_grads_.at(0) = std::make_shared<KLDivergenceCatLossGradOp<float>>(KLDivergenceCatLossGradOp<float>(1e-6, beta, capacity_d));
+    lossFunctionHelpers.at(3).loss_function_grads_.at(0) = std::make_shared<KLDivergenceCatLossGradOp<float>>(KLDivergenceCatLossGradOp<float>(1e-6, 0.0, capacity_d));
 
     // Update the loss function helpers
     this->setLossFunctionHelpers(lossFunctionHelpers);
 
     if (n_epochs % 1000 == 0 && n_epochs != 0) {
-      // save the model every 1000 epochs
-      model_interpreter.getModelResults(model, false, true, false, false);
-      ModelFile<TensorT> data;
+      //// save the model every 1000 epochs
+      //model_interpreter.getModelResults(model, false, true, false, false);
+      //ModelFile<TensorT> data;
 
       //// save the model weights to .csv
       //data.storeModelCsv(model.getName() + "_" + std::to_string(n_epochs) + "_nodes.csv",
       //	model.getName() + "_" + std::to_string(n_epochs) + "_links.csv",
       //	model.getName() + "_" + std::to_string(n_epochs) + "_weights.csv", model, false, false, true);
 
-      // save the model and tensors to binary
-      data.storeModelBinary(model.getName() + "_" + std::to_string(n_epochs) + "_model.binary", model);
-      ModelInterpreterFileGpu<TensorT> interpreter_data;
-      interpreter_data.storeModelInterpreterBinary(model.getName() + "_" + std::to_string(n_epochs) + "_interpreter.binary", model_interpreter);
+      //// save the model and tensors to binary
+      //data.storeModelBinary(model.getName() + "_" + std::to_string(n_epochs) + "_model.binary", model);
+      //ModelInterpreterFileGpu<TensorT> interpreter_data;
+      //interpreter_data.storeModelInterpreterBinary(model.getName() + "_" + std::to_string(n_epochs) + "_interpreter.binary", model_interpreter);
     }
   }
   void trainingModelLogger(const int & n_epochs, Model<TensorT>& model, ModelInterpreterGpu<TensorT>& model_interpreter, ModelLogger<TensorT>& model_logger,

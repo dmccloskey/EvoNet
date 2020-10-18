@@ -1484,8 +1484,8 @@ BOOST_AUTO_TEST_CASE(operationfunctionKLDivergenceCatOp)
 
   operation(y_pred.data(), y_true.data(), error_ptr, batch_size, memory_size, layer_size, time_step, device);
   Eigen::TensorMap<Eigen::Tensor<float, 2>> error(error_ptr, batch_size, memory_size);
-  BOOST_CHECK_CLOSE(error(0, 0), 6.12971067, 1e-4);
-  BOOST_CHECK_CLOSE(error(1, 0), 30.2493725, 1e-4);
+  BOOST_CHECK_CLOSE(error(0, 0), 0.693147182, 1e-4);
+  BOOST_CHECK_CLOSE(error(1, 0), 3.46573591, 1e-4);
   BOOST_CHECK_CLOSE(error(0, 1), 0, 1e-4);
   BOOST_CHECK_CLOSE(error(1, 1), 0, 1e-4);
 
@@ -1496,8 +1496,8 @@ BOOST_AUTO_TEST_CASE(operationfunctionKLDivergenceCatOp)
 
 	operationC(y_pred.data(), y_true.data(), errorC_ptr, batch_size, memory_size, layer_size, time_step, device);
 	Eigen::TensorMap<Eigen::Tensor<float, 2>> errorC(errorC_ptr, batch_size, memory_size);
-	BOOST_CHECK_CLOSE(errorC(0, 0), 5.43656349, 1e-4);
-	BOOST_CHECK_CLOSE(errorC(1, 0), 29.5562248, 1e-4);
+	BOOST_CHECK_CLOSE(errorC(0, 0), 0, 1e-4);
+	BOOST_CHECK_CLOSE(errorC(1, 0), 2.77258873, 1e-4);
 	BOOST_CHECK_CLOSE(errorC(0, 1), 0, 1e-4);
 	BOOST_CHECK_CLOSE(errorC(1, 1), 0, 1e-4);
 }
@@ -1543,13 +1543,13 @@ BOOST_AUTO_TEST_CASE(operationfunctionKLDivergenceCatGradOp)
 
   operation(y_pred.data(), y_true.data(), error_ptr, batch_size, memory_size, layer_size, time_step, device);
   Eigen::TensorMap<Eigen::Tensor<float, 3>> error(error_ptr, batch_size, memory_size, layer_size);
-  BOOST_CHECK_CLOSE(error(0, 0, 0), -5.43656349, 1e-4);
+  BOOST_CHECK_CLOSE(error(0, 0, 0), -1, 1e-4);
   BOOST_CHECK_CLOSE(error(0, 1, 0), 0.0, 1e-4);
-  BOOST_CHECK_CLOSE(error(1, 0, 0), -22.1671677, 1e-4);
+  BOOST_CHECK_CLOSE(error(1, 0, 0), -1.69314718, 1e-4);
   BOOST_CHECK_CLOSE(error(1, 1, 0), 0.0, 1e-4);
-  BOOST_CHECK_CLOSE(error(0, 0, 1), -5.43656349, 1e-4);
+  BOOST_CHECK_CLOSE(error(0, 0, 1), -1, 1e-4);
   BOOST_CHECK_CLOSE(error(0, 1, 1), 0.0, 1e-4);
-  BOOST_CHECK_CLOSE(error(1, 0, 1), -22.1671677, 1e-4);
+  BOOST_CHECK_CLOSE(error(1, 0, 1), -1.69314718, 1e-4);
   BOOST_CHECK_CLOSE(error(1, 1, 1), 0.0, 1e-4);
 
 	// With capacity
@@ -1559,13 +1559,13 @@ BOOST_AUTO_TEST_CASE(operationfunctionKLDivergenceCatGradOp)
 
 	operationC(y_pred.data(), y_true.data(), errorC_ptr, batch_size, memory_size, layer_size, time_step, device);
 	Eigen::TensorMap<Eigen::Tensor<float, 3>> errorC(errorC_ptr, batch_size, memory_size, layer_size);
-	BOOST_CHECK_CLOSE(errorC(0, 0, 0), -4.74341631, 1e-4);
+	BOOST_CHECK_CLOSE(errorC(0, 0, 0), -0.306852818, 1e-4);
 	BOOST_CHECK_CLOSE(errorC(0, 1, 0), 0.0, 1e-4);
-	BOOST_CHECK_CLOSE(errorC(1, 0, 0), -21.47402, 1e-4);
+	BOOST_CHECK_CLOSE(errorC(1, 0, 0), -1, 1e-4);
 	BOOST_CHECK_CLOSE(errorC(1, 1, 0), 0.0, 1e-4);
-	BOOST_CHECK_CLOSE(errorC(0, 0, 1), -4.74341631, 1e-4);
+	BOOST_CHECK_CLOSE(errorC(0, 0, 1), -0.306852818, 1e-4);
 	BOOST_CHECK_CLOSE(errorC(0, 1, 1), 0.0, 1e-4);
-	BOOST_CHECK_CLOSE(errorC(1, 0, 1), -21.47402, 1e-4);
+	BOOST_CHECK_CLOSE(errorC(1, 0, 1), -1, 1e-4);
 	BOOST_CHECK_CLOSE(errorC(1, 1, 1), 0.0, 1e-4);
 }
 

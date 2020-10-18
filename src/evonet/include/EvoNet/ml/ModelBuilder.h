@@ -2522,6 +2522,17 @@ public:
       delete[] sampler_name_char;
 			//node_names.push_back(sampler_name);
 
+			// Make the logAlphaScale node
+			char* logalphaScale_name_char = new char[512];
+			sprintf(logalphaScale_name_char, "%s_%012d-Scalar", name.data(), i);
+			std::string logalphaScale_name(logalphaScale_name_char);
+			Node<TensorT> logalphaScale(logalphaScale_name, NodeType::hidden, NodeStatus::initialized, std::make_shared<LogOp<TensorT>>(LogOp<TensorT>()), std::make_shared<LogGradOp<TensorT>>(LogGradOp<TensorT>()), std::make_shared<SumOp<TensorT>>(SumOp<TensorT>()), std::make_shared<SumErrorOp<TensorT>>(SumErrorOp<TensorT>()), std::make_shared<SumWeightGradOp<TensorT>>(SumWeightGradOp<TensorT>()));
+			logalphaScale.setModuleName(module_name);
+			if (specify_layer) logalphaScale.setLayerName(module_name + "-Scalar");
+			model.addNodes({ logalphaScale });
+			delete[] logalphaScale_name_char;
+			//node_names.push_back(logalphaScale_name);
+
 			// Make the LogAlphaSampler nodes
 			char* logAlphaSampler_name_char = new char[512];
 			sprintf(logAlphaSampler_name_char, "%s_%012d-LogAlphaSampler", name.data(), i);
@@ -2543,15 +2554,25 @@ public:
 			model.addLinks({ lsToLAS_link });
       delete[] lsToLAS_link_name_char;
 
+			// Make the links from the alpha node to the logAlpha node
+			scalar_weight_name = makeUnityWeight(model, 1.0, module_name, "%s_to_%s", alpha_node_names[i], logalphaScale_name);
+			char* laToLA_link_name_char = new char[512];
+			sprintf(laToLA_link_name_char, "%s_to_%s", alpha_node_names[i].data(), logalphaScale_name.data());
+			std::string laToLA_link_name(laToLA_link_name_char);
+			Link laToLA_link(laToLA_link_name, alpha_node_names[i], logalphaScale_name, scalar_weight_name);
+			laToLA_link.setModuleName(module_name);
+			model.addLinks({ laToLA_link });
+			delete[] laToLA_link_name_char;
+
 			// Make the links from the logAlpha node and sampler node to the logAlphaSamplerSum node
-			scalar_weight_name = makeUnityWeight(model, 1.0, module_name, "%s_to_%s", alpha_node_names[i], logAlphaSampler_name);
-			//scalar_weight_name = makeUnityWeight(model, 1.0, module_name, "%s_to_%s", logalphaScale_name, logAlphaSampler_name);
+			//scalar_weight_name = makeUnityWeight(model, 1.0, module_name, "%s_to_%s", alpha_node_names[i], logAlphaSampler_name);
+			scalar_weight_name = makeUnityWeight(model, 1.0, module_name, "%s_to_%s", logalphaScale_name, logAlphaSampler_name);
 			char* laToLAS_link_name_char = new char[512];
-			sprintf(laToLAS_link_name_char, "%s_to_%s", alpha_node_names[i].data(), logAlphaSampler_name.data());
-			//sprintf(laToLAS_link_name_char, "%s_to_%s", logalphaScale_name.data(), logAlphaSampler_name.data());
+			//sprintf(laToLAS_link_name_char, "%s_to_%s", alpha_node_names[i].data(), logAlphaSampler_name.data());
+			sprintf(laToLAS_link_name_char, "%s_to_%s", logalphaScale_name.data(), logAlphaSampler_name.data());
 			std::string laToLAS_link_name(laToLAS_link_name_char);
-			Link laToLAS_link(laToLAS_link_name, alpha_node_names[i], logAlphaSampler_name, scalar_weight_name);
-			//Link laToLAS_link(laToLAS_link_name, logalphaScale_name, logAlphaSampler_name, scalar_weight_name);
+			//Link laToLAS_link(laToLAS_link_name, alpha_node_names[i], logAlphaSampler_name, scalar_weight_name);
+			Link laToLAS_link(laToLAS_link_name, logalphaScale_name, logAlphaSampler_name, scalar_weight_name);
 			laToLAS_link.setModuleName(module_name);
 			model.addLinks({ laToLAS_link });
       delete[] laToLAS_link_name_char;

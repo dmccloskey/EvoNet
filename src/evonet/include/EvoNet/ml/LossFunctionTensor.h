@@ -835,8 +835,6 @@ public:
 
     See implementation: https://github.com/Schlumberger/joint-vae/blob/master/jointvae/training.py#L311
       KLD = alpha * log(alpha) + log(n) where n is the number of categories
-      for predicted = log(alpha) as is the case here
-      KLD = exp(predicted) * predicted + log(n)
   */
   template<typename TensorT, typename DeviceT>
   class KLDivergenceCatLossTensorOp : public LossFunctionTensorOp<TensorT, DeviceT>
@@ -853,8 +851,8 @@ public:
       Eigen::TensorMap<Eigen::Tensor<TensorT, 2>> error_tensor(error, batch_size, memory_size);
       auto predicted_chip = predicted_tensor.chip(time_step, 1);
 
-      //auto neg_entropy = (predicted_chip * predicted_chip.log()).sum(Eigen::array<int, 1>({ 1 }));
-      auto neg_entropy = (predicted_chip.exp() * predicted_chip).sum(Eigen::array<int, 1>({ 1 }));
+      auto neg_entropy = (predicted_chip * predicted_chip.log()).sum(Eigen::array<int, 1>({ 1 }));
+      //auto neg_entropy = (predicted_chip.exp() * predicted_chip).sum(Eigen::array<int, 1>({ 1 })); // Previous where input was logAlpha
       auto log_cat = error_tensor.chip(time_step, 1).constant(layer_size).log();
 			auto kl_div_cap = neg_entropy + log_cat - (error_tensor.chip(time_step, 1).constant(this->capacity_)).cwiseMin(log_cat);
       auto result = kl_div_cap * error_tensor.chip(time_step, 1).constant(this->scale_);
@@ -867,7 +865,7 @@ public:
   /**
     @brief KLDivergenceCat  loss function gradient.
 
-		d/dx of x*exp(x) + log(a) = (x+1)*exp(x)
+		d/dx of x*log(x) + log(a) = log(x) + 1
   */
   template<typename TensorT, typename DeviceT>
   class KLDivergenceCatLossGradTensorOp : public LossFunctionGradTensorOp<TensorT, DeviceT>
@@ -883,7 +881,7 @@ public:
       Eigen::TensorMap<Eigen::Tensor<TensorT, 3>> predicted_tensor(predicted, batch_size, memory_size, layer_size);
       Eigen::TensorMap<Eigen::Tensor<TensorT, 3>> error_tensor(error, batch_size, memory_size, layer_size);
       auto predicted_chip = predicted_tensor.chip(time_step, 1);
-			auto kl_div = (predicted_chip + predicted_chip.constant(TensorT(1))) * predicted_chip.exp();
+			auto kl_div = predicted_chip.log() + predicted_chip.constant(TensorT(1));
 			auto log_cat = expected_tensor.constant(layer_size).log();
 			auto kl_div_cap = kl_div - (error_tensor.chip(time_step, 1).constant(this->capacity_)).cwiseMin(log_cat);
       auto result = kl_div_cap * error_tensor.chip(time_step, 1).constant(this->scale_);

@@ -1053,8 +1053,8 @@ void test_operationfunctionKLDivergenceCatOp()
   
   assert(cudaStreamDestroy(stream) == cudaSuccess);
   Eigen::TensorMap<Eigen::Tensor<double, 2>> error(error_ptr, batch_size, memory_size);
-  AssertPrint(assert_close(error(0, 0), 6.12971067));
-  AssertPrint(assert_close(error(1, 0), 30.2493725));
+  AssertPrint(assert_close(error(0, 0), 0.693147182));
+  AssertPrint(assert_close(error(1, 0), 3.46573591));
   AssertPrint(assert_close(error(0, 1), 0.0));
   AssertPrint(assert_close(error(1, 1), 0.0));
 
@@ -1065,8 +1065,8 @@ void test_operationfunctionKLDivergenceCatOp()
 
 	operationC(y_pred.data(), y_true.data(), errorC_ptr, batch_size, memory_size, layer_size, time_step, device);
 	Eigen::TensorMap<Eigen::Tensor<double, 2>> errorC(errorC_ptr, batch_size, memory_size);
-	AssertPrint(assert_close(errorC(0, 0), 5.43656349));
-	AssertPrint(assert_close(errorC(1, 0), 29.5562248));
+	AssertPrint(assert_close(errorC(0, 0), 0.0));
+	AssertPrint(assert_close(errorC(1, 0), 2.77258873));
 	AssertPrint(assert_close(errorC(0, 1), 0.0));
 	AssertPrint(assert_close(errorC(1, 1), 0.0));
 }
@@ -1097,13 +1097,13 @@ void test_operationfunctionKLDivergenceCatGradOp()
   
   assert(cudaStreamDestroy(stream) == cudaSuccess);
   Eigen::TensorMap<Eigen::Tensor<double, 3>> error(error_ptr, batch_size, memory_size, layer_size);
-  AssertPrint(assert_close(error(0, 0, 0), -5.43656349));
+  AssertPrint(assert_close(error(0, 0, 0), -1.0));
   AssertPrint(assert_close(error(0, 1, 0), 0.0));
-  AssertPrint(assert_close(error(1, 0, 0), -22.1671677));
+  AssertPrint(assert_close(error(1, 0, 0), -1.69314718));
   AssertPrint(assert_close(error(1, 1, 0), 0.0));
-  AssertPrint(assert_close(error(0, 0, 1), -5.43656349));
+  AssertPrint(assert_close(error(0, 0, 1), -1.0));
   AssertPrint(assert_close(error(0, 1, 1), 0.0));
-  AssertPrint(assert_close(error(1, 0, 1), -22.1671677));
+  AssertPrint(assert_close(error(1, 0, 1), -1.69314718));
   AssertPrint(assert_close(error(1, 1, 1), 0.0));
 
 	// With capacity
@@ -1113,13 +1113,13 @@ void test_operationfunctionKLDivergenceCatGradOp()
 
 	operationC(y_pred.data(), y_true.data(), errorC_ptr, batch_size, memory_size, layer_size, time_step, device);
 	Eigen::TensorMap<Eigen::Tensor<double, 3>> errorC(errorC_ptr, batch_size, memory_size, layer_size);
-	AssertPrint(assert_close(errorC(0, 0, 0), -4.74341631));
+	AssertPrint(assert_close(errorC(0, 0, 0), -0.306852818));
 	AssertPrint(assert_close(errorC(0, 1, 0), 0.0));
-	AssertPrint(assert_close(errorC(1, 0, 0), -21.47402));
+	AssertPrint(assert_close(errorC(1, 0, 0), -1.0));
 	AssertPrint(assert_close(errorC(1, 1, 0), 0.0));
-	AssertPrint(assert_close(errorC(0, 0, 1), -4.74341631));
+	AssertPrint(assert_close(errorC(0, 0, 1), -0.306852818));
 	AssertPrint(assert_close(errorC(0, 1, 1), 0.0));
-	AssertPrint(assert_close(errorC(1, 0, 1), -21.47402));
+	AssertPrint(assert_close(errorC(1, 0, 1), -1.0));
 	AssertPrint(assert_close(errorC(1, 1, 1), 0.0));
 }
 

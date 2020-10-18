@@ -439,8 +439,8 @@ namespace EvoNet
 	/*
 	@brief 1D Gumbel sampler
 
-	where the Gumbel(0; 1) distribution can be sampled using inverse transform sampling by drawing u 
-		Uniform(0; 1) and computing g = -log(-log(u)).
+	where the Gumbel(0; 1) distribution can be sampled using inverse transform sampling by drawing u
+		Uniform(0; 1) and computing g = -log(-log(u + EPS) + EPS).
 
 	@param[in] n_dims the number of categorical labels
 	@param[in] n_labels the number of categorical labels
@@ -455,7 +455,7 @@ namespace EvoNet
 		Eigen::Tensor<Ta, 2> gumbel_dist(n_dims, n_labels);
 		gumbel_dist = -(-(gumbel_dist.unaryExpr([&gen, &dist](const Ta& elem) {
 			return Ta(dist(gen));
-		})).log()).log();
+		}) + gumbel_dist.constant(Ta(1e-12))).log() + gumbel_dist.constant(Ta(1e-12))).log();
 		return gumbel_dist;
 	};
 

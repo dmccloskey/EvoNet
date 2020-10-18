@@ -22,7 +22,7 @@ void main_(const ParameterTypes& ...args) {
   // Make the input nodes
   std::vector<std::string> input_nodes;
   makeMuEncodingNodes(input_nodes, args...);
-  makeLogAlphaEncodingNodes(input_nodes, args...);
+  makeAlphaEncodingNodes(input_nodes, args...);
 
   // Make the output nodes
   std::vector<std::string> output_nodes = makeOutputNodes(n_features);

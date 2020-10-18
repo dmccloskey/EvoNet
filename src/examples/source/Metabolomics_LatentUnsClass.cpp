@@ -26,7 +26,7 @@ void main_(const ParameterTypes& ...args) {
   // Make the output nodes
   std::vector<std::string> encoding_nodes_mu = makeMuEncodingNodes(args...);
   std::vector<std::string> encoding_nodes_logvar = makeLogVarEncodingNodes(args...);
-  std::vector<std::string> encoding_nodes_logalpha = makeLogAlphaEncodingNodes(args...);
+  std::vector<std::string> encoding_nodes_logalpha = makeAlphaEncodingNodes(args...);
 
   // define the model trainer
   CVAEFullyConnDefaultDevice<float> model_trainer;
