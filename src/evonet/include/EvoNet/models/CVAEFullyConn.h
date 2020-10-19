@@ -205,8 +205,12 @@ namespace EvoNet
       and style using a gaussian distribution
 
     References:
-      arXiv:1804.00104
-      https://github.com/Schlumberger/joint-vae
+      CVAE:
+        arXiv:1804.00104
+        https://github.com/Schlumberger/joint-vae
+      VAE:
+        Based on Kingma et al, 2014: https://arxiv.org/pdf/1312.6114
+        https://github.com/pytorch/examples/blob/master/vae/main.py
 
     @param[in, out] model The network model
     @param[in] n_pixels The number of input/output pixels
@@ -315,6 +319,7 @@ namespace EvoNet
 
     // Add the Endocer FC layers
     std::vector<std::string> node_names_mu, node_names_logvar, node_names_alpha;
+    std::vector<std::string> node_names_Gencoder, node_names_Cencoder;
     if (n_hidden_0 > 0) {
       node_names = model_builder.addFullyConnected(model, "EN0", "EN0", node_names, n_hidden_0,
         activation, activation_grad, integration_op, integration_error_op, integration_weight_grad_op,
@@ -333,39 +338,57 @@ namespace EvoNet
         std::make_shared<RandWeightInitOp<TensorT>>(RandWeightInitOp<TensorT>((TensorT)(node_names.size() + n_hidden_2) / 2, 1)),
         solver_op, 0.0f, 0.0f, add_bias, specify_layers);
     }
-    node_names_mu = model_builder.addFullyConnected(model, "MuEnc", "MuEnc", node_names, n_encodings,
-      std::make_shared<LinearOp<TensorT>>(LinearOp<TensorT>()),
-      std::make_shared<LinearGradOp<TensorT>>(LinearGradOp<TensorT>()),
-      integration_op, integration_error_op, integration_weight_grad_op,
-      std::make_shared<RandWeightInitOp<TensorT>>(RandWeightInitOp<TensorT>((TensorT)(node_names.size() + n_encodings) / 2, 1)),
-      solver_op, 0.0f, 0.0f, false, specify_layers);
-    node_names_logvar = model_builder.addFullyConnected(model, "LogVarEnc", "LogVarEnc", node_names, n_encodings,
-      std::make_shared<LinearOp<TensorT>>(LinearOp<TensorT>()),
-      std::make_shared<LinearGradOp<TensorT>>(LinearGradOp<TensorT>()),
-      integration_op, integration_error_op, integration_weight_grad_op,
-      std::make_shared<RandWeightInitOp<TensorT>>(RandWeightInitOp<TensorT>((TensorT)(node_names.size() + n_encodings) / 2, 1)),
-      solver_op, 0.0f, 0.0f, false, specify_layers);
-    node_names_alpha = model_builder.addFullyConnected(model, "AlphaEncNonProp", "AlphaEncNonProp", node_names, n_categorical,
-      std::make_shared<LinearOp<TensorT>>(LinearOp<TensorT>()),
-      std::make_shared<LinearGradOp<TensorT>>(LinearGradOp<TensorT>()),
-      integration_op, integration_error_op, integration_weight_grad_op,
-      std::make_shared<RandWeightInitOp<TensorT>>(RandWeightInitOp<TensorT>((TensorT)(node_names.size() + n_categorical) / 2, 1)),
-      solver_op, 0.0f, 0.0f, false, specify_layers);
-    node_names_alpha = model_builder.addStableSoftMax(model, "AlphaEnc", "AlphaEnc", node_names_alpha, specify_layers);
 
-    // Add the Encoding layers
-    std::vector<std::string> node_names_Gencoder = model_builder.addGaussianEncoding(model, "Gaussian_encoding", "Gaussian_encoding", node_names_mu, node_names_logvar, true);
-    std::vector<std::string> node_names_Cencoder = model_builder.addCategoricalEncoding(model, "Categorical_encoding", "Categorical_encoding", node_names_alpha, true);
+    // Add the encoding layers
+    if (n_encodings > 0) {
+      node_names_mu = model_builder.addFullyConnected(model, "MuEnc", "MuEnc", node_names, n_encodings,
+        std::make_shared<LinearOp<TensorT>>(LinearOp<TensorT>()),
+        std::make_shared<LinearGradOp<TensorT>>(LinearGradOp<TensorT>()),
+        integration_op, integration_error_op, integration_weight_grad_op,
+        std::make_shared<RandWeightInitOp<TensorT>>(RandWeightInitOp<TensorT>((TensorT)(node_names.size() + n_encodings) / 2, 1)),
+        solver_op, 0.0f, 0.0f, false, specify_layers);
+      node_names_logvar = model_builder.addFullyConnected(model, "LogVarEnc", "LogVarEnc", node_names, n_encodings,
+        std::make_shared<LinearOp<TensorT>>(LinearOp<TensorT>()),
+        std::make_shared<LinearGradOp<TensorT>>(LinearGradOp<TensorT>()),
+        integration_op, integration_error_op, integration_weight_grad_op,
+        std::make_shared<RandWeightInitOp<TensorT>>(RandWeightInitOp<TensorT>((TensorT)(node_names.size() + n_encodings) / 2, 1)),
+        solver_op, 0.0f, 0.0f, false, specify_layers);
+      node_names_Gencoder = model_builder.addGaussianEncoding(model, "Gaussian_encoding", "Gaussian_encoding", node_names_mu, node_names_logvar, true);
+    }
+    if (n_categorical > 0) {
+      node_names_alpha = model_builder.addFullyConnected(model, "AlphaEncNonProp", "AlphaEncNonProp", node_names, n_categorical,
+        std::make_shared<LinearOp<TensorT>>(LinearOp<TensorT>()),
+        std::make_shared<LinearGradOp<TensorT>>(LinearGradOp<TensorT>()),
+        integration_op, integration_error_op, integration_weight_grad_op,
+        std::make_shared<RandWeightInitOp<TensorT>>(RandWeightInitOp<TensorT>((TensorT)(node_names.size() + n_categorical) / 2, 1)),
+        solver_op, 0.0f, 0.0f, false, specify_layers);
+      node_names_alpha = model_builder.addStableSoftMax(model, "AlphaEnc", "AlphaEnc", node_names_alpha, specify_layers);
+      node_names_Cencoder = model_builder.addCategoricalEncoding(model, "Categorical_encoding", "Categorical_encoding", node_names_alpha, true);
+    }
 
     // Add the Decoder FC layers
     if (n_hidden_2 > 0) {
-      node_names = model_builder.addFullyConnected(model, "DE2", "DE2", node_names_Gencoder, n_hidden_2,
-        activation, activation_grad, integration_op, integration_error_op, integration_weight_grad_op,
-        std::make_shared<RandWeightInitOp<TensorT>>(RandWeightInitOp<TensorT>((TensorT)(node_names_Gencoder.size() + n_hidden_2) / 2, 1)),
-        solver_op, 0.0f, 0.0f, add_bias, specify_layers);
-      model_builder.addFullyConnected(model, "DE2", node_names_Cencoder, node_names,
-        std::make_shared<RandWeightInitOp<TensorT>>(RandWeightInitOp<TensorT>((TensorT)(node_names_Cencoder.size() + n_hidden_2) / 2, 1)),
-        solver_op, 0.0f, specify_layers);
+      if (node_names_Gencoder.size() && node_names_Cencoder.size()) {
+        node_names = model_builder.addFullyConnected(model, "DE2", "DE2", node_names_Gencoder, n_hidden_2,
+          activation, activation_grad, integration_op, integration_error_op, integration_weight_grad_op,
+          std::make_shared<RandWeightInitOp<TensorT>>(RandWeightInitOp<TensorT>((TensorT)(node_names_Gencoder.size() + n_hidden_2) / 2, 1)),
+          solver_op, 0.0f, 0.0f, add_bias, specify_layers);
+        model_builder.addFullyConnected(model, "DE2", node_names_Cencoder, node_names,
+          std::make_shared<RandWeightInitOp<TensorT>>(RandWeightInitOp<TensorT>((TensorT)(node_names_Cencoder.size() + n_hidden_2) / 2, 1)),
+          solver_op, 0.0f, specify_layers);
+      }
+      else if (node_names_Gencoder.size()) {
+        node_names = model_builder.addFullyConnected(model, "DE2", "DE2", node_names_Gencoder, n_hidden_2,
+          activation, activation_grad, integration_op, integration_error_op, integration_weight_grad_op,
+          std::make_shared<RandWeightInitOp<TensorT>>(RandWeightInitOp<TensorT>((TensorT)(node_names_Gencoder.size() + n_hidden_2) / 2, 1)),
+          solver_op, 0.0f, 0.0f, add_bias, specify_layers);
+      }
+      else if (node_names_Cencoder.size()) {
+        node_names = model_builder.addFullyConnected(model, "DE2", "DE2", node_names_Cencoder, n_hidden_2,
+          activation, activation_grad, integration_op, integration_error_op, integration_weight_grad_op,
+          std::make_shared<RandWeightInitOp<TensorT>>(RandWeightInitOp<TensorT>((TensorT)(node_names_Cencoder.size() + n_hidden_2) / 2, 1)),
+          solver_op, 0.0f, 0.0f, add_bias, specify_layers);
+      }
     }
     if (n_hidden_1 > 0 && n_hidden_2 > 0) {
       node_names = model_builder.addFullyConnected(model, "DE1", "DE1", node_names, n_hidden_1,
@@ -374,13 +397,27 @@ namespace EvoNet
         solver_op, 0.0f, 0.0f, add_bias, specify_layers);
     }
     else if (n_hidden_1 > 0) {
-      node_names = model_builder.addFullyConnected(model, "DE1", "DE1", node_names_Gencoder, n_hidden_2,
-        activation, activation_grad, integration_op, integration_error_op, integration_weight_grad_op,
-        std::make_shared<RandWeightInitOp<TensorT>>(RandWeightInitOp<TensorT>((TensorT)(node_names_Gencoder.size() + n_hidden_1) / 2, 1)),
-        solver_op, 0.0f, 0.0f, add_bias, specify_layers);
-      model_builder.addFullyConnected(model, "DE1", node_names_Cencoder, node_names,
-        std::make_shared<RandWeightInitOp<TensorT>>(RandWeightInitOp<TensorT>((TensorT)(node_names_Cencoder.size() + n_hidden_1) / 2, 1)),
-        solver_op, 0.0f, specify_layers);
+      if (node_names_Gencoder.size() && node_names_Cencoder.size()) {
+        node_names = model_builder.addFullyConnected(model, "DE1", "DE1", node_names_Gencoder, n_hidden_2,
+          activation, activation_grad, integration_op, integration_error_op, integration_weight_grad_op,
+          std::make_shared<RandWeightInitOp<TensorT>>(RandWeightInitOp<TensorT>((TensorT)(node_names_Gencoder.size() + n_hidden_1) / 2, 1)),
+          solver_op, 0.0f, 0.0f, add_bias, specify_layers);
+        model_builder.addFullyConnected(model, "DE1", node_names_Cencoder, node_names,
+          std::make_shared<RandWeightInitOp<TensorT>>(RandWeightInitOp<TensorT>((TensorT)(node_names_Cencoder.size() + n_hidden_1) / 2, 1)),
+          solver_op, 0.0f, specify_layers);
+      }
+      else if (node_names_Gencoder.size()) {
+        node_names = model_builder.addFullyConnected(model, "DE1", "DE1", node_names_Gencoder, n_hidden_2,
+          activation, activation_grad, integration_op, integration_error_op, integration_weight_grad_op,
+          std::make_shared<RandWeightInitOp<TensorT>>(RandWeightInitOp<TensorT>((TensorT)(node_names_Gencoder.size() + n_hidden_1) / 2, 1)),
+          solver_op, 0.0f, 0.0f, add_bias, specify_layers);
+      }
+      else if (node_names_Cencoder.size()) {
+        node_names = model_builder.addFullyConnected(model, "DE1", "DE1", node_names_Cencoder, n_hidden_2,
+          activation, activation_grad, integration_op, integration_error_op, integration_weight_grad_op,
+          std::make_shared<RandWeightInitOp<TensorT>>(RandWeightInitOp<TensorT>((TensorT)(node_names_Cencoder.size() + n_hidden_1) / 2, 1)),
+          solver_op, 0.0f, 0.0f, add_bias, specify_layers);
+      }
     }
     if (n_hidden_0 > 0 && n_hidden_1 > 0) {
       node_names = model_builder.addFullyConnected(model, "DE0", "DE0", node_names, n_hidden_0,
@@ -389,13 +426,27 @@ namespace EvoNet
         solver_op, 0.0f, 0.0f, add_bias, specify_layers);
     }
     else if (n_hidden_0 > 0) {
-      node_names = model_builder.addFullyConnected(model, "DE1", "DE1", node_names_Gencoder, n_hidden_0,
-        activation, activation_grad, integration_op, integration_error_op, integration_weight_grad_op,
-        std::make_shared<RandWeightInitOp<TensorT>>(RandWeightInitOp<TensorT>((TensorT)(node_names_Gencoder.size() + n_hidden_0) / 2, 1)),
-        solver_op, 0.0f, 0.0f, add_bias, specify_layers);
-      model_builder.addFullyConnected(model, "DE1", node_names_Cencoder, node_names,
-        std::make_shared<RandWeightInitOp<TensorT>>(RandWeightInitOp<TensorT>((TensorT)(node_names_Cencoder.size() + n_hidden_0) / 2, 1)),
-        solver_op, 0.0f, specify_layers);
+      if (node_names_Gencoder.size() && node_names_Cencoder.size()) {
+        node_names = model_builder.addFullyConnected(model, "DE1", "DE1", node_names_Gencoder, n_hidden_0,
+          activation, activation_grad, integration_op, integration_error_op, integration_weight_grad_op,
+          std::make_shared<RandWeightInitOp<TensorT>>(RandWeightInitOp<TensorT>((TensorT)(node_names_Gencoder.size() + n_hidden_0) / 2, 1)),
+          solver_op, 0.0f, 0.0f, add_bias, specify_layers);
+        model_builder.addFullyConnected(model, "DE1", node_names_Cencoder, node_names,
+          std::make_shared<RandWeightInitOp<TensorT>>(RandWeightInitOp<TensorT>((TensorT)(node_names_Cencoder.size() + n_hidden_0) / 2, 1)),
+          solver_op, 0.0f, specify_layers);
+      }
+      else if (node_names_Gencoder.size()) {
+        node_names = model_builder.addFullyConnected(model, "DE1", "DE1", node_names_Gencoder, n_hidden_0,
+          activation, activation_grad, integration_op, integration_error_op, integration_weight_grad_op,
+          std::make_shared<RandWeightInitOp<TensorT>>(RandWeightInitOp<TensorT>((TensorT)(node_names_Gencoder.size() + n_hidden_0) / 2, 1)),
+          solver_op, 0.0f, 0.0f, add_bias, specify_layers);
+      }
+      else if (node_names_Cencoder.size()) {
+        node_names = model_builder.addFullyConnected(model, "DE1", "DE1", node_names_Cencoder, n_hidden_0,
+          activation, activation_grad, integration_op, integration_error_op, integration_weight_grad_op,
+          std::make_shared<RandWeightInitOp<TensorT>>(RandWeightInitOp<TensorT>((TensorT)(node_names_Cencoder.size() + n_hidden_0) / 2, 1)),
+          solver_op, 0.0f, 0.0f, add_bias, specify_layers);
+      }
     }
     node_names = model_builder.addFullyConnected(model, "DE-Output", "DE-Output", node_names, n_inputs,
       std::make_shared<LinearOp<TensorT>>(LinearOp<TensorT>()),
@@ -453,8 +504,11 @@ namespace EvoNet
     ModelBuilder<TensorT> model_builder;
 
     // Add the inputs
-    std::vector<std::string> node_names_Gencoder = model_builder.addInputNodes(model, "Gaussian_encoding", "Gaussian_encoding", n_encodings, specify_layers); // just Mu
-    std::vector<std::string> node_names_Cencoder = model_builder.addInputNodes(model, "Categorical_encoding-SoftMax-Out", "Categorical_encoding-SoftMax-Out", n_categorical, specify_layers);
+    std::vector<std::string> node_names_Gencoder, node_names_Cencoder;
+    if (n_encodings > 0)
+      node_names_Gencoder = model_builder.addInputNodes(model, "Gaussian_encoding", "Gaussian_encoding", n_encodings, specify_layers); // just Mu
+    if (n_categorical > 0)
+      node_names_Cencoder = model_builder.addInputNodes(model, "Categorical_encoding-SoftMax-Out", "Categorical_encoding-SoftMax-Out", n_categorical, specify_layers);
 
     // Define the activation based on `add_feature_norm`
     std::shared_ptr<ActivationOp<TensorT>> activation = std::make_shared<LeakyReLUOp<TensorT>>(LeakyReLUOp<TensorT>());
@@ -471,13 +525,27 @@ namespace EvoNet
     // Add the Decoder FC layers
     std::vector<std::string> node_names;
     if (n_hidden_2 > 0) {
-      node_names = model_builder.addFullyConnected(model, "DE2", "DE2", node_names_Gencoder, n_hidden_2,
-        activation, activation_grad, integration_op, integration_error_op, integration_weight_grad_op,
-        std::make_shared<RandWeightInitOp<TensorT>>(RandWeightInitOp<TensorT>((TensorT)(node_names_Gencoder.size() + n_hidden_2) / 2, 1)),
-        solver_op, 0.0f, 0.0f, add_bias, specify_layers);
-      model_builder.addFullyConnected(model, "DE2", node_names_Cencoder, node_names,
-        std::make_shared<RandWeightInitOp<TensorT>>(RandWeightInitOp<TensorT>((TensorT)(node_names_Cencoder.size() + n_hidden_2) / 2, 1)),
-        solver_op, 0.0f, specify_layers);
+      if (node_names_Gencoder.size() && node_names_Cencoder.size()) {
+        node_names = model_builder.addFullyConnected(model, "DE2", "DE2", node_names_Gencoder, n_hidden_2,
+          activation, activation_grad, integration_op, integration_error_op, integration_weight_grad_op,
+          std::make_shared<RandWeightInitOp<TensorT>>(RandWeightInitOp<TensorT>((TensorT)(node_names_Gencoder.size() + n_hidden_2) / 2, 1)),
+          solver_op, 0.0f, 0.0f, add_bias, specify_layers);
+        model_builder.addFullyConnected(model, "DE2", node_names_Cencoder, node_names,
+          std::make_shared<RandWeightInitOp<TensorT>>(RandWeightInitOp<TensorT>((TensorT)(node_names_Cencoder.size() + n_hidden_2) / 2, 1)),
+          solver_op, 0.0f, specify_layers);
+      }
+      else if (node_names_Gencoder.size()) {
+        node_names = model_builder.addFullyConnected(model, "DE2", "DE2", node_names_Gencoder, n_hidden_2,
+          activation, activation_grad, integration_op, integration_error_op, integration_weight_grad_op,
+          std::make_shared<RandWeightInitOp<TensorT>>(RandWeightInitOp<TensorT>((TensorT)(node_names_Gencoder.size() + n_hidden_2) / 2, 1)),
+          solver_op, 0.0f, 0.0f, add_bias, specify_layers);
+      }
+      else if (node_names_Cencoder.size()) {
+        node_names = model_builder.addFullyConnected(model, "DE2", "DE2", node_names_Cencoder, n_hidden_2,
+          activation, activation_grad, integration_op, integration_error_op, integration_weight_grad_op,
+          std::make_shared<RandWeightInitOp<TensorT>>(RandWeightInitOp<TensorT>((TensorT)(node_names_Cencoder.size() + n_hidden_2) / 2, 1)),
+          solver_op, 0.0f, 0.0f, add_bias, specify_layers);
+      }
     }
     if (n_hidden_1 > 0 && n_hidden_2 > 0) {
       node_names = model_builder.addFullyConnected(model, "DE1", "DE1", node_names, n_hidden_1,
@@ -486,13 +554,27 @@ namespace EvoNet
         solver_op, 0.0f, 0.0f, add_bias, specify_layers);
     }
     else if (n_hidden_1 > 0) {
-      node_names = model_builder.addFullyConnected(model, "DE1", "DE1", node_names_Gencoder, n_hidden_2,
-        activation, activation_grad, integration_op, integration_error_op, integration_weight_grad_op,
-        std::make_shared<RandWeightInitOp<TensorT>>(RandWeightInitOp<TensorT>((TensorT)(node_names_Gencoder.size() + n_hidden_1) / 2, 1)),
-        solver_op, 0.0f, 0.0f, add_bias, specify_layers);
-      model_builder.addFullyConnected(model, "DE1", node_names_Cencoder, node_names,
-        std::make_shared<RandWeightInitOp<TensorT>>(RandWeightInitOp<TensorT>((TensorT)(node_names_Cencoder.size() + n_hidden_1) / 2, 1)),
-        solver_op, 0.0f, specify_layers);
+      if (node_names_Gencoder.size() && node_names_Cencoder.size()) {
+        node_names = model_builder.addFullyConnected(model, "DE1", "DE1", node_names_Gencoder, n_hidden_2,
+          activation, activation_grad, integration_op, integration_error_op, integration_weight_grad_op,
+          std::make_shared<RandWeightInitOp<TensorT>>(RandWeightInitOp<TensorT>((TensorT)(node_names_Gencoder.size() + n_hidden_1) / 2, 1)),
+          solver_op, 0.0f, 0.0f, add_bias, specify_layers);
+        model_builder.addFullyConnected(model, "DE1", node_names_Cencoder, node_names,
+          std::make_shared<RandWeightInitOp<TensorT>>(RandWeightInitOp<TensorT>((TensorT)(node_names_Cencoder.size() + n_hidden_1) / 2, 1)),
+          solver_op, 0.0f, specify_layers);
+      }
+      else if (node_names_Gencoder.size()) {
+        node_names = model_builder.addFullyConnected(model, "DE1", "DE1", node_names_Gencoder, n_hidden_2,
+          activation, activation_grad, integration_op, integration_error_op, integration_weight_grad_op,
+          std::make_shared<RandWeightInitOp<TensorT>>(RandWeightInitOp<TensorT>((TensorT)(node_names_Gencoder.size() + n_hidden_1) / 2, 1)),
+          solver_op, 0.0f, 0.0f, add_bias, specify_layers);
+      }
+      else if (node_names_Cencoder.size()) {
+        node_names = model_builder.addFullyConnected(model, "DE1", "DE1", node_names_Cencoder, n_hidden_2,
+          activation, activation_grad, integration_op, integration_error_op, integration_weight_grad_op,
+          std::make_shared<RandWeightInitOp<TensorT>>(RandWeightInitOp<TensorT>((TensorT)(node_names_Cencoder.size() + n_hidden_1) / 2, 1)),
+          solver_op, 0.0f, 0.0f, add_bias, specify_layers);
+      }
     }
     if (n_hidden_0 > 0 && n_hidden_1 > 0) {
       node_names = model_builder.addFullyConnected(model, "DE0", "DE0", node_names, n_hidden_0,
@@ -501,13 +583,27 @@ namespace EvoNet
         solver_op, 0.0f, 0.0f, add_bias, specify_layers);
     }
     else if (n_hidden_0 > 0) {
-      node_names = model_builder.addFullyConnected(model, "DE1", "DE1", node_names_Gencoder, n_hidden_0,
-        activation, activation_grad, integration_op, integration_error_op, integration_weight_grad_op,
-        std::make_shared<RandWeightInitOp<TensorT>>(RandWeightInitOp<TensorT>((TensorT)(node_names_Gencoder.size() + n_hidden_0) / 2, 1)),
-        solver_op, 0.0f, 0.0f, add_bias, specify_layers);
-      model_builder.addFullyConnected(model, "DE1", node_names_Cencoder, node_names,
-        std::make_shared<RandWeightInitOp<TensorT>>(RandWeightInitOp<TensorT>((TensorT)(node_names_Cencoder.size() + n_hidden_0) / 2, 1)),
-        solver_op, 0.0f, specify_layers);
+      if (node_names_Gencoder.size() && node_names_Cencoder.size()) {
+        node_names = model_builder.addFullyConnected(model, "DE1", "DE1", node_names_Gencoder, n_hidden_0,
+          activation, activation_grad, integration_op, integration_error_op, integration_weight_grad_op,
+          std::make_shared<RandWeightInitOp<TensorT>>(RandWeightInitOp<TensorT>((TensorT)(node_names_Gencoder.size() + n_hidden_0) / 2, 1)),
+          solver_op, 0.0f, 0.0f, add_bias, specify_layers);
+        model_builder.addFullyConnected(model, "DE1", node_names_Cencoder, node_names,
+          std::make_shared<RandWeightInitOp<TensorT>>(RandWeightInitOp<TensorT>((TensorT)(node_names_Cencoder.size() + n_hidden_0) / 2, 1)),
+          solver_op, 0.0f, specify_layers);
+      }
+      else if (node_names_Gencoder.size()) {
+        node_names = model_builder.addFullyConnected(model, "DE1", "DE1", node_names_Gencoder, n_hidden_0,
+          activation, activation_grad, integration_op, integration_error_op, integration_weight_grad_op,
+          std::make_shared<RandWeightInitOp<TensorT>>(RandWeightInitOp<TensorT>((TensorT)(node_names_Gencoder.size() + n_hidden_0) / 2, 1)),
+          solver_op, 0.0f, 0.0f, add_bias, specify_layers);
+      }
+      else if (node_names_Cencoder.size()) {
+        node_names = model_builder.addFullyConnected(model, "DE1", "DE1", node_names_Cencoder, n_hidden_0,
+          activation, activation_grad, integration_op, integration_error_op, integration_weight_grad_op,
+          std::make_shared<RandWeightInitOp<TensorT>>(RandWeightInitOp<TensorT>((TensorT)(node_names_Cencoder.size() + n_hidden_0) / 2, 1)),
+          solver_op, 0.0f, 0.0f, add_bias, specify_layers);
+      }
     }
     node_names = model_builder.addFullyConnected(model, "DE-Output", "DE-Output", node_names, n_inputs,
       std::make_shared<LinearOp<TensorT>>(LinearOp<TensorT>()),
@@ -554,7 +650,7 @@ namespace EvoNet
     auto solver_op = std::make_shared<AdamOp<TensorT>>(AdamOp<TensorT>(this->learning_rate_, 0.9, 0.999, 1e-8, this->gradient_clipping_));
 
     // Add the Encoder FC layers
-    std::vector<std::string> node_names_mu, node_names_logvar, node_names_alpha;
+    std::vector<std::string> node_names_mu, node_names_logvar, node_names_alpha, node_names_Cencoder;
     if (n_hidden_0 > 0) {
       node_names = model_builder.addFullyConnected(model, "EN0", "EN0", node_names, n_hidden_0,
         activation, activation_grad, integration_op, integration_error_op, integration_weight_grad_op,
@@ -573,27 +669,32 @@ namespace EvoNet
         std::make_shared<RandWeightInitOp<TensorT>>(RandWeightInitOp<TensorT>((TensorT)(node_names.size() + n_hidden_2) / 2, 1)),
         solver_op, 0.0f, 0.0f, add_bias, specify_layers);
     }
-    node_names_mu = model_builder.addFullyConnected(model, "MuEnc", "MuEnc", node_names, n_encodings,
-      std::make_shared<LinearOp<TensorT>>(LinearOp<TensorT>()),
-      std::make_shared<LinearGradOp<TensorT>>(LinearGradOp<TensorT>()),
-      integration_op, integration_error_op, integration_weight_grad_op,
-      std::make_shared<RandWeightInitOp<TensorT>>(RandWeightInitOp<TensorT>((TensorT)(node_names.size() + n_encodings) / 2, 1)),
-      solver_op, 0.0f, 0.0f, false, specify_layers);
-    node_names_logvar = model_builder.addFullyConnected(model, "LogVarEnc", "LogVarEnc", node_names, n_encodings,
-      std::make_shared<LinearOp<TensorT>>(LinearOp<TensorT>()),
-      std::make_shared<LinearGradOp<TensorT>>(LinearGradOp<TensorT>()),
-      integration_op, integration_error_op, integration_weight_grad_op,
-      std::make_shared<RandWeightInitOp<TensorT>>(RandWeightInitOp<TensorT>((TensorT)(node_names.size() + n_encodings) / 2, 1)),
-      solver_op, 0.0f, 0.0f, false, specify_layers);
-    node_names_alpha = model_builder.addFullyConnected(model, "AlphaEncNonProb", "AlphaEncNonProb", node_names, n_categorical,
-      std::make_shared<LinearOp<TensorT>>(LinearOp<TensorT>()),
-      std::make_shared<LinearGradOp<TensorT>>(LinearGradOp<TensorT>()),
-      integration_op, integration_error_op, integration_weight_grad_op,
-      std::make_shared<RandWeightInitOp<TensorT>>(RandWeightInitOp<TensorT>((TensorT)(node_names.size() + n_categorical) / 2, 1)),
-      solver_op, 0.0f, 0.0f, false, specify_layers);
 
-    // Make the softmax layer
-    std::vector<std::string> node_names_Cencoder = model_builder.addStableSoftMax(model, "Categorical_encoding-SoftMax", "Categorical_encoding-SoftMax", node_names_alpha, specify_layers);
+    // Add the encoding layers
+    if (n_encodings > 0) {
+      node_names_mu = model_builder.addFullyConnected(model, "MuEnc", "MuEnc", node_names, n_encodings,
+        std::make_shared<LinearOp<TensorT>>(LinearOp<TensorT>()),
+        std::make_shared<LinearGradOp<TensorT>>(LinearGradOp<TensorT>()),
+        integration_op, integration_error_op, integration_weight_grad_op,
+        std::make_shared<RandWeightInitOp<TensorT>>(RandWeightInitOp<TensorT>((TensorT)(node_names.size() + n_encodings) / 2, 1)),
+        solver_op, 0.0f, 0.0f, false, specify_layers);
+      node_names_logvar = model_builder.addFullyConnected(model, "LogVarEnc", "LogVarEnc", node_names, n_encodings,
+        std::make_shared<LinearOp<TensorT>>(LinearOp<TensorT>()),
+        std::make_shared<LinearGradOp<TensorT>>(LinearGradOp<TensorT>()),
+        integration_op, integration_error_op, integration_weight_grad_op,
+        std::make_shared<RandWeightInitOp<TensorT>>(RandWeightInitOp<TensorT>((TensorT)(node_names.size() + n_encodings) / 2, 1)),
+        solver_op, 0.0f, 0.0f, false, specify_layers);
+    }
+    if (n_categorical > 0) {
+      node_names_alpha = model_builder.addFullyConnected(model, "AlphaEncNonProp", "AlphaEncNonProp", node_names, n_categorical,
+        std::make_shared<LinearOp<TensorT>>(LinearOp<TensorT>()),
+        std::make_shared<LinearGradOp<TensorT>>(LinearGradOp<TensorT>()),
+        integration_op, integration_error_op, integration_weight_grad_op,
+        std::make_shared<RandWeightInitOp<TensorT>>(RandWeightInitOp<TensorT>((TensorT)(node_names.size() + n_categorical) / 2, 1)),
+        solver_op, 0.0f, 0.0f, false, specify_layers);
+      //node_names_alpha = model_builder.addStableSoftMax(model, "AlphaEnc", "AlphaEnc", node_names_alpha, specify_layers);
+      node_names_Cencoder = model_builder.addStableSoftMax(model, "Categorical_encoding", "Categorical_encoding", node_names_alpha, true);
+    }
 
     // Add the actual output nodes
     node_names_mu = model_builder.addSinglyConnected(model, "Mu", "Mu", node_names_mu, node_names_mu.size(),
@@ -656,7 +757,7 @@ namespace EvoNet
         activation, activation_grad, integration_op, integration_error_op, integration_weight_grad_op,
         std::make_shared<RandWeightInitOp<TensorT>>(RandWeightInitOp<TensorT>((TensorT)(node_names.size() + n_hidden_0) / 2, 1)),
         solver_op, 0.0f, 0.0f, add_bias, specify_layers);
-      
+
     }
     if (n_hidden_1 > 0) {
       node_names = model_builder.addFullyConnected(model, "EN1", "EN1@L", node_names, n_hidden_1,
@@ -670,6 +771,10 @@ namespace EvoNet
         std::make_shared<RandWeightInitOp<TensorT>>(RandWeightInitOp<TensorT>((TensorT)(node_names.size() + n_hidden_2) / 2, 1)),
         solver_op, 0.0f, 0.0f, add_bias, specify_layers);
     }
+
+    // Add the latent layer
+    std::vector<std::string> node_names_Gencoder_L, node_names_Cencoder_L;
+    if (n_encodings > 0) {
     node_names_mu = model_builder.addFullyConnected(model, "MuEnc", "MuEnc@L", node_names, n_encodings,
       std::make_shared<LinearOp<TensorT>>(LinearOp<TensorT>()),
       std::make_shared<LinearGradOp<TensorT>>(LinearGradOp<TensorT>()),
@@ -682,34 +787,32 @@ namespace EvoNet
       integration_op, integration_error_op, integration_weight_grad_op,
       std::make_shared<RandWeightInitOp<TensorT>>(RandWeightInitOp<TensorT>((TensorT)(node_names.size() + n_encodings) / 2, 1)),
       solver_op, 0.0f, 0.0f, false, specify_layers);
-    node_names_alpha = model_builder.addFullyConnected(model, "AlphaEnc", "AlphaEnc@L", node_names, n_categorical,
-      std::make_shared<LinearOp<TensorT>>(LinearOp<TensorT>()),
-      std::make_shared<LinearGradOp<TensorT>>(LinearGradOp<TensorT>()),
-      integration_op, integration_error_op, integration_weight_grad_op,
-      std::make_shared<RandWeightInitOp<TensorT>>(RandWeightInitOp<TensorT>((TensorT)(node_names.size() + n_categorical) / 2, 1)),
-      solver_op, 0.0f, 0.0f, false, specify_layers);
-
-    // Make the Gaussian layer
-    std::vector<std::string> node_names_Gencoder_L = model_builder.addSinglyConnected(model, "Gaussian_encoding_LR", "Gaussian_encoding_L", node_names_mu, node_names_mu.size(),
+    node_names_Gencoder_L = model_builder.addSinglyConnected(model, "Gaussian_encoding_LR", "Gaussian_encoding_L", node_names_mu, node_names_mu.size(),
       std::make_shared<LinearOp<TensorT>>(LinearOp<TensorT>()),
       std::make_shared<LinearGradOp<TensorT>>(LinearGradOp<TensorT>()),
       integration_op, integration_error_op, integration_weight_grad_op,
       std::make_shared<ConstWeightInitOp<TensorT>>(ConstWeightInitOp<TensorT>(1)),
       std::make_shared<DummySolverOp<TensorT>>(DummySolverOp<TensorT>()), 0.0f, 0.0f, false, specify_layers);
-
-    // Make the softmax layer
-    std::vector<std::string> node_names_Cencoder_L = model_builder.addStableSoftMax(model, "Categorical_encoding-SoftMax_LR", "Categorical_encoding-SoftMax_L", node_names_alpha, specify_layers);
+    }
+    if (n_categorical > 0) {
+      node_names_alpha = model_builder.addFullyConnected(model, "AlphaEnc", "AlphaEnc@L", node_names, n_categorical,
+        std::make_shared<LinearOp<TensorT>>(LinearOp<TensorT>()),
+        std::make_shared<LinearGradOp<TensorT>>(LinearGradOp<TensorT>()),
+        integration_op, integration_error_op, integration_weight_grad_op,
+        std::make_shared<RandWeightInitOp<TensorT>>(RandWeightInitOp<TensorT>((TensorT)(node_names.size() + n_categorical) / 2, 1)),
+        solver_op, 0.0f, 0.0f, false, specify_layers);
+      node_names_Cencoder_L = model_builder.addStableSoftMax(model, "Categorical_encoding-SoftMax_LR", "Categorical_encoding-SoftMax_L", node_names_alpha, specify_layers);
+    }
 
     // Add the inputs (Right hand side)
     node_names = model_builder.addInputNodes(model, "Input@R", "Input@R", n_inputs, specify_layers);
 
-    // Add the Endocer FC layers
+    // Add the Encoder FC layers
     if (n_hidden_0 > 0) {
       node_names = model_builder.addFullyConnected(model, "EN0", "EN0@R", node_names, n_hidden_0,
         activation, activation_grad, integration_op, integration_error_op, integration_weight_grad_op,
         std::make_shared<RandWeightInitOp<TensorT>>(RandWeightInitOp<TensorT>((TensorT)(node_names.size() + n_hidden_0) / 2, 1)),
         solver_op, 0.0f, 0.0f, add_bias, specify_layers);
-
     }
     if (n_hidden_1 > 0) {
       node_names = model_builder.addFullyConnected(model, "EN1", "EN1@R", node_names, n_hidden_1,
@@ -723,35 +826,38 @@ namespace EvoNet
         std::make_shared<RandWeightInitOp<TensorT>>(RandWeightInitOp<TensorT>((TensorT)(node_names.size() + n_hidden_2) / 2, 1)),
         solver_op, 0.0f, 0.0f, add_bias, specify_layers);
     }
-    node_names_mu = model_builder.addFullyConnected(model, "MuEnc", "MuEnc@R", node_names, n_encodings,
-      std::make_shared<LinearOp<TensorT>>(LinearOp<TensorT>()),
-      std::make_shared<LinearGradOp<TensorT>>(LinearGradOp<TensorT>()),
-      integration_op, integration_error_op, integration_weight_grad_op,
-      std::make_shared<RandWeightInitOp<TensorT>>(RandWeightInitOp<TensorT>((TensorT)(node_names.size() + n_encodings) / 2, 1)),
-      solver_op, 0.0f, 0.0f, false, specify_layers);
-    node_names_logvar = model_builder.addFullyConnected(model, "LogVarEnc", "LogVarEnc@R", node_names, n_encodings,
-      std::make_shared<LinearOp<TensorT>>(LinearOp<TensorT>()),
-      std::make_shared<LinearGradOp<TensorT>>(LinearGradOp<TensorT>()),
-      integration_op, integration_error_op, integration_weight_grad_op,
-      std::make_shared<RandWeightInitOp<TensorT>>(RandWeightInitOp<TensorT>((TensorT)(node_names.size() + n_encodings) / 2, 1)),
-      solver_op, 0.0f, 0.0f, false, specify_layers);
-    node_names_alpha = model_builder.addFullyConnected(model, "AlphaEnc", "AlphaEnc@R", node_names, n_categorical,
-      std::make_shared<LinearOp<TensorT>>(LinearOp<TensorT>()),
-      std::make_shared<LinearGradOp<TensorT>>(LinearGradOp<TensorT>()),
-      integration_op, integration_error_op, integration_weight_grad_op,
-      std::make_shared<RandWeightInitOp<TensorT>>(RandWeightInitOp<TensorT>((TensorT)(node_names.size() + n_categorical) / 2, 1)),
-      solver_op, 0.0f, 0.0f, false, specify_layers);
 
-    // Make the Gaussian layer
-    std::vector<std::string> node_names_Gencoder_R = model_builder.addSinglyConnected(model, "Gaussian_encoding_LR", "Gaussian_encoding_R", node_names_mu, node_names_mu.size(),
-      std::make_shared<LinearOp<TensorT>>(LinearOp<TensorT>()),
-      std::make_shared<LinearGradOp<TensorT>>(LinearGradOp<TensorT>()),
-      integration_op, integration_error_op, integration_weight_grad_op,
-      std::make_shared<ConstWeightInitOp<TensorT>>(ConstWeightInitOp<TensorT>(1)),
-      std::make_shared<DummySolverOp<TensorT>>(DummySolverOp<TensorT>()), 0.0f, 0.0f, false, specify_layers);
-
-    // Make the softmax layer
-    std::vector<std::string> node_names_Cencoder_R = model_builder.addStableSoftMax(model, "Categorical_encoding-SoftMax_LR", "Categorical_encoding-SoftMax_R", node_names_alpha, specify_layers);
+    // Add the latent space
+    std::vector<std::string> node_names_Gencoder_R, node_names_Cencoder_R;
+    if (n_encodings > 0) {
+      node_names_mu = model_builder.addFullyConnected(model, "MuEnc", "MuEnc@R", node_names, n_encodings,
+        std::make_shared<LinearOp<TensorT>>(LinearOp<TensorT>()),
+        std::make_shared<LinearGradOp<TensorT>>(LinearGradOp<TensorT>()),
+        integration_op, integration_error_op, integration_weight_grad_op,
+        std::make_shared<RandWeightInitOp<TensorT>>(RandWeightInitOp<TensorT>((TensorT)(node_names.size() + n_encodings) / 2, 1)),
+        solver_op, 0.0f, 0.0f, false, specify_layers);
+      node_names_logvar = model_builder.addFullyConnected(model, "LogVarEnc", "LogVarEnc@R", node_names, n_encodings,
+        std::make_shared<LinearOp<TensorT>>(LinearOp<TensorT>()),
+        std::make_shared<LinearGradOp<TensorT>>(LinearGradOp<TensorT>()),
+        integration_op, integration_error_op, integration_weight_grad_op,
+        std::make_shared<RandWeightInitOp<TensorT>>(RandWeightInitOp<TensorT>((TensorT)(node_names.size() + n_encodings) / 2, 1)),
+        solver_op, 0.0f, 0.0f, false, specify_layers);
+      node_names_Gencoder_R = model_builder.addSinglyConnected(model, "Gaussian_encoding_LR", "Gaussian_encoding_R", node_names_mu, node_names_mu.size(),
+        std::make_shared<LinearOp<TensorT>>(LinearOp<TensorT>()),
+        std::make_shared<LinearGradOp<TensorT>>(LinearGradOp<TensorT>()),
+        integration_op, integration_error_op, integration_weight_grad_op,
+        std::make_shared<ConstWeightInitOp<TensorT>>(ConstWeightInitOp<TensorT>(1)),
+        std::make_shared<DummySolverOp<TensorT>>(DummySolverOp<TensorT>()), 0.0f, 0.0f, false, specify_layers);
+    }
+    if (n_categorical > 0) {
+      node_names_alpha = model_builder.addFullyConnected(model, "AlphaEnc", "AlphaEnc@R", node_names, n_categorical,
+        std::make_shared<LinearOp<TensorT>>(LinearOp<TensorT>()),
+        std::make_shared<LinearGradOp<TensorT>>(LinearGradOp<TensorT>()),
+        integration_op, integration_error_op, integration_weight_grad_op,
+        std::make_shared<RandWeightInitOp<TensorT>>(RandWeightInitOp<TensorT>((TensorT)(node_names.size() + n_categorical) / 2, 1)),
+        solver_op, 0.0f, 0.0f, false, specify_layers);
+      node_names_Cencoder_R = model_builder.addStableSoftMax(model, "Categorical_encoding-SoftMax_LR", "Categorical_encoding-SoftMax_R", node_names_alpha, specify_layers);
+    }
 
     // Rename the input nodes
     std::vector<std::vector<std::string>> tokens_vec = { {"Input@L"}, {"Input@R"} };
@@ -812,13 +918,27 @@ namespace EvoNet
 
     // Add the Decoder FC layers
     if (n_hidden_2 > 0) {
-      node_names = model_builder.addFullyConnected(model, "DE2", "DE2", node_names_Gencoder, n_hidden_2,
-        activation, activation_grad, integration_op, integration_error_op, integration_weight_grad_op,
-        std::make_shared<RandWeightInitOp<TensorT>>(RandWeightInitOp<TensorT>((TensorT)(node_names_Gencoder.size() + n_hidden_2) / 2, 1)),
-        solver_op, 0.0f, 0.0f, add_bias, specify_layers);
-      model_builder.addFullyConnected(model, "DE2", node_names_Cencoder, node_names,
-        std::make_shared<RandWeightInitOp<TensorT>>(RandWeightInitOp<TensorT>((TensorT)(node_names_Cencoder.size() + n_hidden_2) / 2, 1)),
-        solver_op, 0.0f, specify_layers);
+      if (node_names_Gencoder.size() && node_names_Cencoder.size()) {
+        node_names = model_builder.addFullyConnected(model, "DE2", "DE2", node_names_Gencoder, n_hidden_2,
+          activation, activation_grad, integration_op, integration_error_op, integration_weight_grad_op,
+          std::make_shared<RandWeightInitOp<TensorT>>(RandWeightInitOp<TensorT>((TensorT)(node_names_Gencoder.size() + n_hidden_2) / 2, 1)),
+          solver_op, 0.0f, 0.0f, add_bias, specify_layers);
+        model_builder.addFullyConnected(model, "DE2", node_names_Cencoder, node_names,
+          std::make_shared<RandWeightInitOp<TensorT>>(RandWeightInitOp<TensorT>((TensorT)(node_names_Cencoder.size() + n_hidden_2) / 2, 1)),
+          solver_op, 0.0f, specify_layers);
+      }
+      else if (node_names_Gencoder.size()) {
+        node_names = model_builder.addFullyConnected(model, "DE2", "DE2", node_names_Gencoder, n_hidden_2,
+          activation, activation_grad, integration_op, integration_error_op, integration_weight_grad_op,
+          std::make_shared<RandWeightInitOp<TensorT>>(RandWeightInitOp<TensorT>((TensorT)(node_names_Gencoder.size() + n_hidden_2) / 2, 1)),
+          solver_op, 0.0f, 0.0f, add_bias, specify_layers);
+      }
+      else if (node_names_Cencoder.size()) {
+        node_names = model_builder.addFullyConnected(model, "DE2", "DE2", node_names_Cencoder, n_hidden_2,
+          activation, activation_grad, integration_op, integration_error_op, integration_weight_grad_op,
+          std::make_shared<RandWeightInitOp<TensorT>>(RandWeightInitOp<TensorT>((TensorT)(node_names_Cencoder.size() + n_hidden_2) / 2, 1)),
+          solver_op, 0.0f, 0.0f, add_bias, specify_layers);
+      }
     }
     if (n_hidden_1 > 0 && n_hidden_2 > 0) {
       node_names = model_builder.addFullyConnected(model, "DE1", "DE1", node_names, n_hidden_1,
@@ -827,13 +947,27 @@ namespace EvoNet
         solver_op, 0.0f, 0.0f, add_bias, specify_layers);
     }
     else if (n_hidden_1 > 0) {
-      node_names = model_builder.addFullyConnected(model, "DE1", "DE1", node_names_Gencoder, n_hidden_2,
-        activation, activation_grad, integration_op, integration_error_op, integration_weight_grad_op,
-        std::make_shared<RandWeightInitOp<TensorT>>(RandWeightInitOp<TensorT>((TensorT)(node_names_Gencoder.size() + n_hidden_1) / 2, 1)),
-        solver_op, 0.0f, 0.0f, add_bias, specify_layers);
-      model_builder.addFullyConnected(model, "DE1", node_names_Cencoder, node_names,
-        std::make_shared<RandWeightInitOp<TensorT>>(RandWeightInitOp<TensorT>((TensorT)(node_names_Cencoder.size() + n_hidden_1) / 2, 1)),
-        solver_op, 0.0f, specify_layers);
+      if (node_names_Gencoder.size() && node_names_Cencoder.size()) {
+        node_names = model_builder.addFullyConnected(model, "DE1", "DE1", node_names_Gencoder, n_hidden_2,
+          activation, activation_grad, integration_op, integration_error_op, integration_weight_grad_op,
+          std::make_shared<RandWeightInitOp<TensorT>>(RandWeightInitOp<TensorT>((TensorT)(node_names_Gencoder.size() + n_hidden_1) / 2, 1)),
+          solver_op, 0.0f, 0.0f, add_bias, specify_layers);
+        model_builder.addFullyConnected(model, "DE1", node_names_Cencoder, node_names,
+          std::make_shared<RandWeightInitOp<TensorT>>(RandWeightInitOp<TensorT>((TensorT)(node_names_Cencoder.size() + n_hidden_1) / 2, 1)),
+          solver_op, 0.0f, specify_layers);
+      }
+      else if (node_names_Gencoder.size()) {
+        node_names = model_builder.addFullyConnected(model, "DE1", "DE1", node_names_Gencoder, n_hidden_2,
+          activation, activation_grad, integration_op, integration_error_op, integration_weight_grad_op,
+          std::make_shared<RandWeightInitOp<TensorT>>(RandWeightInitOp<TensorT>((TensorT)(node_names_Gencoder.size() + n_hidden_1) / 2, 1)),
+          solver_op, 0.0f, 0.0f, add_bias, specify_layers);
+      }
+      else if (node_names_Cencoder.size()) {
+        node_names = model_builder.addFullyConnected(model, "DE1", "DE1", node_names_Cencoder, n_hidden_2,
+          activation, activation_grad, integration_op, integration_error_op, integration_weight_grad_op,
+          std::make_shared<RandWeightInitOp<TensorT>>(RandWeightInitOp<TensorT>((TensorT)(node_names_Cencoder.size() + n_hidden_1) / 2, 1)),
+          solver_op, 0.0f, 0.0f, add_bias, specify_layers);
+      }
     }
     if (n_hidden_0 > 0 && n_hidden_1 > 0) {
       node_names = model_builder.addFullyConnected(model, "DE0", "DE0", node_names, n_hidden_0,
@@ -842,13 +976,27 @@ namespace EvoNet
         solver_op, 0.0f, 0.0f, add_bias, specify_layers);
     }
     else if (n_hidden_0 > 0) {
-      node_names = model_builder.addFullyConnected(model, "DE1", "DE1", node_names_Gencoder, n_hidden_0,
-        activation, activation_grad, integration_op, integration_error_op, integration_weight_grad_op,
-        std::make_shared<RandWeightInitOp<TensorT>>(RandWeightInitOp<TensorT>((TensorT)(node_names_Gencoder.size() + n_hidden_0) / 2, 1)),
-        solver_op, 0.0f, 0.0f, add_bias, specify_layers);
-      model_builder.addFullyConnected(model, "DE1", node_names_Cencoder, node_names,
-        std::make_shared<RandWeightInitOp<TensorT>>(RandWeightInitOp<TensorT>((TensorT)(node_names_Cencoder.size() + n_hidden_0) / 2, 1)),
-        solver_op, 0.0f, specify_layers);
+      if (node_names_Gencoder.size() && node_names_Cencoder.size()) {
+        node_names = model_builder.addFullyConnected(model, "DE1", "DE1", node_names_Gencoder, n_hidden_0,
+          activation, activation_grad, integration_op, integration_error_op, integration_weight_grad_op,
+          std::make_shared<RandWeightInitOp<TensorT>>(RandWeightInitOp<TensorT>((TensorT)(node_names_Gencoder.size() + n_hidden_0) / 2, 1)),
+          solver_op, 0.0f, 0.0f, add_bias, specify_layers);
+        model_builder.addFullyConnected(model, "DE1", node_names_Cencoder, node_names,
+          std::make_shared<RandWeightInitOp<TensorT>>(RandWeightInitOp<TensorT>((TensorT)(node_names_Cencoder.size() + n_hidden_0) / 2, 1)),
+          solver_op, 0.0f, specify_layers);
+      }
+      else if (node_names_Gencoder.size()) {
+        node_names = model_builder.addFullyConnected(model, "DE1", "DE1", node_names_Gencoder, n_hidden_0,
+          activation, activation_grad, integration_op, integration_error_op, integration_weight_grad_op,
+          std::make_shared<RandWeightInitOp<TensorT>>(RandWeightInitOp<TensorT>((TensorT)(node_names_Gencoder.size() + n_hidden_0) / 2, 1)),
+          solver_op, 0.0f, 0.0f, add_bias, specify_layers);
+      }
+      else if (node_names_Cencoder.size()) {
+        node_names = model_builder.addFullyConnected(model, "DE1", "DE1", node_names_Cencoder, n_hidden_0,
+          activation, activation_grad, integration_op, integration_error_op, integration_weight_grad_op,
+          std::make_shared<RandWeightInitOp<TensorT>>(RandWeightInitOp<TensorT>((TensorT)(node_names_Cencoder.size() + n_hidden_0) / 2, 1)),
+          solver_op, 0.0f, 0.0f, add_bias, specify_layers);
+      }
     }
     node_names = model_builder.addFullyConnected(model, "DE-Output", "DE-Output", node_names, n_inputs,
       std::make_shared<LinearOp<TensorT>>(LinearOp<TensorT>()),

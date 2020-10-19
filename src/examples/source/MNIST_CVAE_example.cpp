@@ -5,7 +5,6 @@
 #include <EvoNet/models/CVAEFullyConnDefaultDevice.h>
 #include <EvoNet/simulator/MNISTSimulator.h>
 #include <EvoNet/simulator/DataSimulator.h>
-#include <EvoNet/io/Parameters.h>
 #include <unsupported/Eigen/CXX11/Tensor>
 
 using namespace EvoNet;
@@ -244,6 +243,9 @@ void main_(const ParameterTypes& ...args) {
   std::vector<ModelInterpreterDefaultDevice<float>> model_interpreters;
   ModelInterpreterFileDefaultDevice<float> model_interpreter_file;
   makeModelAndInterpreters(model, model_trainer, model_interpreters, model_interpreter_file, n_pixels, args...);
+  if (!model.checkCompleteInputToOutput()) {
+    std::cout << "Model Error!" << std::endl;
+  }
 
   // define the model logger
   ModelLogger<float> model_logger(true, true, true, false, false, true, false, true);

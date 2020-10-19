@@ -21,7 +21,7 @@ class ModelTrainerExt : public ModelTrainerGpu<TensorT>
 {
 public:
   bool KL_divergence_warmup_ = false;
-  TensorT beta_ = 1;
+  TensorT beta_ = 0;
   TensorT capacity_c_ = 0;
   /*
   @brief Basic VAE with	Xavier-like initialization
