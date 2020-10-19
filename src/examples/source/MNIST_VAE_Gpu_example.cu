@@ -21,7 +21,7 @@ class ModelTrainerExt : public ModelTrainerGpu<TensorT>
 {
 public:
   bool KL_divergence_warmup_ = false;
-  TensorT beta_ = 0;
+  TensorT beta_ = 1;
   TensorT capacity_c_ = 0;
   /*
   @brief Basic VAE with	Xavier-like initialization
@@ -867,7 +867,7 @@ void main_MNIST(const std::string& data_dir, const bool& make_model, const bool&
   // define the model trainers and resources for the trainers
   std::vector<ModelInterpreterGpu<float>> model_interpreters;
   for (size_t i = 0; i < n_threads; ++i) {
-    ModelResources model_resources = { ModelDevice(1, 1) };
+    ModelResources model_resources = { ModelDevice(3, 1) };
     ModelInterpreterGpu<float> model_interpreter(model_resources);
     model_interpreters.push_back(model_interpreter);
   }
@@ -911,7 +911,7 @@ void main_MNIST(const std::string& data_dir, const bool& make_model, const bool&
   Model<float> model;
   if (make_model) {
     std::cout << "Making the model..." << std::endl;
-    ModelTrainerExt<float>().makeVAEFullyConn(model, input_size, encoding_size, 128, 128, 0, false, false, true);
+    ModelTrainerExt<float>().makeVAEFullyConn(model, input_size, encoding_size, 128, 128, 0, true, false, true);
     //ModelTrainerExt<float>().makeVAECovNet(model, input_size, encoding_size, 32, 1, 0, 2, 1, 0, 128, 128, 7, 1, false, true);
   }
   else {

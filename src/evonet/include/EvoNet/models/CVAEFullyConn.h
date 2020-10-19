@@ -368,7 +368,7 @@ namespace EvoNet
 
     // Add the Decoder FC layers
     if (n_hidden_2 > 0) {
-      if (node_names_Gencoder.size() && node_names_Cencoder.size()) {
+      if (node_names_Gencoder.size()>0 && node_names_Cencoder.size()>0) {
         node_names = model_builder.addFullyConnected(model, "DE2", "DE2", node_names_Gencoder, n_hidden_2,
           activation, activation_grad, integration_op, integration_error_op, integration_weight_grad_op,
           std::make_shared<RandWeightInitOp<TensorT>>(RandWeightInitOp<TensorT>((TensorT)(node_names_Gencoder.size() + n_hidden_2) / 2, 1)),
@@ -377,13 +377,13 @@ namespace EvoNet
           std::make_shared<RandWeightInitOp<TensorT>>(RandWeightInitOp<TensorT>((TensorT)(node_names_Cencoder.size() + n_hidden_2) / 2, 1)),
           solver_op, 0.0f, specify_layers);
       }
-      else if (node_names_Gencoder.size()) {
+      else if (node_names_Gencoder.size()>0) {
         node_names = model_builder.addFullyConnected(model, "DE2", "DE2", node_names_Gencoder, n_hidden_2,
           activation, activation_grad, integration_op, integration_error_op, integration_weight_grad_op,
           std::make_shared<RandWeightInitOp<TensorT>>(RandWeightInitOp<TensorT>((TensorT)(node_names_Gencoder.size() + n_hidden_2) / 2, 1)),
           solver_op, 0.0f, 0.0f, add_bias, specify_layers);
       }
-      else if (node_names_Cencoder.size()) {
+      else if (node_names_Cencoder.size()>0) {
         node_names = model_builder.addFullyConnected(model, "DE2", "DE2", node_names_Cencoder, n_hidden_2,
           activation, activation_grad, integration_op, integration_error_op, integration_weight_grad_op,
           std::make_shared<RandWeightInitOp<TensorT>>(RandWeightInitOp<TensorT>((TensorT)(node_names_Cencoder.size() + n_hidden_2) / 2, 1)),
@@ -397,8 +397,8 @@ namespace EvoNet
         solver_op, 0.0f, 0.0f, add_bias, specify_layers);
     }
     else if (n_hidden_1 > 0) {
-      if (node_names_Gencoder.size() && node_names_Cencoder.size()) {
-        node_names = model_builder.addFullyConnected(model, "DE1", "DE1", node_names_Gencoder, n_hidden_2,
+      if (node_names_Gencoder.size()>0 && node_names_Cencoder.size()>0) {
+        node_names = model_builder.addFullyConnected(model, "DE1", "DE1", node_names_Gencoder, n_hidden_1,
           activation, activation_grad, integration_op, integration_error_op, integration_weight_grad_op,
           std::make_shared<RandWeightInitOp<TensorT>>(RandWeightInitOp<TensorT>((TensorT)(node_names_Gencoder.size() + n_hidden_1) / 2, 1)),
           solver_op, 0.0f, 0.0f, add_bias, specify_layers);
@@ -406,14 +406,14 @@ namespace EvoNet
           std::make_shared<RandWeightInitOp<TensorT>>(RandWeightInitOp<TensorT>((TensorT)(node_names_Cencoder.size() + n_hidden_1) / 2, 1)),
           solver_op, 0.0f, specify_layers);
       }
-      else if (node_names_Gencoder.size()) {
-        node_names = model_builder.addFullyConnected(model, "DE1", "DE1", node_names_Gencoder, n_hidden_2,
+      else if (node_names_Gencoder.size()>0) {
+        node_names = model_builder.addFullyConnected(model, "DE1", "DE1", node_names_Gencoder, n_hidden_1,
           activation, activation_grad, integration_op, integration_error_op, integration_weight_grad_op,
           std::make_shared<RandWeightInitOp<TensorT>>(RandWeightInitOp<TensorT>((TensorT)(node_names_Gencoder.size() + n_hidden_1) / 2, 1)),
           solver_op, 0.0f, 0.0f, add_bias, specify_layers);
       }
-      else if (node_names_Cencoder.size()) {
-        node_names = model_builder.addFullyConnected(model, "DE1", "DE1", node_names_Cencoder, n_hidden_2,
+      else if (node_names_Cencoder.size()>0) {
+        node_names = model_builder.addFullyConnected(model, "DE1", "DE1", node_names_Cencoder, n_hidden_1,
           activation, activation_grad, integration_op, integration_error_op, integration_weight_grad_op,
           std::make_shared<RandWeightInitOp<TensorT>>(RandWeightInitOp<TensorT>((TensorT)(node_names_Cencoder.size() + n_hidden_1) / 2, 1)),
           solver_op, 0.0f, 0.0f, add_bias, specify_layers);
@@ -426,23 +426,23 @@ namespace EvoNet
         solver_op, 0.0f, 0.0f, add_bias, specify_layers);
     }
     else if (n_hidden_0 > 0) {
-      if (node_names_Gencoder.size() && node_names_Cencoder.size()) {
-        node_names = model_builder.addFullyConnected(model, "DE1", "DE1", node_names_Gencoder, n_hidden_0,
+      if (node_names_Gencoder.size()>0 && node_names_Cencoder.size()>0) {
+        node_names = model_builder.addFullyConnected(model, "DE0", "DE0", node_names_Gencoder, n_hidden_0,
           activation, activation_grad, integration_op, integration_error_op, integration_weight_grad_op,
           std::make_shared<RandWeightInitOp<TensorT>>(RandWeightInitOp<TensorT>((TensorT)(node_names_Gencoder.size() + n_hidden_0) / 2, 1)),
           solver_op, 0.0f, 0.0f, add_bias, specify_layers);
-        model_builder.addFullyConnected(model, "DE1", node_names_Cencoder, node_names,
+        model_builder.addFullyConnected(model, "DE0", node_names_Cencoder, node_names,
           std::make_shared<RandWeightInitOp<TensorT>>(RandWeightInitOp<TensorT>((TensorT)(node_names_Cencoder.size() + n_hidden_0) / 2, 1)),
           solver_op, 0.0f, specify_layers);
       }
-      else if (node_names_Gencoder.size()) {
-        node_names = model_builder.addFullyConnected(model, "DE1", "DE1", node_names_Gencoder, n_hidden_0,
+      else if (node_names_Gencoder.size()>0) {
+        node_names = model_builder.addFullyConnected(model, "DE0", "DE0", node_names_Gencoder, n_hidden_0,
           activation, activation_grad, integration_op, integration_error_op, integration_weight_grad_op,
           std::make_shared<RandWeightInitOp<TensorT>>(RandWeightInitOp<TensorT>((TensorT)(node_names_Gencoder.size() + n_hidden_0) / 2, 1)),
           solver_op, 0.0f, 0.0f, add_bias, specify_layers);
       }
-      else if (node_names_Cencoder.size()) {
-        node_names = model_builder.addFullyConnected(model, "DE1", "DE1", node_names_Cencoder, n_hidden_0,
+      else if (node_names_Cencoder.size()>0) {
+        node_names = model_builder.addFullyConnected(model, "DE0", "DE0", node_names_Cencoder, n_hidden_0,
           activation, activation_grad, integration_op, integration_error_op, integration_weight_grad_op,
           std::make_shared<RandWeightInitOp<TensorT>>(RandWeightInitOp<TensorT>((TensorT)(node_names_Cencoder.size() + n_hidden_0) / 2, 1)),
           solver_op, 0.0f, 0.0f, add_bias, specify_layers);
@@ -525,7 +525,7 @@ namespace EvoNet
     // Add the Decoder FC layers
     std::vector<std::string> node_names;
     if (n_hidden_2 > 0) {
-      if (node_names_Gencoder.size() && node_names_Cencoder.size()) {
+      if (node_names_Gencoder.size() > 0 && node_names_Cencoder.size() > 0) {
         node_names = model_builder.addFullyConnected(model, "DE2", "DE2", node_names_Gencoder, n_hidden_2,
           activation, activation_grad, integration_op, integration_error_op, integration_weight_grad_op,
           std::make_shared<RandWeightInitOp<TensorT>>(RandWeightInitOp<TensorT>((TensorT)(node_names_Gencoder.size() + n_hidden_2) / 2, 1)),
@@ -534,13 +534,13 @@ namespace EvoNet
           std::make_shared<RandWeightInitOp<TensorT>>(RandWeightInitOp<TensorT>((TensorT)(node_names_Cencoder.size() + n_hidden_2) / 2, 1)),
           solver_op, 0.0f, specify_layers);
       }
-      else if (node_names_Gencoder.size()) {
+      else if (node_names_Gencoder.size() > 0) {
         node_names = model_builder.addFullyConnected(model, "DE2", "DE2", node_names_Gencoder, n_hidden_2,
           activation, activation_grad, integration_op, integration_error_op, integration_weight_grad_op,
           std::make_shared<RandWeightInitOp<TensorT>>(RandWeightInitOp<TensorT>((TensorT)(node_names_Gencoder.size() + n_hidden_2) / 2, 1)),
           solver_op, 0.0f, 0.0f, add_bias, specify_layers);
       }
-      else if (node_names_Cencoder.size()) {
+      else if (node_names_Cencoder.size() > 0) {
         node_names = model_builder.addFullyConnected(model, "DE2", "DE2", node_names_Cencoder, n_hidden_2,
           activation, activation_grad, integration_op, integration_error_op, integration_weight_grad_op,
           std::make_shared<RandWeightInitOp<TensorT>>(RandWeightInitOp<TensorT>((TensorT)(node_names_Cencoder.size() + n_hidden_2) / 2, 1)),
@@ -554,8 +554,8 @@ namespace EvoNet
         solver_op, 0.0f, 0.0f, add_bias, specify_layers);
     }
     else if (n_hidden_1 > 0) {
-      if (node_names_Gencoder.size() && node_names_Cencoder.size()) {
-        node_names = model_builder.addFullyConnected(model, "DE1", "DE1", node_names_Gencoder, n_hidden_2,
+      if (node_names_Gencoder.size() > 0 && node_names_Cencoder.size() > 0) {
+        node_names = model_builder.addFullyConnected(model, "DE1", "DE1", node_names_Gencoder, n_hidden_1,
           activation, activation_grad, integration_op, integration_error_op, integration_weight_grad_op,
           std::make_shared<RandWeightInitOp<TensorT>>(RandWeightInitOp<TensorT>((TensorT)(node_names_Gencoder.size() + n_hidden_1) / 2, 1)),
           solver_op, 0.0f, 0.0f, add_bias, specify_layers);
@@ -563,14 +563,14 @@ namespace EvoNet
           std::make_shared<RandWeightInitOp<TensorT>>(RandWeightInitOp<TensorT>((TensorT)(node_names_Cencoder.size() + n_hidden_1) / 2, 1)),
           solver_op, 0.0f, specify_layers);
       }
-      else if (node_names_Gencoder.size()) {
-        node_names = model_builder.addFullyConnected(model, "DE1", "DE1", node_names_Gencoder, n_hidden_2,
+      else if (node_names_Gencoder.size() > 0) {
+        node_names = model_builder.addFullyConnected(model, "DE1", "DE1", node_names_Gencoder, n_hidden_1,
           activation, activation_grad, integration_op, integration_error_op, integration_weight_grad_op,
           std::make_shared<RandWeightInitOp<TensorT>>(RandWeightInitOp<TensorT>((TensorT)(node_names_Gencoder.size() + n_hidden_1) / 2, 1)),
           solver_op, 0.0f, 0.0f, add_bias, specify_layers);
       }
-      else if (node_names_Cencoder.size()) {
-        node_names = model_builder.addFullyConnected(model, "DE1", "DE1", node_names_Cencoder, n_hidden_2,
+      else if (node_names_Cencoder.size() > 0) {
+        node_names = model_builder.addFullyConnected(model, "DE1", "DE1", node_names_Cencoder, n_hidden_1,
           activation, activation_grad, integration_op, integration_error_op, integration_weight_grad_op,
           std::make_shared<RandWeightInitOp<TensorT>>(RandWeightInitOp<TensorT>((TensorT)(node_names_Cencoder.size() + n_hidden_1) / 2, 1)),
           solver_op, 0.0f, 0.0f, add_bias, specify_layers);
@@ -583,23 +583,23 @@ namespace EvoNet
         solver_op, 0.0f, 0.0f, add_bias, specify_layers);
     }
     else if (n_hidden_0 > 0) {
-      if (node_names_Gencoder.size() && node_names_Cencoder.size()) {
-        node_names = model_builder.addFullyConnected(model, "DE1", "DE1", node_names_Gencoder, n_hidden_0,
+      if (node_names_Gencoder.size() > 0 && node_names_Cencoder.size() > 0) {
+        node_names = model_builder.addFullyConnected(model, "DE0", "DE0", node_names_Gencoder, n_hidden_0,
           activation, activation_grad, integration_op, integration_error_op, integration_weight_grad_op,
           std::make_shared<RandWeightInitOp<TensorT>>(RandWeightInitOp<TensorT>((TensorT)(node_names_Gencoder.size() + n_hidden_0) / 2, 1)),
           solver_op, 0.0f, 0.0f, add_bias, specify_layers);
-        model_builder.addFullyConnected(model, "DE1", node_names_Cencoder, node_names,
+        model_builder.addFullyConnected(model, "DE0", node_names_Cencoder, node_names,
           std::make_shared<RandWeightInitOp<TensorT>>(RandWeightInitOp<TensorT>((TensorT)(node_names_Cencoder.size() + n_hidden_0) / 2, 1)),
           solver_op, 0.0f, specify_layers);
       }
-      else if (node_names_Gencoder.size()) {
-        node_names = model_builder.addFullyConnected(model, "DE1", "DE1", node_names_Gencoder, n_hidden_0,
+      else if (node_names_Gencoder.size() > 0) {
+        node_names = model_builder.addFullyConnected(model, "DE0", "DE0", node_names_Gencoder, n_hidden_0,
           activation, activation_grad, integration_op, integration_error_op, integration_weight_grad_op,
           std::make_shared<RandWeightInitOp<TensorT>>(RandWeightInitOp<TensorT>((TensorT)(node_names_Gencoder.size() + n_hidden_0) / 2, 1)),
           solver_op, 0.0f, 0.0f, add_bias, specify_layers);
       }
-      else if (node_names_Cencoder.size()) {
-        node_names = model_builder.addFullyConnected(model, "DE1", "DE1", node_names_Cencoder, n_hidden_0,
+      else if (node_names_Cencoder.size() > 0) {
+        node_names = model_builder.addFullyConnected(model, "DE0", "DE0", node_names_Cencoder, n_hidden_0,
           activation, activation_grad, integration_op, integration_error_op, integration_weight_grad_op,
           std::make_shared<RandWeightInitOp<TensorT>>(RandWeightInitOp<TensorT>((TensorT)(node_names_Cencoder.size() + n_hidden_0) / 2, 1)),
           solver_op, 0.0f, 0.0f, add_bias, specify_layers);
@@ -918,7 +918,7 @@ namespace EvoNet
 
     // Add the Decoder FC layers
     if (n_hidden_2 > 0) {
-      if (node_names_Gencoder.size() && node_names_Cencoder.size()) {
+      if (node_names_Gencoder.size() > 0 && node_names_Cencoder.size() > 0) {
         node_names = model_builder.addFullyConnected(model, "DE2", "DE2", node_names_Gencoder, n_hidden_2,
           activation, activation_grad, integration_op, integration_error_op, integration_weight_grad_op,
           std::make_shared<RandWeightInitOp<TensorT>>(RandWeightInitOp<TensorT>((TensorT)(node_names_Gencoder.size() + n_hidden_2) / 2, 1)),
@@ -927,13 +927,13 @@ namespace EvoNet
           std::make_shared<RandWeightInitOp<TensorT>>(RandWeightInitOp<TensorT>((TensorT)(node_names_Cencoder.size() + n_hidden_2) / 2, 1)),
           solver_op, 0.0f, specify_layers);
       }
-      else if (node_names_Gencoder.size()) {
+      else if (node_names_Gencoder.size() > 0) {
         node_names = model_builder.addFullyConnected(model, "DE2", "DE2", node_names_Gencoder, n_hidden_2,
           activation, activation_grad, integration_op, integration_error_op, integration_weight_grad_op,
           std::make_shared<RandWeightInitOp<TensorT>>(RandWeightInitOp<TensorT>((TensorT)(node_names_Gencoder.size() + n_hidden_2) / 2, 1)),
           solver_op, 0.0f, 0.0f, add_bias, specify_layers);
       }
-      else if (node_names_Cencoder.size()) {
+      else if (node_names_Cencoder.size() > 0) {
         node_names = model_builder.addFullyConnected(model, "DE2", "DE2", node_names_Cencoder, n_hidden_2,
           activation, activation_grad, integration_op, integration_error_op, integration_weight_grad_op,
           std::make_shared<RandWeightInitOp<TensorT>>(RandWeightInitOp<TensorT>((TensorT)(node_names_Cencoder.size() + n_hidden_2) / 2, 1)),
@@ -947,8 +947,8 @@ namespace EvoNet
         solver_op, 0.0f, 0.0f, add_bias, specify_layers);
     }
     else if (n_hidden_1 > 0) {
-      if (node_names_Gencoder.size() && node_names_Cencoder.size()) {
-        node_names = model_builder.addFullyConnected(model, "DE1", "DE1", node_names_Gencoder, n_hidden_2,
+      if (node_names_Gencoder.size() > 0 && node_names_Cencoder.size() > 0) {
+        node_names = model_builder.addFullyConnected(model, "DE1", "DE1", node_names_Gencoder, n_hidden_1,
           activation, activation_grad, integration_op, integration_error_op, integration_weight_grad_op,
           std::make_shared<RandWeightInitOp<TensorT>>(RandWeightInitOp<TensorT>((TensorT)(node_names_Gencoder.size() + n_hidden_1) / 2, 1)),
           solver_op, 0.0f, 0.0f, add_bias, specify_layers);
@@ -956,14 +956,14 @@ namespace EvoNet
           std::make_shared<RandWeightInitOp<TensorT>>(RandWeightInitOp<TensorT>((TensorT)(node_names_Cencoder.size() + n_hidden_1) / 2, 1)),
           solver_op, 0.0f, specify_layers);
       }
-      else if (node_names_Gencoder.size()) {
-        node_names = model_builder.addFullyConnected(model, "DE1", "DE1", node_names_Gencoder, n_hidden_2,
+      else if (node_names_Gencoder.size() > 0) {
+        node_names = model_builder.addFullyConnected(model, "DE1", "DE1", node_names_Gencoder, n_hidden_1,
           activation, activation_grad, integration_op, integration_error_op, integration_weight_grad_op,
           std::make_shared<RandWeightInitOp<TensorT>>(RandWeightInitOp<TensorT>((TensorT)(node_names_Gencoder.size() + n_hidden_1) / 2, 1)),
           solver_op, 0.0f, 0.0f, add_bias, specify_layers);
       }
-      else if (node_names_Cencoder.size()) {
-        node_names = model_builder.addFullyConnected(model, "DE1", "DE1", node_names_Cencoder, n_hidden_2,
+      else if (node_names_Cencoder.size() > 0) {
+        node_names = model_builder.addFullyConnected(model, "DE1", "DE1", node_names_Cencoder, n_hidden_1,
           activation, activation_grad, integration_op, integration_error_op, integration_weight_grad_op,
           std::make_shared<RandWeightInitOp<TensorT>>(RandWeightInitOp<TensorT>((TensorT)(node_names_Cencoder.size() + n_hidden_1) / 2, 1)),
           solver_op, 0.0f, 0.0f, add_bias, specify_layers);
@@ -976,23 +976,23 @@ namespace EvoNet
         solver_op, 0.0f, 0.0f, add_bias, specify_layers);
     }
     else if (n_hidden_0 > 0) {
-      if (node_names_Gencoder.size() && node_names_Cencoder.size()) {
-        node_names = model_builder.addFullyConnected(model, "DE1", "DE1", node_names_Gencoder, n_hidden_0,
+      if (node_names_Gencoder.size() > 0 && node_names_Cencoder.size() > 0) {
+        node_names = model_builder.addFullyConnected(model, "DE0", "DE0", node_names_Gencoder, n_hidden_0,
           activation, activation_grad, integration_op, integration_error_op, integration_weight_grad_op,
           std::make_shared<RandWeightInitOp<TensorT>>(RandWeightInitOp<TensorT>((TensorT)(node_names_Gencoder.size() + n_hidden_0) / 2, 1)),
           solver_op, 0.0f, 0.0f, add_bias, specify_layers);
-        model_builder.addFullyConnected(model, "DE1", node_names_Cencoder, node_names,
+        model_builder.addFullyConnected(model, "DE0", node_names_Cencoder, node_names,
           std::make_shared<RandWeightInitOp<TensorT>>(RandWeightInitOp<TensorT>((TensorT)(node_names_Cencoder.size() + n_hidden_0) / 2, 1)),
           solver_op, 0.0f, specify_layers);
       }
-      else if (node_names_Gencoder.size()) {
-        node_names = model_builder.addFullyConnected(model, "DE1", "DE1", node_names_Gencoder, n_hidden_0,
+      else if (node_names_Gencoder.size() > 0) {
+        node_names = model_builder.addFullyConnected(model, "DE0", "DE0", node_names_Gencoder, n_hidden_0,
           activation, activation_grad, integration_op, integration_error_op, integration_weight_grad_op,
           std::make_shared<RandWeightInitOp<TensorT>>(RandWeightInitOp<TensorT>((TensorT)(node_names_Gencoder.size() + n_hidden_0) / 2, 1)),
           solver_op, 0.0f, 0.0f, add_bias, specify_layers);
       }
-      else if (node_names_Cencoder.size()) {
-        node_names = model_builder.addFullyConnected(model, "DE1", "DE1", node_names_Cencoder, n_hidden_0,
+      else if (node_names_Cencoder.size() > 0) {
+        node_names = model_builder.addFullyConnected(model, "DE0", "DE0", node_names_Cencoder, n_hidden_0,
           activation, activation_grad, integration_op, integration_error_op, integration_weight_grad_op,
           std::make_shared<RandWeightInitOp<TensorT>>(RandWeightInitOp<TensorT>((TensorT)(node_names_Cencoder.size() + n_hidden_0) / 2, 1)),
           solver_op, 0.0f, 0.0f, add_bias, specify_layers);

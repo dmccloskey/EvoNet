@@ -67,6 +67,10 @@ set(ml_executables_list
   WeightTensorData_test
 )
 
+set(models_executables_list
+  CVAEFullyConn_test
+)
+
 set(simulator_executables_list
   BiochemicalDataSimulator_test
   BiochemicalReaction_test
@@ -86,6 +90,7 @@ set(TEST_executables
     ${core_executables_list}
     ${io_executables_list}
     ${ml_executables_list}
+    ${models_executables_list}
 	${graph_executables_list}
     ${simulator_executables_list}
 )

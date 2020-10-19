@@ -56,6 +56,10 @@ add_dependencies(IO_TEST ${io_executables_list})
 add_custom_target(ML_TEST)
 add_dependencies(ML_TEST ${ml_executables_list})
 
+# ml
+add_custom_target(MODELS_TEST)
+add_dependencies(MODELS_TEST ${models_executables_list})
+
 # algorithm
 add_custom_target(SIMULATOR_TEST)
 add_dependencies(SIMULATOR_TEST ${simulator_executables_list})
