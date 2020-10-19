@@ -5,7 +5,6 @@
 #include <EvoNet/models/CVAEFullyConnGpu.h>
 #include <EvoNet/simulator/MNISTSimulator.h>
 #include <EvoNet/simulator/DataSimulator.h>
-#include <EvoNet/io/Parameters.h>
 #include <unsupported/Eigen/CXX11/Tensor>
 
 using namespace EvoNet;
