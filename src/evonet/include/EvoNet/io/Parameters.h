@@ -156,6 +156,8 @@ namespace EvoNet
       struct SimulationType : Parameter<std::string> { using Parameter::Parameter; };
       struct ModelType : Parameter<std::string> { using Parameter::Parameter; };
       struct BiochemicalRxnsFilename : Parameter<std::string> { using Parameter::Parameter; };
+      struct SupervisionWarmup : Parameter<bool> { using Parameter::Parameter; };
+      struct SupervisionPercent : Parameter<float> { using Parameter::Parameter; };
     }
   }
 

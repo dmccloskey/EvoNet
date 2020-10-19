@@ -33,8 +33,6 @@ namespace EvoNet
       struct OnlineLinearScaleInput : Parameter<bool> { using Parameter::Parameter; };
       struct OnlineLogTransformInput : Parameter<bool> { using Parameter::Parameter; };
       struct OnlineStandardizeInput : Parameter<bool> { using Parameter::Parameter; };
-      struct SupervisionWarmup : Parameter<bool> { using Parameter::Parameter; };
-      struct SupervisionPercent : Parameter<float> { using Parameter::Parameter; };
     }
   }
   /**
