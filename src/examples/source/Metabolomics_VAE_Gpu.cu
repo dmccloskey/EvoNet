@@ -54,7 +54,7 @@ void main_(const ParameterTypes& ...args) {
   std::vector<std::string> output_nodes = makeOutputNodes(n_features);
   std::vector<std::string> encoding_nodes_mu = makeMuEncodingNodes(args...);
   std::vector<std::string> encoding_nodes_logvar = makeLogVarEncodingNodes(args...);
-  std::vector<std::string> encoding_nodes_logalpha = makeLogAlphaEncodingNodes(args...);
+  std::vector<std::string> encoding_nodes_logalpha = makeAlphaEncodingNodes(args...);
   std::vector<std::string> categorical_softmax_nodes = makeCategoricalSoftmaxNodes(args...);
 
   // define the model trainer

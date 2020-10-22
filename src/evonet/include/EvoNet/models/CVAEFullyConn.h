@@ -6,6 +6,7 @@
 // .h
 #include <EvoNet/ml/ModelTrainer.h>
 #include <EvoNet/ml/ModelBuilder.h>
+#include <EvoNet/io/ModelFile.h>
 #include <EvoNet/io/Parameters.h>
 
 // .cpp
