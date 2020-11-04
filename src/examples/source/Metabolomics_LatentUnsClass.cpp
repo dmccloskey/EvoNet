@@ -135,7 +135,7 @@ int main(int argc, char** argv)
   EvoNetParameters::ModelTrainer::KLDivergenceWarmup KL_divergence_warmup("KL_divergence_warmup", true);
   EvoNetParameters::ModelTrainer::NEncodingsContinuous n_encodings_continuous("n_encodings_continuous", 8);
   EvoNetParameters::ModelTrainer::NEncodingsCategorical n_encodings_categorical("n_encodings_categorical", 8);
-  EvoNetParameters::ModelTrainer::Beta beta("beta", 30);
+  EvoNetParameters::ModelTrainer::BetaC beta("beta", 30);
   EvoNetParameters::ModelTrainer::CapacityC capacity_c("capacity_c", 5);
   EvoNetParameters::ModelTrainer::CapacityD capacity_d("capacity_d", 5);
   EvoNetParameters::ModelReplicator::NNodeDownAdditionsLB n_node_down_additions_lb("n_node_down_additions_lb", 0);

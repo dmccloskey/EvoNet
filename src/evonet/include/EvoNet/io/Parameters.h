@@ -145,7 +145,8 @@ namespace EvoNet
       struct KLDivergenceWarmup : Parameter<bool> { using Parameter::Parameter; };
       struct NEncodingsContinuous : Parameter<int> { using Parameter::Parameter; };
       struct NEncodingsCategorical : Parameter<int> { using Parameter::Parameter; };
-      struct Beta : Parameter<float> { using Parameter::Parameter; };
+      struct BetaC : Parameter<float> { using Parameter::Parameter; };
+      struct BetaD : Parameter<float> { using Parameter::Parameter; };
       struct CapacityC : Parameter<float> { using Parameter::Parameter; };
       struct CapacityD : Parameter<float> { using Parameter::Parameter; };
     }
