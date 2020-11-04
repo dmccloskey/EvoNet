@@ -31,7 +31,7 @@ void main_(const ParameterTypes& ...args) {
 
   // define the model trainer
   CVAEFullyConnGpu<float> model_trainer;
-  makeModelTrainer<float>(model_trainer, std::vector<std::string>(), std::vector<std::string>(), std::vector<std::string>(), std::vector<std::string>(), categorical_softmax_nodes, args...);
+  makeModelTrainer<float>(model_trainer, std::vector<std::string>(), std::vector<std::string>(), std::vector<std::string>(), std::vector<std::string>(), encoding_nodes_logalpha, args...);
 
   // define the model and resources
   Model<float> model;
