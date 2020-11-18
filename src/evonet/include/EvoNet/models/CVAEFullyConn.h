@@ -149,6 +149,29 @@ namespace EvoNet
           std::get<EvoNetParameters::ModelTrainer::NHidden1>(parameters).get(),
           std::get<EvoNetParameters::ModelTrainer::NHidden2>(parameters).get(), false, true);
       }
+      else if (std::get<EvoNetParameters::Examples::ModelType>(parameters).get() == "EncDecContinued") {
+        model_trainer.makeCVAE(model, n_features,
+          std::get<EvoNetParameters::ModelTrainer::NEncodingsContinuous>(parameters).get(),
+          std::get<EvoNetParameters::ModelTrainer::NEncodingsCategorical>(parameters).get(),
+          std::get<EvoNetParameters::ModelTrainer::NHidden0>(parameters).get(),
+          std::get<EvoNetParameters::ModelTrainer::NHidden1>(parameters).get(),
+          std::get<EvoNetParameters::ModelTrainer::NHidden2>(parameters).get(), false, true);
+
+        // read in the weights
+        ModelFile<TensorT> model_file;
+        model_file.loadWeightValuesBinary(std::get<EvoNetParameters::General::OutputDir>(parameters).get() + std::get<EvoNetParameters::Main::ModelName>(parameters).get() + "_model.binary", model.weights_);
+
+        //WeightFile<TensorT> weight_file;
+        //weight_file.loadWeightValuesCsv(std::get<EvoNetParameters::General::OutputDir>(parameters).get() + std::get<EvoNetParameters::Main::ModelName>(parameters).get() + "_weights.csv", 
+        //  model.weights_);
+
+        // check that all weights were read in correctly
+        for (auto& weight_map : model.getWeightsMap()) {
+          if (weight_map.second->getInitWeight()) {
+            std::cout << "Model " << model.getName() << " Weight " << weight_map.first << " has not be initialized." << std::endl;;
+          }
+        }
+      }
       else if (std::get<EvoNetParameters::Examples::ModelType>(parameters).get() == "Enc") {
         // make the encoder only
         model_trainer.makeCVAEEncoder(model, n_features,

@@ -21,7 +21,7 @@ class ModelTrainerExt : public ModelTrainerGpu<TensorT>
 {
 public:
   bool KL_divergence_warmup_ = false;
-  TensorT beta_ = 1;
+  TensorT beta_c_ = 1;
   TensorT capacity_c_ = 0;
   /*
   @brief Basic VAE with	Xavier-like initialization
@@ -615,12 +615,12 @@ public:
     auto lossFunctionHelpers = this->getLossFunctionHelpers();
 
     // Increase the KL divergence beta and capacity
-    TensorT beta = this->beta_;
+    TensorT beta = this->beta_c_;
     TensorT capacity_c = this->capacity_c_;
     if (this->KL_divergence_warmup_) {
       TensorT scale_factor1 = (n_epochs - 100 > 0) ? n_epochs - 100 : 1;
       beta /= (2.5e4 / scale_factor1);
-      if (beta > this->beta_) beta = this->beta_;
+      if (beta > this->beta_c_) beta = this->beta_c_;
       TensorT scale_factor2 = (n_epochs - 100 > 0) ? n_epochs - 100 : 1;
       capacity_c /= (2.5e4 / scale_factor2);
       if (capacity_c > this->capacity_c_) capacity_c = this->capacity_c_;

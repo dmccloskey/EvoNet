@@ -40,11 +40,12 @@ namespace EvoNet
     // Check point the model every 1000 epochs
     if (n_epochs % 1000 == 0 && n_epochs != 0) {
       model_interpreter.getModelResults(model, false, true, false, false);
-      // save the model weights (Not needed if binary is working fine)
+      //// save the model weights (Not needed if binary is working fine)
       //WeightFile<float> weight_data;
       //weight_data.storeWeightValuesCsv(model.getName() + "_" + std::to_string(n_epochs) + "_weights.csv", model.weights_);
 
       // save the model and tensors to binary
+      // BUG: Stored binarized model does not change when the model has been loaded from binary
       ModelFile<TensorT> data;
       data.storeModelBinary(model.getName() + "_" + std::to_string(n_epochs) + "_model.binary", model);
       ModelInterpreterFileGpu<TensorT> interpreter_data;

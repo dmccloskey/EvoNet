@@ -54,12 +54,12 @@ void main_(const ParameterTypes& ...args) {
   std::vector<std::string> output_nodes = makeOutputNodes(n_features);
   std::vector<std::string> encoding_nodes_mu = makeMuEncodingNodes(args...);
   std::vector<std::string> encoding_nodes_logvar = makeLogVarEncodingNodes(args...);
-  std::vector<std::string> encoding_nodes_logalpha = makeLogAlphaEncodingNodes(args...);
-  std::vector<std::string> categorical_softmax_nodes = makeCategoricalSoftmaxNodes(args...);
+  std::vector<std::string> encoding_nodes_alpha = makeAlphaEncodingNodes(args...);
+  //std::vector<std::string> categorical_softmax_nodes = makeCategoricalSoftmaxNodes(args...);
 
   // define the model trainer
   CVAEFullyConnDefaultDevice<float> model_trainer;
-  makeModelTrainer<float>(model_trainer, output_nodes, encoding_nodes_mu, encoding_nodes_logvar, encoding_nodes_logalpha, categorical_softmax_nodes, args...);
+  makeModelTrainer<float>(model_trainer, output_nodes, encoding_nodes_mu, encoding_nodes_logvar, encoding_nodes_alpha, encoding_nodes_alpha, args...);
 
   // define the model and resources
   Model<float> model;
@@ -166,7 +166,8 @@ int main(int argc, char** argv)
   EvoNetParameters::ModelTrainer::KLDivergenceWarmup KL_divergence_warmup("KL_divergence_warmup", true);
   EvoNetParameters::ModelTrainer::NEncodingsContinuous n_encodings_continuous("n_encodings_continuous", 8);
   EvoNetParameters::ModelTrainer::NEncodingsCategorical n_encodings_categorical("n_encodings_categorical", 8);
-  EvoNetParameters::ModelTrainer::Beta beta("beta", 30);
+  EvoNetParameters::ModelTrainer::BetaC beta_c("beta_c", 30);
+  EvoNetParameters::ModelTrainer::BetaD beta_d("beta_d", 30);
   EvoNetParameters::ModelTrainer::CapacityC capacity_c("capacity_c", 5);
   EvoNetParameters::ModelTrainer::CapacityD capacity_d("capacity_d", 5);
   EvoNetParameters::ModelReplicator::NNodeDownAdditionsLB n_node_down_additions_lb("n_node_down_additions_lb", 0);
@@ -201,7 +202,7 @@ int main(int argc, char** argv)
     device_id, model_name, make_model, load_model_csv, load_model_binary, train_model, evolve_model, evaluate_model, evaluate_models,
     model_type, simulation_type, biochemical_rxns_filename, metabo_data_train_filename, metabo_data_test_filename, meta_data_train_filename, meta_data_test_filename, use_concentrations, use_MARs, sample_values, iter_values, fill_sampling, fill_mean, fill_zero, apply_fold_change, fold_change_ref, fold_change_log_base, offline_linear_scale_input, offline_log_transform_input, offline_standardize_input, online_linear_scale_input, online_log_transform_input, online_standardize_input, supervision_warmup, supervision_percent,
     population_name, n_generations, n_interpreters, /*prune_model_num, remove_isolated_nodes, check_complete_model_input_to_output, population_size, n_top, n_random, n_replicates_per_model, reset_model_copy_weights, reset_model_template_weights, population_logging, set_population_size_fixed, set_population_size_doubling, set_training_steps_by_model_size,*/
-    batch_size, memory_size, n_epochs_training, n_epochs_validation, n_epochs_evaluation, n_tbtt_steps, n_tett_steps, verbosity, logging_training, logging_validation, logging_evaluation, find_cycles, fast_interpreter, preserve_ooo, interpret_model, reset_model, n_hidden_0, n_hidden_1, n_hidden_2, loss_fnc_weight_0, loss_fnc_weight_1, loss_fnc_weight_2, learning_rate, gradient_clipping, reset_interpreter, loss_function, KL_divergence_warmup, n_encodings_continuous, n_encodings_categorical, beta, capacity_c, capacity_d/*,
+    batch_size, memory_size, n_epochs_training, n_epochs_validation, n_epochs_evaluation, n_tbtt_steps, n_tett_steps, verbosity, logging_training, logging_validation, logging_evaluation, find_cycles, fast_interpreter, preserve_ooo, interpret_model, reset_model, n_hidden_0, n_hidden_1, n_hidden_2, loss_fnc_weight_0, loss_fnc_weight_1, loss_fnc_weight_2, learning_rate, gradient_clipping, reset_interpreter, loss_function, KL_divergence_warmup, n_encodings_continuous, n_encodings_categorical, beta_c, beta_d, capacity_c, capacity_d/*,
     n_node_down_additions_lb, n_node_right_additions_lb, n_node_down_copies_lb, n_node_right_copies_lb, n_link_additons_lb, n_link_copies_lb, n_node_deletions_lb, n_link_deletions_lb, n_node_activation_changes_lb, n_node_integration_changes_lb, n_module_additions_lb, n_module_copies_lb, n_module_deletions_lb, n_node_down_additions_ub, n_node_right_additions_ub, n_node_down_copies_ub, n_node_right_copies_ub, n_link_additons_ub, n_link_copies_ub, n_node_deletions_ub, n_link_deletions_ub, n_node_activation_changes_ub, n_node_integration_changes_ub, n_module_additions_ub, n_module_copies_ub, n_module_deletions_ub, set_modification_rate_fixed, set_modification_rate_by_prev_error*/);
 
     // Read in the parameters

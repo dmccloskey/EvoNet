@@ -79,7 +79,8 @@ namespace EvoNet
         ++iter;
         if (batch_iter >= batch_size) {
           batch_iter = 0;
-          iter += stride;
+          iter -= batch_size; // subtract out the iterations along the batch
+          iter += stride; // and jump to the next set of labels
         }
         if (iter >= data_training.dimension(1)) {
           ++step;

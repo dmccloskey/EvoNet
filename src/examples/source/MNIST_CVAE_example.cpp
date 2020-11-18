@@ -201,7 +201,7 @@ void main_(const ParameterTypes& ...args) {
   CVAEFullyConnDefaultDevice<float> model_trainer;
   setModelTrainerParameters(model_trainer, args...);
   model_trainer.KL_divergence_warmup_ = std::get<EvoNetParameters::ModelTrainer::KLDivergenceWarmup>(parameters).get();
-  model_trainer.beta_ = std::get<EvoNetParameters::ModelTrainer::Beta>(parameters).get();
+  model_trainer.beta_c_ = std::get<EvoNetParameters::ModelTrainer::Beta>(parameters).get();
   model_trainer.capacity_c_ = std::get<EvoNetParameters::ModelTrainer::CapacityC>(parameters).get();
   model_trainer.capacity_d_ = std::get<EvoNetParameters::ModelTrainer::CapacityD>(parameters).get();
   model_trainer.learning_rate_ = std::get<EvoNetParameters::ModelTrainer::LearningRate>(parameters).get();

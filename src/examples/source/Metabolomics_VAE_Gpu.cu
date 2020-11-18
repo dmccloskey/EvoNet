@@ -55,11 +55,11 @@ void main_(const ParameterTypes& ...args) {
   std::vector<std::string> encoding_nodes_mu = makeMuEncodingNodes(args...);
   std::vector<std::string> encoding_nodes_logvar = makeLogVarEncodingNodes(args...);
   std::vector<std::string> encoding_nodes_alpha = makeAlphaEncodingNodes(args...);
-  std::vector<std::string> categorical_softmax_nodes = makeCategoricalSoftmaxNodes(args...);
+  //std::vector<std::string> categorical_softmax_nodes = makeCategoricalSoftmaxNodes(args...);
 
   // define the model trainer
   CVAEFullyConnGpu<float> model_trainer;
-  makeModelTrainer<float>(model_trainer, output_nodes, encoding_nodes_mu, encoding_nodes_logvar, encoding_nodes_alpha, categorical_softmax_nodes, args...);
+  makeModelTrainer<float>(model_trainer, output_nodes, encoding_nodes_mu, encoding_nodes_logvar, encoding_nodes_alpha, encoding_nodes_alpha, args...);
 
   // define the model and resources
   Model<float> model;
