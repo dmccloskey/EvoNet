@@ -167,6 +167,46 @@ BOOST_AUTO_TEST_CASE(makeCVAEEncoderDefaultDevice)
   output_nodes.clear();
 }
 
+BOOST_AUTO_TEST_CASE(makeCVAEClassifierDefaultDevice)
+{
+  CVAEFullyConnDefaultDevice<float> model_trainer;
+  Model<float> model;
+
+  // prepare the parameters
+  EvoNetParameters::ModelTrainer::NHidden0 n_hidden_0("n_hidden_0", 4);
+  EvoNetParameters::ModelTrainer::NHidden1 n_hidden_1("n_hidden_1", 4);
+  EvoNetParameters::ModelTrainer::NHidden2 n_hidden_2("n_hidden_2", 0);
+  EvoNetParameters::ModelTrainer::NEncodingsCategorical n_encodings_categorical("n_encodings_categorical", 2);
+  auto parameters = std::make_tuple(n_hidden_0, n_hidden_1, n_hidden_2, n_encodings_categorical);
+
+  // make the model
+  int n_input = 8;
+  model_trainer.makeCVAEClassifier(model, n_input,
+    std::get<EvoNetParameters::ModelTrainer::NEncodingsCategorical>(parameters).get(),
+    std::get<EvoNetParameters::ModelTrainer::NHidden0>(parameters).get(),
+    std::get<EvoNetParameters::ModelTrainer::NHidden1>(parameters).get(),
+    std::get<EvoNetParameters::ModelTrainer::NHidden2>(parameters).get(), false, true);
+  BOOST_CHECK(model.checkCompleteInputToOutput());
+
+  // Check the input nodes
+  std::vector<std::string> input_nodes;
+  makeInputNodes(input_nodes, n_input);
+  for (std::string node : input_nodes) {
+    BOOST_CHECK(model.nodes_.count(node) > 0);
+    BOOST_CHECK(model.nodes_.at(node)->getType() == NodeType::input);
+  }
+
+  // Check the output nodes
+  std::vector<std::string> output_nodes;
+  output_nodes.clear();
+  EvoNet::apply([&output_nodes](auto&& ...args) { output_nodes = makeAlphaEncodingNodes(args ...); }, parameters);
+  for (std::string node : output_nodes) {
+    BOOST_CHECK(model.nodes_.count(node) > 0);
+    BOOST_CHECK(model.nodes_.at(node)->getType() == NodeType::output);
+  }
+  output_nodes.clear();
+}
+
 BOOST_AUTO_TEST_CASE(makeCVAEDecoderDefaultDevice)
 {
   CVAEFullyConnDefaultDevice<float> model_trainer;

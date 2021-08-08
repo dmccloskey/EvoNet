@@ -172,6 +172,31 @@ namespace EvoNet
           }
         }
       }
+      else if (std::get<EvoNetParameters::Examples::ModelType>(parameters).get() == "Class") {
+        model_trainer.makeCVAEClassifier(model, n_features,
+          std::get<EvoNetParameters::ModelTrainer::NEncodingsCategorical>(parameters).get(),
+          std::get<EvoNetParameters::ModelTrainer::NHidden0>(parameters).get(),
+          std::get<EvoNetParameters::ModelTrainer::NHidden1>(parameters).get(),
+          std::get<EvoNetParameters::ModelTrainer::NHidden2>(parameters).get(), false, true);
+      }
+      else if (std::get<EvoNetParameters::Examples::ModelType>(parameters).get() == "ClassContinued") {
+        model_trainer.makeCVAEClassifier(model, n_features,
+          std::get<EvoNetParameters::ModelTrainer::NEncodingsCategorical>(parameters).get(),
+          std::get<EvoNetParameters::ModelTrainer::NHidden0>(parameters).get(),
+          std::get<EvoNetParameters::ModelTrainer::NHidden1>(parameters).get(),
+          std::get<EvoNetParameters::ModelTrainer::NHidden2>(parameters).get(), false, true);
+
+        // read in the weights
+        ModelFile<TensorT> model_file;
+        model_file.loadWeightValuesBinary(std::get<EvoNetParameters::General::OutputDir>(parameters).get() + std::get<EvoNetParameters::Main::ModelName>(parameters).get() + "_model.binary", model.weights_);
+
+        // check that all weights were read in correctly
+        for (auto& weight_map : model.getWeightsMap()) {
+          if (weight_map.second->getInitWeight()) {
+            std::cout << "Model " << model.getName() << " Weight " << weight_map.first << " has not be initialized." << std::endl;;
+          }
+        }
+      }
       else if (std::get<EvoNetParameters::Examples::ModelType>(parameters).get() == "Enc") {
         // make the encoder only
         model_trainer.makeCVAEEncoder(model, n_features,
@@ -283,6 +308,20 @@ namespace EvoNet
     */
     void makeCVAEEncoder(Model<TensorT>& model,
       const int& n_inputs = 784, const int& n_encodings = 64, const int& n_categorical = 10, const int& n_hidden_0 = 512, const int& n_hidden_1 = 256, const int& n_hidden_2 = 64,
+      const bool& add_bias = true, const bool& specify_layers = false);
+
+    /*
+    @brief Classifier that encodes pixels to labels
+
+    @param[in, out] model The network model
+    @param[in] n_input The number of input nodes
+    @param[in] n_categorical The number of output labels
+    @param[in] n_hidden The length of the hidden layers
+    @param[in] specify_layers Whether to give the `ModelInterpreter` "hints" as to the correct network structure during graph to tensor compilation
+
+    */
+    void makeCVAEClassifier(Model<TensorT>& model,
+      const int& n_inputs = 784, const int& n_categorical = 10, const int& n_hidden_0 = 512, const int& n_hidden_1 = 256, const int& n_hidden_2 = 64,
       const bool& add_bias = true, const bool& specify_layers = false);
 
     /*
@@ -650,7 +689,6 @@ namespace EvoNet
       model.getNodesMap().at(node_name)->setType(NodeType::output);
     model.setInputAndOutputNodes();
   }
-
   template <typename TensorT, typename InterpreterT>
   inline void CVAEFullyConn<TensorT, InterpreterT>::makeCVAEEncoder(Model<TensorT>& model,
     const int& n_inputs, const int& n_encodings, const int& n_categorical, const int& n_hidden_0, const int& n_hidden_1, const int& n_hidden_2, const bool& add_bias, const bool& specify_layers) {
@@ -746,6 +784,77 @@ namespace EvoNet
       model.nodes_.at(node_name)->setType(NodeType::output);
     for (const std::string& node_name : node_names_logvar)
       model.nodes_.at(node_name)->setType(NodeType::output);
+    for (const std::string& node_name : node_names_alpha)
+      model.nodes_.at(node_name)->setType(NodeType::output);
+    for (const std::string& node_name : node_names_Cencoder)
+      model.nodes_.at(node_name)->setType(NodeType::output);
+    model.setInputAndOutputNodes();
+  }
+
+  template <typename TensorT, typename InterpreterT>
+  inline void CVAEFullyConn<TensorT, InterpreterT>::makeCVAEClassifier(Model<TensorT>& model,
+    const int& n_inputs, const const int& n_categorical, const int& n_hidden_0, const int& n_hidden_1, const int& n_hidden_2, const bool& add_bias, const bool& specify_layers) {
+    model.setId(0);
+    model.setName("CVAEEncoder");
+
+    ModelBuilder<TensorT> model_builder;
+
+    // Add the inputs
+    std::vector<std::string> node_names = model_builder.addInputNodes(model, "Input", "Input", n_inputs, specify_layers);
+
+    // Define the activation based on `add_feature_norm`
+    auto activation = std::make_shared<LeakyReLUOp<TensorT>>(LeakyReLUOp<TensorT>());
+    auto activation_grad = std::make_shared<LeakyReLUGradOp<TensorT>>(LeakyReLUGradOp<TensorT>());
+
+    // Define the node integration
+    auto integration_op = std::make_shared<SumOp<TensorT>>(SumOp<TensorT>());
+    auto integration_error_op = std::make_shared<SumErrorOp<TensorT>>(SumErrorOp<TensorT>());
+    auto integration_weight_grad_op = std::make_shared<SumWeightGradOp<TensorT>>(SumWeightGradOp<TensorT>());
+
+    // Define the solver
+    auto solver_op = std::make_shared<AdamOp<TensorT>>(AdamOp<TensorT>(this->learning_rate_, 0.9, 0.999, 1e-8, this->gradient_clipping_));
+
+    // Add the Encoder FC layers
+    std::vector<std::string> node_names_mu, node_names_logvar, node_names_alpha, node_names_Cencoder;
+    if (n_hidden_0 > 0) {
+      node_names = model_builder.addFullyConnected(model, "EN0", "EN0", node_names, n_hidden_0,
+        activation, activation_grad, integration_op, integration_error_op, integration_weight_grad_op,
+        std::make_shared<RandWeightInitOp<TensorT>>(RandWeightInitOp<TensorT>((TensorT)(node_names.size() + n_hidden_0) / 2, 1)),
+        solver_op, 0.0f, 0.0f, add_bias, specify_layers);
+    }
+    if (n_hidden_1 > 0) {
+      node_names = model_builder.addFullyConnected(model, "EN1", "EN1", node_names, n_hidden_1,
+        activation, activation_grad, integration_op, integration_error_op, integration_weight_grad_op,
+        std::make_shared<RandWeightInitOp<TensorT>>(RandWeightInitOp<TensorT>((TensorT)(node_names.size() + n_hidden_1) / 2, 1)),
+        solver_op, 0.0f, 0.0f, add_bias, specify_layers);
+    }
+    if (n_hidden_2 > 0) {
+      node_names = model_builder.addFullyConnected(model, "EN2", "EN2", node_names, n_hidden_2,
+        activation, activation_grad, integration_op, integration_error_op, integration_weight_grad_op,
+        std::make_shared<RandWeightInitOp<TensorT>>(RandWeightInitOp<TensorT>((TensorT)(node_names.size() + n_hidden_2) / 2, 1)),
+        solver_op, 0.0f, 0.0f, add_bias, specify_layers);
+    }
+
+    // Add the encoding layers
+    if (n_categorical > 0) {
+      node_names_alpha = model_builder.addFullyConnected(model, "AlphaEncNonProp", "AlphaEncNonProp", node_names, n_categorical,
+        std::make_shared<LinearOp<TensorT>>(LinearOp<TensorT>()),
+        std::make_shared<LinearGradOp<TensorT>>(LinearGradOp<TensorT>()),
+        integration_op, integration_error_op, integration_weight_grad_op,
+        std::make_shared<RandWeightInitOp<TensorT>>(RandWeightInitOp<TensorT>((TensorT)(node_names.size() + n_categorical) / 2, 1)),
+        solver_op, 0.0f, 0.0f, false, specify_layers);
+      node_names_Cencoder = model_builder.addStableSoftMax(model, "Categorical_encoding", "Categorical_encoding", node_names_alpha, true);
+    }
+
+    // Add the actual output nodes
+    node_names_alpha = model_builder.addSinglyConnected(model, "Alpha", "Alpha", node_names_alpha, node_names_alpha.size(),
+      std::make_shared<LinearOp<TensorT>>(LinearOp<TensorT>()),
+      std::make_shared<LinearGradOp<TensorT>>(LinearGradOp<TensorT>()),
+      integration_op, integration_error_op, integration_weight_grad_op,
+      std::make_shared<ConstWeightInitOp<TensorT>>(ConstWeightInitOp<TensorT>(1)),
+      std::make_shared<DummySolverOp<TensorT>>(DummySolverOp<TensorT>()), 0.0f, 0.0f, false, true);
+
+    // Specify the output node types manually
     for (const std::string& node_name : node_names_alpha)
       model.nodes_.at(node_name)->setType(NodeType::output);
     for (const std::string& node_name : node_names_Cencoder)

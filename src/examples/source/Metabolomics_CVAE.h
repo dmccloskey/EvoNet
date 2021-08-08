@@ -32,7 +32,6 @@ namespace EvoNetMetabolomics
     model_trainer.learning_rate_ = std::get<EvoNetParameters::ModelTrainer::LearningRate>(parameters).get();
     model_trainer.gradient_clipping_ = std::get<EvoNetParameters::ModelTrainer::GradientClipping>(parameters).get();
     model_trainer.classification_loss_weight_ = std::get<EvoNetParameters::ModelTrainer::LossFncWeight0>(parameters).get();
-
     model_trainer.supervision_warmup_ = std::get<EvoNetParameters::Examples::SupervisionWarmup>(parameters).get();
     model_trainer.supervision_percent_ = std::get<EvoNetParameters::Examples::SupervisionPercent>(parameters).get();
 

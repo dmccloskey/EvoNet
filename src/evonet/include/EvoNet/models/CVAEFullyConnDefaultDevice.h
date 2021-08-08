@@ -49,28 +49,30 @@ namespace EvoNet
     auto lossFunctionHelpers = this->getLossFunctionHelpers();
 
     // Increase the KL divergence beta and capacity
-    TensorT beta_c = this->beta_c_;
-    TensorT beta_d = this->beta_d_;
-    TensorT capacity_c = this->capacity_c_;
-    TensorT capacity_d = this->capacity_d_;
-    if (this->KL_divergence_warmup_) {
-      TensorT scale_factor1 = (n_epochs - 100 > 0) ? n_epochs - 100 : 1;
-      beta_c /= (2.5e4 / scale_factor1);
-      if (beta_c > this->beta_c_) beta_c = this->beta_c_;
-      beta_d /= (2.5e4 / scale_factor1);
-      if (beta_d > this->beta_d_) beta_d = this->beta_d_;
-      TensorT scale_factor2 = (n_epochs - 1.0e4 > 0) ? n_epochs - 1.0e4 : 1;
-      capacity_c /= (1.5e4 / scale_factor2);
-      if (capacity_c > this->capacity_c_) capacity_c = this->capacity_c_;
-      capacity_d /= (1.5e4 * scale_factor2);
-      if (capacity_d > this->capacity_d_) capacity_d = this->capacity_d_;
+    if (this->getLossFunctionHelpers().size() >= 2) {
+      TensorT beta_c = this->beta_c_;
+      TensorT beta_d = this->beta_d_;
+      TensorT capacity_c = this->capacity_c_;
+      TensorT capacity_d = this->capacity_d_;
+      if (this->KL_divergence_warmup_) {
+        TensorT scale_factor1 = (n_epochs - 100 > 0) ? n_epochs - 100 : 1;
+        beta_c /= (2.5e4 / scale_factor1);
+        if (beta_c > this->beta_c_) beta_c = this->beta_c_;
+        beta_d /= (2.5e4 / scale_factor1);
+        if (beta_d > this->beta_d_) beta_d = this->beta_d_;
+        TensorT scale_factor2 = (n_epochs - 1.0e4 > 0) ? n_epochs - 1.0e4 : 1;
+        capacity_c /= (1.5e4 / scale_factor2);
+        if (capacity_c > this->capacity_c_) capacity_c = this->capacity_c_;
+        capacity_d /= (1.5e4 * scale_factor2);
+        if (capacity_d > this->capacity_d_) capacity_d = this->capacity_d_;
+      }
+      lossFunctionHelpers.at(1).loss_functions_.at(0) = std::make_shared<KLDivergenceMuLossOp<float>>(KLDivergenceMuLossOp<float>(1e-6, beta_c, capacity_c));
+      lossFunctionHelpers.at(2).loss_functions_.at(0) = std::make_shared<KLDivergenceLogVarLossOp<float>>(KLDivergenceLogVarLossOp<float>(1e-6, beta_c, capacity_c));
+      lossFunctionHelpers.at(3).loss_functions_.at(0) = std::make_shared<KLDivergenceCatLossOp<float>>(KLDivergenceCatLossOp<float>(1e-6, beta_d, capacity_d));
+      lossFunctionHelpers.at(1).loss_function_grads_.at(0) = std::make_shared<KLDivergenceMuLossGradOp<float>>(KLDivergenceMuLossGradOp<float>(1e-6, beta_c, capacity_c));
+      lossFunctionHelpers.at(2).loss_function_grads_.at(0) = std::make_shared<KLDivergenceLogVarLossGradOp<float>>(KLDivergenceLogVarLossGradOp<float>(1e-6, beta_c, capacity_c));
+      lossFunctionHelpers.at(3).loss_function_grads_.at(0) = std::make_shared<KLDivergenceCatLossGradOp<float>>(KLDivergenceCatLossGradOp<float>(1e-6, beta_d, capacity_d));
     }
-    lossFunctionHelpers.at(1).loss_functions_.at(0) = std::make_shared<KLDivergenceMuLossOp<float>>(KLDivergenceMuLossOp<float>(1e-6, beta_c, capacity_c));
-    lossFunctionHelpers.at(2).loss_functions_.at(0) = std::make_shared<KLDivergenceLogVarLossOp<float>>(KLDivergenceLogVarLossOp<float>(1e-6, beta_c, capacity_c));
-    lossFunctionHelpers.at(3).loss_functions_.at(0) = std::make_shared<KLDivergenceCatLossOp<float>>(KLDivergenceCatLossOp<float>(1e-6, beta_d, capacity_d));
-    lossFunctionHelpers.at(1).loss_function_grads_.at(0) = std::make_shared<KLDivergenceMuLossGradOp<float>>(KLDivergenceMuLossGradOp<float>(1e-6, beta_c, capacity_c));
-    lossFunctionHelpers.at(2).loss_function_grads_.at(0) = std::make_shared<KLDivergenceLogVarLossGradOp<float>>(KLDivergenceLogVarLossGradOp<float>(1e-6, beta_c, capacity_c));
-    lossFunctionHelpers.at(3).loss_function_grads_.at(0) = std::make_shared<KLDivergenceCatLossGradOp<float>>(KLDivergenceCatLossGradOp<float>(1e-6, beta_d, capacity_d));
 
     // Modulate the level of supervision
     if (this->getLossFunctionHelpers().size() >= 5) {
