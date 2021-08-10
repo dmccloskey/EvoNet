@@ -110,7 +110,7 @@ public:
 public:
 		ELUOp() = default;
 		~ELUOp() = default;
-    ELUOp(const TensorT& eps, const TensorT& min, const TensorT& max, const TensorT& alpha) : ActivationOp(eps, min, max), alpha_(alpha) {};
+    ELUOp(const TensorT& eps, const TensorT& min, const TensorT& max, const TensorT& alpha) : ActivationOp<TensorT>(eps, min, max), alpha_(alpha) {};
     void setAlpha(const TensorT& alpha) { alpha_ = alpha; };
     TensorT getAlpha() const { return alpha_; };
     std::string getName() const{return "ELUOp";};
@@ -139,7 +139,7 @@ private:
 public:
 		ELUGradOp() = default;
 		~ELUGradOp() = default;
-    ELUGradOp(const TensorT& eps, const TensorT& min, const TensorT& max, const TensorT& alpha) : ActivationOp(eps, min, max), alpha_(alpha) {};
+    ELUGradOp(const TensorT& eps, const TensorT& min, const TensorT& max, const TensorT& alpha) : ActivationOp<TensorT>(eps, min, max), alpha_(alpha) {};
     ELUGradOp(const TensorT& alpha): alpha_(alpha){}; 
     void setAlpha(const TensorT& alpha) { alpha_ = alpha; };
     TensorT getAlpha() const { return alpha_; };
@@ -430,7 +430,7 @@ public:
 	public:
 		PowOp() = default;
 		~PowOp() = default;
-    PowOp(const TensorT& eps, const TensorT& min, const TensorT& max, const TensorT& base) : ActivationOp(eps, min, max), base_(base) {};
+    PowOp(const TensorT& eps, const TensorT& min, const TensorT& max, const TensorT& base) : ActivationOp<TensorT>(eps, min, max), base_(base) {};
     PowOp(const TensorT& base) : base_(base) {};
 		std::string getName() const { return "PowOp"; };
 		std::vector<TensorT> getParameters() const { return std::vector<TensorT>({ this->getEps(), this->getMin(), this->getMax(), base_ }); }
@@ -453,7 +453,7 @@ public:
 	public:
 		PowGradOp() = default;
 		~PowGradOp() = default;
-    PowGradOp(const TensorT& eps, const TensorT& min, const TensorT& max, const TensorT& base) : ActivationOp(eps, min, max), base_(base) {};
+    PowGradOp(const TensorT& eps, const TensorT& min, const TensorT& max, const TensorT& base) : ActivationOp<TensorT>(eps, min, max), base_(base) {};
 		PowGradOp(const TensorT& base) : base_(base) {};
 		std::string getName() const { return "PowGradOp"; };
 		std::vector<TensorT> getParameters() const { return std::vector<TensorT>({ this->getEps(), this->getMin(), this->getMax(), base_ }); }
@@ -478,7 +478,7 @@ public:
 	public:
 		LeakyReLUOp() = default;
 		~LeakyReLUOp() = default;
-    LeakyReLUOp(const TensorT& eps, const TensorT& min, const TensorT& max, const TensorT& alpha) : ActivationOp(eps, min, max), alpha_(alpha) {};
+    LeakyReLUOp(const TensorT& eps, const TensorT& min, const TensorT& max, const TensorT& alpha) : ActivationOp<TensorT>(eps, min, max), alpha_(alpha) {};
 		LeakyReLUOp(const TensorT& alpha) : alpha_(alpha) {};
 		void setAlpha(const TensorT& alpha) { alpha_ = alpha; };
 		TensorT getAlpha() const { return alpha_; };
@@ -503,7 +503,7 @@ public:
 	public:
 		LeakyReLUGradOp() = default;
 		~LeakyReLUGradOp() = default;
-    LeakyReLUGradOp(const TensorT& eps, const TensorT& min, const TensorT& max, const TensorT& alpha) : ActivationOp(eps, min, max), alpha_(alpha) {};
+    LeakyReLUGradOp(const TensorT& eps, const TensorT& min, const TensorT& max, const TensorT& alpha) : ActivationOp<TensorT>(eps, min, max), alpha_(alpha) {};
 		void setAlpha(const TensorT& alpha) { alpha_ = alpha; };
 		TensorT getAlpha() const { return alpha_; };
 		std::string getName() const { return "LeakyReLUGradOp"; };

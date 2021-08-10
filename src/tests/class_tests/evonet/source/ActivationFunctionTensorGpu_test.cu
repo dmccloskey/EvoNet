@@ -8,6 +8,7 @@
 #include <unsupported/Eigen/CXX11/Tensor>
 #include <EvoNet/core/Preprocessing.h>
 #include <EvoNet/ml/ActivationFunctionTensor.h>
+#define AssertPrint(a) if (!a) std::cout<<"Test failed"<<std::endl; // Macro to print instead of abort on test failures
 
 using namespace EvoNet;
 using namespace std;
@@ -18,7 +19,7 @@ void test_operationfunctionReluTensorOp()
 	const int batch_size = 5;
 	const int memory_size = 2;
 	const int layer_size = 2;
-	cudaStream_t stream; assert(cudaStreamCreateWithFlags(&stream, cudaStreamNonBlocking) == cudaSuccess); Eigen::GpuStreamDevice stream_device(&stream, 0); Eigen::GpuDevice device(&stream_device);
+	cudaStream_t stream; AssertPrint(cudaStreamCreateWithFlags(&stream, cudaStreamNonBlocking) == cudaSuccess); Eigen::GpuStreamDevice stream_device(&stream, 0); Eigen::GpuDevice device(&stream_device);
 	Eigen::Tensor<double, 3> input(batch_size, memory_size, layer_size);
 	input.setValues({
 		{{0,0}, {0,0}},
@@ -42,7 +43,7 @@ void test_operationfunctionReluTensorOp()
 	for (int i = 0; i < batch_size; ++i) {
 		for (int j = 0; j < memory_size; ++j) {
 			for (int k = 0; k < layer_size; ++k) {
-				assert(assert_close(output(i,j,k), test(i,j,k)));
+				AssertPrint(assert_close(output(i,j,k), test(i,j,k)));
 			}
 		}
 	}
@@ -54,7 +55,7 @@ void test_operationfunctionReluGradTensorOp()
 	const int batch_size = 5;
 	const int memory_size = 2;
 	const int layer_size = 2;
-	cudaStream_t stream; assert(cudaStreamCreateWithFlags(&stream, cudaStreamNonBlocking) == cudaSuccess); Eigen::GpuStreamDevice stream_device(&stream, 0); Eigen::GpuDevice device(&stream_device);
+	cudaStream_t stream; AssertPrint(cudaStreamCreateWithFlags(&stream, cudaStreamNonBlocking) == cudaSuccess); Eigen::GpuStreamDevice stream_device(&stream, 0); Eigen::GpuDevice device(&stream_device);
 	Eigen::Tensor<double, 3> input(batch_size, memory_size, layer_size);
 	input.setValues({
 		{{0,0}, {0,0}},
@@ -78,7 +79,7 @@ void test_operationfunctionReluGradTensorOp()
 	for (int i = 0; i < batch_size; ++i) {
 		for (int j = 0; j < memory_size; ++j) {
 			for (int k = 0; k < layer_size; ++k) {
-				assert(assert_close(output(i,j,k), test(i,j,k)));
+				AssertPrint(assert_close(output(i,j,k), test(i,j,k)));
 			}
 		}
 	}
@@ -90,7 +91,7 @@ void test_operationfunctionEluTensorOp()
 	const int batch_size = 5;
 	const int memory_size = 2;
 	const int layer_size = 2;
-	cudaStream_t stream; assert(cudaStreamCreateWithFlags(&stream, cudaStreamNonBlocking) == cudaSuccess); Eigen::GpuStreamDevice stream_device(&stream, 0); Eigen::GpuDevice device(&stream_device);
+	cudaStream_t stream; AssertPrint(cudaStreamCreateWithFlags(&stream, cudaStreamNonBlocking) == cudaSuccess); Eigen::GpuStreamDevice stream_device(&stream, 0); Eigen::GpuDevice device(&stream_device);
 	Eigen::Tensor<double, 3> input(batch_size, memory_size, layer_size);
 	input.setValues({
 		{{0,0}, {0,0}},
@@ -114,7 +115,7 @@ void test_operationfunctionEluTensorOp()
 	for (int i = 0; i < batch_size; ++i) {
 		for (int j = 0; j < memory_size; ++j) {
 			for (int k = 0; k < layer_size; ++k) {
-				assert(assert_close(output(i,j,k), test(i,j,k)));
+				AssertPrint(assert_close(output(i,j,k), test(i,j,k)));
 			}
 		}
 	}
@@ -126,7 +127,7 @@ void test_operationfunctionEluGradTensorOp()
 	const int batch_size = 5;
 	const int memory_size = 2;
 	const int layer_size = 2;
-	cudaStream_t stream; assert(cudaStreamCreateWithFlags(&stream, cudaStreamNonBlocking) == cudaSuccess); Eigen::GpuStreamDevice stream_device(&stream, 0); Eigen::GpuDevice device(&stream_device);
+	cudaStream_t stream; AssertPrint(cudaStreamCreateWithFlags(&stream, cudaStreamNonBlocking) == cudaSuccess); Eigen::GpuStreamDevice stream_device(&stream, 0); Eigen::GpuDevice device(&stream_device);
 	Eigen::Tensor<double, 3> input(batch_size, memory_size, layer_size);
 	input.setValues({
 		{{0,0}, {0,0}},
@@ -150,7 +151,7 @@ void test_operationfunctionEluGradTensorOp()
 	for (int i = 0; i < batch_size; ++i) {
 		for (int j = 0; j < memory_size; ++j) {
 			for (int k = 0; k < layer_size; ++k) {
-				assert(assert_close(output(i,j,k), test(i,j,k)));
+				AssertPrint(assert_close(output(i,j,k), test(i,j,k)));
 			}
 		}
 	}
@@ -162,7 +163,7 @@ void test_operationfunctionSigmoidTensorOp()
 	const int batch_size = 5;
 	const int memory_size = 2;
 	const int layer_size = 2;
-	cudaStream_t stream; assert(cudaStreamCreateWithFlags(&stream, cudaStreamNonBlocking) == cudaSuccess); Eigen::GpuStreamDevice stream_device(&stream, 0); Eigen::GpuDevice device(&stream_device);
+	cudaStream_t stream; AssertPrint(cudaStreamCreateWithFlags(&stream, cudaStreamNonBlocking) == cudaSuccess); Eigen::GpuStreamDevice stream_device(&stream, 0); Eigen::GpuDevice device(&stream_device);
 	Eigen::Tensor<double, 3> input(batch_size, memory_size, layer_size);
 	input.setValues({
 		{{0,0}, {0,0}},
@@ -186,7 +187,7 @@ void test_operationfunctionSigmoidTensorOp()
 	for (int i = 0; i < batch_size; ++i) {
 		for (int j = 0; j < memory_size; ++j) {
 			for (int k = 0; k < layer_size; ++k) {
-				assert(assert_close(output(i,j,k), test(i,j,k)));
+				AssertPrint(assert_close(output(i,j,k), test(i,j,k)));
 			}
 		}
 	}
@@ -198,7 +199,7 @@ void test_operationfunctionSigmoidGradTensorOp()
 	const int batch_size = 5;
 	const int memory_size = 2;
 	const int layer_size = 2;
-	cudaStream_t stream; assert(cudaStreamCreateWithFlags(&stream, cudaStreamNonBlocking) == cudaSuccess); Eigen::GpuStreamDevice stream_device(&stream, 0); Eigen::GpuDevice device(&stream_device);
+	cudaStream_t stream; AssertPrint(cudaStreamCreateWithFlags(&stream, cudaStreamNonBlocking) == cudaSuccess); Eigen::GpuStreamDevice stream_device(&stream, 0); Eigen::GpuDevice device(&stream_device);
 	Eigen::Tensor<double, 3> input(batch_size, memory_size, layer_size);
 	input.setValues({
 		{{0,0}, {0,0}},
@@ -222,7 +223,7 @@ void test_operationfunctionSigmoidGradTensorOp()
 	for (int i = 0; i < batch_size; ++i) {
 		for (int j = 0; j < memory_size; ++j) {
 			for (int k = 0; k < layer_size; ++k) {
-				assert(assert_close(output(i,j,k), test(i,j,k)));
+				AssertPrint(assert_close(output(i,j,k), test(i,j,k)));
 			}
 		}
 	}
@@ -234,7 +235,7 @@ void test_operationfunctionTanHTensorOp()
 	const int batch_size = 5;
 	const int memory_size = 2;
 	const int layer_size = 2;
-	cudaStream_t stream; assert(cudaStreamCreateWithFlags(&stream, cudaStreamNonBlocking) == cudaSuccess); Eigen::GpuStreamDevice stream_device(&stream, 0); Eigen::GpuDevice device(&stream_device);
+	cudaStream_t stream; AssertPrint(cudaStreamCreateWithFlags(&stream, cudaStreamNonBlocking) == cudaSuccess); Eigen::GpuStreamDevice stream_device(&stream, 0); Eigen::GpuDevice device(&stream_device);
 	Eigen::Tensor<double, 3> input(batch_size, memory_size, layer_size);
 	input.setValues({
 		{{0,0}, {0,0}},
@@ -258,7 +259,7 @@ void test_operationfunctionTanHTensorOp()
 	for (int i = 0; i < batch_size; ++i) {
 		for (int j = 0; j < memory_size; ++j) {
 			for (int k = 0; k < layer_size; ++k) {
-				assert(assert_close(output(i,j,k), test(i,j,k)));
+				AssertPrint(assert_close(output(i,j,k), test(i,j,k)));
 			}
 		}
 	}
@@ -270,7 +271,7 @@ void test_operationfunctionTanHGradTensorOp()
 	const int batch_size = 5;
 	const int memory_size = 2;
 	const int layer_size = 2;
-	cudaStream_t stream; assert(cudaStreamCreateWithFlags(&stream, cudaStreamNonBlocking) == cudaSuccess); Eigen::GpuStreamDevice stream_device(&stream, 0); Eigen::GpuDevice device(&stream_device);
+	cudaStream_t stream; AssertPrint(cudaStreamCreateWithFlags(&stream, cudaStreamNonBlocking) == cudaSuccess); Eigen::GpuStreamDevice stream_device(&stream, 0); Eigen::GpuDevice device(&stream_device);
 	Eigen::Tensor<double, 3> input(batch_size, memory_size, layer_size);
 	input.setValues({
 		{{0,0}, {0,0}},
@@ -294,7 +295,7 @@ void test_operationfunctionTanHGradTensorOp()
 	for (int i = 0; i < batch_size; ++i) {
 		for (int j = 0; j < memory_size; ++j) {
 			for (int k = 0; k < layer_size; ++k) {
-				assert(assert_close(output(i,j,k), test(i,j,k)));
+				AssertPrint(assert_close(output(i,j,k), test(i,j,k)));
 			}
 		}
 	}
@@ -307,7 +308,7 @@ void test_operationfunctionReTanHTensorOp()
 	const int batch_size = 5;
 	const int memory_size = 2;
 	const int layer_size = 2;
-	cudaStream_t stream; assert(cudaStreamCreateWithFlags(&stream, cudaStreamNonBlocking) == cudaSuccess); Eigen::GpuStreamDevice stream_device(&stream, 0); Eigen::GpuDevice device(&stream_device);
+	cudaStream_t stream; AssertPrint(cudaStreamCreateWithFlags(&stream, cudaStreamNonBlocking) == cudaSuccess); Eigen::GpuStreamDevice stream_device(&stream, 0); Eigen::GpuDevice device(&stream_device);
 	Eigen::Tensor<double, 3> input(batch_size, memory_size, layer_size);
 	input.setValues({
 		{{0,0}, {0,0}},
@@ -331,7 +332,7 @@ void test_operationfunctionReTanHTensorOp()
 	for (int i = 0; i < batch_size; ++i) {
 		for (int j = 0; j < memory_size; ++j) {
 			for (int k = 0; k < layer_size; ++k) {
-				assert(assert_close(output(i,j,k), test(i,j,k)));
+				AssertPrint(assert_close(output(i,j,k), test(i,j,k)));
 			}
 		}
 	}
@@ -344,7 +345,7 @@ void test_operationfunctionReTanHGradTensorOp()
 	const int batch_size = 5;
 	const int memory_size = 2;
 	const int layer_size = 2;
-	cudaStream_t stream; assert(cudaStreamCreateWithFlags(&stream, cudaStreamNonBlocking) == cudaSuccess); Eigen::GpuStreamDevice stream_device(&stream, 0); Eigen::GpuDevice device(&stream_device);
+	cudaStream_t stream; AssertPrint(cudaStreamCreateWithFlags(&stream, cudaStreamNonBlocking) == cudaSuccess); Eigen::GpuStreamDevice stream_device(&stream, 0); Eigen::GpuDevice device(&stream_device);
 	Eigen::Tensor<double, 3> input(batch_size, memory_size, layer_size);
 	input.setValues({
 		{{0,0}, {0,0}},
@@ -368,7 +369,7 @@ void test_operationfunctionReTanHGradTensorOp()
 	for (int i = 0; i < batch_size; ++i) {
 		for (int j = 0; j < memory_size; ++j) {
 			for (int k = 0; k < layer_size; ++k) {
-				assert(assert_close(output(i,j,k), test(i,j,k)));
+				AssertPrint(assert_close(output(i,j,k), test(i,j,k)));
 			}
 		}
 	}
@@ -380,7 +381,7 @@ void test_operationfunctionLinearTensorOp()
 	const int batch_size = 5;
 	const int memory_size = 2;
 	const int layer_size = 2;
-	cudaStream_t stream; assert(cudaStreamCreateWithFlags(&stream, cudaStreamNonBlocking) == cudaSuccess); Eigen::GpuStreamDevice stream_device(&stream, 0); Eigen::GpuDevice device(&stream_device);
+	cudaStream_t stream; AssertPrint(cudaStreamCreateWithFlags(&stream, cudaStreamNonBlocking) == cudaSuccess); Eigen::GpuStreamDevice stream_device(&stream, 0); Eigen::GpuDevice device(&stream_device);
 	Eigen::Tensor<double, 3> input(batch_size, memory_size, layer_size);
 	input.setValues({
 		{{0,0}, {0,0}},
@@ -404,7 +405,7 @@ void test_operationfunctionLinearTensorOp()
 	for (int i = 0; i < batch_size; ++i) {
 		for (int j = 0; j < memory_size; ++j) {
 			for (int k = 0; k < layer_size; ++k) {
-				assert(assert_close(output(i,j,k), test(i,j,k)));
+				AssertPrint(assert_close(output(i,j,k), test(i,j,k)));
 			}
 		}
 	}
@@ -416,7 +417,7 @@ void test_operationfunctionLinearGradTensorOp()
 	const int batch_size = 5;
 	const int memory_size = 2;
 	const int layer_size = 2;
-	cudaStream_t stream; assert(cudaStreamCreateWithFlags(&stream, cudaStreamNonBlocking) == cudaSuccess); Eigen::GpuStreamDevice stream_device(&stream, 0); Eigen::GpuDevice device(&stream_device);
+	cudaStream_t stream; AssertPrint(cudaStreamCreateWithFlags(&stream, cudaStreamNonBlocking) == cudaSuccess); Eigen::GpuStreamDevice stream_device(&stream, 0); Eigen::GpuDevice device(&stream_device);
 	Eigen::Tensor<double, 3> input(batch_size, memory_size, layer_size);
 	input.setValues({
 		{{0,0}, {0,0}},
@@ -440,7 +441,7 @@ void test_operationfunctionLinearGradTensorOp()
 	for (int i = 0; i < batch_size; ++i) {
 		for (int j = 0; j < memory_size; ++j) {
 			for (int k = 0; k < layer_size; ++k) {
-				assert(assert_close(output(i,j,k), test(i,j,k)));
+				AssertPrint(assert_close(output(i,j,k), test(i,j,k)));
 			}
 		}
 	}
@@ -452,7 +453,7 @@ void test_operationfunctionInverseTensorOp()
 	const int batch_size = 5;
 	const int memory_size = 2;
 	const int layer_size = 2;
-	cudaStream_t stream; assert(cudaStreamCreateWithFlags(&stream, cudaStreamNonBlocking) == cudaSuccess); Eigen::GpuStreamDevice stream_device(&stream, 0); Eigen::GpuDevice device(&stream_device);
+	cudaStream_t stream; AssertPrint(cudaStreamCreateWithFlags(&stream, cudaStreamNonBlocking) == cudaSuccess); Eigen::GpuStreamDevice stream_device(&stream, 0); Eigen::GpuDevice device(&stream_device);
 	Eigen::Tensor<double, 3> input(batch_size, memory_size, layer_size);
 	input.setValues({
 		{{0,0}, {0,0}},
@@ -476,7 +477,7 @@ void test_operationfunctionInverseTensorOp()
 	for (int i = 0; i < batch_size; ++i) {
 		for (int j = 0; j < memory_size; ++j) {
 			for (int k = 0; k < layer_size; ++k) {
-				assert(assert_close(output(i,j,k), test(i,j,k)));
+				AssertPrint(assert_close(output(i,j,k), test(i,j,k)));
 			}
 		}
 	}
@@ -488,7 +489,7 @@ void test_operationfunctionInverseGradTensorOp()
 	const int batch_size = 5;
 	const int memory_size = 2;
 	const int layer_size = 2;
-	cudaStream_t stream; assert(cudaStreamCreateWithFlags(&stream, cudaStreamNonBlocking) == cudaSuccess); Eigen::GpuStreamDevice stream_device(&stream, 0); Eigen::GpuDevice device(&stream_device);
+	cudaStream_t stream; AssertPrint(cudaStreamCreateWithFlags(&stream, cudaStreamNonBlocking) == cudaSuccess); Eigen::GpuStreamDevice stream_device(&stream, 0); Eigen::GpuDevice device(&stream_device);
 	Eigen::Tensor<double, 3> input(batch_size, memory_size, layer_size);
 	input.setValues({
 		{{0,0}, {0,0}},
@@ -512,7 +513,7 @@ void test_operationfunctionInverseGradTensorOp()
 	for (int i = 0; i < batch_size; ++i) {
 		for (int j = 0; j < memory_size; ++j) {
 			for (int k = 0; k < layer_size; ++k) {
-				assert(assert_close(output(i, j, k), test(i, j, k)));
+				AssertPrint(assert_close(output(i, j, k), test(i, j, k)));
 			}
 		}
 	}
@@ -524,7 +525,7 @@ void test_operationfunctionExponentialTensorOp()
 	const int batch_size = 5;
 	const int memory_size = 2;
 	const int layer_size = 2;
-	cudaStream_t stream; assert(cudaStreamCreateWithFlags(&stream, cudaStreamNonBlocking) == cudaSuccess); Eigen::GpuStreamDevice stream_device(&stream, 0); Eigen::GpuDevice device(&stream_device);
+	cudaStream_t stream; AssertPrint(cudaStreamCreateWithFlags(&stream, cudaStreamNonBlocking) == cudaSuccess); Eigen::GpuStreamDevice stream_device(&stream, 0); Eigen::GpuDevice device(&stream_device);
 	Eigen::Tensor<double, 3> input(batch_size, memory_size, layer_size);
 	input.setValues({
 		{{0,0}, {0,0}},
@@ -548,7 +549,7 @@ void test_operationfunctionExponentialTensorOp()
 	for (int i = 0; i < batch_size; ++i) {
 		for (int j = 0; j < memory_size; ++j) {
 			for (int k = 0; k < layer_size; ++k) {
-				assert(assert_close(output(i, j, k), test(i, j, k)));
+				AssertPrint(assert_close(output(i, j, k), test(i, j, k)));
 			}
 		}
 	}
@@ -560,7 +561,7 @@ void test_operationfunctionExponentialGradTensorOp()
 	const int batch_size = 5;
 	const int memory_size = 2;
 	const int layer_size = 2;
-	cudaStream_t stream; assert(cudaStreamCreateWithFlags(&stream, cudaStreamNonBlocking) == cudaSuccess); Eigen::GpuStreamDevice stream_device(&stream, 0); Eigen::GpuDevice device(&stream_device);
+	cudaStream_t stream; AssertPrint(cudaStreamCreateWithFlags(&stream, cudaStreamNonBlocking) == cudaSuccess); Eigen::GpuStreamDevice stream_device(&stream, 0); Eigen::GpuDevice device(&stream_device);
 	Eigen::Tensor<double, 3> input(batch_size, memory_size, layer_size);
 	input.setValues({
 		{{0,0}, {0,0}},
@@ -584,7 +585,7 @@ void test_operationfunctionExponentialGradTensorOp()
 	for (int i = 0; i < batch_size; ++i) {
 		for (int j = 0; j < memory_size; ++j) {
 			for (int k = 0; k < layer_size; ++k) {
-				assert(assert_close(output(i, j, k), test(i, j, k)));
+				AssertPrint(assert_close(output(i, j, k), test(i, j, k)));
 			}
 		}
 	}
@@ -596,7 +597,7 @@ void test_operationfunctionLogTensorOp()
 	const int batch_size = 5;
 	const int memory_size = 2;
 	const int layer_size = 2;
-	cudaStream_t stream; assert(cudaStreamCreateWithFlags(&stream, cudaStreamNonBlocking) == cudaSuccess); Eigen::GpuStreamDevice stream_device(&stream, 0); Eigen::GpuDevice device(&stream_device);
+	cudaStream_t stream; AssertPrint(cudaStreamCreateWithFlags(&stream, cudaStreamNonBlocking) == cudaSuccess); Eigen::GpuStreamDevice stream_device(&stream, 0); Eigen::GpuDevice device(&stream_device);
 	Eigen::Tensor<double, 3> input(batch_size, memory_size, layer_size);
 	input.setValues({
 		{{0,0}, {0,0}},
@@ -622,7 +623,7 @@ void test_operationfunctionLogTensorOp()
 	for (int i = 0; i < batch_size; ++i) {
 		for (int j = 0; j < memory_size; ++j) {
 			for (int k = 0; k < layer_size; ++k) {
-				assert(assert_close(output(i, j, k), test(i, j, k)));
+				AssertPrint(assert_close(output(i, j, k), test(i, j, k)));
 			}
 		}
 	}
@@ -634,7 +635,7 @@ void test_operationfunctionLogGradTensorOp()
 	const int batch_size = 5;
 	const int memory_size = 2;
 	const int layer_size = 2;
-	cudaStream_t stream; assert(cudaStreamCreateWithFlags(&stream, cudaStreamNonBlocking) == cudaSuccess); Eigen::GpuStreamDevice stream_device(&stream, 0); Eigen::GpuDevice device(&stream_device);
+	cudaStream_t stream; AssertPrint(cudaStreamCreateWithFlags(&stream, cudaStreamNonBlocking) == cudaSuccess); Eigen::GpuStreamDevice stream_device(&stream, 0); Eigen::GpuDevice device(&stream_device);
 	Eigen::Tensor<double, 3> input(batch_size, memory_size, layer_size);
 	input.setValues({
 		{{0,0}, {0,0}},
@@ -658,7 +659,7 @@ void test_operationfunctionLogGradTensorOp()
 	for (int i = 0; i < batch_size; ++i) {
 		for (int j = 0; j < memory_size; ++j) {
 			for (int k = 0; k < layer_size; ++k) {
-				assert(assert_close(output(i, j, k), test(i, j, k)));
+				AssertPrint(assert_close(output(i, j, k), test(i, j, k)));
 			}
 		}
 	}
@@ -670,7 +671,7 @@ void test_operationfunctionPowTensorOp()
 	const int batch_size = 5;
 	const int memory_size = 2;
 	const int layer_size = 2;
-	cudaStream_t stream; assert(cudaStreamCreateWithFlags(&stream, cudaStreamNonBlocking) == cudaSuccess); Eigen::GpuStreamDevice stream_device(&stream, 0); Eigen::GpuDevice device(&stream_device);
+	cudaStream_t stream; AssertPrint(cudaStreamCreateWithFlags(&stream, cudaStreamNonBlocking) == cudaSuccess); Eigen::GpuStreamDevice stream_device(&stream, 0); Eigen::GpuDevice device(&stream_device);
 	Eigen::Tensor<double, 3> input(batch_size, memory_size, layer_size);
 	input.setValues({
 		{{0,0}, {0,0}},
@@ -694,7 +695,7 @@ void test_operationfunctionPowTensorOp()
 	for (int i = 0; i < batch_size; ++i) {
 		for (int j = 0; j < memory_size; ++j) {
 			for (int k = 0; k < layer_size; ++k) {
-				assert(assert_close(output(i, j, k), test(i, j, k)));
+				AssertPrint(assert_close(output(i, j, k), test(i, j, k)));
 			}
 		}
 	}
@@ -706,7 +707,7 @@ void test_operationfunctionPowGradTensorOp()
 	const int batch_size = 5;
 	const int memory_size = 2;
 	const int layer_size = 2;
-	cudaStream_t stream; assert(cudaStreamCreateWithFlags(&stream, cudaStreamNonBlocking) == cudaSuccess); Eigen::GpuStreamDevice stream_device(&stream, 0); Eigen::GpuDevice device(&stream_device);
+	cudaStream_t stream; AssertPrint(cudaStreamCreateWithFlags(&stream, cudaStreamNonBlocking) == cudaSuccess); Eigen::GpuStreamDevice stream_device(&stream, 0); Eigen::GpuDevice device(&stream_device);
 	Eigen::Tensor<double, 3> input(batch_size, memory_size, layer_size);
 	input.setValues({
 		{{0,0}, {0,0}},
@@ -730,7 +731,7 @@ void test_operationfunctionPowGradTensorOp()
 	for (int i = 0; i < batch_size; ++i) {
 		for (int j = 0; j < memory_size; ++j) {
 			for (int k = 0; k < layer_size; ++k) {
-				assert(assert_close(output(i, j, k), test(i, j, k)));
+				AssertPrint(assert_close(output(i, j, k), test(i, j, k)));
 			}
 		}
 	}
@@ -742,7 +743,7 @@ void test_operationfunctionLeakyReLUTensorOp()
 	const int batch_size = 5;
 	const int memory_size = 2;
 	const int layer_size = 2;
-	cudaStream_t stream; assert(cudaStreamCreateWithFlags(&stream, cudaStreamNonBlocking) == cudaSuccess); Eigen::GpuStreamDevice stream_device(&stream, 0); Eigen::GpuDevice device(&stream_device);
+	cudaStream_t stream; AssertPrint(cudaStreamCreateWithFlags(&stream, cudaStreamNonBlocking) == cudaSuccess); Eigen::GpuStreamDevice stream_device(&stream, 0); Eigen::GpuDevice device(&stream_device);
 	Eigen::Tensor<double, 3> input(batch_size, memory_size, layer_size);
 	input.setValues({
 		{{0,0}, {0,0}},
@@ -766,7 +767,7 @@ void test_operationfunctionLeakyReLUTensorOp()
 	for (int i = 0; i < batch_size; ++i) {
 		for (int j = 0; j < memory_size; ++j) {
 			for (int k = 0; k < layer_size; ++k) {
-				assert(assert_close(output(i, j, k), test(i, j, k)));
+				AssertPrint(assert_close(output(i, j, k), test(i, j, k)));
 			}
 		}
 	}
@@ -778,7 +779,7 @@ void test_operationfunctionLeakyReLUGradTensorOp()
 	const int batch_size = 5;
 	const int memory_size = 2;
 	const int layer_size = 2;
-	cudaStream_t stream; assert(cudaStreamCreateWithFlags(&stream, cudaStreamNonBlocking) == cudaSuccess); Eigen::GpuStreamDevice stream_device(&stream, 0); Eigen::GpuDevice device(&stream_device);
+	cudaStream_t stream; AssertPrint(cudaStreamCreateWithFlags(&stream, cudaStreamNonBlocking) == cudaSuccess); Eigen::GpuStreamDevice stream_device(&stream, 0); Eigen::GpuDevice device(&stream_device);
 	Eigen::Tensor<double, 3> input(batch_size, memory_size, layer_size);
 	input.setValues({
 		{{0,0}, {0,0}},
@@ -802,7 +803,7 @@ void test_operationfunctionLeakyReLUGradTensorOp()
 	for (int i = 0; i < batch_size; ++i) {
 		for (int j = 0; j < memory_size; ++j) {
 			for (int k = 0; k < layer_size; ++k) {
-				assert(assert_close(output(i, j, k), test(i, j, k)));
+				AssertPrint(assert_close(output(i, j, k), test(i, j, k)));
 			}
 		}
 	}
@@ -814,7 +815,7 @@ void test_operationfunctionSinTensorOp()
 	const int batch_size = 5;
 	const int memory_size = 2;
 	const int layer_size = 2;
-	cudaStream_t stream; assert(cudaStreamCreateWithFlags(&stream, cudaStreamNonBlocking) == cudaSuccess); Eigen::GpuStreamDevice stream_device(&stream, 0); Eigen::GpuDevice device(&stream_device);
+	cudaStream_t stream; AssertPrint(cudaStreamCreateWithFlags(&stream, cudaStreamNonBlocking) == cudaSuccess); Eigen::GpuStreamDevice stream_device(&stream, 0); Eigen::GpuDevice device(&stream_device);
 	Eigen::Tensor<double, 3> input(batch_size, memory_size, layer_size);
 	input.setValues({
 		{{0,0}, {0,0}},
@@ -838,7 +839,7 @@ void test_operationfunctionSinTensorOp()
 	for (int i = 0; i < batch_size; ++i) {
 		for (int j = 0; j < memory_size; ++j) {
 			for (int k = 0; k < layer_size; ++k) {
-				//assert(assert_close(output(i, j, k), test(i, j, k))); //TODO: fixme
+				//AssertPrint(assert_close(output(i, j, k), test(i, j, k))); //TODO: fixme
 			}
 		}
 	}
@@ -850,7 +851,7 @@ void test_operationfunctionSinGradTensorOp()
 	const int batch_size = 5;
 	const int memory_size = 2;
 	const int layer_size = 2;
-	cudaStream_t stream; assert(cudaStreamCreateWithFlags(&stream, cudaStreamNonBlocking) == cudaSuccess); Eigen::GpuStreamDevice stream_device(&stream, 0); Eigen::GpuDevice device(&stream_device);
+	cudaStream_t stream; AssertPrint(cudaStreamCreateWithFlags(&stream, cudaStreamNonBlocking) == cudaSuccess); Eigen::GpuStreamDevice stream_device(&stream, 0); Eigen::GpuDevice device(&stream_device);
 	Eigen::Tensor<double, 3> input(batch_size, memory_size, layer_size);
 	input.setValues({
 		{{0,0}, {0,0}},
@@ -874,7 +875,7 @@ void test_operationfunctionSinGradTensorOp()
 	for (int i = 0; i < batch_size; ++i) {
 		for (int j = 0; j < memory_size; ++j) {
 			for (int k = 0; k < layer_size; ++k) {
-				//assert(assert_close(output(i, j, k), test(i, j, k))); //TODO: fixme
+				//AssertPrint(assert_close(output(i, j, k), test(i, j, k))); //TODO: fixme
 			}
 		}
 	}
@@ -886,7 +887,7 @@ void test_operationfunctionCosTensorOp()
 	const int batch_size = 5;
 	const int memory_size = 2;
 	const int layer_size = 2;
-	cudaStream_t stream; assert(cudaStreamCreateWithFlags(&stream, cudaStreamNonBlocking) == cudaSuccess); Eigen::GpuStreamDevice stream_device(&stream, 0); Eigen::GpuDevice device(&stream_device);
+	cudaStream_t stream; AssertPrint(cudaStreamCreateWithFlags(&stream, cudaStreamNonBlocking) == cudaSuccess); Eigen::GpuStreamDevice stream_device(&stream, 0); Eigen::GpuDevice device(&stream_device);
 	Eigen::Tensor<double, 3> input(batch_size, memory_size, layer_size);
 	input.setValues({
 		{{0,0}, {0,0}},
@@ -910,7 +911,7 @@ void test_operationfunctionCosTensorOp()
 	for (int i = 0; i < batch_size; ++i) {
 		for (int j = 0; j < memory_size; ++j) {
 			for (int k = 0; k < layer_size; ++k) {
-				//assert(assert_close(output(i, j, k), test(i, j, k))); //TODO: fixme
+				//AssertPrint(assert_close(output(i, j, k), test(i, j, k))); //TODO: fixme
 			}
 		}
 	}
@@ -922,7 +923,7 @@ void test_operationfunctionCosGradTensorOp()
 	const int batch_size = 5;
 	const int memory_size = 2;
 	const int layer_size = 2;
-	cudaStream_t stream; assert(cudaStreamCreateWithFlags(&stream, cudaStreamNonBlocking) == cudaSuccess); Eigen::GpuStreamDevice stream_device(&stream, 0); Eigen::GpuDevice device(&stream_device);
+	cudaStream_t stream; AssertPrint(cudaStreamCreateWithFlags(&stream, cudaStreamNonBlocking) == cudaSuccess); Eigen::GpuStreamDevice stream_device(&stream, 0); Eigen::GpuDevice device(&stream_device);
 	Eigen::Tensor<double, 3> input(batch_size, memory_size, layer_size);
 	input.setValues({
 		{{0,0}, {0,0}},
@@ -946,7 +947,7 @@ void test_operationfunctionCosGradTensorOp()
 	for (int i = 0; i < batch_size; ++i) {
 		for (int j = 0; j < memory_size; ++j) {
 			for (int k = 0; k < layer_size; ++k) {
-				//assert(assert_close(output(i, j, k), test(i, j, k))); //TODO: fixme
+				//AssertPrint(assert_close(output(i, j, k), test(i, j, k))); //TODO: fixme
 			}
 		}
 	}

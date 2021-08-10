@@ -7,7 +7,7 @@
 # $Author: Douglas McCloseky
 # --------------------------------------------------------------------------
 
-cmake_minimum_required(VERSION 3.8.2 FATAL_ERROR)
+cmake_minimum_required(VERSION 3.18.0 FATAL_ERROR)
 
 #------------------------------------------------------------------------------
 # Handle superbuild first
@@ -32,7 +32,7 @@ SET(CMAKE_ALLOW_LOOSE_LOOP_CONSTRUCTS true)
 # Set C++ version
 SET(CMAKE_CXX_STANDARD 17)
 SET(CMAKE_CXX_STANDARD_REQUIRED ON)
-set(CMAKE_CUDA_STANDARD 14)
+set(CMAKE_CUDA_STANDARD 17)
 set(CMAKE_CUDA_STANDARD_REQUIRED TRUE)
 
 #------------------------------------------------------------------------------

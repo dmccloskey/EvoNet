@@ -420,7 +420,7 @@ public:
 	{
 	public:
 		KLDivergenceMuLossTensorOp() = default;
-		KLDivergenceMuLossTensorOp(const TensorT & eps, const TensorT & scale, const TensorT & capacity) : LossFunctionTensorOp(eps, scale), capacity_(capacity) {};
+		KLDivergenceMuLossTensorOp(const TensorT & eps, const TensorT & scale, const TensorT & capacity) : LossFunctionTensorOp<TensorT, DeviceT>(eps, scale), capacity_(capacity) {};
 		~KLDivergenceMuLossTensorOp() = default;
 		std::string getName() { return "KLDivergenceMuLossTensorOp"; }
 		void operator()(TensorT* predicted, TensorT* expected, TensorT* error, const int& batch_size, const int& memory_size, const int& layer_size, const int& time_step, DeviceT& device) const
@@ -447,7 +447,7 @@ public:
 	{
 	public:
 		KLDivergenceMuLossGradTensorOp() = default;
-		KLDivergenceMuLossGradTensorOp(const TensorT & eps, const TensorT & scale, const TensorT & capacity) : LossFunctionGradTensorOp(eps, scale), capacity_(capacity) {};
+		KLDivergenceMuLossGradTensorOp(const TensorT & eps, const TensorT & scale, const TensorT & capacity) : LossFunctionGradTensorOp<TensorT, DeviceT>(eps, scale), capacity_(capacity) {};
 		~KLDivergenceMuLossGradTensorOp() = default;
 		std::string getName() { return "KLDivergenceMuLossGradTensorOp"; }
 		void operator()(TensorT* predicted, TensorT* expected, TensorT* error, const int& batch_size, const int& memory_size, const int& layer_size, const int& time_step, DeviceT& device) const
@@ -478,7 +478,7 @@ public:
 	{
 	public:
 		KLDivergenceLogVarLossTensorOp() = default;
-		KLDivergenceLogVarLossTensorOp(const TensorT & eps, const TensorT & scale, const TensorT & capacity) : LossFunctionTensorOp(eps, scale), capacity_(capacity) {};
+		KLDivergenceLogVarLossTensorOp(const TensorT & eps, const TensorT & scale, const TensorT & capacity) : LossFunctionTensorOp<TensorT, DeviceT>(eps, scale), capacity_(capacity) {};
 		~KLDivergenceLogVarLossTensorOp() = default;
 		std::string getName() { return "KLDivergenceLogVarLossTensorOp"; }
 		void operator()(TensorT* predicted, TensorT* expected, TensorT* error, const int& batch_size, const int& memory_size, const int& layer_size, const int& time_step, DeviceT& device) const
@@ -504,7 +504,7 @@ public:
 	{
 	public:
 		KLDivergenceLogVarLossGradTensorOp() = default;
-		KLDivergenceLogVarLossGradTensorOp(const TensorT & eps, const TensorT & scale, const TensorT & capacity) : LossFunctionGradTensorOp(eps, scale), capacity_(capacity) {};
+		KLDivergenceLogVarLossGradTensorOp(const TensorT & eps, const TensorT & scale, const TensorT & capacity) : LossFunctionGradTensorOp<TensorT, DeviceT>(eps, scale), capacity_(capacity) {};
 		~KLDivergenceLogVarLossGradTensorOp() = default;
 		std::string getName() { return "KLDivergenceLogVarLossGradTensorOp"; }
 		void operator()(TensorT* predicted, TensorT* expected, TensorT* error, const int& batch_size, const int& memory_size, const int& layer_size, const int& time_step, DeviceT& device) const
@@ -841,7 +841,7 @@ public:
   {
   public:
 		KLDivergenceCatLossTensorOp() = default;
-		KLDivergenceCatLossTensorOp(const TensorT & eps, const TensorT & scale, const TensorT & capacity) : LossFunctionTensorOp(eps, scale), capacity_(capacity) {};
+		KLDivergenceCatLossTensorOp(const TensorT & eps, const TensorT & scale, const TensorT & capacity) : LossFunctionTensorOp<TensorT, DeviceT>(eps, scale), capacity_(capacity) {};
 		~KLDivergenceCatLossTensorOp() = default;
     std::string getName() { return "KLDivergenceCatLossTensorOp"; }
     void operator()(TensorT* predicted, TensorT* expected, TensorT* error, const int& batch_size, const int& memory_size, const int& layer_size, const int& time_step, DeviceT& device) const
@@ -872,7 +872,7 @@ public:
   {
   public:
 		KLDivergenceCatLossGradTensorOp() = default;
-		KLDivergenceCatLossGradTensorOp(const TensorT & eps, const TensorT & scale, const TensorT & capacity) : LossFunctionGradTensorOp(eps, scale), capacity_(capacity) {};
+		KLDivergenceCatLossGradTensorOp(const TensorT & eps, const TensorT & scale, const TensorT & capacity) : LossFunctionGradTensorOp<TensorT, DeviceT>(eps, scale), capacity_(capacity) {};
 		~KLDivergenceCatLossGradTensorOp() = default;
     std::string getName() { return "KLDivergenceCatLossGradTensorOp"; }
     void operator()(TensorT* predicted, TensorT* expected, TensorT* error, const int& batch_size, const int& memory_size, const int& layer_size, const int& time_step, DeviceT& device) const

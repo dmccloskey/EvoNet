@@ -120,7 +120,7 @@ namespace EvoNet
   public:
     ELUTensorOp() = default;
     ~ELUTensorOp() = default;
-    ELUTensorOp(const TensorT& eps, const TensorT& min, const TensorT& max, const TensorT& alpha) : ActivationTensorOp(eps, min, max), alpha_(alpha) {};
+    ELUTensorOp(const TensorT& eps, const TensorT& min, const TensorT& max, const TensorT& alpha) : ActivationTensorOp<TensorT, DeviceT>(eps, min, max), alpha_(alpha) {};
     ELUTensorOp(const TensorT& alpha): alpha_(alpha){}; 
 		void operator()(TensorT* x_I, TensorT* x_O, const int& batch_size, const int& memory_size, const int& layer_size, const int& time_step, DeviceT& device) const {
 			Eigen::TensorMap<Eigen::Tensor<TensorT, 3>> x(x_I, batch_size, memory_size, layer_size);
@@ -156,7 +156,7 @@ namespace EvoNet
   public:
     ELUGradTensorOp() = default;
     ~ELUGradTensorOp() = default;
-    ELUGradTensorOp(const TensorT& eps, const TensorT& min, const TensorT& max, const TensorT& alpha) : ActivationTensorOp(eps, min, max), alpha_(alpha) {};
+    ELUGradTensorOp(const TensorT& eps, const TensorT& min, const TensorT& max, const TensorT& alpha) : ActivationTensorOp<TensorT, DeviceT>(eps, min, max), alpha_(alpha) {};
     ELUGradTensorOp(const TensorT& alpha): alpha_(alpha){}; 
     void operator()(TensorT* x_I, TensorT* x_O, const int& batch_size, const int& memory_size, const int& layer_size, const int& time_step, DeviceT& device) const {
 			Eigen::TensorMap<Eigen::Tensor<TensorT, 3>> x(x_I, batch_size, memory_size, layer_size);
@@ -600,7 +600,7 @@ namespace EvoNet
   public:
     PowTensorOp() = default;
     ~PowTensorOp() = default;
-    PowTensorOp(const TensorT& eps, const TensorT& min, const TensorT& max, const TensorT& base) : ActivationTensorOp(eps, min, max), base_(base) {};
+    PowTensorOp(const TensorT& eps, const TensorT& min, const TensorT& max, const TensorT& base) : ActivationTensorOp<TensorT, DeviceT>(eps, min, max), base_(base) {};
 		PowTensorOp(const TensorT& base): base_(base){};
 		void operator()(TensorT* x_I, TensorT* x_O, const int& batch_size, const int& memory_size, const int& layer_size, const int& time_step, DeviceT& device) const {
 			Eigen::TensorMap<Eigen::Tensor<TensorT, 3>> x(x_I, batch_size, memory_size, layer_size);
@@ -630,7 +630,7 @@ namespace EvoNet
   public:
     PowGradTensorOp() = default;
     ~PowGradTensorOp() = default;
-    PowGradTensorOp(const TensorT& eps, const TensorT& min, const TensorT& max, const TensorT& base) : ActivationTensorOp(eps, min, max), base_(base) {};
+    PowGradTensorOp(const TensorT& eps, const TensorT& min, const TensorT& max, const TensorT& base) : ActivationTensorOp<TensorT, DeviceT>(eps, min, max), base_(base) {};
 		PowGradTensorOp(const TensorT& base) : base_(base) {};
 		void operator()(TensorT* x_I, TensorT* x_O, const int& batch_size, const int& memory_size, const int& layer_size, const int& time_step, DeviceT& device) const {
 			Eigen::TensorMap<Eigen::Tensor<TensorT, 3>> x(x_I, batch_size, memory_size, layer_size);
@@ -662,7 +662,7 @@ namespace EvoNet
   public:
     LeakyReLUTensorOp() = default;
     ~LeakyReLUTensorOp() = default;
-    LeakyReLUTensorOp(const TensorT& eps, const TensorT& min, const TensorT& max, const TensorT& alpha) : ActivationTensorOp(eps, min, max), alpha_(alpha) {};
+    LeakyReLUTensorOp(const TensorT& eps, const TensorT& min, const TensorT& max, const TensorT& alpha) : ActivationTensorOp<TensorT, DeviceT>(eps, min, max), alpha_(alpha) {};
 		LeakyReLUTensorOp(const TensorT& alpha) : alpha_(alpha) {};
 		void operator()(TensorT* x_I, TensorT* x_O, const int& batch_size, const int& memory_size, const int& layer_size, const int& time_step, DeviceT& device) const {
 			Eigen::TensorMap<Eigen::Tensor<TensorT, 3>> x(x_I, batch_size, memory_size, layer_size);
@@ -692,7 +692,7 @@ namespace EvoNet
   public:
     LeakyReLUGradTensorOp() = default;
     ~LeakyReLUGradTensorOp() = default;
-    LeakyReLUGradTensorOp(const TensorT& eps, const TensorT& min, const TensorT& max, const TensorT& alpha) : ActivationTensorOp(eps, min, max), alpha_(alpha) {};
+    LeakyReLUGradTensorOp(const TensorT& eps, const TensorT& min, const TensorT& max, const TensorT& alpha) : ActivationTensorOp<TensorT, DeviceT>(eps, min, max), alpha_(alpha) {};
 		LeakyReLUGradTensorOp(const TensorT& alpha) : alpha_(alpha) {};
 		void operator()(TensorT* x_I, TensorT* x_O, const int& batch_size, const int& memory_size, const int& layer_size, const int& time_step, DeviceT& device) const {
 			Eigen::TensorMap<Eigen::Tensor<TensorT, 3>> x(x_I, batch_size, memory_size, layer_size);
