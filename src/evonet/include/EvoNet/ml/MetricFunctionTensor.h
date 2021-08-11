@@ -632,7 +632,7 @@ public:
   {
   public:
     CosineSimilarityTensorOp() = default;
-    CosineSimilarityTensorOp(std::string& reduction_func) : MetricFunctionTensorOp(reduction_func) {};
+    CosineSimilarityTensorOp(std::string& reduction_func) : MetricFunctionTensorOp<TensorT, DeviceT>(reduction_func) {};
     std::string getName() { return "CosineSimilarityTensorOp"; }
     void operator()(TensorT* predicted, TensorT* expected, TensorT* error, const int& batch_size, const int& memory_size, const int& layer_size,
       const int& n_metrics, const int& time_step, const int& metric_index, DeviceT& device) const {
@@ -691,7 +691,7 @@ public:
   {
   public:
     PearsonRTensorOp() = default;
-    PearsonRTensorOp(std::string& reduction_func) : MetricFunctionTensorOp(reduction_func) {};
+    PearsonRTensorOp(std::string& reduction_func) : MetricFunctionTensorOp<TensorT, DeviceT>(reduction_func) {};
     std::string getName() { return "PearsonRTensorOp"; }
     void operator()(TensorT* predicted, TensorT* expected, TensorT* error, const int& batch_size, const int& memory_size, const int& layer_size,
       const int& n_metrics, const int& time_step, const int& metric_index, DeviceT& device) const {
@@ -752,7 +752,7 @@ public:
   {
   public:
     EuclideanDistTensorOp() = default;
-    EuclideanDistTensorOp(std::string& reduction_func) : MetricFunctionTensorOp(reduction_func) {};
+    EuclideanDistTensorOp(std::string& reduction_func) : MetricFunctionTensorOp<TensorT, DeviceT>(reduction_func) {};
     std::string getName() { return "EuclideanDistTensorOp"; }
     void operator()(TensorT* predicted, TensorT* expected, TensorT* error, const int& batch_size, const int& memory_size, const int& layer_size,
       const int& n_metrics, const int& time_step, const int& metric_index, DeviceT& device) const {
@@ -806,7 +806,7 @@ public:
   {
   public:
     ManhattanDistTensorOp() = default;
-    ManhattanDistTensorOp(std::string& reduction_func) : MetricFunctionTensorOp(reduction_func) {};
+    ManhattanDistTensorOp(std::string& reduction_func) : MetricFunctionTensorOp<TensorT, DeviceT>(reduction_func) {};
     std::string getName() { return "ManhattanDistTensorOp"; }
     void operator()(TensorT* predicted, TensorT* expected, TensorT* error, const int& batch_size, const int& memory_size, const int& layer_size,
       const int& n_metrics, const int& time_step, const int& metric_index, DeviceT& device) const {
@@ -860,7 +860,7 @@ public:
   {
   public:
     JeffreysAndMatusitaDistTensorOp() = default;
-    JeffreysAndMatusitaDistTensorOp(std::string& reduction_func) : MetricFunctionTensorOp(reduction_func) {};
+    JeffreysAndMatusitaDistTensorOp(std::string& reduction_func) : MetricFunctionTensorOp<TensorT, DeviceT>(reduction_func) {};
     std::string getName() { return "JeffreysAndMatusitaDistTensorOp"; }
     void operator()(TensorT* predicted, TensorT* expected, TensorT* error, const int& batch_size, const int& memory_size, const int& layer_size,
       const int& n_metrics, const int& time_step, const int& metric_index, DeviceT& device) const {
@@ -915,7 +915,7 @@ public:
   {
   public:
     LogarithmicDistTensorOp() = default;
-    LogarithmicDistTensorOp(std::string& reduction_func) : MetricFunctionTensorOp(reduction_func) {};
+    LogarithmicDistTensorOp(std::string& reduction_func) : MetricFunctionTensorOp<TensorT, DeviceT>(reduction_func) {};
     std::string getName() { return "LogarithmicDistTensorOp"; }
     void operator()(TensorT* predicted, TensorT* expected, TensorT* error, const int& batch_size, const int& memory_size, const int& layer_size,
       const int& n_metrics, const int& time_step, const int& metric_index, DeviceT& device) const {
@@ -970,7 +970,7 @@ public:
   {
   public:
     PercentDifferenceTensorOp() = default;
-    PercentDifferenceTensorOp(std::string& reduction_func) : MetricFunctionTensorOp(reduction_func) {};
+    PercentDifferenceTensorOp(std::string& reduction_func) : MetricFunctionTensorOp<TensorT, DeviceT>(reduction_func) {};
     std::string getName() { return "PercentDifferenceTensorOp"; }
     void operator()(TensorT* predicted, TensorT* expected, TensorT* error, const int& batch_size, const int& memory_size, const int& layer_size,
       const int& n_metrics, const int& time_step, const int& metric_index, DeviceT& device) const {

@@ -837,14 +837,35 @@ public:
 			// step 1: compute the weight-normalized source net input expanded across batch and memory
       // NOTE for numerical stability we multiply by the weight_tensor and then divide by the square of the weight tensor plus a small number to avoid dividing by 0
 			//auto input_normalized_tensor = source_input_tensor.broadcast(Eigen::array<int, 4>({ 1, 1, 1, sink_layer_size })) * weight_tensor_exp / (weight_tensor_exp*weight_tensor_exp + weight_tensor_exp.constant(this->eps_));
-      auto input_normalized_tensor = (weight_tensor_exp != weight_tensor_exp.constant(TensorT(0))).select(
-        source_input_tensor.broadcast(Eigen::array<int, 4>({ 1, 1, 1, sink_layer_size })) / weight_tensor_exp_clipped_pos, weight_tensor_exp.constant(TensorT(0)));
+			TensorT* tmp_data;
+			if (typeid(device).name() == typeid(Eigen::DefaultDevice).name()) {
+				tmp_data = new TensorT[batch_size * memory_size * source_layer_size * sink_layer_size];
+			}
+#if COMPILE_WITH_CUDA
+			else if (typeid(device).name() == typeid(Eigen::GpuDevice).name()) {
+				size_t bytes = batch_size * memory_size * source_layer_size * sink_layer_size * sizeof(TensorT);
+				assert(cudaMalloc((void**)(&tmp_data), bytes) == cudaSuccess);
+			}
+#endif
+			Eigen::TensorMap<Eigen::Tensor<TensorT, 4>> input_normalized_tensor(tmp_data, batch_size, memory_size, source_layer_size, sink_layer_size);
+			input_normalized_tensor.device(device) = (weight_tensor_exp != weight_tensor_exp.constant(TensorT(0))).select(
+				source_input_tensor.broadcast(Eigen::array<int, 4>({ 1, 1, 1, sink_layer_size })) / weight_tensor_exp_clipped_pos, weight_tensor_exp.constant(TensorT(0)));
 			
       // step 2: scale to the sink error
 			auto scaled_error = -sink_error_tensor.broadcast(Eigen::array<int, 4>({ 1, 1, source_layer_size, 1 })) * input_normalized_tensor;
 			
       // step 3: sum along the memory and average along the batch dimensions
 			weight_error_tensor.device(device) += (scaled_error.sum(Eigen::array<int, 2>({ 0, 1 })) * weight_error_tensor.constant(TensorT(1) / (TensorT)batch_size)).clip(this->min_, this->max_).eval();
+
+			// Deallocate temporary memory
+			if (typeid(device).name() == typeid(Eigen::DefaultDevice).name()) {
+				delete[] tmp_data;
+			}
+#if COMPILE_WITH_CUDA
+			else if (typeid(device).name() == typeid(Eigen::GpuDevice).name()) {
+				assert(cudaFree(tmp_data) == cudaSuccess);
+			}
+#endif
 		};
 		std::string getName() const { return "ProdWeightGradTensorOp"; };
 	//private:

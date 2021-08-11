@@ -82,9 +82,9 @@ public:
     SGDOp(const TensorT& learning_rate, const TensorT& momentum):
       momentum_(momentum){this->setLearningRate(learning_rate);}
     SGDOp(const TensorT& learning_rate, const TensorT& momentum, const TensorT& gradient_threshold) :
-      SolverOp(gradient_threshold), momentum_(momentum) { this->setLearningRate(learning_rate); }
+      SolverOp<TensorT>(gradient_threshold), momentum_(momentum) { this->setLearningRate(learning_rate); }
     SGDOp(const TensorT& learning_rate, const TensorT& momentum, const TensorT& gradient_threshold, const TensorT& gradient_noise_sigma, const TensorT& gradient_noise_gamma) :
-      SolverOp(gradient_threshold, gradient_noise_sigma, gradient_noise_gamma),momentum_(momentum) {this->setLearningRate(learning_rate);}
+      SolverOp<TensorT>(gradient_threshold, gradient_noise_sigma, gradient_noise_gamma),momentum_(momentum) {this->setLearningRate(learning_rate);}
     void setMomentum(const TensorT& momentum){momentum_ = momentum;};
     TensorT getMomentum() const{return momentum_;};
     void setMomentumPrev(const TensorT& momentum_prev){momentum_prev_ = momentum_prev;};
@@ -135,9 +135,9 @@ private:
     SSDOp(const TensorT& learning_rate, const TensorT& momentum) :
       momentum_(momentum) {this->setLearningRate(learning_rate);}
     SSDOp(const TensorT& learning_rate, const TensorT& momentum, const TensorT& gradient_threshold) :
-      SolverOp(gradient_threshold), momentum_(momentum) {this->setLearningRate(learning_rate);}
+      SolverOp<TensorT>(gradient_threshold), momentum_(momentum) {this->setLearningRate(learning_rate);}
     SSDOp(const TensorT& learning_rate, const TensorT& momentum, const TensorT& gradient_threshold, const TensorT& gradient_noise_sigma, const TensorT& gradient_noise_gamma) :
-      SolverOp(gradient_threshold, gradient_noise_sigma, gradient_noise_gamma), momentum_(momentum) {this->setLearningRate(learning_rate);}
+      SolverOp<TensorT>(gradient_threshold, gradient_noise_sigma, gradient_noise_gamma), momentum_(momentum) {this->setLearningRate(learning_rate);}
     void setMomentum(const TensorT& momentum) { momentum_ = momentum; };
     TensorT getMomentum() const { return momentum_; };
     void setMomentumPrev(const TensorT& momentum_prev) { momentum_prev_ = momentum_prev; };
@@ -192,9 +192,9 @@ public:
     AdamOp(const TensorT& learning_rate, const TensorT& momentum, const TensorT& momentum2, const TensorT& delta) :
       momentum_(momentum), momentum2_(momentum2), delta_(delta) {this->setLearningRate(learning_rate);};
     AdamOp(const TensorT& learning_rate, const TensorT& momentum, const TensorT& momentum2, const TensorT& delta, const TensorT& gradient_threshold) :
-      SolverOp(gradient_threshold), momentum_(momentum), momentum2_(momentum2), delta_(delta) {this->setLearningRate(learning_rate);}
+      SolverOp<TensorT>(gradient_threshold), momentum_(momentum), momentum2_(momentum2), delta_(delta) {this->setLearningRate(learning_rate);}
     AdamOp(const TensorT& learning_rate, const TensorT& momentum, const TensorT& momentum2, const TensorT& delta, const TensorT& gradient_threshold, const TensorT& gradient_noise_sigma, const TensorT& gradient_noise_gamma) :
-      SolverOp(gradient_threshold, gradient_noise_sigma, gradient_noise_gamma), momentum_(momentum), momentum2_(momentum2), delta_(delta) {this->setLearningRate(learning_rate);}
+      SolverOp<TensorT>(gradient_threshold, gradient_noise_sigma, gradient_noise_gamma), momentum_(momentum), momentum2_(momentum2), delta_(delta) {this->setLearningRate(learning_rate);}
     void setMomentum(const TensorT& momentum){momentum_ = momentum;};
     TensorT getMomentum() const{return momentum_;};
     void setMomentum2(const TensorT& momentum2){momentum2_ = momentum2;};
@@ -262,11 +262,11 @@ private:
       this->setLearningRate(learning_rate);
     };
     SVAGOp(const TensorT& learning_rate, const TensorT& momentum, const TensorT& gradient_threshold) :
-      SolverOp(gradient_threshold), momentum_(momentum) {
+      SolverOp<TensorT>(gradient_threshold), momentum_(momentum) {
       this->setLearningRate(learning_rate);
     }
     SVAGOp(const TensorT& learning_rate, const TensorT& momentum, const TensorT& gradient_threshold, const TensorT& gradient_noise_sigma, const TensorT& gradient_noise_gamma) :
-      SolverOp(gradient_threshold, gradient_noise_sigma, gradient_noise_gamma), momentum_(momentum) {
+      SolverOp<TensorT>(gradient_threshold, gradient_noise_sigma, gradient_noise_gamma), momentum_(momentum) {
       this->setLearningRate(learning_rate);
     }
     void setMomentum(const TensorT& momentum) { momentum_ = momentum; };
