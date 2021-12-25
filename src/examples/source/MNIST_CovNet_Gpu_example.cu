@@ -736,10 +736,10 @@ void main_MNIST(const std::string& data_dir, const bool& make_model, const bool&
   Model<float> model;
   if (make_model) {
     std::cout << "Making the model..." << std::endl;
-    //model_trainer.makeFullyConn(model, input_nodes.size(), output_nodes.size(), 512, 0, 0, true, false, true);  // Baseline
+    model_trainer.makeFullyConn(model, input_nodes.size(), output_nodes.size(), 512, 0, 0, false, false, true);  // Baseline
     //model_trainer.makeCovNet(model, input_nodes.size(), output_nodes.size(), 2, 2, 0, 32, 4, 7, 1, 2, 2, false, true, true);  // Sanity test
     //model_trainer.makeCovNet(model, input_nodes.size(), output_nodes.size(), 8, 2, 0, 64, 0, 5, 1, 2, 2, true, false, true, true); // Recommended model
-    model_trainer.makeCovNet(model, input_nodes.size(), output_nodes.size(), 8, 2, 0, 64, 0, 7, 1, 2, 2, false, false, true, true); // Sanity test
+    //model_trainer.makeCovNet(model, input_nodes.size(), output_nodes.size(), 8, 2, 0, 64, 0, 7, 1, 2, 2, false, false, true, true); // Sanity test
     //model_trainer.makeCovNet(model, input_nodes.size(), output_nodes.size(), 32, 2, 0, 512, 32, 5, 1, 2, 2, true, false, true, true); // Recommended model
     //model_trainer.makeCovNet(model, input_nodes.size(), output_nodes.size(), 32, 2, 0, 512, 32, 7, 1, 2, 2, false, false, true, true); // Recommended model
   }
