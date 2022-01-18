@@ -1,7 +1,7 @@
 
 
 cmake_minimum_required(VERSION 3.8.2 FATAL_ERROR)
-project("SmartPeak_class_examples_smartpeak")
+project("EvoNet_class_examples_evonet")
 
 message(STATUS "building examples...")
 
@@ -11,11 +11,11 @@ include(executables.cmake)
 
 #------------------------------------------------------------------------------
 # Include directories for examples
-set(SMARTPEAK_EXAMPLES_INTERNAL_INCLUDE_DIRECTORIES "${PROJECT_BINARY_DIR}/include/")
-# add SmartPeak directories
-set(SMARTPEAK_EXAMPLES_EXTERNAL_INCLUDE_DIRECTORIES "${SmartPeak_INCLUDE_DIRECTORIES}")
-include_directories(${SMARTPEAK_EXAMPLES_INTERNAL_INCLUDE_DIRECTORIES})
-include_directories(SYSTEM ${SMARTPEAK_EXAMPLES_EXTERNAL_INCLUDE_DIRECTORIES})
+set(EVONET_EXAMPLES_INTERNAL_INCLUDE_DIRECTORIES "${PROJECT_BINARY_DIR}/include/")
+# add EvoNet directories
+set(EVONET_EXAMPLES_EXTERNAL_INCLUDE_DIRECTORIES "${EvoNet_INCLUDE_DIRECTORIES}")
+include_directories(${EVONET_EXAMPLES_INTERNAL_INCLUDE_DIRECTORIES})
+include_directories(SYSTEM ${EVONET_EXAMPLES_EXTERNAL_INCLUDE_DIRECTORIES})
 
 #------------------------------------------------------------------------------
 # disable optimization for examples for gcc like compilers
@@ -39,7 +39,7 @@ endif()
 # Add the actual examples
 foreach(_examples ${ml_executables_list})
   add_executable(${_examples} source/${_examples})
-  target_link_libraries(${_examples} ${SmartPeak_LIBRARIES})
+  target_link_libraries(${_examples} ${EvoNet_LIBRARIES})
   # only add OPENMP flags to gcc linker (execpt Mac OS X, due to compiler bug
   # see https://sourceforge.net/apps/trac/open-ms/ticket/280 for details)
   if (OPENMP_FOUND AND NOT MSVC AND NOT ${CMAKE_SYSTEM_NAME} MATCHES "Darwin")
@@ -54,7 +54,7 @@ endforeach(_examples)
 if (EVONET_CUDA)
   foreach(_examples ${cuda_executables_list})
 	add_executable(${_examples} source/${_examples})
-	target_link_libraries(${_examples} ${SmartPeak_LIBRARIES})
+	target_link_libraries(${_examples} ${EvoNet_LIBRARIES})
 	# only add OPENMP flags to gcc linker (execpt Mac OS X, due to compiler bug
 	# see https://sourceforge.net/apps/trac/open-ms/ticket/280 for details)
 	if (OPENMP_FOUND AND NOT MSVC AND NOT ${CMAKE_SYSTEM_NAME} MATCHES "Darwin")

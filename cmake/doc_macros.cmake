@@ -1,7 +1,7 @@
 # --------------------------------------------------------------------------
-#                   SmartPeak -- Open-Source Mass Spectrometry
+#                   EvoNet -- Open-Source Mass Spectrometry
 # --------------------------------------------------------------------------
-# Copyright The SmartPeak Team -- Eberhard Karls University Tuebingen,
+# Copyright The EvoNet Team -- Eberhard Karls University Tuebingen,
 # ETH Zurich, and Freie Universitaet Berlin 2002-2017.
 #
 # This software is released under a three-clause BSD license:
@@ -43,7 +43,7 @@ set(SMARTPEAK_DOCUMENTATION_DIRECTORIES ""
 # Registers the given path in the documentation system
 #
 # @param path_to_document Path containing header files that should be documented
-macro(smartpeak_doc_path path_to_document)
+macro(evonet_doc_path path_to_document)
   set(SMARTPEAK_DOCUMENTATION_DIRECTORIES
     ${path_to_document}
     ${SMARTPEAK_DOCUMENTATION_DIRECTORIES}

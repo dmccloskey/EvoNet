@@ -1,19 +1,19 @@
 /**TODO:  Add copyright*/
 
-#include <SmartPeak/ml/PopulationTrainerGpu.h>
-#include <SmartPeak/ml/ModelTrainerGpu.h>
-#include <SmartPeak/ml/ModelReplicator.h>
-#include <SmartPeak/ml/ModelBuilder.h>
-#include <SmartPeak/ml/Model.h>
-#include <SmartPeak/io/PopulationTrainerFile.h>
-#include <SmartPeak/io/ModelInterpreterFileGpu.h>
-#include <SmartPeak/io/ModelFile.h>
+#include <EvoNet/ml/PopulationTrainerGpu.h>
+#include <EvoNet/ml/ModelTrainerGpu.h>
+#include <EvoNet/ml/ModelReplicator.h>
+#include <EvoNet/ml/ModelBuilder.h>
+#include <EvoNet/ml/Model.h>
+#include <EvoNet/io/PopulationTrainerFile.h>
+#include <EvoNet/io/ModelInterpreterFileGpu.h>
+#include <EvoNet/io/ModelFile.h>
 
-#include <SmartPeak/simulator/MNISTSimulator.h>
+#include <EvoNet/simulator/MNISTSimulator.h>
 
 #include <unsupported/Eigen/CXX11/Tensor>
 
-using namespace SmartPeak;
+using namespace EvoNet;
 
 // Extended classes
 template<typename TensorT>

@@ -1,10 +1,10 @@
 cmake_minimum_required(VERSION 3.0.2 FATAL_ERROR)
-project("SmartPeak_src")
+project("EvoNet_src")
 
 #------------------------------------------------------------------------------
-# SmartPeak core lib
+# EvoNet core lib
 #------------------------------------------------------------------------------
-add_subdirectory(smartpeak)
+add_subdirectory(evonet)
 
 #------------------------------------------------------------------------------
 # Tests

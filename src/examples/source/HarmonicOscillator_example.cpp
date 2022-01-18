@@ -1,16 +1,16 @@
 /**TODO:  Add copyright*/
 
-#include <SmartPeak/ml/PopulationTrainerExperimentalDefaultDevice.h>
-#include <SmartPeak/ml/ModelTrainerExperimentalDefaultDevice.h>
-#include <SmartPeak/ml/ModelReplicatorExperimental.h>
-#include <SmartPeak/ml/ModelBuilder.h>
-#include <SmartPeak/ml/Model.h>
-#include <SmartPeak/io/Parameters.h>
-#include <SmartPeak/simulator/HarmonicOscillatorSimulator.h>
+#include <EvoNet/ml/PopulationTrainerExperimentalDefaultDevice.h>
+#include <EvoNet/ml/ModelTrainerExperimentalDefaultDevice.h>
+#include <EvoNet/ml/ModelReplicatorExperimental.h>
+#include <EvoNet/ml/ModelBuilder.h>
+#include <EvoNet/ml/Model.h>
+#include <EvoNet/io/Parameters.h>
+#include <EvoNet/simulator/HarmonicOscillatorSimulator.h>
 
 #include <unsupported/Eigen/CXX11/Tensor>
 
-using namespace SmartPeak;
+using namespace EvoNet;
 
 template<typename TensorT>
 class DataSimulatorExt : public HarmonicOscillatorSimulator<TensorT>
@@ -710,9 +710,9 @@ int main(int argc, char** argv)
 
   // Read in the parameters
   LoadParametersFromCsv loadParametersFromCsv(id_int, parameters_filename);
-  parameters = SmartPeak::apply([&loadParametersFromCsv](auto&& ...args) { return loadParametersFromCsv(args...); }, parameters);
+  parameters = EvoNet::apply([&loadParametersFromCsv](auto&& ...args) { return loadParametersFromCsv(args...); }, parameters);
 
   // Run the application
-  SmartPeak::apply([](auto&& ...args) { main_HarmonicOscillator1D(args ...); }, parameters);
+  EvoNet::apply([](auto&& ...args) { main_HarmonicOscillator1D(args ...); }, parameters);
   return 0;
 }

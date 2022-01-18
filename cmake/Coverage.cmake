@@ -15,8 +15,8 @@ else()
   set(CMAKE_SHARED_LINKER_FLAGS "${CMAKE_EXE_LINKER_FLAGS} -fprofile-arcs -ftest-coverage")
   include(cmake/modules/CodeCoverage.cmake)
   # in addition to system paths, also ignore includes from the prefix path (e.g. contrib libs)
-  setup_target_for_coverage(SmartPeak_coverage coverage ${CMAKE_PREFIX_PATH})
-  message("Coverage tests enabled. You can run 'make SmartPeak_coverage'") 
+  setup_target_for_coverage(EvoNet_coverage coverage ${CMAKE_PREFIX_PATH})
+  message("Coverage tests enabled. You can run 'make EvoNet_coverage'") 
 endif()
 
 

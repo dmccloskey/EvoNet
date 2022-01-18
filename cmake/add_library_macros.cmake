@@ -49,11 +49,11 @@ endfunction(convert_to_unity_build)
 ## @note This macro will do nothing with non MSVC generators.
 macro(copy_dll_to_extern_bin targetname)
   if(MSVC)
-    file(TO_NATIVE_PATH "${SMARTPEAK_HOST_BINARY_DIRECTORY}/src/tests/class_tests/bin/$(ConfigurationName)/$(TargetFileName)" DLL_TEST_TARGET)
-    file(TO_NATIVE_PATH "${SMARTPEAK_HOST_BINARY_DIRECTORY}/src/tests/class_tests/bin/$(ConfigurationName)" DLL_TEST_TARGET_PATH)
+    file(TO_NATIVE_PATH "${EVONET_HOST_BINARY_DIRECTORY}/src/tests/class_tests/bin/$(ConfigurationName)/$(TargetFileName)" DLL_TEST_TARGET)
+    file(TO_NATIVE_PATH "${EVONET_HOST_BINARY_DIRECTORY}/src/tests/class_tests/bin/$(ConfigurationName)" DLL_TEST_TARGET_PATH)
 
-    file(TO_NATIVE_PATH "${SMARTPEAK_HOST_BINARY_DIRECTORY}/doc/doxygen/parameters/$(ConfigurationName)/$(TargetFileName)" DLL_DOC_TARGET)
-    file(TO_NATIVE_PATH "${SMARTPEAK_HOST_BINARY_DIRECTORY}/doc/doxygen/parameters/$(ConfigurationName)" DLL_DOC_TARGET_PATH)
+    file(TO_NATIVE_PATH "${EVONET_HOST_BINARY_DIRECTORY}/doc/doxygen/parameters/$(ConfigurationName)/$(TargetFileName)" DLL_DOC_TARGET)
+    file(TO_NATIVE_PATH "${EVONET_HOST_BINARY_DIRECTORY}/doc/doxygen/parameters/$(ConfigurationName)" DLL_DOC_TARGET_PATH)
 
 
     add_custom_command(TARGET ${targetname}
@@ -66,12 +66,12 @@ macro(copy_dll_to_extern_bin targetname)
 endmacro()
 
 #------------------------------------------------------------------------------
-# smartpeak_add_library()
-# Create an SmartPeak library, install it, register for export of targets, and
+# evonet_add_library()
+# Create an EvoNet library, install it, register for export of targets, and
 # export all required variables for later usage in the build system.
 #
 # Signature:
-# smartpeak_add_library(TARGET_NAME  SmartPeak
+# evonet_add_library(TARGET_NAME  EvoNet
 #                    SOURCE_FILES  <source files to build the library>
 #                    HEADER_FILES  <header files associated to the library>
 #                                  (will be installed with the library)
@@ -81,52 +81,52 @@ endmacro()
 #                                      (will be added with -isystem if available)
 #                    LINK_LIBRARIES <list of libraries used when linking the library>
 #                    DLL_EXPORT_PATH <path to the dll export header>)
-function(smartpeak_add_library)
+function(evonet_add_library)
   #------------------------------------------------------------------------------
   # parse arguments to function
   set(options )
   set(oneValueArgs TARGET_NAME DLL_EXPORT_PATH)
   set(multiValueArgs INTERNAL_INCLUDES PRIVATE_INCLUDES EXTERNAL_INCLUDES SOURCE_FILES HEADER_FILES LINK_LIBRARIES)
-  cmake_parse_arguments(smartpeak_add_library "${options}" "${oneValueArgs}" "${multiValueArgs}" ${ARGN} )
+  cmake_parse_arguments(evonet_add_library "${options}" "${oneValueArgs}" "${multiValueArgs}" ${ARGN} )
 
   #------------------------------------------------------------------------------
   # Status message for configure output
-  message(STATUS "Adding library ${smartpeak_add_library_TARGET_NAME}")
+  message(STATUS "Adding library ${evonet_add_library_TARGET_NAME}")
 
   #------------------------------------------------------------------------------
   # merge into global exported includes
-  set(${smartpeak_add_library_TARGET_NAME}_INCLUDE_DIRECTORIES ${smartpeak_add_library_INTERNAL_INCLUDES}
-                                                            ${smartpeak_add_library_EXTERNAL_INCLUDES}
-      CACHE INTERNAL "${smartpeak_add_library_TARGET_NAME} include directories" FORCE)
+  set(${evonet_add_library_TARGET_NAME}_INCLUDE_DIRECTORIES ${evonet_add_library_INTERNAL_INCLUDES}
+                                                            ${evonet_add_library_EXTERNAL_INCLUDES}
+      CACHE INTERNAL "${evonet_add_library_TARGET_NAME} include directories" FORCE)
 
   #------------------------------------------------------------------------------
   # Include directories
-  include_directories(${smartpeak_add_library_INTERNAL_INCLUDES})
-  include_directories(SYSTEM ${smartpeak_add_library_EXTERNAL_INCLUDES})
-  include_directories(SYSTEM ${smartpeak_add_library_PRIVATE_INCLUDES})
+  include_directories(${evonet_add_library_INTERNAL_INCLUDES})
+  include_directories(SYSTEM ${evonet_add_library_EXTERNAL_INCLUDES})
+  include_directories(SYSTEM ${evonet_add_library_PRIVATE_INCLUDES})
 
   #------------------------------------------------------------------------------
   # Check if we want a unity build
   if (ENABLE_UNITYBUILD)
-  	message(STATUS "Enabled Unity Build for ${smartpeak_add_library_TARGET_NAME}")
-  	convert_to_unity_build(${smartpeak_add_library_TARGET_NAME}_UnityBuild smartpeak_add_library_SOURCE_FILES)
+  	message(STATUS "Enabled Unity Build for ${evonet_add_library_TARGET_NAME}")
+  	convert_to_unity_build(${evonet_add_library_TARGET_NAME}_UnityBuild evonet_add_library_SOURCE_FILES)
   endif()
 
   #------------------------------------------------------------------------------
   # Add the library
-  add_library(${smartpeak_add_library_TARGET_NAME} ${smartpeak_add_library_SOURCE_FILES})
+  add_library(${evonet_add_library_TARGET_NAME} ${evonet_add_library_SOURCE_FILES})
 
   #------------------------------------------------------------------------------
   # Generate export header if requested
-  if(NOT ${smartpeak_add_library_DLL_EXPORT_PATH} STREQUAL "")
-    set(_CONFIG_H "include/${smartpeak_add_library_DLL_EXPORT_PATH}${smartpeak_add_library_TARGET_NAME}Config.h")
-    string(TOUPPER ${smartpeak_add_library_TARGET_NAME} _TARGET_UPPER_CASE)
+  if(NOT ${evonet_add_library_DLL_EXPORT_PATH} STREQUAL "")
+    set(_CONFIG_H "include/${evonet_add_library_DLL_EXPORT_PATH}${evonet_add_library_TARGET_NAME}Config.h")
+    string(TOUPPER ${evonet_add_library_TARGET_NAME} _TARGET_UPPER_CASE)
     include(GenerateExportHeader)
-    generate_export_header(${smartpeak_add_library_TARGET_NAME}
+    generate_export_header(${evonet_add_library_TARGET_NAME}
                           EXPORT_MACRO_NAME ${_TARGET_UPPER_CASE}_DLLAPI
                           EXPORT_FILE_NAME ${_CONFIG_H})
 
-    string(REGEX REPLACE "/" "\\\\" _fixed_path ${smartpeak_add_library_DLL_EXPORT_PATH})
+    string(REGEX REPLACE "/" "\\\\" _fixed_path ${evonet_add_library_DLL_EXPORT_PATH})
 
     # add generated header to visual studio
     source_group("Header Files\\${_fixed_path}" FILES ${_CONFIG_H})
@@ -134,35 +134,35 @@ function(smartpeak_add_library)
 
   #------------------------------------------------------------------------------
   # Link library against other libraries
-  if(smartpeak_add_library_LINK_LIBRARIES)
+  if(evonet_add_library_LINK_LIBRARIES)
     ## check for consistent lib arch (e.g. all 64bit)?
-    check_lib_architecture(smartpeak_add_library_LINK_LIBRARIES)
-    target_link_libraries(${smartpeak_add_library_TARGET_NAME} ${smartpeak_add_library_LINK_LIBRARIES})
-    list(LENGTH smartpeak_add_library_LINK_LIBRARIES _library_count)
+    check_lib_architecture(evonet_add_library_LINK_LIBRARIES)
+    target_link_libraries(${evonet_add_library_TARGET_NAME} ${evonet_add_library_LINK_LIBRARIES})
+    list(LENGTH evonet_add_library_LINK_LIBRARIES _library_count)
   endif()
 
   #------------------------------------------------------------------------------
   # Export libraries (self + dependencies)
-  set(${smartpeak_add_library_TARGET_NAME}_LIBRARIES
-        ${smartpeak_add_library_TARGET_NAME}
-        ${smartpeak_add_library_LINK_LIBRARIES}
+  set(${evonet_add_library_TARGET_NAME}_LIBRARIES
+        ${evonet_add_library_TARGET_NAME}
+        ${evonet_add_library_LINK_LIBRARIES}
         CACHE
-        INTERNAL "${smartpeak_add_library_TARGET_NAME} libraries" FORCE)
+        INTERNAL "${evonet_add_library_TARGET_NAME} libraries" FORCE)
 
   #------------------------------------------------------------------------------
   # we also want to install the library
-  install_library(${smartpeak_add_library_TARGET_NAME})
-  install_headers("${smartpeak_add_library_HEADER_FILES};${PROJECT_BINARY_DIR}/${_CONFIG_H}" ${smartpeak_add_library_TARGET_NAME})
+  install_library(${evonet_add_library_TARGET_NAME})
+  install_headers("${evonet_add_library_HEADER_FILES};${PROJECT_BINARY_DIR}/${_CONFIG_H}" ${evonet_add_library_TARGET_NAME})
 
   #------------------------------------------------------------------------------
   # register for export
-  smartpeak_register_export_target(${smartpeak_add_library_TARGET_NAME})
+  evonet_register_export_target(${evonet_add_library_TARGET_NAME})
 
   #------------------------------------------------------------------------------
   # copy dll to test/doc bin folder on MSVC systems
-  copy_dll_to_extern_bin(${smartpeak_add_library_TARGET_NAME})
+  copy_dll_to_extern_bin(${evonet_add_library_TARGET_NAME})
 
   #------------------------------------------------------------------------------
   # Status message for configure output
-  message(STATUS "Adding library ${smartpeak_add_library_TARGET_NAME} - SUCCESS")
+  message(STATUS "Adding library ${evonet_add_library_TARGET_NAME} - SUCCESS")
 endfunction()

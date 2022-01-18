@@ -1,0 +1,9 @@
+
+#ifndef EVONET_TEST_CONFIG_H
+#define EVONET_TEST_CONFIG_H
+
+// Macro to construct a c string containing the complete path to the test data
+#define EVONET_GET_TEST_DATA_PATH(filename) (std::string("@CF_EVONET_TEST_DATA_PATH@") + filename).c_str()
+#define EVONET_GET_TEST_DATA_PATH_MESSAGE(prefix,filename,suffix) (prefix + std::string("@CF_EVONET_TEST_DATA_PATH@") + filename + suffix).c_str()
+
+#endif // EVONET_TEST_CONFIG_H

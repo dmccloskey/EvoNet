@@ -1,19 +1,19 @@
 /**TODO:  Add copyright*/
 
-#include <SmartPeak/ml/PopulationTrainerGpu.h>
-#include <SmartPeak/ml/ModelTrainerGpu.h>
-#include <SmartPeak/ml/ModelReplicator.h>
-#include <SmartPeak/ml/ModelBuilder.h>
-#include <SmartPeak/ml/Model.h>
-#include <SmartPeak/io/PopulationTrainerFile.h>
-#include <SmartPeak/io/ModelInterpreterFileGpu.h>
-#include <SmartPeak/io/ModelFile.h>
+#include <EvoNet/ml/PopulationTrainerGpu.h>
+#include <EvoNet/ml/ModelTrainerGpu.h>
+#include <EvoNet/ml/ModelReplicator.h>
+#include <EvoNet/ml/ModelBuilder.h>
+#include <EvoNet/ml/Model.h>
+#include <EvoNet/io/PopulationTrainerFile.h>
+#include <EvoNet/io/ModelInterpreterFileGpu.h>
+#include <EvoNet/io/ModelFile.h>
 
-#include <SmartPeak/simulator/MNISTSimulator.h>
+#include <EvoNet/simulator/MNISTSimulator.h>
 
 #include <unsupported/Eigen/CXX11/Tensor>
 
-using namespace SmartPeak;
+using namespace EvoNet;
 
 // Extended classes
 template<typename TensorT>
@@ -736,10 +736,10 @@ void main_MNIST(const std::string& data_dir, const bool& make_model, const bool&
   Model<float> model;
   if (make_model) {
     std::cout << "Making the model..." << std::endl;
-    //model_trainer.makeFullyConn(model, input_nodes.size(), output_nodes.size(), 512, 0, 0, true, false, true);  // Baseline
+    model_trainer.makeFullyConn(model, input_nodes.size(), output_nodes.size(), 512, 0, 0, false, false, true);  // Baseline
     //model_trainer.makeCovNet(model, input_nodes.size(), output_nodes.size(), 2, 2, 0, 32, 4, 7, 1, 2, 2, false, true, true);  // Sanity test
     //model_trainer.makeCovNet(model, input_nodes.size(), output_nodes.size(), 8, 2, 0, 64, 0, 5, 1, 2, 2, true, false, true, true); // Recommended model
-    model_trainer.makeCovNet(model, input_nodes.size(), output_nodes.size(), 8, 2, 0, 64, 0, 7, 1, 2, 2, false, false, true, true); // Sanity test
+    //model_trainer.makeCovNet(model, input_nodes.size(), output_nodes.size(), 8, 2, 0, 64, 0, 7, 1, 2, 2, false, false, true, true); // Sanity test
     //model_trainer.makeCovNet(model, input_nodes.size(), output_nodes.size(), 32, 2, 0, 512, 32, 5, 1, 2, 2, true, false, true, true); // Recommended model
     //model_trainer.makeCovNet(model, input_nodes.size(), output_nodes.size(), 32, 2, 0, 512, 32, 7, 1, 2, 2, false, false, true, true); // Recommended model
   }

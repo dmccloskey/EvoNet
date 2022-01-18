@@ -1,25 +1,28 @@
 /**TODO:  Add copyright*/
 
-#include <SmartPeak/ml/PopulationTrainerGpu.h>
-#include <SmartPeak/ml/ModelTrainerGpu.h>
-#include <SmartPeak/ml/ModelReplicator.h>
-#include <SmartPeak/ml/ModelBuilder.h>
-#include <SmartPeak/ml/Model.h>
-#include <SmartPeak/io/PopulationTrainerFile.h>
-#include <SmartPeak/io/ModelInterpreterFileGpu.h>
-#include <SmartPeak/io/ModelFile.h>
+#include <EvoNet/ml/PopulationTrainerGpu.h>
+#include <EvoNet/ml/ModelTrainerGpu.h>
+#include <EvoNet/ml/ModelReplicator.h>
+#include <EvoNet/ml/ModelBuilder.h>
+#include <EvoNet/ml/Model.h>
+#include <EvoNet/io/PopulationTrainerFile.h>
+#include <EvoNet/io/ModelInterpreterFileGpu.h>
+#include <EvoNet/io/ModelFile.h>
 
-#include <SmartPeak/simulator/MNISTSimulator.h>
+#include <EvoNet/simulator/MNISTSimulator.h>
 
 #include <unsupported/Eigen/CXX11/Tensor>
 
-using namespace SmartPeak;
+using namespace EvoNet;
 
 // Extended 
 template<typename TensorT>
 class ModelTrainerExt : public ModelTrainerGpu<TensorT>
 {
 public:
+  bool KL_divergence_warmup_ = false;
+  TensorT beta_c_ = 1;
+  TensorT capacity_c_ = 0;
   /*
   @brief Basic VAE with	Xavier-like initialization
 
@@ -608,16 +611,27 @@ public:
     //  }
     //}
 
-    // Increase the KL divergence beta and capacity
-    TensorT beta = 1 / 2.5e4 * n_epochs;
-    if (beta > 1) beta = 1;
-    TensorT capacity_z = 0.0 / 2.5e4 * n_epochs;
-    if (capacity_z > 5) capacity_z = 5;
-    this->getLossFunctionHelpers().at(1).loss_functions_.at(0) = std::make_shared<KLDivergenceMuLossOp<float>>(KLDivergenceMuLossOp<float>(1e-6, beta, capacity_z));
-    this->getLossFunctionHelpers().at(2).loss_functions_.at(0) = std::make_shared<KLDivergenceLogVarLossOp<float>>(KLDivergenceLogVarLossOp<float>(1e-6, beta, capacity_z));
-    this->getLossFunctionHelpers().at(1).loss_function_grads_.at(0) = std::make_shared<KLDivergenceMuLossGradOp<float>>(KLDivergenceMuLossGradOp<float>(1e-6, beta, capacity_z));
-    this->getLossFunctionHelpers().at(2).loss_function_grads_.at(0) = std::make_shared<KLDivergenceLogVarLossGradOp<float>>(KLDivergenceLogVarLossGradOp<float>(1e-6, beta, capacity_z));
+    // copy the loss function helpers
+    auto lossFunctionHelpers = this->getLossFunctionHelpers();
 
+    // Increase the KL divergence beta and capacity
+    TensorT beta = this->beta_c_;
+    TensorT capacity_c = this->capacity_c_;
+    if (this->KL_divergence_warmup_) {
+      TensorT scale_factor1 = (n_epochs - 100 > 0) ? n_epochs - 100 : 1;
+      beta /= (2.5e4 / scale_factor1);
+      if (beta > this->beta_c_) beta = this->beta_c_;
+      TensorT scale_factor2 = (n_epochs - 100 > 0) ? n_epochs - 100 : 1;
+      capacity_c /= (2.5e4 / scale_factor2);
+      if (capacity_c > this->capacity_c_) capacity_c = this->capacity_c_;
+    }
+    lossFunctionHelpers.at(1).loss_functions_.at(0) = std::make_shared<KLDivergenceMuLossOp<float>>(KLDivergenceMuLossOp<float>(1e-6, beta, capacity_c));
+    lossFunctionHelpers.at(2).loss_functions_.at(0) = std::make_shared<KLDivergenceLogVarLossOp<float>>(KLDivergenceLogVarLossOp<float>(1e-6, beta, capacity_c));
+    lossFunctionHelpers.at(1).loss_function_grads_.at(0) = std::make_shared<KLDivergenceMuLossGradOp<float>>(KLDivergenceMuLossGradOp<float>(1e-6, beta, capacity_c));
+    lossFunctionHelpers.at(2).loss_function_grads_.at(0) = std::make_shared<KLDivergenceLogVarLossGradOp<float>>(KLDivergenceLogVarLossGradOp<float>(1e-6, beta, capacity_c));
+
+    // Update the loss function helpers
+    this->setLossFunctionHelpers(lossFunctionHelpers);
     if (n_epochs % 1000 == 0 && n_epochs != 0) {
       // save the model every 1000 epochs
       model_interpreter.getModelResults(model, false, true, false, false);
@@ -859,7 +873,7 @@ void main_MNIST(const std::string& data_dir, const bool& make_model, const bool&
   }
   ModelTrainerExt<float> model_trainer;
   //model_trainer.setBatchSize(1); // evaluation only
-  model_trainer.setBatchSize(128);
+  model_trainer.setBatchSize(64);
   model_trainer.setNEpochsTraining(200001);
   model_trainer.setNEpochsValidation(25);
   model_trainer.setNEpochsEvaluation(100);
@@ -872,8 +886,8 @@ void main_MNIST(const std::string& data_dir, const bool& make_model, const bool&
   std::vector<LossFunctionHelper<float>> loss_function_helpers;
   LossFunctionHelper<float> loss_function_helper1, loss_function_helper2, loss_function_helper3;
   loss_function_helper1.output_nodes_ = output_nodes;
-  loss_function_helper1.loss_functions_ = { std::make_shared<BCEWithLogitsLossOp<float>>(BCEWithLogitsLossOp<float>(1e-6, 1.0 / float(input_size))) };
-  loss_function_helper1.loss_function_grads_ = { std::make_shared<BCEWithLogitsLossGradOp<float>>(BCEWithLogitsLossGradOp<float>(1e-6, 1.0 / float(input_size))) };
+  loss_function_helper1.loss_functions_ = { std::make_shared<MSELossOp<float>>(MSELossOp<float>(1e-6, 1.0)) };
+  loss_function_helper1.loss_function_grads_ = { std::make_shared<MSELossGradOp<float>>(MSELossGradOp<float>(1e-6, 1.0)) };
   loss_function_helpers.push_back(loss_function_helper1);
   loss_function_helper2.output_nodes_ = encoding_nodes_mu;
   loss_function_helper2.loss_functions_ = { std::make_shared<KLDivergenceMuLossOp<float>>(KLDivergenceMuLossOp<float>(1e-6, 0.0, 0.0)) };
@@ -897,7 +911,7 @@ void main_MNIST(const std::string& data_dir, const bool& make_model, const bool&
   Model<float> model;
   if (make_model) {
     std::cout << "Making the model..." << std::endl;
-    ModelTrainerExt<float>().makeVAEFullyConn(model, input_size, encoding_size, 512, 512, 0, false, false, true);
+    ModelTrainerExt<float>().makeVAEFullyConn(model, input_size, encoding_size, 128, 128, 0, true, false, true);
     //ModelTrainerExt<float>().makeVAECovNet(model, input_size, encoding_size, 32, 1, 0, 2, 1, 0, 128, 128, 7, 1, false, true);
   }
   else {

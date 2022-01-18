@@ -15,8 +15,9 @@ set(ml_executables_list
   Metabolomics_BatchCorrection
   Metabolomics_Classification
   Metabolomics_LatentArithmetic
+  Metabolomics_LatentTraversal
+  Metabolomics_LatentUnsClass
   Metabolomics_VAE
-  Metabolomics_MultiTask
   #Metabolomics_Stats_RBC
   #Metabolomics_Stats_KALE
   PeakIntegrator_app
@@ -37,8 +38,9 @@ set(cuda_executables_list
   AddProbRec_Gpu_example
   Metabolomics_BatchCorrection_Gpu
   Metabolomics_Classification_Gpu
+  Metabolomics_LatentTraversal_Gpu
+  Metabolomics_LatentUnsClass_Gpu
   Metabolomics_VAE_Gpu
-  Metabolomics_MultiTask_Gpu
   PeakIntegrator_Gpu_app
 )
 
