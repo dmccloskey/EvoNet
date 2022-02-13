@@ -18,8 +18,8 @@ copyright   = '2022, EvoNet Team'
 author      = 'EvoNet Team'
 
 extensions              = [ 
-                            "breathe",
-                            "exhale",
+                            #"breathe",
+                            #"exhale",
                             "sphinx.ext.todo",
                             "sphinx.ext.autodoc",
                             "sphinx.ext.intersphinx",
