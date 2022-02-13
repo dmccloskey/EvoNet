@@ -46,6 +46,7 @@ Examples
 - Full computational networks for the analysis and simulation of biochemical networks (work in progress...).
 - Benchmarks on various MNIST related classification and reconstruction tasks.
 - Benchmarks using various Omics data (work in progress...).
+- All examples can be found in the `./src/examples` directory, and can be built using the provided `CMAKE` scripts.
 
 .. begin_examples
 
@@ -67,5 +68,6 @@ Code
 - Unit tests are provided for (almost) all classes and methods on both CPU and GPU.
 - Docstrings and documentation is provided for (almost) all classes and methods.
 - Runs on Windows, Linux, and MacOS.  Please note that Windows is currently the most well tested.
+- All unit tests can be found in the `./src/tests` directory, and can be ran using `CTest`.
 
-.. end_gui
+.. end_code
