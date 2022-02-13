@@ -70,7 +70,7 @@ exhale_args = {
     "createTreeView":        True,
     # TIP: if using the sphinx-bootstrap-theme, you need
     # "treeViewIsBootstrap": True,
-    "exhaleExecutesDoxygen": False, #True,
+    "exhaleExecutesDoxygen": True,
     "exhaleDoxygenStdin":    "INPUT = ../src/evonet/include/EvoNet"
 }
 

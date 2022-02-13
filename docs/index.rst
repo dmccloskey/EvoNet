@@ -1,8 +1,5 @@
-SmartPeak
-=========
-
-.. image:: images/SmartPeak.png
-   :align: right
+EvoNet
+======
 
 .. toctree::
    :caption: First Steps
