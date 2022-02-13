@@ -47,7 +47,7 @@ def configureDoxyfile(input_dir, output_dir):
         file.write(filedata)
 
 
-#docs_build_on_RtD = os.environ.get('READTHEDOCS', None) == 'True'
+docs_build_on_RtD = os.environ.get('READTHEDOCS', None) == 'True'
 
 breathe_projects = {"EvoNet" : "docs/xml"}
 
@@ -70,7 +70,7 @@ exhale_args = {
     "createTreeView":        True,
     # TIP: if using the sphinx-bootstrap-theme, you need
     # "treeViewIsBootstrap": True,
-    "exhaleExecutesDoxygen": True,
+    #"exhaleExecutesDoxygen": True,
     "exhaleDoxygenStdin":    "INPUT = ../src/evonet/include/EvoNet"
 }
 
