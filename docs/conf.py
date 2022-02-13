@@ -56,7 +56,7 @@ if docs_build_on_RtD:
     output_dir = 'build'
     copy_tree('../images', 'images')
     configureDoxyfile(input_dir, output_dir)
-    subprocess.call('doxygen', shell=True)
+    #subprocess.call('doxygen', shell=True)
     breathe_projects['EvoNet'] = output_dir + '/xml'
 
 

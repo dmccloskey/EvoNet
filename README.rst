@@ -6,7 +6,7 @@ EvoNet: Evolving end-to-end computational networks
 
 .. |docs| image:: https://readthedocs.com/projects/evonet/badge/?version=latest
    :alt: Documentation Status
-   :target: https://smartpeak.readthedocs.io/en/latest/?badge=latest
+   :target: https://evonet.readthedocs.io/en/latest/?badge=latest
 
 .. |circleci| image:: https://circleci.com/gh/dmccloskey/EvoNet.svg?branch=develop?style=svg
    :alt: CircleCI Build Status (Windows, Linux & macOS)
